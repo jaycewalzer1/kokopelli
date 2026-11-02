@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
 out/
-*.db
-*.db-*
+models/
+.venv/
 .DS_Store

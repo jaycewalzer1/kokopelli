@@ -1,53 +1,52 @@
 # World Model: Synthetic Life
 
-A clock for one complete synthetic life, readable at any level from the life story down to a single minute.
+Base infrastructure for calling a local world model and LLM on Apple silicon.
 
-```
-life story > developmental segments > statements and plans > year > season > month > week > day > hour > minute
-```
+| File | What it holds |
+|---|---|
+| `settings.py` | Which world model and LLM to use, and where they live |
+| `world_model.py` | Calls NVIDIA Cosmos3-Nano |
+| `llm_model.py` | Calls Qwen3-VL-8B-Instruct |
+| `blend.py` | Crossfades world model clips into one video |
+| `tests/` | One test file for each of the three above |
 
-The first life is Nell Varga, 1941-2023, of the fictional harbor town of Port Averill on Lake Huron. Read it in [docs/WORLD_STORY.md](docs/WORLD_STORY.md). The storage design and its open questions are in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
+## Setup
 
-## Try it
-
-Needs Python 3.12 or newer and nothing else.
+Needs `uv`, `ffmpeg`, and the Cosmos3 MLX port installed in `~/cosmos3/cosmos3-mlx`.
 
 ```sh
-python3 -m lifeclock validate                        # check the canon for contradictions
-python3 -m lifeclock at 1996-07-23T13:18             # read the whole stack at one minute
-python3 -m lifeclock run --db out/life.db            # tick every minute of the life
-python3 -m lifeclock verify --db out/life.db         # check every invariant and replay the life
-python3 -m lifeclock story --db out/life.db --out story.md
-python3 -m unittest discover -s tests
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python -r requirements.txt
+.venv/bin/hf download Qwen/Qwen3-VL-8B-Instruct --local-dir models/Qwen3-VL-8B-Instruct
+.venv/bin/hf download nvidia/Cosmos3-Nano --local-dir models/Cosmos3-Nano
 ```
 
-## Layout
+## Use
 
-| Path | What it holds |
-|---|---|
-| `canon/world.json` | The authored world: people, segments, statements, plans, events, schedules |
-| `lifeclock/clock.py` | Time as an integer, and the calendar levels as intervals on it |
-| `lifeclock/world.py` | Top-down expansion to any minute; canon validation |
-| `lifeclock/engine.py` | Ticks through the life with checkpoints, pacing, and audits |
-| `lifeclock/store.py` | SQLite schema and digests |
-| `lifeclock/verify.py` | Invariant checks on a finished life |
+```python
+from blend import blend
+from llm_model import ask, unload
+from world_model import text_to_video
 
-## The one-hour test
+prompt = ask("Write a one-sentence video prompt about a lake at dawn.")
+unload()
+a = text_to_video(prompt, "out/a.mp4")
+b = text_to_video(prompt, "out/b.mp4")
+blend([a, b], "out/blended.mp4")
+```
 
-[`hour-test.yml`](.github/workflows/hour-test.yml) stretches the entire life across one real hour, about 12,000 simulated minutes per second:
+Each model peaks at about 18 GB, so unload the LLM before calling the world model.
 
-1. Runs the life unpaced as a reference.
-2. Starts the paced run and hard-kills it with `SIGKILL` at 25 minutes.
-3. Resumes it from its last checkpoint and catches up to the original schedule.
-4. Requires the run to take 3600s within 60s, and every invariant to hold.
-5. Requires the paced and reference lives to be byte-identical across all digests.
+## Test
 
-Ticking the clock takes about 1% of that hour. The paced run spends the rest checking randomly chosen lived minutes against an independent random-access lookup, and any disagreement fails the test.
+The model tests call the real models and take a few minutes.
 
-Start it from the Actions tab or with `gh workflow run hour-test.yml`. It only runs on demand, and each run uses about 65 Actions minutes.
+```sh
+.venv/bin/python -m unittest discover -s tests -v
+```
 
-## Canon rules
+`tests/test_continuous_video.py` is skipped by default. It generates a real 30 second video in `out/continuous_video/`, which takes about two hours and resumes if stopped.
 
-- Edit the story in `canon/world.json`, then run `validate`.
-- A database refuses to resume on a different canon.
-- Append new activities to the end of the list. Their codes are list positions.
+```sh
+RUN_LONG_TESTS=1 .venv/bin/python -u -m unittest tests.test_continuous_video -v
+```
