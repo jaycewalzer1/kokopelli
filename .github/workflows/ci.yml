@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate canon and run unit tests
+        run: |
+          python -m lifeclock validate
+          python -m unittest discover -s tests
+
+      - name: Reference life, unpaced
+        run: |
+          mkdir -p out
+          python -m lifeclock run --db out/reference.db --heartbeat 15
+          python -m lifeclock verify --db out/reference.db
+
+      - name: Short paced life with a hard kill and resume
+        run: |
+          set +e
+          timeout --signal=KILL 20 python -m lifeclock run --db out/paced.db --wall-seconds 60 --heartbeat 10
+          code=$?
+          set -e
+          test "$code" -eq 137
+          python -m lifeclock run --db out/paced.db --wall-seconds 60 --heartbeat 10
+          python -m lifeclock verify --db out/paced.db --expect-wall 60 --wall-tolerance 15 --shallow
+          python -m lifeclock compare out/reference.db out/paced.db

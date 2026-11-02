@@ -1,0 +1,98 @@
+name: One-hour life test
+
+# Stretches one whole life across one real hour, hard-kills it partway, resumes
+# it, and requires the result to match an unpaced run of the same life exactly.
+on:
+  workflow_dispatch:
+    inputs:
+      wall_seconds:
+        description: Real seconds to stretch the life across
+        default: "3600"
+      kill_after_seconds:
+        description: Real seconds before the hard kill
+        default: "1500"
+
+permissions:
+  contents: read
+
+jobs:
+  hour:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    env:
+      WALL: ${{ inputs.wall_seconds }}
+      KILL_AFTER: ${{ inputs.kill_after_seconds }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate canon and run unit tests
+        run: |
+          python -m lifeclock validate
+          python -m unittest discover -s tests
+
+      - name: Reference life, unpaced
+        run: |
+          mkdir -p out
+          python -m lifeclock run --db out/reference.db --heartbeat 15
+          python -m lifeclock verify --db out/reference.db --out out/reference-verify.json
+
+      - name: Paced life, hard-killed partway
+        run: |
+          set +e
+          timeout --signal=KILL "$KILL_AFTER" \
+            python -m lifeclock run --db out/paced.db --wall-seconds "$WALL" --heartbeat 60
+          code=$?
+          set -e
+          if [ "$code" -ne 137 ]; then
+            echo "Expected the run to be killed (exit 137), got $code"
+            exit 1
+          fi
+          echo "Killed as intended after ${KILL_AFTER}s."
+
+      - name: Resume the same life to its end
+        run: python -m lifeclock run --db out/paced.db --wall-seconds "$WALL" --heartbeat 60
+
+      - name: Verify the paced life, including its one-hour duration
+        run: |
+          python -m lifeclock verify --db out/paced.db \
+            --expect-wall "$WALL" --wall-tolerance 60 --out out/paced-verify.json
+
+      - name: Require the paced and reference lives to be identical
+        run: python -m lifeclock compare out/reference.db out/paced.db | tee out/compare.txt
+
+      - name: Render the story and sample moments
+        if: always()
+        run: |
+          python -m lifeclock story --db out/paced.db --out out/WORLD_STORY.md || true
+          for when in 1951-01-16T10:00 1957-11-19T21:45 1996-07-23T13:17 1996-07-23T13:18 2023-10-02T06:39; do
+            python -m lifeclock at "$when" >> out/moments.txt || true
+            echo >> out/moments.txt
+          done
+
+      - name: Write the job summary
+        if: always()
+        run: |
+          {
+            echo "## One-hour life test"
+            echo '```'
+            tail -n 2 out/compare.txt || echo "no comparison was reached"
+            python -c "import json; f = json.load(open('out/paced-verify.json')); print(json.dumps({'problems': f['problems'], **{k: v for k, v in f['facts'].items() if k != 'digests'}}, indent=2))" || true
+            echo '```'
+            echo '```'
+            cat out/moments.txt || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: life-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            out/paced.db
+            out/*.json
+            out/*.md
+            out/*.txt
