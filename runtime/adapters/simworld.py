@@ -1,0 +1,1332 @@
+"""SimWorld behind the PhysicsSim interface: the Unreal server owns physical truth.
+
+Terms: a *step* is one loop turn of 30 sim-seconds. An *engine tick* is one Unreal frame of
+tick_interval_s. Sim time is always engine ticks times tick_interval_s, never the wall clock.
+Read runtime/SIMWORLD.md for what has and has not been proven against a real server.
+"""
+import copy
+import json
+import math
+import random
+import re
+import struct
+import time
+import hashlib
+from io import BytesIO
+from pathlib import Path
+from typing import Any, Optional
+
+import numpy as np
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from runtime.adapters import simworld_commands as c
+from runtime.adapters.simworld_control import Mover, MoverIO
+from runtime.adapters.simworld_math import (angle_delta, camera_to_world, distance_cm, hearing, heading_to,
+                                            intrinsics_from_fov, parse_clock, sun_pitch_from_elevation, time_of_day)
+from runtime.adapters.simworld_wire import NUMBER, CommandError, SimWorldError, Wire, parse_numbers
+from runtime.physics import (ACTION_CATALOG, INTERACT_BY_KIND, ActionOutcome, AgentState, CameraState, Capture,
+                             Extrinsics, Gesture, MaskColor, NpcState, ObjectState, PhysicalState, PhysicsSim, Pose, RenderFile,
+                             RestoreReport, Rotation, SimCheckpoint, SpeechEvent, StageTiming, StepResult, TaskStatus,
+                             TimeOfDay, Vec3, Velocity, Weather, parse_action)
+
+# Real blueprint paths and names from the SimWorld source.
+AGENT_ASSET = "/Game/TrafficSystem/Pedestrian/Base_User_Agent.Base_User_Agent_C"  # config/example.yaml:116
+NPC_ASSET = "/Game/TrafficSystem/Pedestrian/Base_Pedestrian.Base_Pedestrian_C"  # config/example.yaml:86
+SCOOTER_ASSET = "/Game/ScooterAssets/Blueprints/BP_Scooter_Pawn.BP_Scooter_Pawn_C"  # config/example.yaml:123
+UE_MANAGER_ASSET = "/Game/TrafficSystem/UE_Manager.UE_Manager_C"  # config/example.yaml:4
+WEATHER_ASSET = "/Game/Weather/BP_WeatherManager.BP_WeatherManager_C"  # communicator.py:1127
+MUG_ASSET = "/Game/InteractableAsset/Cup/BP_Mug.BP_Mug_C"  # examples/ue_command.ipynb cell 39
+BOX_ASSET = "/Game/InteractableAsset/Box/BP_Interactable_Box.BP_Interactable_Box_C"  # examples/ue_command.ipynb cell 43
+AGENT_ACTOR = "GEN_BP_Humanoid_0"  # communicator.py:162
+UE_MANAGER_ACTOR = "GEN_BP_UEManager"  # communicator.py:805
+WEATHER_ACTOR = "GEN_WeatherManager"  # weather_manager.py:11
+NEW_HUMANOID_PREFIX = "Base_User_Agent_C_"  # communicator.py:117
+
+VIEWMODES = {"rgb": ("lit", "png"), "depth": ("depth", "npy"), "segmentation": ("object_mask", "png")}
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+NPY_SIGNATURE = b"\x93NUMPY"
+
+# Actions that do not interrupt whatever the agent is already doing.
+NON_PREEMPTING = {"continue", "speak", "set_speed"}
+
+NOT_RESTORED = [
+    "velocity and momentum: actors restart at rest, so the first moments after a restore differ",
+    "animation pose and blend state",
+    "NPC controller internals: routes restart toward the saved waypoint, from rest",
+    "character movement state, such as being mid-air",
+    "physics solver state of objects: sleep state, contacts, angular velocity",
+    "anything this adapter did not spawn: level actors, or traffic if you start it yourself",
+    "traffic signal timers and vehicles (this adapter does not run them)",
+    "the collision counters, which are cumulative inside Unreal and have no reset command",
+    "renderer history: temporal anti-aliasing, auto-exposure and Lumen caches, so pixels may differ after a restore",
+    "Unreal's own frame counter and world time (ours comes from the saved tick count)",
+]
+
+
+class SpawnSpec(BaseModel):
+    """Something interactable in the world. existing=True means it is already in the level."""
+    model_config = ConfigDict(extra="forbid")
+    id: str
+    kind: str = Field(pattern="^(object|seat|scooter|vehicle)$")
+    asset: str = ""
+    position: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    yaw: float = 0.0
+    existing: bool = False
+    actor: Optional[str] = None
+
+    @property
+    def actor_name(self) -> str:
+        return self.actor or f"GEN_BP_{self.id}"
+
+
+class NpcSpec(BaseModel):
+    """A pedestrian. With waypoints it walks them in a loop, driven from Python so it is repeatable."""
+    model_config = ConfigDict(extra="forbid")
+    id: str
+    position: tuple[float, float, float]
+    yaw: float = 0.0
+    speed_cm_s: float = 100.0
+    waypoints: list[tuple[float, float]] = Field(default_factory=list)
+    index: int = 0
+
+    @property
+    def actor_name(self) -> str:
+        return f"GEN_BP_Pedestrian_{self.index}"  # communicator.py:367
+
+
+def default_objects() -> list[SpawnSpec]:
+    """Assets used by SimWorld's own example notebook. No seat: we know of no seat asset."""
+    return [
+        SpawnSpec(id="mug_0", kind="object", asset=MUG_ASSET, position=(290, -110, 0)),
+        SpawnSpec(id="box_0", kind="object", asset=BOX_ASSET, position=(600, 300, 0)),
+        SpawnSpec(id="scooter_0", kind="scooter", asset=SCOOTER_ASSET, position=(200, 200, 0), actor="GEN_BP_Scooter_0"),
+    ]
+
+
+class SimWorldConfig(BaseModel):
+    """Every knob, with the reasoning for defaults in SIMWORLD.md under "Decisions for the owner"."""
+    model_config = ConfigDict(extra="forbid")
+
+    host: str = "127.0.0.1"
+    port: int = 9000  # docs: minimal_example.rst:10
+    map_path: Optional[str] = Field(default=None, description="None keeps the map the server launched with.")
+
+    tick_interval_s: float = Field(default=0.1, gt=0)
+    step_seconds: float = Field(default=30.0, gt=0)
+    capture_offsets_s: tuple[float, ...] = (15.0, 30.0)
+    control_interval_s: float = Field(default=0.5, gt=0)
+    velocity_window_s: float = Field(default=1.0, gt=0)
+    settle_s: float = Field(default=3.0, ge=0, description="Ticks after spawn so actors fall to the ground.")
+
+    camera_id: Optional[int] = Field(default=None, description="None finds the camera nearest the agent.")
+    resolution: tuple[int, int] = (320, 240)
+    fov_deg: Optional[float] = None
+    modalities: tuple[str, ...] = ("rgb", "depth", "segmentation")
+    out_dir: str = "out/wmloop_simworld"
+    run_id: Optional[str] = None
+    assign_mask_colors: bool = True
+
+    seed: int = 0
+    agent_position: tuple[float, float, float] = (0.0, 0.0, 600.0)  # communicator.py:626 spawns at z=600
+    agent_yaw: float = 0.0
+    agent_speed_cm_s: float = 200.0  # config/example.yaml:112
+    npc_count: int = Field(default=2, ge=0, description="Random NPCs from the seed. Ignored if npcs is given.")
+    npcs: Optional[list[NpcSpec]] = None
+    objects: list[SpawnSpec] = Field(default_factory=default_objects)
+    spawn_ue_manager: bool = True  # docs: unrealcv+.rst:64 calls it required
+    spawn_weather_manager: bool = True
+
+    hearing_radius_cm: float = Field(default=1000.0, gt=0)
+    interact_radius_cm: float = Field(default=300.0, gt=0)
+    stuck_window_s: float = Field(default=8.0, gt=0)
+    arrival_radius_cm: float = Field(default=150.0, gt=0)  # config/example.yaml:115
+
+    start_time: str = "08:00"
+    sunrise_h: float = 6.0
+    sunset_h: float = 18.0
+    max_sun_elevation_deg: float = 70.0
+    sunrise_azimuth_deg: float = 90.0
+    max_sun_intensity: Optional[float] = Field(default=None, description="None uses what the level has at reset.")
+    sun_pitch_sign: int = Field(default=-1, description="-1 if a daytime sun has negative pitch. Gate script checks it.")
+    fog: Optional[tuple[float, float, float]] = None  # density, distance, falloff
+    atmosphere: Optional[tuple[float, float]] = None  # rayleigh, mie
+
+    request_timeout_s: float = 30.0
+    render_timeout_s: float = 60.0
+    connect_timeout_s: float = 30.0
+    reconnect_attempts: int = Field(default=3, ge=0)
+    reconnect_backoff_s: float = 2.0
+    init_settle_s: float = Field(default=1.0, ge=0)  # unrealcv.py:67 sleeps 1s here
+    map_load_timeout_s: float = 120.0
+    restore_tolerance_cm: float = 5.0
+    restore_flush_s: float = Field(default=2.0, ge=0, description="Uncounted ticks before teleporting, so turns in flight end.")
+
+    @model_validator(mode="after")
+    def _times_fit_ticks(self):
+        for name, seconds in [("step_seconds", self.step_seconds), ("control_interval_s", self.control_interval_s),
+                              ("velocity_window_s", self.velocity_window_s),
+                              *([("settle_s", self.settle_s)] if self.settle_s else []),
+                              *([("restore_flush_s", self.restore_flush_s)] if self.restore_flush_s else []),
+                              *[("capture_offsets_s", s) for s in self.capture_offsets_s]]:
+            self._ticks_for(seconds, name)
+        if not self.capture_offsets_s or max(self.capture_offsets_s) != self.step_seconds:
+            raise ValueError("the last capture must land on the end of the step")
+        if min(self.capture_offsets_s) <= self.velocity_window_s:
+            raise ValueError("velocity_window_s must be shorter than the first capture offset")
+        if self.sun_pitch_sign not in (-1, 1):
+            raise ValueError("sun_pitch_sign must be -1 or 1")
+        for m in self.modalities:
+            if m not in VIEWMODES:
+                raise ValueError(f"unknown modality {m!r}")
+        parse_clock(self.start_time)
+        return self
+
+    def _ticks_for(self, seconds: float, name: str = "time") -> int:
+        """Whole ticks in `seconds`. Refuses a remainder, since exact sim time is the point."""
+        ticks = round(seconds / self.tick_interval_s)
+        if ticks < 1 or abs(ticks * self.tick_interval_s - seconds) > 1e-9:
+            raise ValueError(f"{name}={seconds} is not a whole number of {self.tick_interval_s}s ticks")
+        return ticks
+
+    @property
+    def ticks_per_step(self) -> int:
+        return self._ticks_for(self.step_seconds)
+
+
+class SimWorldPhysics(PhysicsSim):
+    """Drives a SimWorld server. One instance, one world, one client connection."""
+
+    def __init__(self, config: Optional[SimWorldConfig] = None):
+        self.config = config or SimWorldConfig()
+        cfg = self.config
+        self.wire = Wire(cfg.host, cfg.port, cfg.request_timeout_s, cfg.connect_timeout_s, cfg.reconnect_attempts,
+                         cfg.reconnect_backoff_s, on_reconnect=self._after_reconnect)
+        self.warnings: list[str] = []
+        self.seed = cfg.seed
+        self.tick_count = 0
+        self.step_index = 0
+        self.branch = 0
+        self.camera_id: Optional[int] = cfg.camera_id
+        self.weather_available = False
+        self.start_s = parse_clock(cfg.start_time)
+        self.sun_max = cfg.max_sun_intensity or 10.0
+        self.fog = cfg.fog
+        self.atmosphere = cfg.atmosphere
+        self.npc_specs: list[NpcSpec] = []
+        self.specs = {s.id: s for s in cfg.objects}
+        self.targets: dict[str, str] = {}
+        self._sync_mode = False
+        self._ready = False
+        self._broken: Optional[str] = None
+        self._new_world()
+
+    def _new_world(self) -> None:
+        self.agent_speed = self.config.agent_speed_cm_s
+        self.posture = "standing"
+        self.held: Optional[str] = None
+        self.riding: Optional[str] = None
+        self.vehicle: Optional[str] = None
+        self.walking = False
+        self.gesture: Optional[str] = None
+        self.gesture_variant = 0
+        self.gaze: Optional[dict] = None
+        self._last_task_result: Optional[Mover] = None
+        self._speech: list[SpeechEvent] = []
+        self._camera_reset_pending = False
+        self.task: Optional[Mover] = None
+        self.npc_movers: dict[str, Mover] = {}
+        self.npc_waypoint: dict[str, int] = {}
+        self.mask_colors: list[MaskColor] = []
+        self._snapshots: dict[str, tuple[int, Vec3]] = {}
+
+    ###################################################
+    # Lifecycle
+    ###################################################
+
+    def connect(self) -> None:
+        """Connect and send the same setup as UnrealCV.ini_unrealcv (unrealcv.py:62-67)."""
+        if self.wire.connected:
+            return
+        self.wire.connect()
+        self._init_server()
+
+    def _init_server(self) -> None:
+        w, h = self.config.resolution
+        self.wire.send_no_reply(c.set_resolution(w, h))
+        self.wire.send_no_reply(c.async_skinned_assets())
+        time.sleep(self.config.init_settle_s)
+
+    def close(self) -> None:
+        """Leave the server running and unpaused, then disconnect. Safe to call twice."""
+        if self.wire.connected and self._sync_mode:
+            try:
+                self.wire.request(c.resume(), resend=False)
+            except SimWorldError as e:
+                self.warnings.append(f"could not resume the game on close: {e}")
+        self._sync_mode = False
+        self._ready = False
+        self.wire.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+    def load_map(self, map_path: str) -> None:
+        """Switch level using the unrealcv library's command. Launching with the map is safer."""
+        self.wire.request(c.set_level(map_path), timeout=self.config.map_load_timeout_s, resend=False)
+        deadline = time.monotonic() + self.config.map_load_timeout_s
+        while True:  # the level is ready once the server answers object queries again
+            try:
+                self._objects()
+                return
+            except SimWorldError:
+                if time.monotonic() > deadline:
+                    raise
+                time.sleep(1.0)
+
+    def reset(self, seed: Optional[int] = None) -> Capture:
+        """Build the world, pause it, and return state and renders at time zero."""
+        self.connect()
+        cfg = self.config
+        self.seed = cfg.seed if seed is None else seed
+        self._ready = False
+        self._broken = None
+        if self._sync_mode:
+            self.wire.request(c.resume(), resend=False)  # spawn while running, as every SimWorld example does
+            self._sync_mode = False
+        if cfg.map_path:
+            self.load_map(cfg.map_path)
+        self._destroy_ours()
+        self._new_world()
+        self.tick_count = self.step_index = 0
+        self.start_s = parse_clock(cfg.start_time)
+
+        self.npc_specs = cfg.npcs if cfg.npcs is not None else self._random_npcs(random.Random(self.seed))
+        self._index_targets()
+        self._spawn_agent()  # first, because camera ids follow spawn order (agent_system.rst:71)
+        for npc in self.npc_specs:
+            self._spawn_npc(npc)
+        for spec in cfg.objects:
+            if not spec.existing:
+                self._spawn_object(spec)
+        if cfg.spawn_ue_manager:
+            self._spawn_manager()
+        self._spawn_weather()
+        self._check_spawned()
+
+        self._enter_sync()
+        for _ in range(cfg._ticks_for(cfg.settle_s, "settle_s") if cfg.settle_s else 0):
+            self.wire.request(c.tick(), resend=False)
+        self._setup_camera()
+        self._setup_mask_colors()
+        self._apply_weather_settings()
+        self._start_npc_routes()
+        self._apply_sun(0.0)
+        self.wire.request(c.tick(), resend=False)  # uncounted, so the sun reaches the first frame
+        self._ready = True
+        return self._capture(0.0, StageTiming())
+
+    def _random_npcs(self, rng: random.Random) -> list[NpcSpec]:
+        """Seeded NPC layout: a ring around the agent, each walking between two seeded points."""
+        ax, ay, _ = self.config.agent_position
+        npcs = []
+        for i in range(self.config.npc_count):
+            points = []
+            angle = rng.uniform(0, 2 * math.pi)
+            for _ in range(3):
+                angle += rng.uniform(2.0, 4.0)  # roughly across the ring, so legs are not tiny hops
+                radius = rng.uniform(400, 1500)
+                points.append((round(ax + radius * math.cos(angle), 1), round(ay + radius * math.sin(angle), 1)))
+            npcs.append(NpcSpec(id=f"npc_{i}", index=i, position=(points[0][0], points[0][1], 110.0),  # communicator.py:715
+                                yaw=round(rng.uniform(0, 360), 1), speed_cm_s=round(rng.uniform(100, 200), 1),
+                                waypoints=points[1:]))
+        return npcs
+
+    def _index_targets(self) -> None:
+        self.targets = {npc.id: "npc" for npc in self.npc_specs}
+        self.targets.update({s.id: s.kind for s in self.config.objects})
+
+    def _spawn(self, asset: str, name: str, x: float, y: float, z: float, yaw: float, movable: bool = True) -> None:
+        """Same order as communicator.py:620-645."""
+        for command in (c.spawn(asset, name), c.set_location(name, x, y, z), c.set_rotation(name, 0, yaw, 0),
+                        c.set_scale(name, 1, 1, 1), c.set_collision(name, True), c.set_movable(name, movable)):
+            self.wire.request(command, resend=False)
+
+    def _spawn_agent(self) -> None:
+        cfg = self.config
+        self._spawn(AGENT_ASSET, AGENT_ACTOR, *cfg.agent_position, cfg.agent_yaw)
+        self.wire.request(c.set_speed(AGENT_ACTOR, self.agent_speed), resend=False)
+
+    def _spawn_npc(self, npc: NpcSpec) -> None:
+        self._spawn(NPC_ASSET, npc.actor_name, *npc.position, npc.yaw)
+        self.wire.request(c.npc_speed(npc.actor_name, npc.speed_cm_s), resend=False)
+
+    def _spawn_object(self, spec: SpawnSpec) -> None:
+        self._spawn(spec.asset, spec.actor_name, *spec.position, spec.yaw)
+
+    def _spawn_manager(self) -> None:
+        self.wire.request(c.spawn(UE_MANAGER_ASSET, UE_MANAGER_ACTOR), resend=False)  # communicator.py:806
+        self.wire.request(c.update_manager(UE_MANAGER_ACTOR), resend=False)  # communicator.py:810
+
+    def _spawn_weather(self) -> None:
+        if self.config.spawn_weather_manager:
+            self.wire.request(c.spawn(WEATHER_ASSET, WEATHER_ACTOR), resend=False)
+
+    def _tracked(self) -> dict[str, str]:
+        tracked = {"agent": AGENT_ACTOR}
+        tracked.update({npc.id: npc.actor_name for npc in self.npc_specs})
+        tracked.update({s.id: s.actor_name for s in self.config.objects})
+        return tracked
+
+    def _objects(self) -> list[str]:
+        return str(self.wire.request(c.list_objects())).split()
+
+    def _check_spawned(self) -> None:
+        present = {name.lower() for name in self._objects()}  # clear_env compares lowercased too (communicator.py:889)
+        missing = [name for name in self._tracked().values() if name.lower() not in present]
+        if missing:
+            raise CommandError(f"these actors did not appear after spawning: {missing}. "
+                               "The asset path may not exist in this SimWorld package.")
+        self.weather_available = self.config.spawn_weather_manager and WEATHER_ACTOR.lower() in present
+        if self.config.spawn_weather_manager and not self.weather_available:
+            self.warnings.append(f"{WEATHER_ACTOR} did not spawn, so sun, fog and atmosphere are unavailable. "
+                                 "unrealcv.py:1180 says weather is 'currently not in use for production'.")
+
+    def _destroy_ours(self) -> None:
+        """Remove what an earlier run of ours left. Never touches level actors."""
+        present = {name.lower() for name in self._objects()}
+        names = ["GEN_BP_Humanoid_0", UE_MANAGER_ACTOR, WEATHER_ACTOR]
+        names += [f"GEN_BP_Pedestrian_{i}" for i in range(max(self.config.npc_count, len(self.config.npcs or [])))]
+        names += [s.actor_name for s in self.config.objects if not s.existing]
+        removed = False
+        for name in names:
+            if name.lower() in present:
+                self.wire.request(c.destroy(name), resend=False)
+                removed = True
+        if removed:
+            self.wire.request(c.clean_garbage(), resend=False)
+
+    def _enter_sync(self) -> None:
+        """Same order as UnrealCV.set_mode: set the interval, then pause (unrealcv.py:213-216)."""
+        self.wire.request(c.set_tick_interval(self.config.tick_interval_s), resend=False)
+        self.wire.request(c.pause(), resend=False)
+        self._sync_mode = True
+
+    def _after_reconnect(self) -> None:
+        """Runs on every automatic reconnect. A restarted server has an empty, unpaused world."""
+        self._init_server()
+        if self._sync_mode:
+            self.wire.request(c.set_tick_interval(self.config.tick_interval_s), resend=False)
+            self.wire.request(c.pause(), resend=False)
+        if self._ready and AGENT_ACTOR.lower() not in {n.lower() for n in self._objects()} and not self.riding:
+            self._broken = "the server restarted and the world is gone. Call restore_state or reset."
+
+    ###################################################
+    # Camera, colours and weather setup
+    ###################################################
+
+    def _setup_camera(self) -> None:
+        cfg = self.config
+        if cfg.camera_id is None:
+            self.camera_id = self._find_agent_camera()
+        w, h = cfg.resolution
+        self.wire.request(c.set_camera_size(self.camera_id, w, h), resend=False)
+        if cfg.fov_deg is not None:
+            self.wire.request(c.set_camera_fov(self.camera_id, cfg.fov_deg), resend=False)
+
+    def _find_agent_camera(self) -> int:
+        """Pick the camera closest to the agent. Ids depend on spawn order, so we check, not assume."""
+        here = self._read_pose(self._agent_actor).location
+        try:
+            names = str(self.wire.request(c.list_cameras())).split()
+        except CommandError as e:
+            self.warnings.append(f"could not list cameras, assuming camera 1: {e}")
+            return 1
+        best, best_distance = None, math.inf
+        for cam in range(1, len(names)):  # camera 0 is the level's spectator (agent_system.rst:71)
+            try:
+                d = distance_cm(here, self._read_camera_location(cam))
+            except SimWorldError:
+                continue
+            if d < best_distance:
+                best, best_distance = cam, d
+        if best is None:
+            self.warnings.append(f"no camera found near the agent (server lists {names}), assuming camera 1")
+            return 1
+        if best_distance > 500:
+            self.warnings.append(f"nearest camera {best} is {best_distance:.0f}cm from the agent, may not be its camera")
+        return best
+
+    def _setup_mask_colors(self) -> None:
+        """Give each tracked actor its own mask colour, then ask the server what it actually uses.
+
+        SimWorld assigns mask colours the same way in generate_world (communicator.py:864).
+        """
+        colors = []
+        for i, (actor_id, actor) in enumerate(sorted(self._tracked().items())):
+            assigned = None
+            if self.config.assign_mask_colors:
+                assigned = [(40 + 53 * i) % 256, (200 - 37 * i) % 256, (90 + 101 * i) % 256]
+                try:
+                    self.wire.request(c.set_mask_color(actor, *assigned), resend=False)
+                except CommandError as e:
+                    self.warnings.append(f"could not set mask colour on {actor}: {e}")
+                    assigned = None
+            readback = None
+            try:  # reply looks like (R=255,G=128,B=64,A=255), per unrealcv/api.py:1487
+                numbers = NUMBER.findall(str(self.wire.request(c.get_mask_color(actor))))
+                readback = [int(float(n)) for n in numbers[:3]] if len(numbers) >= 3 else None
+            except CommandError:
+                pass  # the server does not report colours, so only `assigned` is known
+            colors.append(MaskColor(id=actor_id, actor=actor, assigned_rgb=assigned, readback_rgb=readback))
+        self.mask_colors = colors
+
+    def _apply_weather_settings(self) -> None:
+        if not self.weather_available:
+            return
+        if self.config.max_sun_intensity is None:
+            try:
+                level_value = self._weather_json(c.get_sun_intensity(WEATHER_ACTOR)).get("SunIntensity")
+                if level_value and float(level_value) > 0:
+                    self.sun_max = float(level_value)
+            except SimWorldError as e:
+                self.warnings.append(f"could not read the level's sun intensity, using {self.sun_max}: {e}")
+        if self.fog:
+            self.wire.request(c.set_fog(WEATHER_ACTOR, *self.fog), resend=False)
+        if self.atmosphere:
+            self.wire.request(c.set_atmosphere(WEATHER_ACTOR, *self.atmosphere), resend=False)
+
+    def set_weather(self, fog: Optional[tuple[float, float, float]] = None,
+                    atmosphere: Optional[tuple[float, float]] = None) -> Weather:
+        """Set fog (density, distance_cm, falloff) and/or atmosphere (rayleigh, mie). Returns a read-back."""
+        if not self.weather_available:
+            raise SimWorldError("no weather manager in this world")
+        if fog is not None:
+            density, distance, falloff = fog
+            if not (0 <= density <= 100 and 0 <= distance <= 5000 and 0 <= falloff <= 2):  # unrealcv.py:1236-1238
+                raise ValueError(f"fog out of range: {fog}. Limits are 0-100, 0-5000, 0-2.")
+            self.fog = (density, distance, falloff)
+            self.wire.request(c.set_fog(WEATHER_ACTOR, *self.fog), resend=False)
+        if atmosphere is not None:
+            rayleigh, mie = atmosphere
+            if not (0 <= rayleigh <= 2 and 0 <= mie <= 5):  # unrealcv.py:1262-1263
+                raise ValueError(f"atmosphere out of range: {atmosphere}. Limits are 0-2, 0-5.")
+            self.atmosphere = (rayleigh, mie)
+            self.wire.request(c.set_atmosphere(WEATHER_ACTOR, *self.atmosphere), resend=False)
+        return self.read_weather()
+
+    def set_clock(self, clock: str) -> TimeOfDay:
+        """Jump the time of day. Sim time keeps counting, only the clock it maps to changes."""
+        self.start_s = (parse_clock(clock) - self.sim_time_s) % 86400
+        self._apply_sun(self.sim_time_s)
+        return self._time_of_day(self.sim_time_s)
+
+    def _time_of_day(self, sim_time_s: float) -> TimeOfDay:
+        cfg = self.config
+        return time_of_day(sim_time_s, self.start_s, cfg.sunrise_h, cfg.sunset_h, cfg.max_sun_elevation_deg,
+                           cfg.sunrise_azimuth_deg, self.sun_max)
+
+    def _apply_sun(self, sim_time_s: float) -> None:
+        if not self.weather_available:
+            return
+        tod = self._time_of_day(sim_time_s)
+        pitch = sun_pitch_from_elevation(tod.sun_elevation_deg, self.config.sun_pitch_sign)
+        self.wire.request(c.set_sun_direction(WEATHER_ACTOR, round(pitch, 4), round(tod.sun_azimuth_deg, 4)), resend=False)
+        self.wire.request(c.set_sun_intensity(WEATHER_ACTOR, round(tod.sun_intensity, 4)), resend=False)
+
+    def _weather_json(self, command: str) -> dict:
+        """Weather replies are JSON padded with tabs and newlines (communicator.py:958-963)."""
+        text = self.wire.request(command, resend=True)
+        cleaned = re.sub(r"\s+", " ", re.sub(r"[\r\n\t]", "", str(text))).strip()
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError as e:
+            raise CommandError(f"{command!r} replied with something that is not JSON: {text!r}") from e
+
+    def read_weather(self) -> Weather:
+        if not self.weather_available:
+            return Weather(available=False)
+        try:
+            rotation = self._weather_json(c.get_sun_direction(WEATHER_ACTOR)).get("rotation", "")
+            pitch = re.search(r"P=([-\d.]+)", rotation)
+            yaw = re.search(r"Y=([-\d.]+)", rotation)
+            fog = self._weather_json(c.get_fog(WEATHER_ACTOR))
+            atmosphere = self._weather_json(c.get_atmosphere(WEATHER_ACTOR))
+            intensity = self._weather_json(c.get_sun_intensity(WEATHER_ACTOR))
+            return Weather(available=True,  # key names from communicator.py:966-1088
+                           sun_pitch_deg=float(pitch.group(1)) if pitch else None,
+                           sun_yaw_deg=float(yaw.group(1)) if yaw else None,
+                           sun_intensity=float(intensity["SunIntensity"]) if "SunIntensity" in intensity else None,
+                           fog_density=float(fog["FogDensity"]) if "FogDensity" in fog else None,
+                           fog_distance_cm=float(fog["FogDistance"]) if "FogDistance" in fog else None,
+                           fog_falloff=float(fog["FogFalloff"]) if "FogFalloff" in fog else None,
+                           rayleigh=float(atmosphere["Rayleigh Scattering Scale"]) if "Rayleigh Scattering Scale" in atmosphere else None,
+                           mie=float(atmosphere["Mie Scattering Scale"]) if "Mie Scattering Scale" in atmosphere else None)
+        except (CommandError, ValueError) as e:
+            self.warnings.append(f"could not read weather: {e}")
+            return Weather(available=False)
+
+    ###################################################
+    # Reading the world
+    ###################################################
+
+    @property
+    def sim_time_s(self) -> float:
+        return round(self.tick_count * self.config.tick_interval_s, 6)
+
+    @property
+    def _agent_actor(self) -> str:
+        return self.specs[self.riding].actor_name if self.riding else AGENT_ACTOR  # the humanoid is gone while riding
+
+    def _read_location(self, actor: str) -> Vec3:
+        x, y, z = parse_numbers(self.wire.request(c.get_location(actor)), 3, f"location of {actor}")
+        return Vec3(x=x, y=y, z=z)
+
+    def _read_pose(self, actor: str) -> Pose:
+        pitch, yaw, roll = parse_numbers(self.wire.request(c.get_rotation(actor)), 3, f"rotation of {actor}")
+        return Pose(location=self._read_location(actor), rotation=Rotation(pitch=pitch, yaw=yaw, roll=roll))
+
+    def _read_camera_location(self, cam: int) -> Vec3:
+        x, y, z = parse_numbers(self.wire.request(c.get_camera_location(cam)), 3, "camera location")
+        return Vec3(x=x, y=y, z=z)
+
+    def _read_camera(self) -> CameraState:
+        cam = self.camera_id
+        location = self._read_camera_location(cam)
+        # The docstring at unrealcv.py:921 says yaw first, but :969, ue_detail.rst:69 and the
+        # library's own decoder say pitch first. The gate script checks this on a real server.
+        pitch, yaw, roll = parse_numbers(self.wire.request(c.get_camera_rotation(cam)), 3, "camera rotation")
+        rotation = Rotation(pitch=pitch, yaw=yaw, roll=roll)
+        fov = parse_numbers(self.wire.request(c.get_camera_fov(cam)), 1, "camera fov")[0]
+        width, height = parse_numbers(self.wire.request(c.get_camera_size(cam)), 2, "camera size")
+        return CameraState(camera_id=cam, intrinsics=intrinsics_from_fov(int(width), int(height), fov),
+                           extrinsics=Extrinsics(location_cm=location, rotation_deg=rotation,
+                                                 camera_to_world=camera_to_world(rotation)))
+
+    def _velocity(self, actor: str, location: Vec3) -> Velocity:
+        """Finite difference against the pose saved velocity_window_s before this capture."""
+        saved = self._snapshots.get(actor)
+        if saved is None or saved[0] >= self.tick_count:
+            return Velocity(vector_cm_s=Vec3(x=0, y=0, z=0), speed_cm_s=0.0, window_s=0.0)
+        window = (self.tick_count - saved[0]) * self.config.tick_interval_s
+        v = Vec3(x=(location.x - saved[1].x) / window, y=(location.y - saved[1].y) / window,
+                 z=(location.z - saved[1].z) / window)
+        return Velocity(vector_cm_s=v, speed_cm_s=math.sqrt(v.x ** 2 + v.y ** 2 + v.z ** 2), window_s=window)
+
+    def _snapshot_for_velocity(self) -> None:
+        self._snapshots[self._agent_actor] = (self.tick_count, self._read_location(self._agent_actor))
+        for npc in self.npc_specs:
+            self._snapshots[npc.actor_name] = (self.tick_count, self._read_location(npc.actor_name))
+
+    def _read_collisions(self) -> Optional[dict[str, int]]:
+        """Reply keys from communicator.py:465-468. Optional because it is a blueprint call."""
+        try:
+            reply = json.loads(str(self.wire.request(c.get_collisions(self._agent_actor), resend=True)))
+            return {key: int(reply[key]) for key in
+                    ("HumanCollision", "ObjectCollision", "BuildingCollision", "VehicleCollision")}
+        except (CommandError, ValueError, KeyError, TypeError):
+            return None
+
+    def _task_status(self) -> Optional[TaskStatus]:
+        if self.task:
+            return TaskStatus(type="move_to", phase=self.task.phase, goal=self.task.goal, target_id=self.task.target_id,
+                              distance_remaining_cm=self.task.last_distance_cm)
+        if self.walking:
+            return TaskStatus(type="move_forward", phase="walking")
+        return None
+
+    def read_state(self) -> PhysicalState:
+        """Read the whole physical state from the server, right now."""
+        pose = self._read_pose(self._agent_actor)
+        agent = AgentState(id="agent", actor=self._agent_actor, pose=pose,
+                           velocity=self._velocity(self._agent_actor, pose.location), posture=self.posture,
+                           held_object=self.held, max_speed_cm_s=self.agent_speed, gesture=self.gesture,
+                           active_task=self._task_status(), collisions=self._read_collisions())
+        npcs = []
+        for spec in self.npc_specs:
+            npc_pose = self._read_pose(spec.actor_name)
+            npcs.append(NpcState(id=spec.id, actor=spec.actor_name, pose=npc_pose,
+                                 velocity=self._velocity(spec.actor_name, npc_pose.location)))
+        objects = []
+        for spec in self.config.objects:
+            try:
+                object_pose: Optional[Pose] = self._read_pose(spec.actor_name)
+            except CommandError:
+                object_pose = None  # some actions consume the actor, as the humanoid is while riding
+            objects.append(ObjectState(id=spec.id, actor=spec.actor_name, kind=spec.kind, present=object_pose is not None,
+                                       pose=object_pose, held_by="agent" if self.held == spec.id else None))
+        return PhysicalState(tick_count=self.tick_count, sim_time_s=self.sim_time_s, agent=agent,
+                             npcs=sorted(npcs, key=lambda n: n.id), objects=sorted(objects, key=lambda o: o.id),
+                             time_of_day=self._time_of_day(self.sim_time_s), weather=self.read_weather(),
+                             camera=self._read_camera())
+
+    ###################################################
+    # Rendering
+    ###################################################
+
+    def _render_dir(self) -> Path:
+        run = self.config.run_id or f"wmloop_seed{self.seed}"
+        return Path(self.config.out_dir) / run / f"branch_{self.branch}" / f"step_{self.step_index:04d}"
+
+    def render(self, modality: str, offset_s: float) -> RenderFile:
+        """Fetch one image and save the server's bytes untouched.
+
+        We do not use UnrealCV.get_image: it turns any error into a black 640x480 image
+        (unrealcv.py:1083-1085) and turns depth into a colour picture (unrealcv.py:1096-1110).
+        """
+        viewmode, fmt = VIEWMODES[modality]
+        data = self.wire.request(c.render(self.camera_id, viewmode, fmt), timeout=self.config.render_timeout_s)
+        if not isinstance(data, (bytes, bytearray)):
+            raise CommandError(f"expected {fmt} bytes for {modality}, got {str(data)[:200]!r}")
+        stats = None
+        if fmt == "png":
+            if not data.startswith(PNG_SIGNATURE) or len(data) < 24:
+                raise CommandError(f"{modality} reply is not a PNG (starts {bytes(data[:8])!r})")
+            width, height = struct.unpack(">II", data[16:24])  # PNG IHDR holds the size at this offset
+        else:
+            if not data.startswith(NPY_SIGNATURE):
+                raise CommandError(f"{modality} reply is not an npy file (starts {bytes(data[:8])!r})")
+            array = np.load(BytesIO(data), allow_pickle=False)
+            height, width = array.shape[:2]
+            stats = {"min": float(np.min(array)), "median": float(np.median(array)), "max": float(np.max(array))}
+        if (width, height) != tuple(self.config.resolution):
+            self.warnings.append(f"{modality} came back {width}x{height}, asked for {self.config.resolution}")
+        folder = self._render_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / f"t{offset_s:04.0f}_{modality}.{fmt}"
+        path.write_bytes(data)
+        return RenderFile(modality=modality, path=str(path), sha256=hashlib.sha256(data).hexdigest(),
+                          num_bytes=len(data), format=fmt, width=int(width), height=int(height), depth_stats=stats)
+
+    def _capture(self, offset_s: float, timing: StageTiming) -> Capture:
+        start = time.perf_counter()
+        state = self.read_state()
+        timing.state_capture_s += time.perf_counter() - start
+        renders = {}
+        for modality in self.config.modalities:
+            start = time.perf_counter()
+            renders[modality] = self.render(modality, offset_s)
+            timing.render_s[f"{offset_s:g}s:{modality}"] = time.perf_counter() - start
+        return Capture(offset_s=offset_s, tick_count=self.tick_count, sim_time_s=self.sim_time_s, state=state,
+                       renders=renders, mask_colors=self.mask_colors)
+
+    def _before_capture(self, capture_time_s: float) -> None:
+        """Runs one tick before a capture, so light and camera changes reach the rendered frame."""
+        self._apply_sun(capture_time_s)
+        if self.gaze:
+            self._aim_camera()
+        elif self._camera_reset_pending:
+            yaw = self._read_pose(self._agent_actor).rotation.yaw
+            self.wire.request(c.set_camera_rotation(self.camera_id, 0, round(yaw, 4), 0), resend=False)
+            self._camera_reset_pending = False
+
+    def _gaze_point(self) -> Vec3:
+        if self.gaze.get("target_id"):
+            return self._read_location(self._actor_for(self.gaze["target_id"]))
+        return Vec3(**self.gaze["position"])
+
+    def _aim_camera(self) -> None:
+        camera = self._read_camera_location(self.camera_id)
+        yaw, pitch = heading_to(camera, self._gaze_point())
+        self.wire.request(c.set_camera_rotation(self.camera_id, round(pitch, 4), round(yaw, 4), 0), resend=False)
+
+    def _actor_for(self, target_id: str) -> str:
+        return self._tracked()[target_id]
+
+    ###################################################
+    # Stepping
+    ###################################################
+
+    def step(self, action: Any) -> StepResult:
+        """Apply one action, then advance exactly one step, capturing at each offset.
+
+        A bad action raises pydantic.ValidationError before anything changes. A failure during
+        the step leaves the world half-advanced, so stepping refuses until restore_state or reset.
+        """
+        action = parse_action(action, self.targets)
+        if not self._ready:
+            raise SimWorldError("call reset() or restore_state() before step()")
+        if self._broken:
+            raise SimWorldError(f"cannot step: {self._broken}")
+        # A read first, because reads can reconnect safely. An idle link that dropped between
+        # steps recovers here, instead of surfacing as a lost tick that forces a restore.
+        self._objects()
+        if self._broken:
+            raise SimWorldError(f"cannot step: {self._broken}")
+        try:
+            return self._step(action)
+        except SimWorldError as e:
+            self._broken = f"the previous step failed at tick {self.tick_count}: {e}"
+            raise
+
+    def _step(self, action: Any) -> StepResult:
+        cfg = self.config
+        self.step_index += 1
+        started, sent_before, tick_start = time.perf_counter(), self.wire.commands_sent, self.tick_count
+        timing = StageTiming()
+
+        start = time.perf_counter()
+        self._speech = []
+        outcome = self._apply(action)
+        timing.action_apply_s = time.perf_counter() - start
+
+        control_every = cfg._ticks_for(cfg.control_interval_s)
+        window = cfg._ticks_for(cfg.velocity_window_s)
+        capture_ticks = {cfg._ticks_for(offset): offset for offset in cfg.capture_offsets_s}
+        self._snapshots = {}
+        captures = []
+        snapshot_ticks = {t - window for t in capture_ticks}
+        for done in range(1, cfg.ticks_per_step + 1):
+            if done in capture_ticks:  # the last tick before a capture
+                start = time.perf_counter()
+                self._before_capture(round((tick_start + done) * cfg.tick_interval_s, 6))
+                timing.state_capture_s += time.perf_counter() - start
+
+            start = time.perf_counter()
+            self.wire.request(c.tick(), resend=False)
+            self.tick_count += 1
+            timing.stepping_s += time.perf_counter() - start
+
+            if done % control_every == 0:
+                start = time.perf_counter()
+                self._control()
+                timing.control_s += time.perf_counter() - start
+            if done in snapshot_ticks:
+                start = time.perf_counter()
+                self._snapshot_for_velocity()
+                timing.state_capture_s += time.perf_counter() - start
+            if done in capture_ticks:
+                captures.append(self._capture(capture_ticks[done], timing))
+
+        outcome = self._finish_outcome(outcome)
+        timing.total_s = time.perf_counter() - started
+        timing.commands_sent = self.wire.commands_sent - sent_before
+        return StepResult(step_index=self.step_index, action=action.model_dump(), outcome=outcome,
+                          tick_start=tick_start, tick_end=self.tick_count, ticks_advanced=self.tick_count - tick_start,
+                          sim_time_s=self.sim_time_s, captures=captures, speech_events=self._speech, timing=timing)
+
+    def _finish_outcome(self, outcome: ActionOutcome) -> ActionOutcome:
+        """Long-running actions only know how they went once the step is over."""
+        update: dict[str, Any] = {"task": self._task_status()}
+        last = self._last_task_result
+        if last:
+            update["task"] = TaskStatus(type="move_to", phase=last.phase, goal=last.goal, target_id=last.target_id,
+                                        distance_remaining_cm=last.last_distance_cm)
+        if outcome.type in ("move_to", "continue", "move_forward"):
+            if last:
+                update["status"] = "completed" if last.phase == "arrived" else "failed"
+                update["detail"] = f"move_to {last.phase}, {last.last_distance_cm:.0f}cm from the goal"
+            elif update["task"]:
+                update["status"] = "in_progress"
+        return outcome.model_copy(update=update)
+
+    def _control(self) -> None:
+        """Run the waypoint controllers. They act on tick counts, so wall-clock speed cannot change them."""
+        if self.task:
+            if self.task.target_id:
+                goal = self._read_location(self._actor_for(self.task.target_id))
+                self.task.goal_x, self.task.goal_y, self.task.goal_z = goal.x, goal.y, goal.z
+            self.task.update(self._read_pose(self._agent_actor), self.tick_count, self._agent_io())
+            if self.task.finished:
+                self._last_task_result, self.task = self.task, None
+        for npc in self.npc_specs:
+            mover = self.npc_movers.get(npc.id)
+            if mover is None:
+                continue
+            mover.update(self._read_pose(npc.actor_name), self.tick_count, self._npc_io(npc))
+            if mover.finished:  # arrived or blocked, either way head for the next waypoint
+                self._next_waypoint(npc)
+
+    def _agent_io(self) -> MoverIO:
+        return MoverIO(forward=lambda: self.wire.request(c.move_forward(AGENT_ACTOR), resend=False),
+                       stop=lambda: self.wire.request(c.stop_agent(AGENT_ACTOR), resend=False),
+                       turn=lambda a, d: self.wire.request(c.turn(AGENT_ACTOR, round(a, 3), d), resend=False))
+
+    def _npc_io(self, npc: NpcSpec) -> MoverIO:
+        return MoverIO(forward=lambda: self.wire.request(c.npc_forward(npc.actor_name), resend=False),
+                       stop=lambda: self.wire.request(c.npc_stop(npc.actor_name), resend=False),
+                       turn=lambda a, d: self.wire.request(c.npc_turn(npc.actor_name, round(a, 3), d), resend=False))
+
+    def _new_mover(self, x: float, y: float, z: float, radius: float, target_id: Optional[str] = None) -> Mover:
+        cfg = self.config
+        return Mover(goal_x=x, goal_y=y, goal_z=z, arrival_radius_cm=radius, target_id=target_id,
+                     turn_ticks=max(1, round(1.0 / cfg.tick_interval_s)),  # TurnAround runs for 1s (unrealcv.py:632)
+                     stuck_ticks=max(1, round(cfg.stuck_window_s / cfg.tick_interval_s)))
+
+    def _start_npc_routes(self) -> None:
+        for npc in self.npc_specs:
+            if npc.waypoints:
+                self.npc_waypoint[npc.id] = -1
+                self._next_waypoint(npc)
+
+    def _next_waypoint(self, npc: NpcSpec) -> None:
+        index = (self.npc_waypoint[npc.id] + 1) % len(npc.waypoints)
+        self.npc_waypoint[npc.id] = index
+        x, y = npc.waypoints[index]
+        self.npc_movers[npc.id] = self._new_mover(x, y, 0.0, self.config.arrival_radius_cm)
+
+    ###################################################
+    # Actions
+    ###################################################
+
+    def _apply(self, action: Any) -> ActionOutcome:
+        self._last_task_result = None
+        kind = action.type
+        if kind not in NON_PREEMPTING:
+            self._preempt(kind)
+        status, detail = getattr(self, f"_do_{kind}")(action)
+        return ActionOutcome(type=kind, mapping=ACTION_CATALOG[kind].mapping, status=status, detail=detail)
+
+    def _preempt(self, kind: str) -> None:
+        """A new action replaces whatever was running."""
+        if (self.task or self.walking) and kind != "stop":
+            self.wire.request(c.stop_agent(AGENT_ACTOR), resend=False)
+        self.task = None
+        self.walking = False
+        if self.gesture and kind != "stop_gesture":
+            self.wire.request(c.stop_gesture(AGENT_ACTOR), resend=False)
+            self.gesture = None
+        if self.gaze and kind != "look_at":
+            self.gaze = None
+            self._camera_reset_pending = True
+
+    def _on_foot(self) -> Optional[str]:
+        """Why locomotion is impossible right now, or None if it is fine."""
+        if self.posture != "standing":
+            return f"agent is {self.posture}. Use stand_up, get_off_scooter or exit_vehicle first."
+        return None
+
+    def _out_of_range(self, target_id: str) -> Optional[str]:
+        here = self._read_location(self._agent_actor)
+        there = self._read_location(self._actor_for(target_id))
+        d = distance_cm(here, there)
+        if d > self.config.interact_radius_cm:
+            return f"{target_id} is {d:.0f}cm away, limit is {self.config.interact_radius_cm:.0f}cm. move_to it first."
+        return None
+
+    @staticmethod
+    def _success(reply: Any) -> Optional[bool]:
+        """Parse {"Success": ...}. unrealcv.py:680 only handles the string form, we allow booleans too."""
+        try:
+            value = json.loads(str(reply))["Success"]
+        except (json.JSONDecodeError, KeyError, TypeError):
+            return None
+        text = str(value).strip().lower()
+        return True if text == "true" else False if text == "false" else None
+
+    def _send_checked(self, command: str, on_success=None) -> tuple[str, str]:
+        result = self._success(self.wire.request(command, resend=False))
+        if result is False:
+            return "failed", "the server reported Success=false"
+        if on_success:
+            on_success()
+        if result is None:
+            return "unverified", "sent, but the reply had no readable Success field"
+        return "completed", ""
+
+    def _do_wait(self, action) -> tuple[str, str]:
+        return "completed", ""
+
+    def _do_continue(self, action) -> tuple[str, str]:
+        if not self.task and not self.walking:
+            return "completed", "nothing was running"
+        return "in_progress", ""
+
+    def _do_move_to(self, action) -> tuple[str, str]:
+        problem = self._on_foot()
+        if problem:
+            return "failed", problem
+        goal = action.position or self._read_location(self._actor_for(action.target_id))
+        self.task = self._new_mover(goal.x, goal.y, goal.z, action.arrival_radius_cm, action.target_id)
+        self.task.update(self._read_pose(self._agent_actor), self.tick_count, self._agent_io())
+        if self.task.finished:
+            self._last_task_result, self.task = self.task, None
+        return "in_progress", ""
+
+    def _do_look_at(self, action) -> tuple[str, str]:
+        self.gaze = {"target_id": action.target_id,
+                     "position": action.position.model_dump() if action.position else None}
+        detail = ""
+        if self.posture == "standing":  # sitting or riding, only the camera can move
+            pose = self._read_pose(self._agent_actor)
+            yaw, _ = heading_to(pose.location, self._gaze_point())
+            delta = angle_delta(yaw, pose.rotation.yaw)
+            if abs(delta) > 2:  # local_planner.py:260 ignores turns under 2 degrees
+                self.wire.request(c.turn(AGENT_ACTOR, round(abs(delta), 3), "right" if delta > 0 else "left"), resend=False)
+                detail = f"turned {delta:.1f} degrees"
+        return "completed", detail
+
+    def _do_interact(self, action) -> tuple[str, str]:
+        kind = self.targets[action.target_id]
+        verb = INTERACT_BY_KIND[kind]
+        problem = self._out_of_range(action.target_id)
+        if problem:
+            return "failed", problem
+        if verb == "pick_up":
+            status, detail = self._pick_up(action.target_id)
+        elif verb == "sit_down":
+            status, detail = self._do_sit_down(action)
+        elif verb == "get_on_scooter":
+            status, detail = self._get_on_scooter(action.target_id)
+        else:
+            status, detail = self._enter_vehicle(action.target_id)
+        return status, f"{verb}: {detail}".rstrip(": ")
+
+    def _do_speak(self, action) -> tuple[str, str]:
+        """No physics: this only works out who is close enough to count as hearing."""
+        here = self._read_location(self._agent_actor)
+        listeners = {npc.id: self._read_location(npc.actor_name) for npc in self.npc_specs}
+        heard = hearing(here, listeners, self.config.hearing_radius_cm)
+        self._speech.append(SpeechEvent(speaker_id="agent", text=action.text, tick_count=self.tick_count,
+                                        sim_time_s=self.sim_time_s, hearing_radius_cm=self.config.hearing_radius_cm,
+                                        heard_by=heard))
+        return "completed", f"in hearing range: {heard}. NPCs do not react."
+
+    def _do_move_forward(self, action) -> tuple[str, str]:
+        problem = self._on_foot()
+        if problem:
+            return "failed", problem
+        self.wire.request(c.move_forward(AGENT_ACTOR), resend=False)
+        self.walking = True
+        return "in_progress", ""
+
+    def _do_step_forward(self, action) -> tuple[str, str]:
+        problem = self._on_foot()
+        if problem:
+            return "failed", problem
+        if action.duration_s > self.config.step_seconds:
+            return "failed", f"duration is longer than one step ({self.config.step_seconds}s)"
+        direction = 0 if action.direction == "forward" else 1  # action_space.py:120
+        self.wire.request(c.step_forward(AGENT_ACTOR, action.duration_s, direction), resend=False)
+        return "completed", ""
+
+    def _do_rotate(self, action) -> tuple[str, str]:
+        problem = self._on_foot()
+        if problem:
+            return "failed", problem
+        self.wire.request(c.turn(AGENT_ACTOR, action.angle_deg, action.direction), resend=False)
+        return "completed", ""
+
+    def _do_stop(self, action) -> tuple[str, str]:
+        self.wire.request(c.stop_agent(AGENT_ACTOR), resend=False)
+        return "completed", ""
+
+    def _do_set_speed(self, action) -> tuple[str, str]:
+        self.wire.request(c.set_speed(AGENT_ACTOR, action.speed_cm_s), resend=False)
+        self.agent_speed = action.speed_cm_s
+        return "completed", ""
+
+    def _do_sit_down(self, action) -> tuple[str, str]:
+        problem = self._on_foot()
+        if problem:
+            return "failed", problem
+        return self._send_checked(c.sit_down(AGENT_ACTOR), lambda: setattr(self, "posture", "sitting"))
+
+    def _do_stand_up(self, action) -> tuple[str, str]:
+        if self.posture != "sitting":
+            return "failed", f"agent is {self.posture}, not sitting"
+        return self._send_checked(c.stand_up(AGENT_ACTOR), lambda: setattr(self, "posture", "standing"))
+
+    def _do_pick_up(self, action) -> tuple[str, str]:
+        problem = self._out_of_range(action.target_id)
+        if problem:
+            return "failed", problem
+        return self._pick_up(action.target_id)
+
+    def _pick_up(self, target_id: str) -> tuple[str, str]:
+        problem = self._on_foot()
+        if problem:
+            return "failed", problem
+        if self.held:
+            return "failed", f"already holding {self.held}"
+        return self._send_checked(c.pick_up(AGENT_ACTOR, self._actor_for(target_id)),
+                                  lambda: setattr(self, "held", target_id))
+
+    def _do_drop_object(self, action) -> tuple[str, str]:
+        if not self.held:
+            return "failed", "not holding anything"
+        return self._send_checked(c.drop_object(AGENT_ACTOR), lambda: setattr(self, "held", None))
+
+    def _do_get_on_scooter(self, action) -> tuple[str, str]:
+        problem = self._out_of_range(action.target_id)
+        if problem:
+            return "failed", problem
+        return self._get_on_scooter(action.target_id)
+
+    def _get_on_scooter(self, target_id: str) -> tuple[str, str]:
+        """GetOnScooter names no scooter, so the blueprint presumably uses the nearest. Unverified."""
+        problem = self._on_foot()
+        if problem:
+            return "failed", problem
+        self.wire.request(c.get_on_scooter(AGENT_ACTOR), resend=False)
+        self.wire.request(c.clean_garbage(), resend=False)  # unrealcv.py:710
+        self.riding, self.posture = target_id, "on_scooter"
+        self._recheck_camera()
+        return "completed", ""
+
+    def _do_get_off_scooter(self, action) -> tuple[str, str]:
+        """The humanoid comes back as a new actor, so give it the old name (communicator.py:110-125)."""
+        if not self.riding:
+            return "failed", "not on a scooter"
+        self.wire.request(c.get_off_scooter(self.specs[self.riding].actor_name), resend=False)
+        objects = self._objects()
+        if AGENT_ACTOR not in objects:
+            fresh = [o for o in objects if NEW_HUMANOID_PREFIX in o]
+            if not fresh:
+                return "failed", f"no new humanoid ({NEW_HUMANOID_PREFIX}*) appeared after getting off"
+            self.wire.request(c.rename(fresh[0], AGENT_ACTOR), resend=False)
+        self.riding, self.posture = None, "standing"
+        self.wire.request(c.set_speed(AGENT_ACTOR, self.agent_speed), resend=False)
+        self._recheck_camera()
+        return "completed", ""
+
+    def _recheck_camera(self) -> None:
+        """The humanoid is swapped out on and off a scooter, and its camera may not survive."""
+        if self.config.camera_id is None:
+            self.camera_id = self._find_agent_camera()
+
+    def _do_enter_vehicle(self, action) -> tuple[str, str]:
+        problem = self._out_of_range(action.target_id)
+        if problem:
+            return "failed", problem
+        return self._enter_vehicle(action.target_id)
+
+    def _enter_vehicle(self, target_id: str) -> tuple[str, str]:
+        problem = self._on_foot()
+        if problem:
+            return "failed", problem
+
+        def entered():
+            self.vehicle, self.posture = target_id, "in_vehicle"
+        return self._send_checked(c.enter_vehicle(AGENT_ACTOR, self._actor_for(target_id)), entered)
+
+    def _do_exit_vehicle(self, action) -> tuple[str, str]:
+        if not self.vehicle:
+            return "failed", "not in a vehicle"
+
+        def exited():
+            self.vehicle, self.posture = None, "standing"
+        return self._send_checked(c.exit_vehicle(AGENT_ACTOR, self._actor_for(self.vehicle)), exited)
+
+    def _do_drive(self, action) -> tuple[str, str]:
+        carrier = self.riding or self.vehicle
+        if not carrier:
+            return "failed", "not on a scooter or in a vehicle"
+        self.wire.request(c.drive(self._actor_for(carrier), action.throttle, action.brake, action.steering), resend=False)
+        return "completed", ""
+
+    def _do_gesture(self, action) -> tuple[str, str]:
+        problem = self._on_foot()
+        if problem:
+            return "failed", problem
+        command = {"discuss": lambda: c.discuss(AGENT_ACTOR, action.variant), "argue": lambda: c.argue(AGENT_ACTOR, action.variant),
+                   "listen": lambda: c.listen(AGENT_ACTOR), "wave": lambda: c.wave(AGENT_ACTOR),
+                   "direct": lambda: c.direct(AGENT_ACTOR)}[action.kind]()
+        self.wire.request(command, resend=False)
+        self.gesture, self.gesture_variant = action.kind, action.variant
+        return "completed", ""
+
+    def _do_stop_gesture(self, action) -> tuple[str, str]:
+        self.wire.request(c.stop_gesture(AGENT_ACTOR), resend=False)
+        self.gesture = None
+        return "completed", ""
+
+    ###################################################
+    # Checkpoint and restore
+    ###################################################
+
+    def get_state(self) -> SimCheckpoint:
+        """Snapshot between steps. Refuses if the last step failed, since the state is suspect."""
+        if not self._ready:
+            raise SimWorldError("no world to checkpoint, call reset() first")
+        if self._broken:
+            raise SimWorldError(f"will not checkpoint: {self._broken}")
+        physical = self.read_state()
+        return SimCheckpoint(
+            backend="simworld", tick_count=self.tick_count, step_index=self.step_index, seeds={"master": self.seed},
+            physical=physical, not_restored=list(NOT_RESTORED),
+            # Deep copy, or later steps would rewrite a checkpoint already taken.
+            backend_state=copy.deepcopy({
+                "tick_interval_s": self.config.tick_interval_s, "start_s": self.start_s, "sun_max": self.sun_max,
+                "agent_speed": self.agent_speed, "posture": self.posture, "held": self.held, "riding": self.riding,
+                "vehicle": self.vehicle, "walking": self.walking, "gesture": self.gesture,
+                "gesture_variant": self.gesture_variant, "gaze": self.gaze,
+                "task": self.task.to_dict() if self.task else None,
+                "npc_specs": [npc.model_dump(mode="json") for npc in self.npc_specs],
+                "npc_movers": {i: m.to_dict() for i, m in self.npc_movers.items()},
+                "npc_waypoint": self.npc_waypoint, "fog": self.fog, "atmosphere": self.atmosphere,
+                "camera_id": self.camera_id, "branch": self.branch,
+                "mask_colors": [m.model_dump() for m in self.mask_colors],
+            }))
+
+    def restore_state(self, checkpoint: SimCheckpoint) -> RestoreReport:
+        """Put actors back by teleporting them. Works on a restarted server by respawning what is missing.
+
+        This is not a save-state. Read checkpoint.not_restored for what cannot come back.
+        Returns measured position errors rather than assuming the teleports worked.
+        """
+        saved = checkpoint.backend_state
+        if checkpoint.backend != "simworld":
+            raise ValueError(f"checkpoint is from {checkpoint.backend!r}")
+        if saved["tick_interval_s"] != self.config.tick_interval_s:
+            raise ValueError(f"checkpoint used tick interval {saved['tick_interval_s']}, config says "
+                             f"{self.config.tick_interval_s}. Sim time would stop meaning the same thing.")
+        self.connect()
+        self._ready = False
+        self.seed = checkpoint.seeds["master"]
+        self.npc_specs = [NpcSpec(**npc) for npc in saved["npc_specs"]]
+        self._index_targets()
+
+        self._leave_carriers()
+        respawned = self._respawn_missing()
+        self._enter_sync()
+
+        if AGENT_ACTOR in respawned:  # a new humanoid is standing, empty-handed and idle
+            self.held, self.gesture, self.posture = None, None, "standing"
+        self.wire.request(c.stop_agent(AGENT_ACTOR), resend=False)
+        if self.gesture:
+            self.wire.request(c.stop_gesture(AGENT_ACTOR), resend=False)
+        if self.held:  # drop before moving things, or the held object follows the hand
+            self.wire.request(c.drop_object(AGENT_ACTOR), resend=False)
+        if self.posture == "sitting":
+            self.wire.request(c.stand_up(AGENT_ACTOR), resend=False)
+        state = checkpoint.physical
+        for npc in state.npcs:
+            self.wire.request(c.npc_stop(npc.actor), resend=False)
+        # A stop may not cancel a turn already playing, which would keep rotating an actor
+        # after we place it. So run it out on uncounted ticks first. They do not change sim time.
+        for _ in range(self.config._ticks_for(self.config.restore_flush_s) if self.config.restore_flush_s else 0):
+            self.wire.request(c.tick(), resend=False)
+
+        self._place(AGENT_ACTOR, state.agent.pose)
+        self.wire.request(c.set_speed(AGENT_ACTOR, saved["agent_speed"]), resend=False)
+        for npc in state.npcs:
+            self._place(npc.actor, npc.pose)
+        for spec in self.npc_specs:
+            self.wire.request(c.npc_speed(spec.actor_name, spec.speed_cm_s), resend=False)
+        for obj in state.objects:
+            if obj.pose is not None and not obj.held_by:
+                self._place(obj.actor, obj.pose)
+
+        self._restore_posture(checkpoint)
+        self._restore_adapter_state(checkpoint)
+        report = self._measure_restore(checkpoint, respawned)
+        self._ready = True
+        self._broken = None
+        return report
+
+    def _present(self) -> set[str]:
+        return {name.lower() for name in self._objects()}
+
+    def _leave_carriers(self) -> None:
+        """Get the humanoid back on foot, if the scooter or vehicle still exists."""
+        present = self._present()
+        if self.riding:
+            if self.specs[self.riding].actor_name.lower() in present:
+                self._do_get_off_scooter(None)
+            self.riding, self.posture = None, "standing"
+        if self.vehicle:
+            if self._actor_for(self.vehicle).lower() in present:
+                self.wire.request(c.exit_vehicle(AGENT_ACTOR, self._actor_for(self.vehicle)), resend=False)
+            self.vehicle, self.posture = None, "standing"
+
+    def _respawn_missing(self) -> list[str]:
+        """After a server restart everything is gone. The agent goes first to keep its camera id."""
+        present = self._present()
+        spawners = [(AGENT_ACTOR, self._spawn_agent)]
+        spawners += [(npc.actor_name, lambda npc=npc: self._spawn_npc(npc)) for npc in self.npc_specs]
+        spawners += [(spec.actor_name, lambda spec=spec: self._spawn_object(spec))
+                     for spec in self.config.objects if not spec.existing]
+        if self.config.spawn_ue_manager:
+            spawners.append((UE_MANAGER_ACTOR, self._spawn_manager))
+        if self.config.spawn_weather_manager:
+            spawners.append((WEATHER_ACTOR, self._spawn_weather))
+        missing = [(name, spawn) for name, spawn in spawners if name.lower() not in present]
+        if missing and self._sync_mode:
+            self.wire.request(c.resume(), resend=False)  # reset spawns unpaused, so do the same here
+            self._sync_mode = False
+        for _, spawn in missing:
+            spawn()
+        self.weather_available = self.config.spawn_weather_manager and WEATHER_ACTOR.lower() in self._present()
+        return [name for name, _ in missing]
+
+    def _place(self, actor: str, pose: Pose) -> None:
+        loc, rot = pose.location, pose.rotation
+        self.wire.request(c.set_location(actor, loc.x, loc.y, loc.z), resend=False)
+        self.wire.request(c.set_rotation(actor, rot.pitch, rot.yaw, rot.roll), resend=False)
+
+    def _restore_posture(self, checkpoint: SimCheckpoint) -> None:
+        """Replay what the agent was doing. Best effort, and the animations restart from the top."""
+        saved = checkpoint.backend_state
+        if saved["held"]:
+            self.wire.request(c.pick_up(AGENT_ACTOR, self._actor_for(saved["held"])), resend=False)
+        if saved["posture"] == "sitting":
+            self.wire.request(c.sit_down(AGENT_ACTOR), resend=False)
+        if saved["riding"]:
+            self.wire.request(c.get_on_scooter(AGENT_ACTOR), resend=False)
+            self.wire.request(c.clean_garbage(), resend=False)
+            self._place(self.specs[saved["riding"]].actor_name, checkpoint.physical.agent.pose)
+        if saved["vehicle"]:
+            self.wire.request(c.enter_vehicle(AGENT_ACTOR, self._actor_for(saved["vehicle"])), resend=False)
+        if saved["walking"]:
+            self.wire.request(c.move_forward(AGENT_ACTOR), resend=False)
+        if saved["gesture"]:
+            self._do_gesture(Gesture(kind=saved["gesture"], variant=saved["gesture_variant"]))
+
+    def _restore_adapter_state(self, checkpoint: SimCheckpoint) -> None:
+        saved = checkpoint.backend_state
+        self.tick_count, self.step_index = checkpoint.tick_count, checkpoint.step_index
+        self.start_s, self.sun_max = saved["start_s"], saved["sun_max"]
+        self.agent_speed, self.gesture_variant = saved["agent_speed"], saved["gesture_variant"]
+        self.held, self.riding, self.vehicle = saved["held"], saved["riding"], saved["vehicle"]
+        self.posture, self.walking, self.gesture, self.gaze = saved["posture"], saved["walking"], saved["gesture"], saved["gaze"]
+        self.fog = tuple(saved["fog"]) if saved["fog"] else None
+        self.atmosphere = tuple(saved["atmosphere"]) if saved["atmosphere"] else None
+        self.task = Mover(**saved["task"]) if saved["task"] else None
+        if self.task:
+            self.task.restart()
+        self.npc_waypoint = dict(saved["npc_waypoint"])
+        self.npc_movers = {i: Mover(**m) for i, m in saved["npc_movers"].items()}
+        for mover in self.npc_movers.values():
+            mover.restart()
+        self._snapshots = {}
+        self._last_task_result = None
+        self._camera_reset_pending = False
+        self.branch = self._unused_branch(saved["branch"] + 1)
+
+        self.camera_id = saved["camera_id"]
+        self._setup_camera()
+        self.mask_colors = [MaskColor(**m) for m in saved["mask_colors"]]
+        for color in self.mask_colors:  # a respawned actor has lost its colour
+            if color.assigned_rgb:
+                self.wire.request(c.set_mask_color(color.actor, *color.assigned_rgb), resend=False)
+        camera = checkpoint.physical.camera.extrinsics.rotation_deg
+        self.wire.request(c.set_camera_rotation(self.camera_id, camera.pitch, camera.yaw, camera.roll), resend=False)
+        if self.weather_available:
+            if self.fog:
+                self.wire.request(c.set_fog(WEATHER_ACTOR, *self.fog), resend=False)
+            if self.atmosphere:
+                self.wire.request(c.set_atmosphere(WEATHER_ACTOR, *self.atmosphere), resend=False)
+            self._apply_sun(self.sim_time_s)
+
+    def _unused_branch(self, first: int) -> int:
+        """A replay must not overwrite the renders of the run it branched from."""
+        run = self.config.run_id or f"wmloop_seed{self.seed}"
+        branch = first
+        while (Path(self.config.out_dir) / run / f"branch_{branch}").exists():
+            branch += 1
+        return branch
+
+    def _measure_restore(self, checkpoint: SimCheckpoint, respawned: list[str]) -> RestoreReport:
+        state = checkpoint.physical
+        errors = {"agent": distance_cm(self._read_location(self._agent_actor), state.agent.pose.location)}
+        for npc in state.npcs:
+            errors[npc.id] = distance_cm(self._read_location(npc.actor), npc.pose.location)
+        for obj in state.objects:
+            if obj.pose is not None and not obj.held_by:
+                errors[obj.id] = distance_cm(self._read_location(obj.actor), obj.pose.location)
+        worst = max(errors.values())
+        return RestoreReport(ok=worst <= self.config.restore_tolerance_cm, max_position_error_cm=worst,
+                             position_errors_cm=errors, respawned=respawned, not_restored=list(NOT_RESTORED))
