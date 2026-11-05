@@ -51,6 +51,8 @@ The model card lists 14.6 frames/s on an H100 at 480p, which is about 49 minutes
 
 Notes are now a folder of markdown, `memory/` in each run, in Google's Open Knowledge Format v0.2 (`runtime/notebook.py`). A note at least 90% similar to an existing one updates it, so the prompt shows it once. The prompt also says what the agent last chose and what changed in view. The agent can't open files yet, so it only gets its 5 most recently touched notes.
 
+**This didn't unstick the agent.** `runs/wmloop_notes_20`, with real Qwen on the mock world model and the same seed as `runs/wmloop_agent_20b`, gave 19 waits out of 20, against 18 before. The note repeats from tick 3 to tick 20, so the folder holds 3 notes rather than 20. It's one run, on a mock sim where what's in view never changes, so the prompt told it the same thing every tick and it had nothing to react to. Whether a world where things happen changes this is the next thing to test.
+
 ## What could change the plan
 
 Most likely to bite first:
