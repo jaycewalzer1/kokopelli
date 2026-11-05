@@ -25,7 +25,7 @@ export WMLOOP_APPTAINER_IMAGE="${WMLOOP_APPTAINER_IMAGE:-CHANGE_ME_APPTAINER_IMA
 
 # Safe defaults, change if you want.
 export WMLOOP_MAP="${WMLOOP_MAP:-/Game/Maps/demo_1}"           # base_environments.rst:12
-export WMLOOP_GPU_INDEX="${WMLOOP_GPU_INDEX:-0}"               # -graphicsadapter index, launcher.py:189
+export WMLOOP_GPU_INDEX="${WMLOOP_GPU_INDEX:-0}"               # -graphicsadapter index, launcher.py:193
 export WMLOOP_READY_TIMEOUT_S="${WMLOOP_READY_TIMEOUT_S:-900}" # first shader compile can be slow
 export WMLOOP_TICK_INTERVAL="${WMLOOP_TICK_INTERVAL:-0.1}"
 export WMLOOP_RESOLUTION="${WMLOOP_RESOLUTION:-320x240}"

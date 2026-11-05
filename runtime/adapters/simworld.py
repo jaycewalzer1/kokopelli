@@ -150,8 +150,8 @@ class SimWorldConfig(BaseModel):
     fog: Optional[tuple[float, float, float]] = None  # density, distance, falloff
     atmosphere: Optional[tuple[float, float]] = None  # rayleigh, mie
 
-    request_timeout_s: float = 30.0
-    render_timeout_s: float = 60.0
+    request_timeout_s: float = 60.0  # generous: a tick can stall while Unreal compiles shaders
+    render_timeout_s: float = 120.0
     connect_timeout_s: float = 30.0
     reconnect_attempts: int = Field(default=3, ge=0)
     reconnect_backoff_s: float = 2.0
@@ -295,15 +295,17 @@ class SimWorldPhysics(PhysicsSim):
         self.seed = cfg.seed if seed is None else seed
         self._ready = False
         self._broken = None
-        if self._sync_mode:
-            self.wire.request(c.resume(), resend=False)  # spawn while running, as every SimWorld example does
-            self._sync_mode = False
+        # Spawn while running, as every SimWorld example does. Sent even if we never paused,
+        # since a client that crashed earlier may have left this server paused.
+        self.wire.request(c.resume(), resend=False)
+        self._sync_mode = False
         if cfg.map_path:
             self.load_map(cfg.map_path)
         self._destroy_ours()
         self._new_world()
         self.tick_count = self.step_index = 0
         self.start_s = parse_clock(cfg.start_time)
+        self.branch = self._unused_branch(0)  # a re-run must not overwrite the renders of an earlier one
 
         self.npc_specs = cfg.npcs if cfg.npcs is not None else self._random_npcs(random.Random(self.seed))
         self._index_targets()
@@ -484,7 +486,7 @@ class SimWorldPhysics(PhysicsSim):
                     self.warnings.append(f"could not set mask colour on {actor}: {e}")
                     assigned = None
             readback = None
-            try:  # reply looks like (R=255,G=128,B=64,A=255), per unrealcv/api.py:1487
+            try:  # reply looks like (R=255,G=128,B=64), and maybe a fourth value, per unrealcv/api.py:1487,748
                 numbers = NUMBER.findall(str(self.wire.request(c.get_mask_color(actor))))
                 readback = [int(float(n)) for n in numbers[:3]] if len(numbers) >= 3 else None
             except CommandError:
@@ -1252,7 +1254,7 @@ class SimWorldPhysics(PhysicsSim):
         if self.config.spawn_weather_manager:
             spawners.append((WEATHER_ACTOR, self._spawn_weather))
         missing = [(name, spawn) for name, spawn in spawners if name.lower() not in present]
-        if missing and self._sync_mode:
+        if missing:
             self.wire.request(c.resume(), resend=False)  # reset spawns unpaused, so do the same here
             self._sync_mode = False
         for _, spawn in missing:

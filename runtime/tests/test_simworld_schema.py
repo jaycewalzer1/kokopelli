@@ -1,8 +1,9 @@
 """Action schema and formulas. Needs only pydantic, so it also runs in the root .venv."""
 import json
-import math
+import re
 import typing
 import unittest
+from pathlib import Path
 
 from pydantic import ValidationError
 
@@ -80,6 +81,14 @@ class SchemaTest(unittest.TestCase):
         self.assertEqual(ACTION_CATALOG["look_at"].mapping, "composed")
         self.assertEqual(ACTION_CATALOG["interact"].mapping, "composed")
         self.assertEqual(ACTION_CATALOG["sit_down"].mapping, "native")
+
+    def test_simworld_md_lists_each_action_under_its_real_mapping(self):
+        doc = (Path(physics.__file__).parent / "SIMWORLD.md").read_text()
+        headings = {"native": "**Native**", "composed": "**Composed**", "no_physics": "**No physics effect:**"}
+        for mapping, heading in headings.items():
+            line = next(text for text in doc.splitlines() if text.startswith(heading))
+            listed = set(re.findall(r"`(\w+)`", line))
+            self.assertEqual(listed, {name for name, spec in ACTION_CATALOG.items() if spec.mapping == mapping}, mapping)
 
     def test_json_schema_is_exportable(self):
         schema = action_json_schema()

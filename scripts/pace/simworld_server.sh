@@ -2,10 +2,10 @@
 # Functions to start and stop one headless SimWorld server. Meant to be sourced by the job script.
 #
 # Flags and where they come from:
-#   -RenderOffScreen, -graphicsadapter=N  unrealcv/launcher.py:186,189, real rendering with no display
+#   -RenderOffScreen, -graphicsadapter=N  unrealcv/launcher.py:189,193, real rendering with no display
 #   --cvport N                            simworld minimal_example.rst:10, UnrealCV's port
 #   -nosound, -unattended                 standard Unreal flags, not from SimWorld. No dialogs or audio device.
-# Do not use -nullrhi: it turns off rendering, so there would be no images (launcher.py:188).
+# Do not use -nullrhi: it turns off rendering, so there would be no images (launcher.py:191).
 
 WMLOOP_UE_PID=""
 

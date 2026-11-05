@@ -4,7 +4,7 @@ It proves our client sends what we believe is right. It proves nothing about Unr
 formats are copied from how the client code parses them, and the physics is simple kinematics
 invented for tests. See runtime/SIMWORLD.md for what a real run still has to check.
 
-Wire format (unrealcv/__init__.py:61,120-133): every message is a little-endian uint32 magic,
+Wire format (unrealcv/__init__.py:61,120-123): every message is a little-endian uint32 magic,
 a uint32 size, then the payload. A request's payload is "<id>:<command>", and the reply is
 "<same id>:<body>". On accept the server sends a message starting with "connected".
 Binds only to 127.0.0.1, on an ephemeral port unless told otherwise.
@@ -171,7 +171,7 @@ class FakeUnrealCV:
                 sock, _ = self._listener.accept()
             except OSError:
                 return
-            if self._client is not None:  # "Currently only one client is allowed" (unrealcv/__init__.py:147)
+            if self._client is not None:  # "Currently only one client is allowed" (unrealcv/__init__.py:145)
                 self.busy_rejections += 1
                 self._send(sock, b"Server is busy")
                 sock.close()
@@ -252,7 +252,7 @@ class FakeUnrealCV:
         name = r"(\S+)"
         number = r"(-?[\d.]+(?:e-?\d+)?)"
         return [
-            (r"vget /unrealcv/commands", self._commands_list),  # unrealcv/__init__.py:244
+            (r"vget /unrealcv/commands", self._commands_list),  # unrealcv/__init__.py:232
             (r"vrun setres (\d+)x(\d+)w", self._setres),  # unrealcv.py:64
             (r"vrun Editor\.AsyncSkinnedAssetCompilation 2", lambda: OK),  # unrealcv.py:66
             (rf"vset /action/game/level {name}", self._level),  # unrealcv/api.py:1338
@@ -296,7 +296,7 @@ class FakeUnrealCV:
 
     def _commands_list(self):
         if not self.advertise_commands:
-            return "error: unknown command"  # an older server, unrealcv/__init__.py:249
+            return "error: unknown command"  # an older server, unrealcv/__init__.py:240
         return "\n".join(["vget /unrealcv/commands", "vget /objects", "vset /action/tick", "vbp [str] [str]"])
 
     def _setres(self, w, h):
@@ -392,7 +392,7 @@ class FakeUnrealCV:
         if name not in self.actors:
             return self._missing(name)
         r, g, b = self.actors[name].color or (0, 0, 0)
-        return f"(R={r},G={g},B={b},A=255)"  # format from unrealcv/api.py:1487
+        return f"(R={r},G={g},B={b},A=255)"  # api.py:1487 shows the format, and :748 drops a fourth value
 
     def _tick_interval(self, seconds):
         self.tick_interval = float(seconds)

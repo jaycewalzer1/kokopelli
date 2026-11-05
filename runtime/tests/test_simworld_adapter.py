@@ -95,6 +95,22 @@ class LifecycleTest(AdapterCase):
         self.assertEqual(len([a for a in self.server.actors if a == AGENT_ACTOR]), 1)
         self.assertTrue(self.server.paused)
 
+    def test_reset_unpauses_a_server_left_paused_by_a_crashed_client(self):
+        self.sim.wire.close()  # the old client vanished without resuming
+        self.assertTrue(self.server.paused)
+        self.replace_sim()
+        count = len(self.server.commands)
+        self.sim.reset()
+        sent = self.commands_since(count)
+        first_spawn = next(i for i, cmd in enumerate(sent) if "spawn_bp_asset" in cmd)
+        self.assertLess(sent.index("vset /action/game/resume"), first_spawn)
+
+    def test_a_second_reset_does_not_overwrite_earlier_renders(self):
+        first = self.first.renders["rgb"].path
+        second = self.sim.reset().renders["rgb"].path
+        self.assertNotEqual(first, second)
+        self.assertTrue(Path(first).exists())
+
     def test_second_reset_leaves_level_actors_alone(self):
         self.server.handle("vset /objects/spawn_bp_asset /Game/Level/Tree Tree_1")
         self.sim.reset()

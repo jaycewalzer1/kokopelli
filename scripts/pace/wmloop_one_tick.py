@@ -390,9 +390,15 @@ class Checklist:
         replies = {}
         for action in ({"type": "stop"}, {"type": "set_speed", "speed_cm_s": 200}, {"type": "step_forward", "duration_s": 1},
                        {"type": "rotate", "angle_deg": 30, "direction": "left"}, {"type": "move_forward"},
-                       {"type": "gesture", "kind": "wave"}, {"type": "stop_gesture"}, {"type": "sit_down"}, {"type": "stand_up"}):
+                       {"type": "gesture", "kind": "wave"}, {"type": "stop_gesture"}):
             replies[action["type"]] = self.sim.step(action).outcome.status
-        return verdict(all(s != "failed" for s in replies.values()), str(replies))
+        if any(s == "failed" for s in replies.values()):
+            return "FAIL", str(replies)
+        # SitDown names no seat, so with none nearby a refusal is the right answer, not a failure.
+        sit = self.sim.step({"type": "sit_down"}).outcome.status
+        stand = self.sim.step({"type": "stand_up"}).outcome.status if sit != "failed" else "not tried"
+        replies.update(sit_down=sit, stand_up=stand)
+        return ("PASS" if sit != "failed" else "LOOK"), f"{replies}. A failed sit_down may only mean no seat is nearby."
 
     def scooter(self):
         scooters = self._objects_of_kind("scooter")

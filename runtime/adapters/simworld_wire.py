@@ -225,7 +225,11 @@ class Wire:
             raise ConnectionLostError(f"not connected, could not send {command!r}")
         self.commands_sent += 1
         self.seen.add(NUMBER.sub("0", command))
-        self.client.request(command, -1)
+        try:
+            self.client.request(command, -1)
+        except (ConnectionError, OSError) as e:
+            self._drop()
+            raise ConnectionLostError(f"could not send {command!r}: {e}") from e
 
     def unsupported_seen(self) -> list[str]:
         """Commands we sent that the server's own command list does not mention.
