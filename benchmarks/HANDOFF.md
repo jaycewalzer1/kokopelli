@@ -51,6 +51,44 @@ python3 /Users/jaycewalzer/Desktop/kokopelli/.claude/worktrees/ops/ops/gpu.py ru
 | Sampling seed | `ask()` has no argument. The backend calls `mx.random.seed()` first, after making sure the model is loaded. Tested as repeatable on a tiny model, not yet on real Qwen. It relies on how mlx-vlm works today |
 | `temperature=0.0`, the default in `ask()` | Greedy, so sampling alone shows no spread at all. That's why the noise check uses 0.7 |
 
+## Phase 5: the base-model noise check
+
+**It ran, on real Qwen, with no adapter:** Holt-Laury and the lotteries, 50 samples per template, temperature 0.7, 1,050 results, 0 invalid, about 1.5 seconds per sample. Results are in `benchmarks/results/noise_t07/`, which git ignores. Rerun the analysis with `python -m benchmarks.noise_check benchmarks/results/noise_t07`.
+
+**Holt-Laury as a full menu doesn't measure risk preference well in this model.** Of 150 ladders, only three scores occurred: 0 (93 times), 9 (28) and 10 (29). No answer switched mid-ladder. Humans average about 5.6, and switch in the middle.
+
+| Template | Mean safe | Safe option listed first | Risky option listed first | Most common answer |
+|---|---|---|---|---|
+| `die` | 3.78 | 8.22 | 0.00 | `AAAAAAAAAB` or `AAAAAAAAAA` |
+| `fractions` | 1.26 | 2.42 | 0.00 | All risky in both orders |
+| `percent` | 5.80 | 10.00 | 1.25 | `AAAAAAAAAA` |
+
+- **The score mostly follows position.** On `die` and `percent`, swapping the options moves the score by more than 8 of 10 points, because the model picks "A" on nearly every row. A mean near 5.6 here would be a coincidence of averaging the two orders.
+- **It's nearly identical within a cell.** Inside one template and order, one or two answer patterns account for everything, so sampling at 0.7 adds little spread.
+- **The answers aren't sensible preferences.** 58% of `percent` answers take $2.00 for sure over $3.85 for sure on row 10, and most `fractions` answers take the risky option on row 1.
+- **`AAAAAAAAAB` shows some reading.** On `die`, the safe-first answer flips only on row 10, where B is plainly better.
+
+**The lotteries are more usable, unevenly.** Overall underweighting rate 0.431, against 0.373 for humans who read the odds. The model chose the first-listed option 52% of the time overall, which hides differences by template.
+
+| Template | Underweighting rate | What drives the choice |
+|---|---|---|
+| `plain` | 0.38 | Content: on 5 of 6 problems every answer was the same in both orders. Little spread, mostly 0 or 1 |
+| `percent` | 0.59 | Mixed: several problems flip with position, and some don't |
+| `tickets` | 0.33 | Position on 3 problems (3, 5 and 6), where it took the first-listed box every time |
+
+44% of problem-and-template cells sit at exactly 0 or 1, where a small shift can't show under sampling.
+
+**The verdict rules were adjusted after seeing this.** My first automatic verdict said "FLOOR", which misread position bias as risk taking. The position and floor rules were added after seeing the data, and `noise_check.py` says so.
+
+**Proposed fixes, before anything downstream:**
+
+1. **Ask Holt-Laury one row at a time.** Results below, once the pilot has run. This is decision 2.
+2. **Score with log-probabilities instead of sampling.** Read P(A) from the model directly and average over both orders. That cancels position exactly and can show small shifts in cells stuck at 0 or 1. It needs logits, which `ask()` doesn't return, so it needs a small addition outside `llm_model.ask`.
+3. **Analyze within order, or require order-balanced cells.** Option order must stay balanced across arms, which the design already does, or position differences would pass for effects.
+4. **Drop or rewrite weak templates.** `tickets` is position-heavy on the lotteries. Don't choose by which one shows an effect later: decide before any adapter exists.
+
+**Without a fix, a LoRA could change the letter habit, and the ladder score would read that as a change in risk preference.** I recommend not locking `PREREG.md` until this is settled.
+
 ## Before and after
 
 The command the training pipeline calls:
