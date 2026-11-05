@@ -35,6 +35,9 @@ def holt_laury_summary(rows):
             "min": float(scores.min()) if len(scores) else None, "max": float(scores.max()) if len(scores) else None,
             "distinct_answers": len(answers), "modal_share": answers.most_common(1)[0][1] / len(valid) if valid else None,
             "modal_answer": answers.most_common(1)[0][0] if valid else None,
+            "at_floor_0_safe": _mean([row["score"] == 0 for row in valid]),
+            "at_ceiling_10_safe": _mean([row["score"] == 10 for row in valid]),
+            "risky_on_row_1": _mean([row["extras"]["first_risky_row"] == 1 for row in valid]),
             "multiple_switching": _mean([row["extras"]["multiple_switching"] for row in valid]),
             "dominated": _mean([row["extras"]["dominated"] for row in valid]),
             "safe_when_safe_first": _mean(safe_first), "safe_when_risky_first": _mean(risky_first),
@@ -70,9 +73,14 @@ def _mean(values):
 
 
 def verdict_holt_laury(table):
-    """Plain-language reading. The thresholds are rules of thumb, chosen before seeing any real data."""
+    """Plain-language reading. The thresholds are rules of thumb, chosen before seeing real data, except the floor and
+    ceiling rule. That was added after the first 28 real samples piled up at 0 safe choices, so don't treat it as blind."""
     if table.empty:
         return "NOT MEASURED"
+    for column, label in (("at_floor_0_safe", "FLOOR: most answers are 0 safe choices, so a move toward more risk can't show"),
+                          ("at_ceiling_10_safe", "CEILING: most answers are 10 safe choices, so a move toward more caution can't show")):
+        if column in table and (table[column].astype(float) >= 0.5).mean() >= 0.5:
+            return label
     frozen = (table.modal_share >= FROZEN_MODAL_SHARE).mean()
     noisy = (table.multiple_switching >= COIN_FLIP_INCONSISTENT).mean()
     if noisy == 1:

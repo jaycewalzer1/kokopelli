@@ -582,6 +582,10 @@ class NoiseCheck(Temp):
     def test_noise_says_so(self):
         self.assertTrue(noise_check.verdict_holt_laury(self._frame(0.1, 0.9)).startswith("PURE NOISE"))
 
+    def test_floor_says_so(self):
+        table = pd.DataFrame([{"modal_share": 0.85, "multiple_switching": 0.0, "at_floor_0_safe": 0.85, "at_ceiling_10_safe": 0.0}] * 3)
+        self.assertTrue(noise_check.verdict_holt_laury(table).startswith("FLOOR"))
+
     def test_empty_says_not_measured(self):
         self.assertEqual(noise_check.verdict_holt_laury(pd.DataFrame()), "NOT MEASURED")
 
