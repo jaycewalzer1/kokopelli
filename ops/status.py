@@ -47,7 +47,7 @@ SMOKE_DIR = STATE / "smoke/agent_loop"
 SUITES = [
     ("life", ROOT, [PY, "-m", "unittest", *LIFE_TESTS]),
     ("homeostatic", ROOT, [PY, "-m", "unittest", *HOMEOSTATIC_TESTS]),
-    ("mind", ROOT, [PY, "-m", "unittest", "tests.test_mind"]),
+    ("mind", ROOT, ["env", f"PYTHONPATH={AGENT_LOOP}", PY, "-m", "unittest", "tests.test_mind"]),
     ("agent loop", AGENT_LOOP, [PY, "-m", "unittest", "discover", "-s", "runtime/tests", "-t", "."]),
     ("agent loop mock run", AGENT_LOOP, [PY, "-m", "runtime.run", "--ticks", "3", "--seed", "7", "--out", str(SMOKE_DIR)]),
     ("simworld", SIMWORLD, [SIMWORLD_PY, "-W", "ignore", "-m", "unittest", "discover", "-s", "runtime/tests", "-t", ".",
