@@ -1,0 +1,142 @@
+"""Phase 5: is the base model's answer on these instruments stable, noisy, or somewhere useful in between?
+
+To detect a shift, an instrument needs two things:
+- Spread. If the model gives the same answer every time, there's a floor or ceiling and small shifts may not show.
+- Signal. If answers look like coin flips, or just follow which option was listed first, there's no preference to shift.
+
+Run:  python -m benchmarks.noise_check benchmarks/results/<run_id>
+It only reports what's in the results file. If nothing was measured, it says so.
+"""
+import argparse
+import json
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from benchmarks.run import read_results
+
+FROZEN_MODAL_SHARE = 0.95   # The same answer this often means there's almost no spread.
+COIN_FLIP_INCONSISTENT = 0.5  # Half or more multiple-switching ladders means no stable preference.
+
+
+def holt_laury_summary(rows):
+    table = []
+    for (arm, template), group in _groups(rows, "holt_laury"):
+        valid = [row for row in group if row["valid"]]
+        scores = np.array([row["score"] for row in valid], float)
+        answers = Counter(row["extras"]["picks"] for row in valid)
+        safe_first = [row["score"] for row in valid if row["option_order"].startswith("safe")]
+        risky_first = [row["score"] for row in valid if row["option_order"].startswith("risky")]
+        table.append({
+            "arm": arm, "template": template, "n": len(group), "valid": len(valid),
+            "mean_safe": _mean(scores), "sd_safe": float(scores.std(ddof=1)) if len(scores) > 1 else None,
+            "min": float(scores.min()) if len(scores) else None, "max": float(scores.max()) if len(scores) else None,
+            "distinct_answers": len(answers), "modal_share": answers.most_common(1)[0][1] / len(valid) if valid else None,
+            "modal_answer": answers.most_common(1)[0][0] if valid else None,
+            "multiple_switching": _mean([row["extras"]["multiple_switching"] for row in valid]),
+            "dominated": _mean([row["extras"]["dominated"] for row in valid]),
+            "safe_when_safe_first": _mean(safe_first), "safe_when_risky_first": _mean(risky_first),
+        })
+    return pd.DataFrame(table)
+
+
+def lotteries_summary(rows):
+    table = []
+    for (arm, template), group in _groups(rows, "lotteries"):
+        for item in sorted({row["item_id"] for row in group}):
+            part = [row for row in group if row["item_id"] == item]
+            valid = [row for row in part if row["valid"]]
+            scores = [row["score"] for row in valid]
+            first = [row["parsed_choice"] == "A" for row in valid]
+            table.append({"arm": arm, "template": template, "item": item, "n": len(part), "valid": len(valid),
+                          "underweighting_rate": _mean(scores), "chose_listed_first": _mean(first),
+                          "chose_H": _mean([row["extras"]["chosen"] == "H" for row in valid])})
+    return pd.DataFrame(table)
+
+
+def _groups(rows, instrument):
+    groups = {}
+    for row in rows:
+        if row["instrument"] == instrument:
+            groups.setdefault((row["arm"], row["template"]), []).append(row)
+    return sorted(groups.items())
+
+
+def _mean(values):
+    values = [float(value) for value in values]
+    return float(np.mean(values)) if values else None
+
+
+def verdict_holt_laury(table):
+    """Plain-language reading. The thresholds are rules of thumb, chosen before seeing any real data."""
+    if table.empty:
+        return "NOT MEASURED"
+    frozen = (table.modal_share >= FROZEN_MODAL_SHARE).mean()
+    noisy = (table.multiple_switching >= COIN_FLIP_INCONSISTENT).mean()
+    if noisy == 1:
+        return "PURE NOISE: most ladders switch back and forth, so there's no stable preference to shift"
+    if frozen == 1:
+        return "NEAR-IDENTICAL: one answer almost every sample in every template, so sampling alone can't show small shifts"
+    if frozen > 0 or noisy > 0:
+        return "MIXED: templates disagree. Read the table before trusting this instrument"
+    return "USABLE SPREAD: answers vary, but stay mostly consistent"
+
+
+def verdict_lotteries(table):
+    if table.empty:
+        return "NOT MEASURED"
+    rate = table.underweighting_rate.astype(float)
+    at_edge = ((rate <= 0.05) | (rate >= 0.95)).mean()
+    position = (table.chose_listed_first.astype(float) - 0.5).abs().mean()
+    if position >= 0.3:
+        return "POSITION BIAS: choices follow which option is listed first more than what it offers"
+    if at_edge >= 0.8:
+        return f"NEAR-IDENTICAL: {at_edge:.0%} of cells are at 0 or 1, so sampling alone can't show small shifts"
+    if at_edge >= 0.4:
+        return f"MIXED: {at_edge:.0%} of cells are at 0 or 1"
+    return "USABLE SPREAD: choice rates sit away from 0 and 1"
+
+
+def smallest_detectable(sd, n_per_arm):
+    """Roughly the smallest true gap two arms need for an 80% chance of detection at alpha .05: 2.8 x SD x sqrt(2/n)."""
+    return 2.8 * sd * np.sqrt(2 / n_per_arm)
+
+
+def control_shift(rows, instrument):
+    """Positive control: did telling the model to be cautious or bold move the score? Mean per arm, if those arms ran."""
+    means = {}
+    for arm in ("base_cautious", "base", "base_bold"):
+        scores = [row["score"] for row in rows if row["instrument"] == instrument and row["arm"] == arm and row["valid"]]
+        if scores:
+            means[arm] = {"mean": float(np.mean(scores)), "n": len(scores)}
+    return means
+
+
+def analyze(out):
+    rows = read_results(out)
+    record_path = Path(out) / "run_record.json"
+    record = json.loads(record_path.read_text()) if record_path.exists() else {}
+    hl, lot = holt_laury_summary(rows), lotteries_summary(rows)
+    return {
+        "backend": record.get("backend"), "real": record.get("real"), "sampling": record.get("sampling"),
+        "n_results": len(rows), "invalid": sum(not row["valid"] for row in rows),
+        "holt_laury": hl.to_dict("records"), "holt_laury_verdict": verdict_holt_laury(hl),
+        "lotteries": lot.to_dict("records"), "lotteries_verdict": verdict_lotteries(lot),
+        "controls": {name: control_shift(rows, name) for name in ("holt_laury", "lotteries")},
+        "mean_latency_s": float(np.mean([row["latency_s"] for row in rows])) if rows else None,
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("run")
+    args = parser.parse_args()
+    summary = analyze(args.run)
+    print(json.dumps(summary, indent=2))
+    (Path(args.run) / "noise_check.json").write_text(json.dumps(summary, indent=2) + "\n")
+
+
+if __name__ == "__main__":
+    main()
