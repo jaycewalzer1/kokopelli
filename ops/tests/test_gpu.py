@@ -22,9 +22,10 @@ class GpuQueue(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def start(self, name, priority, *command, extra=()):
-        return subprocess.Popen([sys.executable, str(GPU), "run", "--name", name, "--priority", str(priority),
-                                 *extra, "--", *command], env=self.env, stdout=subprocess.DEVNULL)
+    def start(self, name, priority, *command, extra=(), about="A test job.", output="out/test"):
+        described = (["--about", about] if about is not None else []) + (["--output", output] if output is not None else [])
+        return subprocess.Popen([sys.executable, str(GPU), "run", "--name", name, "--priority", str(priority), "--cwd", str(self.root),
+                                 *described, *extra, "--", *command], env=self.env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def events(self):
         return [json.loads(line) for line in (self.root / "out/ops/gpu_ledger.jsonl").read_text().splitlines()]
@@ -85,6 +86,19 @@ class GpuQueue(unittest.TestCase):
 
     def gpu(self, *args):
         return subprocess.run([sys.executable, str(GPU), *args], env=self.env, capture_output=True, text=True)
+
+    def test_a_job_without_a_description_or_an_output_is_never_queued(self):
+        marker = self.root / "ran"
+        for missing in ({"about": None}, {"about": "   "}, {"about": "x" * 401}, {"output": None}):
+            self.assertEqual(self.start("vague", 1, "touch", str(marker), **missing).wait(timeout=20), 2, missing)
+        self.assertFalse(marker.exists())
+        self.assertFalse((self.root / "out/ops/gpu_ledger.jsonl").exists())
+
+    def test_the_description_and_outputs_reach_the_ledger(self):
+        self.assertEqual(self.start("described", 1, "true", about="Checks  that\nthe tab can say what this is.", output="runs/x").wait(timeout=20), 0)
+        queued = [e for e in self.events() if e["event"] == "queued"][0]
+        self.assertEqual(queued["about"], "Checks that the tab can say what this is.")
+        self.assertEqual(queued["outputs"], [str((self.root / "runs/x").resolve())])
 
     def test_a_job_without_a_pace_command_is_refused_for_pace_and_never_runs(self):
         marker = self.root / "ran"

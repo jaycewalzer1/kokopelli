@@ -290,7 +290,7 @@ def ledger_jobs():
         job = jobs.setdefault(event["id"], {"name": event["name"], "state": "queued"})
         if event["event"] != "moved":
             job["state"] = event["event"]
-        job.update({k: event[k] for k in ("waited", "exit_code", "seconds", "peak_rss_gb", "log", "timed_out") if k in event})
+        job.update({k: event[k] for k in ("waited", "exit_code", "seconds", "peak_rss_gb", "log", "timed_out", "about", "outputs") if k in event})
         job["at"] = event["at"]
     return list(jobs.values())
 
@@ -459,7 +459,7 @@ def report():
 
     lines += ["", "## GPU queue history", ""]
     if jobs:
-        lines += table(["Job", "State", "Waited", "Ran", "Exit", "Peak RAM", "Log"], [[j["name"], j["state"], f"{j['waited'] / 60:.0f} min" if "waited" in j else "", f"{j['seconds'] / 60:.1f} min" if "seconds" in j else "", j.get("exit_code", ""), f"{j['peak_rss_gb']} GB" if "peak_rss_gb" in j else "", f"`{j['log']}`" if j.get("log") else ""] for j in jobs])
+        lines += table(["Job", "What it does", "State", "Waited", "Ran", "Exit", "Peak RAM", "Log"], [[j["name"], j.get("about", "not described"), j["state"], f"{j['waited'] / 60:.0f} min" if "waited" in j else "", f"{j['seconds'] / 60:.1f} min" if "seconds" in j else "", j.get("exit_code", ""), f"{j['peak_rss_gb']} GB" if "peak_rss_gb" in j else "", f"`{j['log']}`" if j.get("log") else ""] for j in jobs])
     else:
         lines += ["No jobs have used the queue yet."]
 

@@ -2,8 +2,12 @@
 
 Cosmos and Qwen each need about 18 GB, so two model jobs at once can run a 36 GB Mac out of memory.
 
-    python3 ops/gpu.py run --name wmloop_demo --priority 10 --cwd PATH -- CMD ARGS...
+    python3 ops/gpu.py run --name wmloop_demo --priority 10 --cwd PATH \
+        --about "what it tests and why, in a sentence or two" --output runs/wmloop_demo -- CMD ARGS...
     python3 ops/gpu.py status
+
+Every job needs --about and at least one --output (relative to --cwd), so the panel's GPU tab can say what
+each experiment is and show what it made. The owner asked for both; a job without them isn't queued.
 
 `run` blocks until the job has had its turn and finished, then exits with the job's own code, so a
 caller running it in the background is told when the job is done. Lower priority numbers go first;
@@ -36,6 +40,7 @@ LEDGER = STATE / "gpu_ledger.jsonl"
 LOCK = STATE / "gpu.lock"
 LOGS = STATE / "job_logs"
 DEFAULT_WHERE = STATE / "where.json"
+ABOUT_LIMIT = 400
 POLL_SECONDS = float(os.environ.get("KOKOPELLI_GPU_POLL", 15))
 
 # Model jobs started without this wrapper still count as using the GPU.
@@ -168,14 +173,23 @@ def run(args):
     if chosen == "pace" and not args.pace_command:
         print(f"{args.name} can't go to PACE: it has no --pace-command, and the Mac command uses MLX.", file=sys.stderr)
         return 2
+    about = " ".join((args.about or "").split())
+    if not about or len(about) > ABOUT_LIMIT:
+        print(f"{args.name} wasn't queued: --about must say briefly what the experiment does, in at most {ABOUT_LIMIT} characters.", file=sys.stderr)
+        return 2
+    if not args.output:
+        print(f"{args.name} wasn't queued: give at least one --output, the file or folder it writes, so the GPU tab can show it.", file=sys.stderr)
+        return 2
+    outputs = [str(Path(args.cwd or os.getcwd(), output).resolve()) for output in args.output]
     now = time.time()
     ticket_id = f"{int(now * 1000)}-{os.getpid()}"
     ticket = {"id": ticket_id, "name": args.name, "priority": args.priority, "pid": os.getpid(),
               "queued_at": now, "cwd": args.cwd, "command": args.command, "running": False,
-              "where": chosen, "pace_command": args.pace_command, "pull": args.pull}
+              "where": chosen, "pace_command": args.pace_command, "pull": args.pull, "about": about, "outputs": outputs}
     path = QUEUE / f"{ticket_id}.json"
     write_ticket(path, ticket)
-    log_event(event="queued", id=ticket_id, name=args.name, priority=args.priority, command=args.command, cwd=args.cwd, where=chosen)
+    log_event(event="queued", id=ticket_id, name=args.name, priority=args.priority, command=args.command, cwd=args.cwd, where=chosen,
+              about=about, outputs=outputs)
     deadline = now + args.give_up_hours * 3600 if args.give_up_hours else None
     try:
         turn = wait_for_turn(ticket, path, deadline)
@@ -276,6 +290,8 @@ def main():
     run_parser.add_argument("--where", choices=["local", "pace"], help="where to run it; by default, the panel's choice for jobs that have a PACE command")
     run_parser.add_argument("--pace-command", help="the shell command to run on PACE, from the copied code folder")
     run_parser.add_argument("--pull", action="append", default=[], help="a path, relative to --cwd, to copy back from PACE afterwards")
+    run_parser.add_argument("--about", help="required: a sentence or two on what the experiment does and why, shown in the GPU tab")
+    run_parser.add_argument("--output", action="append", default=[], help="required, repeatable: a file or folder it writes, relative to --cwd")
     run_parser.add_argument("command", nargs="+")
     run_parser.set_defaults(handler=run)
     commands.add_parser("status").set_defaults(handler=status)
