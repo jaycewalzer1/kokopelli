@@ -9,7 +9,7 @@ In order. Each gate should pass before spending on the next. A full run is 60 ti
 | 1 | Loop works end to end | `python -m unittest discover -s runtime/tests -t .`, both Pythons | Done on fakes | |
 | 2 | Tools hold up at full scale | 60 ticks in the real shape on mocks, then `runtime.check_video --expect-seconds 1800` | Done on mocks: 240 clips joined into 43,201 frames, exactly 1800.0 s, in about 6.5 minutes. Its speed and storage don't predict a real run | |
 | 3 | Real models in the loop | 3 ticks on the Mac: real Cosmos and Qwen, mock sim, real life text. Passes only with valid decisions that weren't forced waits | Passed: `runs/wmloop_demo_real2`, 3 of 3 valid on the first try, video with no cuts. See the repeat warning under "What could change the plan" | |
-| 4 | Lower-RAM mode | 4-bit Qwen conversion (done: 5.4 GB), then 3 ticks with `--low-memory` | Running | |
+| 4 | Lower-RAM mode | 4-bit Qwen conversion, then 3 ticks with `--low-memory` | Passed: `runs/wmloop_demo_lowmem2`. Demo only, not for experiment results | |
 | 5 | PACE access filled in | `CHANGE_ME` values in `scripts/pace/env.sh` and both `.sbatch` files; `WMLOOP_DRY_RUN=1 bash scripts/pace/wmloop_run.sbatch` | Not started | Owner: account, partition, GPU type |
 | 6 | SimWorld on a real server | `sbatch scripts/pace/wmloop_gate.sbatch`; every checklist line passes | Not started | Gate 5, package download |
 | 7 | Cosmos server on a GPU | One real chunk through `/v1/videos/sync`; `runtime.preflight` sees the model | Not started | Gate 5 |
@@ -25,6 +25,8 @@ In order. Each gate should pass before spending on the next. A full run is 60 ti
 ## Measured so far
 
 Passing real run, on the Mac at 448x256, 16 frames per tick, so about 0.7 s of video rather than 30 s: 436 s for 3 ticks, of which Cosmos was 395 s and Qwen 41 s. The machine's peak RAM was 30.9 GB from a 12.0 GB baseline, with Cosmos and Qwen taking turns.
+
+The low-memory run, at 256x256 with 20 steps, took 222 s for 3 ticks. The machine's peak while Qwen ran fell from 30.9 to 20.0 GB, but its peak while Cosmos ran only fell from 29.5 to 28.2 GB, so 8-bit Cosmos barely reduces its peak. These compare one short run each, from baselines of 12 and 13 GB.
 
 ## What could change the plan
 
