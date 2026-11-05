@@ -30,6 +30,17 @@ export WMLOOP_READY_TIMEOUT_S="${WMLOOP_READY_TIMEOUT_S:-900}" # first shader co
 export WMLOOP_TICK_INTERVAL="${WMLOOP_TICK_INTERVAL:-0.1}"
 export WMLOOP_RESOLUTION="${WMLOOP_RESOLUTION:-320x240}"
 
+# Only for wmloop_run.sbatch, the whole loop. A virtualenv with vllm-omni installed, or set the two commands below.
+export WMLOOP_VLLM_VENV="${WMLOOP_VLLM_VENV:-CHANGE_ME_PATH_TO_VLLM_VENV}"
+export WMLOOP_LIFE_DB="${WMLOOP_LIFE_DB:-CHANGE_ME_PATH_TO_LIFE_DB}"
+export WMLOOP_LIFE_RUN="${WMLOOP_LIFE_RUN:-2}"
+export WMLOOP_COSMOS_MODEL="${WMLOOP_COSMOS_MODEL:-nvidia/Cosmos3-Nano}"
+export WMLOOP_QWEN_MODEL="${WMLOOP_QWEN_MODEL:-Qwen/Qwen3-VL-8B-Instruct}"
+# One GPU each. Which card runs what; indexes within what Slurm gave the job.
+export WMLOOP_COSMOS_GPU="${WMLOOP_COSMOS_GPU:-0}"
+export WMLOOP_QWEN_GPU="${WMLOOP_QWEN_GPU:-1}"
+export WMLOOP_MODEL_READY_TIMEOUT_S="${WMLOOP_MODEL_READY_TIMEOUT_S:-1800}"  # the README's --init-timeout for Cosmos
+
 # Stops with a list of what is unfilled. Pass the names of the variables this script needs.
 wmloop_require() {
     local missing=0 name

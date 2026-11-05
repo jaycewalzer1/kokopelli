@@ -27,10 +27,7 @@ BACKENDS = {"mock": {"sim": "mock", "wm": "mock", "agent": "mock", "context": "m
 def make_sim(config):
     if config.sim == "mock":
         return MockSim()
-    try:
-        from runtime.adapters.simworld_bridge import make_simworld
-    except ModuleNotFoundError:
-        sys.exit("The SimWorld bridge isn't on this branch yet. Use --sim mock for now.")
+    from runtime.adapters.simworld_bridge import make_simworld
     return make_simworld(config)
 
 
@@ -127,6 +124,8 @@ def config_from(args):
     if args.low_memory:
         values["wm_preset"], values["wm_quantize"] = "tiny", 8
         values.setdefault("agent_weights", LOW_MEMORY_WEIGHTS)
+    if args.sim_settings:
+        values["sim_settings"] = json.loads(args.sim_settings)
     if values["wm"] == "cosmos_server":
         values["cond_frames"] = 1
         if not values.get("wm_url"):
@@ -157,6 +156,7 @@ def main():
     parser.add_argument("--drift-threshold", type=float)
     parser.add_argument("--low-memory", action="store_true", help="smaller clips, 8-bit Cosmos, 4-bit Qwen; see runtime/README.md")
     parser.add_argument("--agent-weights", help="a folder of Qwen weights to use instead of the full ones")
+    parser.add_argument("--sim-settings", help="SimWorldConfig fields as JSON, such as the port")
     parser.add_argument("--wm-url", help="a vLLM-Omni server running Cosmos, for --wm cosmos_server")
     parser.add_argument("--wm-quantize", type=int, choices=[8], help="load Cosmos in 8 bits")
     args = parser.parse_args()

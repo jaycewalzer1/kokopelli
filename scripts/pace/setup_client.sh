@@ -13,7 +13,7 @@ wmloop_load_modules
 
 python3 -m venv "$WMLOOP_VENV"
 "$WMLOOP_VENV/bin/pip" install --upgrade pip
-"$WMLOOP_VENV/bin/pip" install "unrealcv==1.3.2" "pydantic>=2" numpy pillow
+"$WMLOOP_VENV/bin/pip" install "unrealcv==1.3.2" "pydantic>=2" numpy pillow requests
 "$WMLOOP_VENV/bin/python" -c "import unrealcv, pydantic, numpy, PIL; print('client env ok, unrealcv', unrealcv.__version__)"
 
 echo "Checking the client against the fake server (no GPU needed):"

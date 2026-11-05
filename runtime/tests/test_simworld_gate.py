@@ -134,7 +134,7 @@ class PaceScriptTest(unittest.TestCase):
         return sorted(p for p in PACE.iterdir() if p.suffix in (".sh", ".sbatch"))
 
     def test_scripts_are_valid_bash(self):
-        self.assertEqual(len(self.scripts()), 5)
+        self.assertEqual(len(self.scripts()), 6)
         for script in self.scripts():
             with self.subTest(script=script.name):
                 result = run(["bash", "-n", str(script)])

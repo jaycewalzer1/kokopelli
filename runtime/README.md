@@ -42,6 +42,16 @@ $PY -m runtime.run --ticks 3 --wm cosmos --agent qwen --low-memory --context lif
 
 `--wm cosmos_server --wm-url <vLLM-Omni server>` follows the model README's rollout, which conditions each chunk on one frame. A re-anchor there replaces that one frame, so it pulls harder than replacing the oldest of five, and may show as a jump. This has only been tested against a fake server.
 
+The whole loop on PACE, after filling in `scripts/pace/env.sh` and the `CHANGE_ME` lines, and after `scripts/pace/wmloop_gate.sbatch` has shown SimWorld works. `runtime/SIMWORLD.md` has the first-run steps.
+
+```sh
+mkdir -p logs
+WMLOOP_DRY_RUN=1 bash scripts/pace/wmloop_run.sbatch        # prints every command
+WMLOOP_TICKS=10 sbatch scripts/pace/wmloop_run.sbatch       # the 5 minute run
+```
+
+On SimWorld the null-agent comparison doesn't run yet, because replays drift by an amount only a real run can measure. Asking to do something it can't, like interacting with a person, costs the agent its turn: the action becomes a `wait` and the refusal is in `last_result`.
+
 ## What each file does
 
 | File | What it holds |
@@ -78,5 +88,6 @@ $PY -m runtime.run --ticks 3 --wm cosmos --agent qwen --low-memory --context lif
 ## Tests
 
 ```sh
-.venv/bin/python -m unittest discover -s runtime/tests -t .
+.venv/bin/python -W ignore -m unittest discover -s runtime/tests -t . -p 'test_[!s]*.py'    # everything but SimWorld
+simworld/.venv/bin/python -W ignore -m unittest discover -s runtime/tests -t . -p 'test_simworld*.py'   # those need unrealcv
 ```

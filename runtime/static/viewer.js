@@ -79,8 +79,11 @@ function draw(run) {
   byId("clip-note").textContent = `Last of ${tick.chunks.length} chunks, ${clip.frames} frames, rendered in ${clip.seconds.toFixed(2)}s.`;
 
   const capture = tick.sim.captures[tick.sim.captures.length - 1];
+  // SimWorld saves raw depth as numbers rather than a picture, so that view only exists on the mock.
+  const views = Object.entries(TRUTH).filter(([view]) => !capture[view].endsWith(".npy"));
+  if (!views.some(([view]) => view === page.truth)) page.truth = "rgb";
   byId("truth").src = file(capture[page.truth]);
-  setTabs(byId("truth-tabs"), Object.entries(TRUTH), page.truth, (value) => { page.truth = value; draw(run); });
+  setTabs(byId("truth-tabs"), views, page.truth, (value) => { page.truth = value; draw(run); });
 
   byId("action").textContent = actionText(tick.decision.action);
   byId("diary").textContent = tick.decision.diary || "";
