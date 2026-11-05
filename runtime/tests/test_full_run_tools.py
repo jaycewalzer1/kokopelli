@@ -170,6 +170,28 @@ class PreemptionTest(unittest.TestCase):
         self.assertEqual(config.sim_settings, {"port": 9, "tick_interval_s": 0.1})
 
 
+class TextStartTest(unittest.TestCase):
+    def test_real_video_on_the_mock_sim_starts_from_the_prompt_without_re_anchoring(self):
+        from runtime.mocks.world_model import MockWorldModel
+
+        seen = []
+
+        class Recording(MockWorldModel):
+            def render_chunk(self, request):
+                seen.append([frame.source for frame in request.cond])
+                if not request.cond:  # A real model needs no first frame. The mock does, so give it the sim's.
+                    from runtime.interfaces import CondFrame
+                    request.cond = [CondFrame(request.target.rgb, "wm")]
+                return super().render_chunk(request)
+
+        config = Config(ticks=2, wm="cosmos", wm_preset="demo", drift_control=False, counterfactual=False)
+        run_dir = folder()
+        run(config, run_dir, world_model=Recording())
+        self.assertEqual(seen[0], [])
+        self.assertTrue(all("sim" not in sources for sources in seen))
+        self.assertEqual(replay.summarize(run_dir)["run"]["totals"]["reanchors"], 0)
+
+
 class MindTest(unittest.TestCase):
     def test_the_feeling_loop_wraps_the_agent_and_resumes(self):
         main_checkout = "/Users/jaycewalzer/Desktop/kokopelli"

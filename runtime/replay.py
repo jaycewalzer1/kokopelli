@@ -64,11 +64,11 @@ def summarize(run_dir):
                 memory[stage] = max(memory.get(stage, 0), value)
         for stage, value in tick["timing"]["seconds"].items():
             seconds[stage] = round(seconds.get(stage, 0) + value, 3)
-    differs = [tick["autonomy"]["differs"] for tick in done if "autonomy" in tick]
+    differs = [tick["autonomy"]["differs"] for tick in done if tick.get("autonomy", {}).get("differs") is not None]
     run["totals"] = {"ticks": len(done), "seconds": seconds, "peak_memory_gb": memory, "cost_usd": round(sum(t["timing"]["cost_usd"] for t in done), 4),
                      "reanchors": sum(len(t["reanchors"]) for t in done), "fallbacks": sum("fallback" in t for t in done),
                      "invalid_replies": sum(not o["valid"] for t in done for o in t["outputs"]),
-                     "autonomy": round(sum(differs) / len(differs), 3) if differs else None, "events": len(events)}
+                     "autonomy": round(sum(differs) / len(differs), 3) if differs else None, "autonomy_ticks": len(differs), "events": len(events)}
     return {"run": run, "ticks": done}
 
 

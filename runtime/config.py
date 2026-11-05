@@ -47,6 +47,11 @@ class Config:
     sim_settings: dict = field(default_factory=dict)
 
     @property
+    def text_start(self):
+        """A real world model with the mock sim: the sim's grid drawing is no use as a picture of the world."""
+        return self.sim == "mock" and self.wm != "mock"
+
+    @property
     def wm_settings(self):
         return WM_PRESETS[self.wm_preset]
 

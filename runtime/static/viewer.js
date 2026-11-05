@@ -88,8 +88,9 @@ function draw(run) {
   byId("action").textContent = actionText(tick.decision.action);
   byId("diary").textContent = tick.decision.diary || "";
   const auto = tick.autonomy;
-  const notes = [auto.differs ? `Differs from the tree's default (${auto.default}).` : `Same as the tree's default (${auto.default}).`];
-  if (tick.fallback) notes.push("Two invalid replies, so this tick became a wait.");
+  const notes = [];
+  if (tick.fallback) notes.push("Two invalid replies, so this tick became a wait. It isn't counted as a choice.");
+  else notes.push(auto.differs ? `Differs from the tree's default (${auto.default}).` : `Same as the tree's default (${auto.default}).`);
   notes.push(`Leak check ${tick.agent_input.leak_check}. ${tick.wm_prompt.dropped_future} future items dropped.`);
   byId("decision-note").textContent = notes.join(" ");
   byId("strip").replaceChildren(...tick.agent_input.images.map((path, index) => {

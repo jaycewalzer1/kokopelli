@@ -44,9 +44,9 @@ class Decision(BaseModel):
 
 
 ACTION_ADAPTER = TypeAdapter(Action)
-ACTION_HELP = """Reply with one JSON object and nothing else:
-{"action": <one action>, "diary": "<optional note to yourself>"}
-Actions:
+ACTION_HELP = """Reply with one JSON object and nothing else. For example:
+{"action": {"type": "look_at", "target": "door"}, "diary": "A note to yourself, if you want one."}
+The action is one of:
 {"type": "move_to", "target": "<something you can see>"}
 {"type": "look_at", "target": "<something you can see>"}
 {"type": "interact", "target": "<something you can see>"}
@@ -69,10 +69,32 @@ def _json_object(raw):
         raise InvalidDecision(f"not valid JSON: {error}") from error
 
 
+def _nested(data):
+    """Qwen tends to write {"action": "look_at", "target": "door"}. The intent is clear, so put it in the schema's shape.
+    Everything is still validated after this, so an unknown action or a stray field is rejected as usual."""
+    if not isinstance(data, dict):
+        return data
+    flat = isinstance(data.get("action"), str)
+    if not flat and not ("type" in data and "action" not in data):
+        return data
+    fields = {key: value for key, value in data.items() if key not in ("action", "diary")}
+    nested = {"action": {"type": data["action"], **fields} if flat else fields}
+    return {**nested, "diary": data["diary"]} if "diary" in data else nested
+
+
+def was_reshaped(raw):
+    """Whether a reply needed _nested to fit the schema, so the log can show how often the model gets the shape wrong."""
+    try:
+        data = _json_object(raw)
+    except InvalidDecision:
+        return False
+    return _nested(data) is not data
+
+
 def parse_decision(raw, visible):
     """Return the Decision in raw, or raise InvalidDecision saying what's wrong with it."""
     try:
-        decision = Decision.model_validate(_json_object(raw))
+        decision = Decision.model_validate(_nested(_json_object(raw)))
     except ValidationError as error:
         raise InvalidDecision(str(error.errors()[0]["msg"])) from error
     target = getattr(decision.action, "target", None)

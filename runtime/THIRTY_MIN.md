@@ -8,8 +8,8 @@ In order. Each gate should pass before spending on the next. A full run is 60 ti
 |---|---|---|---|---|
 | 1 | Loop works end to end | `python -m unittest discover -s runtime/tests -t .`, both Pythons | Done on fakes | |
 | 2 | Tools hold up at full scale | 60 ticks in the real shape on mocks, then `runtime.check_video --expect-seconds 1800` | Done on mocks: 240 clips joined into 43,201 frames, exactly 1800.0 s, in about 6.5 minutes. Its speed and storage don't predict a real run | |
-| 3 | Real models in the loop | 3 ticks on the Mac: real Cosmos and Qwen, mock sim, real life text | Queued at priority 10 | Machine's turn |
-| 4 | Lower-RAM mode | 4-bit Qwen conversion, then 3 ticks with `--low-memory` | Queued at priorities 20 and 30 | Gate 3 |
+| 3 | Real models in the loop | 3 ticks on the Mac: real Cosmos and Qwen, mock sim, real life text. Passes only with valid decisions that weren't forced waits | First try failed: real video and timings, but all 6 replies rejected. Parser and prompt fixed, rerun queued | Machine's turn |
+| 4 | Lower-RAM mode | 4-bit Qwen conversion (done: 5.4 GB), then 3 ticks with `--low-memory` | Running | |
 | 5 | PACE access filled in | `CHANGE_ME` values in `scripts/pace/env.sh` and both `.sbatch` files; `WMLOOP_DRY_RUN=1 bash scripts/pace/wmloop_run.sbatch` | Not started | Owner: account, partition, GPU type |
 | 6 | SimWorld on a real server | `sbatch scripts/pace/wmloop_gate.sbatch`; every checklist line passes | Not started | Gate 5, package download |
 | 7 | Cosmos server on a GPU | One real chunk through `/v1/videos/sync`; `runtime.preflight` sees the model | Not started | Gate 5 |
@@ -21,6 +21,10 @@ In order. Each gate should pass before spending on the next. A full run is 60 ti
 | 13 | Null agent on the real sim | Same seed with `--agent null --wm mock`, then `runtime.compare` | Tool done | Gate 9 |
 | 14 | The 60 tick run | `WMLOOP_TICKS=60 WMLOOP_RUN_NAME=full sbatch scripts/pace/wmloop_run.sbatch` | Not started | Gates 9 to 12 |
 | 15 | Result checks out | `runtime.check_video --expect-seconds 1800`, then watch it; replay in `runtime.viewer` | Tool done | Gate 14 |
+
+## Measured so far
+
+First real run, on the Mac at 448x256, 16 frames per tick, so about 0.7 s of video rather than 30 s: 512 s for 3 ticks, of which Cosmos was 457 s and Qwen 55 s with two tries each. The machine's peak RAM was 30.8 GB from a 12.3 GB baseline, with Cosmos and Qwen taking turns.
 
 ## What could change the plan
 

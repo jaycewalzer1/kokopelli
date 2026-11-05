@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from runtime.actions import InvalidDecision, parse_decision
+from runtime.actions import InvalidDecision, parse_decision, was_reshaped
 from runtime.config import Config
 from runtime.mocks.agent import ScriptedAgent
 from runtime.replay import load, summarize
@@ -29,6 +29,22 @@ class SchemaTest(unittest.TestCase):
             with self.assertRaises(InvalidDecision, msg=raw):
                 parse_decision(raw, VISIBLE)
 
+    def test_the_flat_shape_qwen_writes_is_understood(self):
+        decision = parse_decision('{"action": "look_at", "target": "ball", "diary": "hm"}', VISIBLE)
+        self.assertEqual((decision.action.type, decision.action.target, decision.diary), ("look_at", "ball", "hm"))
+        self.assertEqual(parse_decision('{"type": "wait"}', VISIBLE).action.type, "wait")
+
+    def test_a_reshaped_reply_can_be_told_apart(self):
+        self.assertTrue(was_reshaped('{"action": "wait"}'))
+        self.assertFalse(was_reshaped('{"action": {"type": "wait"}}'))
+        self.assertFalse(was_reshaped("just words"))
+
+    def test_the_flat_shape_is_still_validated(self):
+        for raw in ('{"action": "fly"}', '{"action": "look_at"}', '{"action": "look_at", "target": "the moon"}',
+                    '{"action": "wait", "reward": 1}', '{"type": "fly"}'):
+            with self.assertRaises(InvalidDecision, msg=raw):
+                parse_decision(raw, VISIBLE)
+
     def test_target_it_cannot_see_is_rejected(self):
         with self.assertRaisesRegex(InvalidDecision, "can see"):
             parse_decision('{"action": {"type": "move_to", "target": "the moon"}}', VISIBLE)
@@ -51,6 +67,12 @@ class RetryTest(unittest.TestCase):
         self.assertEqual([o["valid"] for o in tick["outputs"]], [False, False])
         self.assertEqual(tick["decision"]["action"], {"type": "wait"})
         self.assertIn("agent_fallback", [event["kind"] for event in load(folder)])
+
+    def test_a_forced_wait_does_not_count_as_autonomy(self):
+        summary = summarize(self.run_with(ScriptedAgent(1, always_invalid_ticks=[1, 2])))
+        self.assertTrue(all(tick["autonomy"]["differs"] is None for tick in summary["ticks"]))
+        self.assertIsNone(summary["run"]["totals"]["autonomy"])
+        self.assertEqual(summary["run"]["totals"]["autonomy_ticks"], 0)
 
 
 if __name__ == "__main__":

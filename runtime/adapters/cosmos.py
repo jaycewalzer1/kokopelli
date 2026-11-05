@@ -16,6 +16,8 @@ class CosmosWorldModel(WorldModel):
         from world_model import _generate  # Imported here so mock runs don't need the runner installed.
 
         settings = (self.size, request.frames, self.steps, request.seed)
+        if not request.cond:
+            return str(_generate("txt2video.py", request.prompt, request.output, *settings, self.extra))
         if len(request.cond) == 1:
             extra = ("--image", str(Path(request.cond[0].path).resolve()), *self.extra)
             return str(_generate("img2video.py", request.prompt, request.output, *settings, extra))

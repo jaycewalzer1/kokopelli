@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 
 from runtime import checkpoint, drift
-from runtime.actions import InvalidDecision, action_dict, parse_decision
+from runtime.actions import InvalidDecision, action_dict, parse_decision, was_reshaped
 from runtime.frames import evenly_spaced, file_hash, read_clip, save_rgb
 from runtime.interfaces import AgentInput, ChunkRequest, CondFrame
 from runtime.leak_guard import LeakError, drop_future
@@ -35,7 +35,8 @@ class Loop:
     def start(self):
         start = self.config.start_time or self.context.start_time()
         first = self.sim.reset(self.config.seed, start, self.out, self.config.capture_offsets)
-        self.cond = [CondFrame(first.captures[0].rgb, "sim")]
+        # Real video can't start from the mock sim's grid drawing, so it starts from the prompt alone.
+        self.cond = [] if self.config.text_start else [CondFrame(first.captures[0].rgb, "sim")]
         self.visible = first.visible
         self.log.append("sim_reset", 0, {"state": first.state, "capture": self._capture_data(first.captures[0]), "visible": first.visible})
 
@@ -88,11 +89,11 @@ class Loop:
         memory["wm"] = self.memory.take()
 
         clock = time.perf_counter()
-        decision = self._decide(tick, now, context, sampled)
+        decision, forced = self._decide(tick, now, context, sampled)
         seconds["agent"] = time.perf_counter() - clock
         memory["agent"] = self.memory.take()
 
-        self._score_autonomy(tick, now, decision)
+        self._score_autonomy(tick, now, decision, forced)
         self.pending = action_dict(decision.action)
 
         clock = time.perf_counter()
@@ -163,32 +164,34 @@ class Loop:
         prompt, _ = self._guarded(tick, now, build_agent_prompt, context, notes, self.visible, len(images), now)
         self.log.append("agent_input", tick, {"prompt": prompt, "hash": text_hash(prompt), "images": [self._rel(p) for p in images],
                                               "image_hashes": [file_hash(p) for p in images], "notes": notes, "leak_check": "passed"})
-        error = None
+        error, forced = None, False
         for attempt in (1, 2):
             clock = time.perf_counter()
             raw = self.agent.decide(AgentInput(prompt, images, self.visible, now, tick, error))
             latency = round(time.perf_counter() - clock, 4)
             try:
                 decision = parse_decision(raw, self.visible)
-                self.log.append("agent_output", tick, {"attempt": attempt, "raw": raw, "valid": True, "seconds": latency})
+                self.log.append("agent_output", tick, {"attempt": attempt, "raw": raw, "valid": True, "reshaped": was_reshaped(raw), "seconds": latency})
                 break
             except InvalidDecision as invalid:
                 error = str(invalid)
                 self.log.append("agent_output", tick, {"attempt": attempt, "raw": raw, "valid": False, "error": error, "seconds": latency})
         else:
             # Two bad replies. The agent loses its turn rather than the run stopping.
-            decision = parse_decision('{"action": {"type": "wait"}}', self.visible)
+            decision, forced = parse_decision('{"action": {"type": "wait"}}', self.visible), True
             self.log.append("agent_fallback", tick, {"action": "wait", "reason": error})
         if decision.diary:
             self.notes.append({"t": now, "text": decision.diary})
-        self.log.append("decision", tick, {"action": action_dict(decision.action), "diary": decision.diary})
-        return decision
+        self.log.append("decision", tick, {"action": action_dict(decision.action), "diary": decision.diary, "forced": forced})
+        return decision, forced
 
-    def _score_autonomy(self, tick, now, decision):
+    def _score_autonomy(self, tick, now, decision, forced):
         default = self.context.default_action(now)
         action = action_dict(decision.action)
         self.log.append("autonomy", tick, {"action": action["type"], "default": default["type"], "default_source": default["source"],
-                                           "differs": action["type"] != default["type"]})
+                                           "forced": forced,
+                                           # A wait forced by bad replies isn't the agent choosing anything, so it doesn't count either way.
+                                           "differs": None if forced else action["type"] != default["type"]})
 
     def _checkpoint(self, tick, step):
         offset = self.log.offset()

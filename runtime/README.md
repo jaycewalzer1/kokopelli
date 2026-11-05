@@ -79,9 +79,9 @@ On SimWorld the null-agent comparison doesn't run yet, because replays drift by 
 ## What the numbers mean, and what they don't
 
 - **Drift on mocks proves the mechanism, not the method.** The mock world model is built to wander and to respond to re-anchoring, so the improvement shows that the plumbing works. Whether replacing one old frame steers real Cosmos is still untested.
-- **Drift with mock sim plus real Cosmos means little.** A grid drawing and a generated video won't correlate, so the score will sit high. It needs SimWorld renders to mean anything.
+- **Mock sim plus real Cosmos has no re-anchoring.** Its first run showed the mock's grid ghosting into the video, so this pairing now starts from the prompt alone with drift control off. Scores are logged but mean little: they need SimWorld renders.
 - **The score is pixels only.** Depth and segmentation agreement and key-object presence are logged as `null`, because a generated frame has neither map. They need an estimator model.
-- **"Differs from tree" is a stand-in.** The tree has no default action, so it uses the tree's own choice in the slot, mapped to the nearest action (`VERB_TO_ACTION` in `adapters/life_db.py`), or `wait` if it made none. On the mock context the defaults are a fixed script, so the number there carries no meaning.
+- **"Differs from tree" is a stand-in.** The tree has no default action, so it uses the tree's own choice in the slot, mapped to the nearest action (`VERB_TO_ACTION` in `adapters/life_db.py`), or `wait` if it made none. On the mock context the defaults are a fixed script, so the number there carries no meaning. Ticks where bad replies forced a `wait` aren't counted.
 - **The null agent comparison only runs on the mock sim for now.**
 - **Cost reads $0** unless `gpu_dollars_per_hour` is set, since local compute has no bill. Seconds per stage are real.
 
