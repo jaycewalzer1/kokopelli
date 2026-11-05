@@ -235,11 +235,13 @@ def homeostatic():
     runs = []
     for run in sorted(folder.glob("*/"), key=lambda p: p.stat().st_mtime):
         validation = read_jsonl(run / "validation.jsonl")
-        scored = [row["mean_drive"] for row in validation if "mean_drive" in row]
+        valid = [row for row in validation if "mean_drive" in row and row.get("invalid", 0) < 0.05]
+        scored = [row["mean_drive"] for row in valid]
+        invalid_only = bool(validation) and not valid
         progress_file = run / "progress.json"
         progress = json.loads(progress_file.read_text()) if progress_file.exists() else {}
         runs.append({"name": run.name, "updates": progress.get("iteration"), "best": min(scored) if scored else None,
-                     "finished": (run / "finished").exists(), "at": run.stat().st_mtime})
+                     "invalid_only": invalid_only, "finished": (run / "finished").exists(), "at": run.stat().st_mtime})
     baselines_file = folder / "baselines-validation.json"
     baselines = json.loads(baselines_file.read_text()) if baselines_file.exists() else {}
     return {"runs": runs, "baselines": {name: row.get("mean_drive") for name, row in baselines.items() if isinstance(row, dict)}}
@@ -437,7 +439,7 @@ def report():
 
     lines += ["", "## Homeostatic training (mean drive, lower is better)", ""]
     lines += [f"Validation baselines: {', '.join(f'{k} {v:.1f}' for k, v in home['baselines'].items() if v is not None) or 'none'}", ""]
-    lines += table(["Run", "Updates", "Best validation", "Finished", "Last write"], [[r["name"], r["updates"] if r["updates"] is not None else "", f"{r['best']:.1f}" if r["best"] is not None else "not validated", "yes" if r["finished"] else "no", age(r["at"])] for r in home["runs"]])
+    lines += table(["Run", "Updates", "Best validation", "Finished", "Last write"], [[r["name"], r["updates"] if r["updates"] is not None else "", f"{r['best']:.1f}" if r["best"] is not None else "all replies invalid" if r["invalid_only"] else "not validated", "yes" if r["finished"] else "no", age(r["at"])] for r in home["runs"]])
 
     lines += ["", "## GPU queue history", ""]
     if jobs:
