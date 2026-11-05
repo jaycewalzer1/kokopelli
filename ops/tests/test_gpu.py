@@ -17,7 +17,7 @@ class GpuQueue(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.env = {**os.environ, "KOKOPELLI_ROOT": str(self.root), "KOKOPELLI_CODE": str(CODE),
                     "KOKOPELLI_PACE_CONFIG": str(self.root / "no_pace.json"),  # never a real PACE account in a test
-                    "KOKOPELLI_GPU_IGNORE_OUTSIDE": "1", "KOKOPELLI_GPU_POLL": "0.1"}
+                    "KOKOPELLI_GPU_IGNORE_OUTSIDE": "1", "KOKOPELLI_SUMMARIZE": "0", "KOKOPELLI_GPU_POLL": "0.1"}
 
     def tearDown(self):
         self.tmp.cleanup()

@@ -107,6 +107,18 @@ def write_ticket(path, ticket):
     os.replace(temp, path)
 
 
+def summarize_later(ticket_id):
+    """Start ops/summarize.py for a finished job in its own process, so the job's exit isn't held up by it."""
+    if os.environ.get("KOKOPELLI_SUMMARIZE", "1") == "0":
+        return
+    try:
+        with (LOGS / "summaries.log").open("a") as log:
+            subprocess.Popen([sys.executable, str(Path(__file__).with_name("summarize.py")), "--id", ticket_id],
+                             stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
+    except OSError:
+        pass  # A missing summary shows as one on the GPU tab; it never fails the job.
+
+
 def log_event(**fields):
     with LEDGER.open("a") as ledger:
         ledger.write(json.dumps({"at": time.time(), **fields}) + "\n")
@@ -163,6 +175,7 @@ def run_on_pace(ticket, path, args, queued_at):
     if code == 2 and state in (None, "COPYING"):
         print(f"FAILED: {args.name} couldn't be submitted to PACE. See {log_path}", file=sys.stderr, flush=True)
     print(f"{args.name} finished on PACE with exit code {code}, log at {log_path}", flush=True)
+    summarize_later(ticket["id"])
     return code
 
 
@@ -222,6 +235,7 @@ def run(args):
         log_event(event="finished", id=ticket_id, name=args.name, exit_code=code, timed_out=timed_out,
                   seconds=time.time() - started, peak_rss_gb=round(peak_gb, 2), log=str(log_path), where="local")
         print(f"{args.name} finished with exit code {code}, log at {log_path}", flush=True)
+        summarize_later(ticket_id)
         return code
     finally:
         path.unlink(missing_ok=True)
