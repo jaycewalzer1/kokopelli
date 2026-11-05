@@ -1,0 +1,43 @@
+# Published human results to read our numbers against. Reports show these next to each arm.
+# Humans were paid or asked in a lab, so these give a sense of scale. They aren't a target: we don't optimize for them.
+metric: safe_choices
+primary: hypothetical_unordered_1x  # The closest match: a model isn't paid, and sees one menu with no earlier rounds.
+norms:
+  - id: hypothetical_unordered_1x
+    label: "Humans, low stakes, hypothetical, one menu"
+    mean: 5.6
+    n: 36
+    source: "Holt & Laury (2005), AER 95(3), 902-904, Table 1, row 7"
+    verified: true
+  - id: real_unordered_1x
+    label: "Humans, low stakes, real pay, one menu"
+    mean: 5.7
+    n: 48
+    source: "Holt & Laury (2005), AER 95(3), 902-904, Table 1, row 6"
+    verified: true
+  - id: real_ordered_1x_2002
+    label: "Humans, low stakes, real pay, Holt & Laury 2002"
+    mean: 5.2
+    source: "Holt & Laury (2005), Table 1, row 1, restating the 2002 result (208 subjects across all treatments)"
+    verified: true
+  - id: meta_consistent
+    label: "Meta-analysis, consistent subjects only"
+    mean: 5.62
+    sd: 1.89
+    n: 5807
+    source: "Filippin & Crosetto (2016), Management Science, Table 8"
+    verified: true
+rates:
+  - id: multiple_or_inverse_switching
+    label: "Humans who switched more than once or backwards"
+    percent: 10.3
+    n: 6825
+    source: "Filippin & Crosetto (2016), Table 7"
+    verified: true
+  - id: any_inconsistency
+    label: "Humans inconsistent in any way (includes dominated choices)"
+    percent: 15.8
+    source: "Filippin & Crosetto (2016), Table 7"
+    verified: true
+reference_points:
+  risk_neutral_safe_choices: 4  # Derived from the payoffs and tested. Expected value favors B from row 5 on.

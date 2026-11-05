@@ -1,0 +1,8 @@
+name: rendered_lived
+model: Qwen/Qwen3-VL-8B-Instruct
+adapter: out/adapters/rendered_lived/seed{seed}
+seed: 0
+later: true
+training_text:
+  - out/adapters/rendered_lived/seed{seed}/training_text/*
+notes: Later arm. The same as lived, but the run used world-model video. Not part of the first pre-registered contrasts.

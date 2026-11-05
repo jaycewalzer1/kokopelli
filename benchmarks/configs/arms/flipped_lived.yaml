@@ -1,0 +1,7 @@
+name: flipped_lived
+model: Qwen/Qwen3-VL-8B-Instruct
+adapter: out/adapters/flipped_lived/seed{seed}
+seed: 0
+training_text:
+  - out/adapters/flipped_lived/seed{seed}/training_text/*
+notes: LoRA from a lived run where the costly outcome is common. The adapter doesn't exist yet.

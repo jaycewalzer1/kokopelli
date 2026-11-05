@@ -1,0 +1,7 @@
+name: lived
+model: Qwen/Qwen3-VL-8B-Instruct
+adapter: out/adapters/lived/seed{seed}
+seed: 0
+training_text:
+  - out/adapters/lived/seed{seed}/training_text/*
+notes: LoRA from a lived run in the shortcut world. The adapter doesn't exist yet, and these paths are proposals.

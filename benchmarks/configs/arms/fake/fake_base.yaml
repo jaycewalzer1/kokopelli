@@ -1,0 +1,7 @@
+name: fake_base
+model: mock
+adapter: null
+seed: 0
+mock:
+  malformed_rate: 0.02
+notes: Test only. The mock's untilted behavior, standing in for the base arm.
