@@ -51,7 +51,8 @@ export WMLOOP_GPU_INDEX="${WMLOOP_SIM_GPU:-2}"
 COSMOS_SERVER=("$WMLOOP_VLLM_VENV/bin/vllm" serve "$WMLOOP_COSMOS_MODEL" --omni --host 127.0.0.1 --port "$COSMOS_PORT" --init-timeout "$WMLOOP_MODEL_READY_TIMEOUT_S")
 QWEN_SERVER=("$WMLOOP_VLLM_VENV/bin/vllm" serve "$WMLOOP_QWEN_MODEL" --host 127.0.0.1 --port "$QWEN_PORT")
 loop_command() {
-    SIM_JSON="{\"port\": $WMLOOP_PORT, \"tick_interval_s\": $WMLOOP_TICK_INTERVAL}"
+    # Same shape as the video. A 4:3 sim frame would be stretched when a re-anchor hands it to Cosmos.
+    SIM_JSON="{\"port\": $WMLOOP_PORT, \"tick_interval_s\": $WMLOOP_TICK_INTERVAL, \"resolution\": [${WMLOOP_RUN_RESOLUTION:-832, 480}]}"
     LOOP=("$WMLOOP_VENV/bin/python" -u -m runtime.run --backend real --ticks "$TICKS" --seed "$SEED" --wm-preset "$PRESET"
           --sim-settings "$SIM_JSON" --wm-url "http://127.0.0.1:$COSMOS_PORT" --agent-url "http://127.0.0.1:$QWEN_PORT"
           --life-db "$WMLOOP_LIFE_DB" --life-run "$WMLOOP_LIFE_RUN" --out "$RUN_OUT/loop")
