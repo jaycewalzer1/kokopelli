@@ -46,7 +46,8 @@ section { margin-top: var(--space-12); }
 table { border-collapse: collapse; width: 100%; font: 400 13px/20px var(--font-mono); }
 th { text-align: left; font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); }
 th, td { padding: var(--space-2); border-bottom: 1px solid var(--hairline); vertical-align: top; white-space: nowrap; }
-td.wrap { white-space: normal; min-width: 168px; }
+td.wrap { white-space: normal; }
+td.wrap > .cell { display: block; min-width: 168px; }  /* Tables ignore min-width on a cell, but respect it on a block inside. */
 .sub { display: block; color: var(--ink-muted); }
 .mark { display: inline-block; width: 8px; height: 8px; margin-right: var(--space-2); border: 1px solid var(--ink-muted); }
 .mark.pass { background: var(--sage); border-color: var(--sage); }
@@ -230,7 +231,7 @@ def _chart(arms, norm_lines, use_accents):
 
 def _status_cell(status):
     mark = "pass" if status.startswith("pass") else ""
-    return f'<td class="wrap"><span class="mark {mark}"></span>{_e(status)}</td>'
+    return f'<td class="wrap"><span class="cell"><span class="mark {mark}"></span>{_e(status)}</span></td>'
 
 
 def to_html(data):
@@ -267,7 +268,7 @@ def to_html(data):
         parts.append(_table(["arm", "n", "mean", "sd", "95% CI"], [[r.arm, r.n, fmt(r["mean"], 3), fmt(r.sd), f"[{fmt(r.ci_low, 3)}, {fmt(r.ci_high, 3)}]"] for _, r in arms.iterrows()]))
         if lines:
             parts.append('<div class="card"><span class="eyebrow">Human norms, for scale</span>' + _table(["group", "mean", "sd", "n", "source"], [
-                [f"<td class=\"wrap\">{_e(l['label'])}</td>", l["value"], l["sd"] or "-", l["n"] or "-", f"<td class=\"wrap\">{_e(l['source'])}</td>"] for l in lines]) + '</div>')
+                [f"<td class=\"wrap\"><span class=\"cell\">{_e(l['label'])}</span></td>", l["value"], l["sd"] or "-", l["n"] or "-", f"<td class=\"wrap\"><span class=\"cell\">{_e(l['source'])}</span></td>"] for l in lines]) + '</div>')
         templates = data["templates"][data["templates"].instrument == name]
         if templates.template.nunique() > 1:
             ordered = _sorted_arms(templates).sort_values("template", kind="stable")
