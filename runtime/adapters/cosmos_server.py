@@ -6,6 +6,7 @@ five, so the next chunk starts directly from the sim's picture. Expect a stronge
 """
 import json
 import mimetypes
+import time
 from pathlib import Path
 
 from runtime.interfaces import WorldModel
@@ -15,6 +16,8 @@ GUIDANCE = 6.0
 FLOW_SHIFT = 10.0
 MAX_PROMPT_TOKENS = 4096
 TIMEOUT_SECONDS = 3600
+ATTEMPTS = 3
+RETRY_WAIT_SECONDS = 30
 
 
 class CosmosServerWorldModel(WorldModel):
@@ -36,10 +39,20 @@ class CosmosServerWorldModel(WorldModel):
         if len(request.cond) != 1:
             raise ValueError(f"this backend conditions on one frame, got {len(request.cond)}; use cond_frames=1")
         path = Path(request.cond[0].path)
-        with path.open("rb") as image:
-            files = {"input_reference": (path.name, image, mimetypes.guess_type(path.name)[0] or "image/png")}
-            response = requests.post(f"{self.url}/v1/videos/sync", data=self.form(request), files=files,
-                                     headers={"Accept": "video/mp4"}, timeout=TIMEOUT_SECONDS)
+        response = None
+        # A 30 minute run makes 240 of these, so one dropped connection shouldn't cost a restart. A 4xx won't fix itself.
+        for attempt in range(ATTEMPTS):
+            try:
+                with path.open("rb") as image:
+                    files = {"input_reference": (path.name, image, mimetypes.guess_type(path.name)[0] or "image/png")}
+                    response = requests.post(f"{self.url}/v1/videos/sync", data=self.form(request), files=files,
+                                             headers={"Accept": "video/mp4"}, timeout=TIMEOUT_SECONDS)
+                if response.status_code < 500:
+                    break
+            except requests.ConnectionError:
+                if attempt == ATTEMPTS - 1:
+                    raise
+            time.sleep(RETRY_WAIT_SECONDS)
         response.raise_for_status()
         output = Path(request.output)
         output.parent.mkdir(parents=True, exist_ok=True)

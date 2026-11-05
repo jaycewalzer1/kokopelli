@@ -1,4 +1,11 @@
 """The wire format, the gate script, and the PACE scripts, as far as they can run off a cluster."""
+import unittest
+
+try:
+    import unrealcv  # noqa: F401
+except ImportError:
+    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv")
+
 import os
 import re
 import socket

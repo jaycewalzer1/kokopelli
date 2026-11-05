@@ -1,4 +1,11 @@
 """The adapter against the fake server: lifecycle, stepping, state, renders, actions, weather, timing."""
+import unittest
+
+try:
+    import unrealcv  # noqa: F401
+except ImportError:
+    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv")
+
 import hashlib
 import json
 import math

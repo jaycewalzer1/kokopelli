@@ -1,4 +1,11 @@
 """Checkpoint and restore, and what happens when the server misbehaves. All failures must end."""
+import unittest
+
+try:
+    import unrealcv  # noqa: F401
+except ImportError:
+    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv")
+
 import tempfile
 import time
 import unittest

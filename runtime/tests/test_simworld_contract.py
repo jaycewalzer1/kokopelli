@@ -4,6 +4,13 @@ Runs the real simworld UnrealCV class against the fake server and compares every
 sends with our builder in simworld_commands.py. If either side changes, this fails. Also
 checks the traps in unrealcv.py that made us bypass it, so that reason stays true.
 """
+import unittest
+
+try:
+    import unrealcv  # noqa: F401
+except ImportError:
+    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv")
+
 import sys
 import unittest
 from pathlib import Path

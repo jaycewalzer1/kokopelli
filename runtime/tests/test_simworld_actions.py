@@ -1,6 +1,13 @@
 """Each action maps to the right commands and behaves sensibly across steps."""
 import unittest
 
+try:
+    import unrealcv  # noqa: F401
+except ImportError:
+    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv")
+
+import unittest
+
 from runtime.adapters.simworld import AGENT_ACTOR, NpcSpec, SpawnSpec
 from runtime.adapters import simworld_commands as c
 from runtime.adapters.simworld_math import distance_2d_cm, heading_to

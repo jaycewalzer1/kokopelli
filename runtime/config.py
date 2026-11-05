@@ -27,6 +27,7 @@ class Config:
     agent_url: str | None = None
     agent_model: str = "Qwen/Qwen3-VL-8B-Instruct"
     agent_weights: str | None = None
+    mind: bool = False
     wm_quantize: int = 0
     wm_url: str | None = None
 

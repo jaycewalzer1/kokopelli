@@ -16,7 +16,9 @@
 #SBATCH --mem=96G
 #SBATCH --time=12:00:00
 #SBATCH --output=logs/wmloop_run_%j.out
-# Asks for 3 GPUs' worth of work on one node. --mem and --time are guesses until a run measures them.
+#SBATCH --requeue
+#SBATCH --open-mode=append
+# Needs 3 GPUs on one node, one each for SimWorld, Cosmos and Qwen. --mem and --time are guesses until a run measures them.
 set -uo pipefail
 
 WMLOOP_REPO="${WMLOOP_REPO:-${SLURM_SUBMIT_DIR:-$(pwd)}}"
@@ -40,7 +42,8 @@ PRESET="${WMLOOP_WM_PRESET:-gpu_full}"
 # Per job and node, so a second job can't collide on the same ports.
 COSMOS_PORT=$((20000 + ${SLURM_JOB_ID:-0} % 10000))
 QWEN_PORT=$((COSMOS_PORT + 10000))
-RUN_OUT="$WMLOOP_OUT/run_$JOB"
+# Name a run to continue it from a later job. A requeued job keeps its id, so it finds its own folder either way.
+RUN_OUT="$WMLOOP_OUT/run_${WMLOOP_RUN_NAME:-$JOB}"
 export WMLOOP_OUT="$RUN_OUT"
 # Cosmos and Qwen take GPUs 0 and 1 by default (env.sh), so SimWorld gets the third.
 export WMLOOP_GPU_INDEX="${WMLOOP_SIM_GPU:-2}"
@@ -52,6 +55,15 @@ loop_command() {
     LOOP=("$WMLOOP_VENV/bin/python" -u -m runtime.run --backend real --ticks "$TICKS" --seed "$SEED" --wm-preset "$PRESET"
           --sim-settings "$SIM_JSON" --wm-url "http://127.0.0.1:$COSMOS_PORT" --agent-url "http://127.0.0.1:$QWEN_PORT"
           --life-db "$WMLOOP_LIFE_DB" --life-run "$WMLOOP_LIFE_RUN" --out "$RUN_OUT/loop")
+    # A checkpoint means this run started before, and was preempted or crashed. Each tick checkpoints, so at most one is lost.
+    if [ -f "$RUN_OUT/loop/checkpoint.json" ]; then
+        LOOP=("$WMLOOP_VENV/bin/python" -u -m runtime.run --resume "$RUN_OUT/loop" --ticks "$TICKS" --sim-settings "$SIM_JSON"
+              --wm-url "http://127.0.0.1:$COSMOS_PORT" --agent-url "http://127.0.0.1:$QWEN_PORT")
+    fi
+    PREFLIGHT=("$WMLOOP_VENV/bin/python" -m runtime.preflight --backend real --ticks "$TICKS" --wm-preset "$PRESET" --out "$RUN_OUT/loop"
+               --life-db "$WMLOOP_LIFE_DB" --life-run "$WMLOOP_LIFE_RUN" --wm-url "http://127.0.0.1:$COSMOS_PORT"
+               --agent-url "http://127.0.0.1:$QWEN_PORT" --sim-port "$WMLOOP_PORT"
+               --cosmos-model "$WMLOOP_COSMOS_MODEL" --qwen-model "$WMLOOP_QWEN_MODEL")
 }
 
 if [ "${WMLOOP_DRY_RUN:-0}" = "1" ]; then
@@ -61,6 +73,7 @@ if [ "${WMLOOP_DRY_RUN:-0}" = "1" ]; then
     echo "DRY RUN: CUDA_VISIBLE_DEVICES=$WMLOOP_COSMOS_GPU ${COSMOS_SERVER[*]}"
     echo "DRY RUN: CUDA_VISIBLE_DEVICES=$WMLOOP_QWEN_GPU ${QWEN_SERVER[*]}"
     echo "DRY RUN: would wait up to ${WMLOOP_MODEL_READY_TIMEOUT_S}s for http://127.0.0.1:$COSMOS_PORT and :$QWEN_PORT/v1/models"
+    echo "DRY RUN: cd $WMLOOP_REPO && ${PREFLIGHT[*]}"
     echo "DRY RUN: cd $WMLOOP_REPO && ${LOOP[*]}"
     exit 0
 fi
@@ -103,8 +116,17 @@ wait_for_model "http://127.0.0.1:$QWEN_PORT" qwen "$QWEN_PID" || exit 1
 wmloop_start_server || { echo "ERROR: SimWorld never became ready. Send back $RUN_OUT" >&2; exit 1; }
 
 loop_command
-cd "$WMLOOP_REPO" && "${LOOP[@]}" 2>&1 | tee "$RUN_OUT/loop.txt"
+cd "$WMLOOP_REPO" || exit 2
+"${PREFLIGHT[@]}" 2>&1 | tee -a "$RUN_OUT/preflight.txt"
+[ "${PIPESTATUS[0]}" -eq 0 ] || { echo "ERROR: preflight failed, nothing was run. See above." >&2; exit 1; }
+# Preflight's check of SimWorld used its one client slot, so give it a moment to free up.
+sleep 5
+"${LOOP[@]}" 2>&1 | tee -a "$RUN_OUT/loop.txt"
 CODE=${PIPESTATUS[0]}
+if [ "$CODE" -eq 0 ]; then
+    "$WMLOOP_VENV/bin/python" -m runtime.check_video "$RUN_OUT/loop" --expect-seconds "$((TICKS * 30))" 2>&1 | tee "$RUN_OUT/video_check.txt"
+    "$WMLOOP_VENV/bin/python" -m runtime.plan "$RUN_OUT/loop" 2>&1 | tee "$RUN_OUT/plan.txt"
+fi
 
 nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv 2>&1 | tee -a "$RUN_OUT/environment.txt"
 echo "loop exit=$CODE. Copy $RUN_OUT/loop back and view it with: python -m runtime.viewer <that folder>"
