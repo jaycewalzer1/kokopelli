@@ -8,6 +8,13 @@ Cosmos and Qwen each need about 18 GB, so two model jobs at once can run a 36 GB
 `run` blocks until the job has had its turn and finished, then exits with the job's own code, so a
 caller running it in the background is told when the job is done. Lower priority numbers go first;
 equal priorities go in arrival order. Standard library only.
+
+A job can instead run on PACE, if it gives a command that works there:
+    python3 ops/gpu.py run --name x --pace-command "python -m thing --cuda" --pull out/x [--where pace] -- MAC CMD
+    python3 ops/gpu.py where --name x --to pace     # move a waiting job to PACE, or back
+    python3 ops/gpu.py default --to pace            # where new jobs with a PACE command go
+PACE jobs don't take a turn on this Mac, so they don't hold up the local line. cloud/pace.py does the work.
+A ticket with no `where` is local, so tickets written before this existed behave as they always did.
 """
 import argparse
 import fcntl
@@ -22,11 +29,13 @@ import time
 from pathlib import Path
 
 ROOT = Path(os.environ.get("KOKOPELLI_ROOT", Path.home() / "Desktop/kokopelli"))
+CODE = Path(os.environ.get("KOKOPELLI_CODE", Path.home() / "Desktop/kokopelli"))  # where cloud/ lives, which tests don't move
 STATE = ROOT / "out/ops"
 QUEUE = STATE / "queue"
 LEDGER = STATE / "gpu_ledger.jsonl"
 LOCK = STATE / "gpu.lock"
 LOGS = STATE / "job_logs"
+DEFAULT_WHERE = STATE / "where.json"
 POLL_SECONDS = float(os.environ.get("KOKOPELLI_GPU_POLL", 15))
 
 # Model jobs started without this wrapper still count as using the GPU.
@@ -75,6 +84,24 @@ def tickets():
     return sorted(found, key=lambda t: (t["priority"], t["queued_at"]))
 
 
+def where(ticket):
+    return ticket.get("where") or "local"
+
+
+def default_where():
+    try:
+        return json.loads(DEFAULT_WHERE.read_text()).get("default", "local")
+    except (OSError, ValueError):
+        return "local"
+
+
+def write_ticket(path, ticket):
+    # Write then rename, so a reader never sees half a ticket.
+    temp = path.with_suffix(".tmp")
+    temp.write_text(json.dumps(ticket))
+    os.replace(temp, path)
+
+
 def log_event(**fields):
     with LEDGER.open("a") as ledger:
         ledger.write(json.dumps({"at": time.time(), **fields}) + "\n")
@@ -86,35 +113,81 @@ def wait_for_turn(ticket, path, deadline):
             return "gave_up"
         with LOCK.open("w") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            line = tickets()
+            try:
+                ticket.update(json.loads(path.read_text()))  # `where` may have flipped this ticket to PACE while it waited
+            except (OSError, ValueError):
+                pass
+            if where(ticket) == "pace":
+                ticket.setdefault("pace", {})  # marks it as gone, so `where` can't flip it back once it's on its way
+                write_ticket(path, ticket)
+                return "pace"
+            line = [t for t in tickets() if where(t) == "local"]
             first = line and line[0]["id"] == ticket["id"]
             nobody_running = not any(t.get("running") for t in line)
             if first and nobody_running and not outside_model_jobs():
                 ticket["running"] = True
-                path.write_text(json.dumps(ticket))
+                write_ticket(path, ticket)
                 return "go"
         time.sleep(POLL_SECONDS)
+
+
+def run_on_pace(ticket, path, args, queued_at):
+    """The job's turn, on PACE. It fails loudly rather than falling back to the Mac, because the user chose PACE for it."""
+    sys.path.insert(0, str(CODE))
+    from cloud import pace
+
+    started = time.time()
+    log_path = LOGS / f"{time.strftime('%Y%m%d-%H%M%S')}-{args.name}.log"
+    log_event(event="started", id=ticket["id"], name=args.name, waited=started - queued_at, log=str(log_path), where="pace")
+    print(f"{args.name} sent to PACE, log at {log_path}", flush=True)
+
+    def on_update(fields):
+        with LOCK.open("w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            ticket["pace"] = {**ticket.get("pace", {}), **fields, "at": time.time()}
+            write_ticket(path, ticket)
+
+    try:
+        code = pace.run_job({**ticket, "max_hours": args.max_hours}, log_path, on_update)
+    except Exception as error:  # Anything unexpected still has to end in the ledger, not vanish.
+        log_path.open("a").write(f"[pace] {type(error).__name__}: {error}\n")
+        code = 2
+    state = ticket.get("pace", {}).get("state")
+    log_event(event="finished", id=ticket["id"], name=args.name, exit_code=code, timed_out=state == "TIMEOUT",
+              seconds=time.time() - started, log=str(log_path), where="pace", slurm_job=ticket.get("pace", {}).get("job"), slurm_state=state)
+    if code == 2 and state in (None, "COPYING"):
+        print(f"FAILED: {args.name} couldn't be submitted to PACE. See {log_path}", file=sys.stderr, flush=True)
+    print(f"{args.name} finished on PACE with exit code {code}, log at {log_path}", flush=True)
+    return code
 
 
 def run(args):
     for folder in (QUEUE, LOGS):
         folder.mkdir(parents=True, exist_ok=True)
+    chosen = args.where or (default_where() if args.pace_command else "local")
+    if chosen == "pace" and not args.pace_command:
+        print(f"{args.name} can't go to PACE: it has no --pace-command, and the Mac command uses MLX.", file=sys.stderr)
+        return 2
     now = time.time()
     ticket_id = f"{int(now * 1000)}-{os.getpid()}"
     ticket = {"id": ticket_id, "name": args.name, "priority": args.priority, "pid": os.getpid(),
-              "queued_at": now, "cwd": args.cwd, "command": args.command, "running": False}
+              "queued_at": now, "cwd": args.cwd, "command": args.command, "running": False,
+              "where": chosen, "pace_command": args.pace_command, "pull": args.pull}
     path = QUEUE / f"{ticket_id}.json"
-    path.write_text(json.dumps(ticket))
-    log_event(event="queued", id=ticket_id, name=args.name, priority=args.priority, command=args.command)
+    write_ticket(path, ticket)
+    log_event(event="queued", id=ticket_id, name=args.name, priority=args.priority, command=args.command, cwd=args.cwd, where=chosen)
     deadline = now + args.give_up_hours * 3600 if args.give_up_hours else None
     try:
-        if wait_for_turn(ticket, path, deadline) == "gave_up":
+        turn = wait_for_turn(ticket, path, deadline)
+        if turn == "gave_up":
             log_event(event="gave_up", id=ticket_id, name=args.name, waited=time.time() - now)
             print(f"GAVE UP: {args.name} got no turn in {args.give_up_hours} hours", file=sys.stderr)
             return 3
+        if turn == "pace":
+            return run_on_pace(ticket, path, args, now)
         started = time.time()
         log_path = LOGS / f"{time.strftime('%Y%m%d-%H%M%S')}-{args.name}.log"
-        log_event(event="started", id=ticket_id, name=args.name, waited=started - now, log=str(log_path))
+        log_event(event="started", id=ticket_id, name=args.name, waited=started - now, log=str(log_path), where="local")
         print(f"{args.name} started, log at {log_path}", flush=True)
         with log_path.open("w") as log:
             process = subprocess.Popen(["caffeinate", "-is", *args.command], cwd=args.cwd or None,
@@ -133,7 +206,7 @@ def run(args):
                 code = 124
         peak_gb = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss / 2**30
         log_event(event="finished", id=ticket_id, name=args.name, exit_code=code, timed_out=timed_out,
-                  seconds=time.time() - started, peak_rss_gb=round(peak_gb, 2), log=str(log_path))
+                  seconds=time.time() - started, peak_rss_gb=round(peak_gb, 2), log=str(log_path), where="local")
         print(f"{args.name} finished with exit code {code}, log at {log_path}", flush=True)
         return code
     finally:
@@ -143,6 +216,8 @@ def run(args):
 def status(_args):
     for ticket in tickets():
         state = "RUNNING" if ticket.get("running") else "waiting"
+        if where(ticket) == "pace":
+            state = f"PACE {ticket.get('pace', {}).get('state', 'waiting').lower()}"
         waited = (time.time() - ticket["queued_at"]) / 60
         print(f"{state:8} p{ticket['priority']:<3} {ticket['name']:28} {waited:6.1f} min  pid {ticket['pid']}")
     for pid, command in outside_model_jobs():
@@ -157,10 +232,36 @@ def move(args):
         matches = [t for t in tickets() if t["name"] == args.name and not t.get("running")]
         for ticket in matches:
             ticket["priority"] = args.priority
-            (QUEUE / f"{ticket['id']}.json").write_text(json.dumps(ticket))
+            write_ticket(QUEUE / f"{ticket['id']}.json", ticket)
             log_event(event="moved", id=ticket["id"], name=args.name, priority=args.priority)
     print(f"moved {len(matches)} waiting job(s)")
     return 0 if matches else 1
+
+
+def flip(args):
+    """Send a waiting job to PACE or back to the Mac. Only before it starts: a running job is never moved."""
+    with LOCK.open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        waiting = [t for t in tickets() if (t["name"] == args.name or t["id"] == args.name) and not t.get("running") and "pace" not in t]
+        refused = [t for t in waiting if args.to == "pace" and not t.get("pace_command")]
+        for ticket in waiting:
+            if ticket in refused:
+                continue
+            ticket["where"] = args.to
+            write_ticket(QUEUE / f"{ticket['id']}.json", ticket)
+            log_event(event="where", id=ticket["id"], name=ticket["name"], where=args.to)
+    moved = len(waiting) - len(refused)
+    if refused:
+        print(f"{len(refused)} job(s) have no --pace-command, so they can only run on this Mac", file=sys.stderr)
+    print(f"sent {moved} waiting job(s) to {args.to}")
+    return 0 if moved else 1
+
+
+def set_default(args):
+    DEFAULT_WHERE.write_text(json.dumps({"default": args.to, "at": time.time()}))
+    log_event(event="default_where", where=args.to)
+    print(f"new jobs with a PACE command now go to {args.to}")
+    return 0
 
 
 def main():
@@ -172,6 +273,9 @@ def main():
     run_parser.add_argument("--cwd")
     run_parser.add_argument("--give-up-hours", type=float, default=0)
     run_parser.add_argument("--max-hours", type=float, default=0, help="stop the job after this long, so a hang can't hold the GPU all night")
+    run_parser.add_argument("--where", choices=["local", "pace"], help="where to run it; by default, the panel's choice for jobs that have a PACE command")
+    run_parser.add_argument("--pace-command", help="the shell command to run on PACE, from the copied code folder")
+    run_parser.add_argument("--pull", action="append", default=[], help="a path, relative to --cwd, to copy back from PACE afterwards")
     run_parser.add_argument("command", nargs="+")
     run_parser.set_defaults(handler=run)
     commands.add_parser("status").set_defaults(handler=status)
@@ -179,6 +283,13 @@ def main():
     move_parser.add_argument("--name", required=True)
     move_parser.add_argument("--priority", type=int, required=True)
     move_parser.set_defaults(handler=move)
+    where_parser = commands.add_parser("where")
+    where_parser.add_argument("--name", required=True, help="a job's name or ticket id")
+    where_parser.add_argument("--to", choices=["local", "pace"], required=True)
+    where_parser.set_defaults(handler=flip)
+    default_parser = commands.add_parser("default")
+    default_parser.add_argument("--to", choices=["local", "pace"], required=True)
+    default_parser.set_defaults(handler=set_default)
     args = parser.parse_args()
     STATE.mkdir(parents=True, exist_ok=True)
     QUEUE.mkdir(parents=True, exist_ok=True)
