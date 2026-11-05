@@ -32,6 +32,9 @@ RATINGS = {5: "answered its question", 4: "mostly answered it", 3: "partly answe
 PROMPT = """You are summarizing one finished experiment from a research project's GPU queue, for the project owner,
 who will read it on a dashboard. Use only the evidence below. Never invent a number; if the evidence can't show
 something, say so.
+A null or empty field usually means a default or "not applicable" (for example null weights meaning the base
+model, or a raw reply kept only when it was invalid), so never take one as evidence that a step didn't run.
+Only call something untested if the log or outputs show it.
 
 Reply with JSON only, no code fence, in this shape:
 {{"summary": "2 to 4 plain sentences: what it ran, what came out, and what that means",
