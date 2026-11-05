@@ -187,7 +187,7 @@ class Wire:
         if not self.connected:
             raise ConnectionError("not connected")
         self.commands_sent += 1
-        self.seen.add(command)
+        self.seen.add(NUMBER.sub("0", command))  # one entry per kind of command, not per coordinate
         response = self.client.request(command, timeout=timeout)
         if response is None:
             raise ConnectionError("connection closed before the reply")
@@ -224,7 +224,7 @@ class Wire:
         if not self.connected:
             raise ConnectionLostError(f"not connected, could not send {command!r}")
         self.commands_sent += 1
-        self.seen.add(command)
+        self.seen.add(NUMBER.sub("0", command))
         self.client.request(command, -1)
 
     def unsupported_seen(self) -> list[str]:

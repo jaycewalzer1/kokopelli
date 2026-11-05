@@ -276,6 +276,19 @@ class LookAtTest(ActionCase):
         self.assertIsNone(self.sim.gaze)
         self.assertEqual(result.final_state.camera.extrinsics.rotation_deg.pitch, 0.0)
 
+    def test_camera_stays_with_the_body_even_if_a_set_rotation_sticks(self):
+        """The fake models the worst case: a camera rotation stays until set again."""
+        self.run_action(type="look_at", position={"x": 0, "y": 1000, "z": 0})
+        self.run_action(type="wait")
+        result, _ = self.run_action(type="rotate", angle_deg=45.0, direction="right")
+        self.assertAlmostEqual(result.final_state.camera.extrinsics.rotation_deg.yaw,
+                               result.final_state.agent.pose.rotation.yaw, places=3)
+
+    def test_a_camera_never_aimed_is_never_touched(self):
+        self.run_action(type="rotate", angle_deg=45.0, direction="right")
+        self.run_action(type="step_forward", duration_s=1.0)
+        self.assertFalse(any("/camera/1/rotation " in cmd and cmd.startswith("vset") for cmd in self.server.commands))
+
 
 class InteractTest(ActionCase):
     def test_object_means_pick_up(self):

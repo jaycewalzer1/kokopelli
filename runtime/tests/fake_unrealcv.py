@@ -26,6 +26,7 @@ OK = "ok"
 ERROR_UNKNOWN = "error: fake server does not know this command"
 EYE_HEIGHT_CM = 160.0
 PICKUP_REACH_CM = 400.0
+GROUND_Z = 100.0  # where a standing pawn's origin rests in the toy world
 
 
 def png_bytes(rgba: np.ndarray) -> bytes:
@@ -363,6 +364,7 @@ class FakeUnrealCV:
 
     def _destroy(self, name):
         self.actors.pop(name, None)
+        self.cameras = [camera for camera in self.cameras if camera.owner != name]
         return OK
 
     def _rename(self, name, new_name):
@@ -435,6 +437,10 @@ class FakeUnrealCV:
                 yaw = math.radians(actor.rotation[1])
                 actor.location[0] += sign * speed * dt * math.cos(yaw) + self.nondeterminism
                 actor.location[1] += sign * speed * dt * math.sin(yaw)
+        for actor in self.actors.values():
+            is_pawn = "User_Agent" in actor.asset or "Pedestrian" in actor.asset
+            if is_pawn and actor.location[2] > GROUND_Z:  # spawned in the air, as communicator.py:626 does
+                actor.location[2] = max(GROUND_Z, actor.location[2] - 980.0 * dt)
         for actor in self.actors.values():
             if actor.holding and actor.holding in self.actors:
                 self.actors[actor.holding].location = list(actor.location)
@@ -653,11 +659,13 @@ class FakeUnrealCV:
         image[:, :, 0] = level
         image[:, :, 1] = level
         image[:, :, 2] = self._world_fingerprint()
+        image[: h // 2, :, 1] = level // 2  # two bands, so a working render is never a single flat colour
         return png_bytes(image)
 
     def _render_depth(self, index):
         w, h = self._camera(index).size
         depth = np.full((h, w), 1000.0, dtype=np.float32) + float(self._world_fingerprint())
+        depth[: h // 2, :] += 500.0  # farther in the top half, so min and max differ
         out = BytesIO()
         np.save(out, depth, allow_pickle=False)
         return out.getvalue()

@@ -4,7 +4,6 @@ Terms: a *step* is one loop turn of 30 sim-seconds. An *engine tick* is one Unre
 tick_interval_s. Sim time is always engine ticks times tick_interval_s, never the wall clock.
 Read runtime/SIMWORLD.md for what has and has not been proven against a real server.
 """
-import copy
 import json
 import math
 import random
@@ -146,7 +145,7 @@ class SimWorldConfig(BaseModel):
     sunset_h: float = 18.0
     max_sun_elevation_deg: float = 70.0
     sunrise_azimuth_deg: float = 90.0
-    max_sun_intensity: Optional[float] = Field(default=None, description="None uses what the level has at reset.")
+    max_sun_intensity: float = Field(default=10.0, gt=0, le=100, description="Noon brightness. Range from unrealcv.py:1212.")
     sun_pitch_sign: int = Field(default=-1, description="-1 if a daytime sun has negative pitch. Gate script checks it.")
     fog: Optional[tuple[float, float, float]] = None  # density, distance, falloff
     atmosphere: Optional[tuple[float, float]] = None  # rayleigh, mie
@@ -209,7 +208,8 @@ class SimWorldPhysics(PhysicsSim):
         self.camera_id: Optional[int] = cfg.camera_id
         self.weather_available = False
         self.start_s = parse_clock(cfg.start_time)
-        self.sun_max = cfg.max_sun_intensity or 10.0
+        self.sun_max = cfg.max_sun_intensity
+        self.initial_weather: Optional[Weather] = None  # what the level had, on a server we have not touched
         self.fog = cfg.fog
         self.atmosphere = cfg.atmosphere
         self.npc_specs: list[NpcSpec] = []
@@ -232,7 +232,9 @@ class SimWorldPhysics(PhysicsSim):
         self.gaze: Optional[dict] = None
         self._last_task_result: Optional[Mover] = None
         self._speech: list[SpeechEvent] = []
-        self._camera_reset_pending = False
+        self._camera_overridden = False  # true once we have ever set the camera's rotation ourselves
+        self._camera_base_pitch = 0.0
+        self._camera_yaw_offset = 0.0
         self.task: Optional[Mover] = None
         self.npc_movers: dict[str, Mover] = {}
         self.npc_waypoint: dict[str, int] = {}
@@ -320,6 +322,7 @@ class SimWorldPhysics(PhysicsSim):
         for _ in range(cfg._ticks_for(cfg.settle_s, "settle_s") if cfg.settle_s else 0):
             self.wire.request(c.tick(), resend=False)
         self._setup_camera()
+        self._remember_camera_mount()
         self._setup_mask_colors()
         self._apply_weather_settings()
         self._start_npc_routes()
@@ -436,6 +439,12 @@ class SimWorldPhysics(PhysicsSim):
         if cfg.fov_deg is not None:
             self.wire.request(c.set_camera_fov(self.camera_id, cfg.fov_deg), resend=False)
 
+    def _remember_camera_mount(self) -> None:
+        """How the camera sits on the body before we touch it, so we can put it back."""
+        pitch, yaw, _ = parse_numbers(self.wire.request(c.get_camera_rotation(self.camera_id)), 3, "camera rotation")
+        self._camera_base_pitch = pitch
+        self._camera_yaw_offset = angle_delta(yaw, self._read_pose(self._agent_actor).rotation.yaw)
+
     def _find_agent_camera(self) -> int:
         """Pick the camera closest to the agent. Ids depend on spawn order, so we check, not assume."""
         here = self._read_pose(self._agent_actor).location
@@ -486,13 +495,9 @@ class SimWorldPhysics(PhysicsSim):
     def _apply_weather_settings(self) -> None:
         if not self.weather_available:
             return
-        if self.config.max_sun_intensity is None:
-            try:
-                level_value = self._weather_json(c.get_sun_intensity(WEATHER_ACTOR)).get("SunIntensity")
-                if level_value and float(level_value) > 0:
-                    self.sun_max = float(level_value)
-            except SimWorldError as e:
-                self.warnings.append(f"could not read the level's sun intensity, using {self.sun_max}: {e}")
+        # Only recorded. Using it as the maximum would feed our own last value back in on the
+        # next run against the same server, and the world would get darker each time.
+        self.initial_weather = self.read_weather()
         if self.fog:
             self.wire.request(c.set_fog(WEATHER_ACTOR, *self.fog), resend=False)
         if self.atmosphere:
@@ -717,10 +722,11 @@ class SimWorldPhysics(PhysicsSim):
         self._apply_sun(capture_time_s)
         if self.gaze:
             self._aim_camera()
-        elif self._camera_reset_pending:
-            yaw = self._read_pose(self._agent_actor).rotation.yaw
-            self.wire.request(c.set_camera_rotation(self.camera_id, 0, round(yaw, 4), 0), resend=False)
-            self._camera_reset_pending = False
+        elif self._camera_overridden:
+            # Unverified whether a set rotation sticks or the camera follows the body again.
+            # Doing this before every capture makes the render right in both cases.
+            yaw = self._read_pose(self._agent_actor).rotation.yaw + self._camera_yaw_offset
+            self.wire.request(c.set_camera_rotation(self.camera_id, self._camera_base_pitch, round(yaw, 4), 0), resend=False)
 
     def _gaze_point(self) -> Vec3:
         if self.gaze.get("target_id"):
@@ -731,6 +737,7 @@ class SimWorldPhysics(PhysicsSim):
         camera = self._read_camera_location(self.camera_id)
         yaw, pitch = heading_to(camera, self._gaze_point())
         self.wire.request(c.set_camera_rotation(self.camera_id, round(pitch, 4), round(yaw, 4), 0), resend=False)
+        self._camera_overridden = True
 
     def _actor_for(self, target_id: str) -> str:
         return self._tracked()[target_id]
@@ -890,7 +897,6 @@ class SimWorldPhysics(PhysicsSim):
             self.gesture = None
         if self.gaze and kind != "look_at":
             self.gaze = None
-            self._camera_reset_pending = True
 
     def _on_foot(self) -> Optional[str]:
         """Why locomotion is impossible right now, or None if it is fine."""
@@ -1147,8 +1153,9 @@ class SimWorldPhysics(PhysicsSim):
         return SimCheckpoint(
             backend="simworld", tick_count=self.tick_count, step_index=self.step_index, seeds={"master": self.seed},
             physical=physical, not_restored=list(NOT_RESTORED),
-            # Deep copy, or later steps would rewrite a checkpoint already taken.
-            backend_state=copy.deepcopy({
+            # Through JSON, so later steps cannot rewrite a checkpoint already taken, and so it
+            # compares equal to a copy loaded from disk (tuples would come back as lists).
+            backend_state=json.loads(json.dumps({
                 "tick_interval_s": self.config.tick_interval_s, "start_s": self.start_s, "sun_max": self.sun_max,
                 "agent_speed": self.agent_speed, "posture": self.posture, "held": self.held, "riding": self.riding,
                 "vehicle": self.vehicle, "walking": self.walking, "gesture": self.gesture,
@@ -1157,9 +1164,10 @@ class SimWorldPhysics(PhysicsSim):
                 "npc_specs": [npc.model_dump(mode="json") for npc in self.npc_specs],
                 "npc_movers": {i: m.to_dict() for i, m in self.npc_movers.items()},
                 "npc_waypoint": self.npc_waypoint, "fog": self.fog, "atmosphere": self.atmosphere,
-                "camera_id": self.camera_id, "branch": self.branch,
+                "camera_id": self.camera_id, "branch": self.branch, "camera_overridden": self._camera_overridden,
+                "camera_base_pitch": self._camera_base_pitch, "camera_yaw_offset": self._camera_yaw_offset,
                 "mask_colors": [m.model_dump() for m in self.mask_colors],
-            }))
+            })))
 
     def restore_state(self, checkpoint: SimCheckpoint) -> RestoreReport:
         """Put actors back by teleporting them. Works on a restarted server by respawning what is missing.
@@ -1293,7 +1301,6 @@ class SimWorldPhysics(PhysicsSim):
             mover.restart()
         self._snapshots = {}
         self._last_task_result = None
-        self._camera_reset_pending = False
         self.branch = self._unused_branch(saved["branch"] + 1)
 
         self.camera_id = saved["camera_id"]
@@ -1302,8 +1309,11 @@ class SimWorldPhysics(PhysicsSim):
         for color in self.mask_colors:  # a respawned actor has lost its colour
             if color.assigned_rgb:
                 self.wire.request(c.set_mask_color(color.actor, *color.assigned_rgb), resend=False)
-        camera = checkpoint.physical.camera.extrinsics.rotation_deg
-        self.wire.request(c.set_camera_rotation(self.camera_id, camera.pitch, camera.yaw, camera.roll), resend=False)
+        self._camera_base_pitch, self._camera_yaw_offset = saved["camera_base_pitch"], saved["camera_yaw_offset"]
+        if self._camera_overridden or saved["camera_overridden"]:  # leave an untouched camera alone
+            camera = checkpoint.physical.camera.extrinsics.rotation_deg
+            self.wire.request(c.set_camera_rotation(self.camera_id, camera.pitch, camera.yaw, camera.roll), resend=False)
+            self._camera_overridden = True
         if self.weather_available:
             if self.fog:
                 self.wire.request(c.set_fog(WEATHER_ACTOR, *self.fog), resend=False)

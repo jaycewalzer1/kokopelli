@@ -369,8 +369,19 @@ class TimeAndWeatherTest(AdapterCase):
         with self.assertRaises(ValueError):
             self.sim.set_weather(atmosphere=(3, 0))
 
-    def test_max_intensity_defaults_to_the_level_value(self):
-        self.assertEqual(self.sim.sun_max, 10.0)
+    def test_max_intensity_is_configurable(self):
+        self.replace_sim(max_sun_intensity=50.0).reset()
+        self.assertAlmostEqual(self.server.sun_intensity, 25.0, places=3)  # 08:00 is sin(30 degrees) of the peak
+
+    def test_rerunning_on_the_same_server_does_not_dim_the_sun(self):
+        """Regression: the maximum used to be read back from the server, so it was our own last value."""
+        first = self.server.sun_intensity
+        for _ in range(3):
+            self.replace_sim().reset()
+            self.assertAlmostEqual(self.server.sun_intensity, first, places=3)
+
+    def test_records_what_the_level_had_at_first_contact(self):
+        self.assertEqual(self.sim.initial_weather.sun_pitch_deg, -26.0)  # the fake's starting value
 
 
 class DeterminismTest(unittest.TestCase):

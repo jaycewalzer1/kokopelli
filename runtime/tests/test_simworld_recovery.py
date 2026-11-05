@@ -29,6 +29,12 @@ class CheckpointTest(AdapterCase):
             self.sim.step({"type": "move_forward"})
         self.assertEqual(checkpoint.model_dump_json(), before)
 
+    def test_checkpoint_equals_its_copy_on_disk_with_weather_set(self):
+        """Regression: fog is a tuple in memory and a list after JSON, so these once differed."""
+        self.sim.set_weather(fog=(10, 2000, 0.5), atmosphere=(0.3, 0.2))
+        checkpoint = self.sim.get_state()
+        self.assertEqual(SimCheckpoint.load(checkpoint.save(self.out / "ck.json")), checkpoint)
+
     def test_restore_puts_actors_back_and_rewinds_time(self):
         self.sim.step({"type": "move_forward"})
         checkpoint = self.sim.get_state()
