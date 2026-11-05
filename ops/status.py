@@ -314,8 +314,16 @@ def verdicts(tests, runs, data, home, bench):
     ok, evidence = tested("agent loop", "agent loop mock run")
     real = [run for run in runs if run["finished"] and (run["wm"] != "mock" or run["agent"] != "mock")]
     both = [run for run in real if run["wm"] != "mock" and run["agent"] != "mock"]
-    state = "FAILING" if ok is False else "WORKS, both real models" if both else "PARTLY, one real model" if real else "MOCKS ONLY"
-    results.append(("Agent loop", state, f"{evidence}. Finished real-model runs: {len(both)} with both models, {len(real)} in all"))
+    decided = [run for run in both if run["ticks"] and (run["fallbacks"] or 0) < run["ticks"]]
+    if ok is False:
+        state = "FAILING"
+    elif decided:
+        state = "WORKS, both real models"
+    elif both:
+        state = "RENDERS, BUT AGENT MADE NO VALID DECISION"
+    else:
+        state = "PARTLY, one real model" if real else "MOCKS ONLY"
+    results.append(("Agent loop", state, f"{evidence}. Finished real-model runs: {len(both)} with both models, {len(decided)} of those with a valid decision"))
 
     ok, evidence = tested("simworld")
     results.append(("SimWorld adapter", "FAILING" if ok is False else "FAKE SERVER ONLY", f"{evidence}. Needs PACE to reach real Unreal"))
@@ -355,11 +363,14 @@ def verdicts(tests, runs, data, home, bench):
     return results
 
 
-def flags(info, tests, jobs, conflicts, tree, data):
+def flags(info, tests, jobs, conflicts, tree, runs):
     found = []
     for name, row in tests.items():
         if row["ok"] is False:
             found.append(f"**{name}** is failing: {row['summary']}. Output in `out/ops/tests_latest.json`.")
+    for run in runs:
+        if run["finished"] and run["agent"] != "mock" and run["ticks"] and (run["fallbacks"] or 0) >= run["ticks"]:
+            found.append(f"**{run['name']}**: every decision fell back to `wait`, so its autonomy score means nothing.")
     for ticket in gpu.tickets():
         minutes = (time.time() - ticket["queued_at"]) / 60
         if not ticket.get("running") and minutes > 240:
@@ -411,7 +422,7 @@ def report():
     lines += [gates.read_text().strip() if gates.exists() else "`runtime/THIRTY_MIN.md` doesn't exist yet."]
     lines += ["", f"Cost and longer-life test plan: `{plan}`" + ("" if plan.exists() else " (not written yet)")]
     lines += ["", "## Needs attention", ""]
-    lines += [f"- {flag}" for flag in flags(info, tests, jobs, conflicts, tree, data)] or ["Nothing flagged."]
+    lines += [f"- {flag}" for flag in flags(info, tests, jobs, conflicts, tree, runs)] or ["Nothing flagged."]
 
     lines += ["", "## Running now", ""]
     waiting = gpu.tickets()
