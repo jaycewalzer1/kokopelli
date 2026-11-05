@@ -4,6 +4,8 @@ STATUS: DRAFT
 
 This is not final. `run.py --real` refuses to test any hypothesis while the line above is present, except for base-model `--exploratory` checks. When you approve this, delete that line and run `python -m benchmarks.prereg lock`. From then on, any edit stops real runs unless it's logged with `--amend-prereg "reason"`.
 
+**Open problem:** the base-model noise check found that the Holt-Laury menu mostly follows option order in this model, and that the combined lottery score nearly hides a large forced shift. See "Phase 5" in `HANDOFF.md`. The measures below still need a decision on this before locking.
+
 ## Question
 
 Does an LLM that lives an experience in a simulated world and then gets a small LoRA update change differently from one that's only told the same facts?

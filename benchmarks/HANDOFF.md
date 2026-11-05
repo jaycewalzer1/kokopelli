@@ -11,6 +11,7 @@ Measuring sticks for Kokopelli's first experiment. **Main result:** established 
 | Path | What it holds |
 |---|---|
 | `holt_laury/`, `lotteries/` | Finished far-transfer instruments: items with sources, 3 templates, parser, scorer, human norms |
+| `holt_laury_rows/` | Pilot: the same rows, one per prompt. Not pre-registered |
 | `mid_travel/` | Instrument and generator. **No real items yet**, on purpose |
 | `near_errand/` | Task interface and a **stub** world. Real runs refuse it |
 | `guardrails/` | Wrapper around lm-evaluation-harness |
@@ -74,20 +75,59 @@ python3 /Users/jaycewalzer/Desktop/kokopelli/.claude/worktrees/ops/ops/gpu.py ru
 |---|---|---|
 | `plain` | 0.38 | Content: on 5 of 6 problems every answer was the same in both orders. Little spread, mostly 0 or 1 |
 | `percent` | 0.59 | Mixed: several problems flip with position, and some don't |
-| `tickets` | 0.33 | Position on 3 problems (3, 5 and 6), where it took the first-listed box every time |
+| `tickets` | 0.33 | Position on 3 problems (3, 5 and 6), where it took the first-listed box in 149 of 150 answers |
 
 44% of problem-and-template cells sit at exactly 0 or 1, where a small shift can't show under sampling.
 
 **The verdict rules were adjusted after seeing this.** My first automatic verdict said "FLOOR", which misread position bias as risk taking. The position and floor rules were added after seeing the data, and `noise_check.py` says so.
 
-**Proposed fixes, before anything downstream:**
+### Follow-ups: can these instruments see a shift at all?
 
-1. **Ask Holt-Laury one row at a time.** Results below, once the pilot has run. This is decision 2.
-2. **Score with log-probabilities instead of sampling.** Read P(A) from the model directly and average over both orders. That cancels position exactly and can show small shifts in cells stuck at 0 or 1. It needs logits, which `ask()` doesn't return, so it needs a small addition outside `llm_model.ask`.
-3. **Analyze within order, or require order-balanced cells.** Option order must stay balanced across arms, which the design already does, or position differences would pass for effects.
-4. **Drop or rewrite weak templates.** `tickets` is position-heavy on the lotteries. Don't choose by which one shows an effect later: decide before any adapter exists.
+**Positive control: yes, for a large forced shift.** A persona sentence was put in front of the prompt, 20 samples per cell, with exploratory runs only. Real arms never get this. Results are also in `noise_t07/`.
 
-**Without a fix, a LoRA could change the letter habit, and the ladder score would read that as a change in risk preference.** I recommend not locking `PREREG.md` until this is settled.
+| | Cautious persona | Plain base | Bold persona |
+|---|---|---|---|
+| Holt-Laury mean safe choices | 9.85 | 3.61 | 0.00 |
+| Lotteries, all problems | 0.589 | 0.431 | 0.361 |
+| Lotteries, rare outcome is bad (problems 1, 3) | 0.08 | 0.41 | 1.00 |
+| Lotteries, rare outcome is good (problems 2, 4, 5, 6) | 0.84 | 0.44 | 0.04 |
+
+- **Position bias disappears when the model has a stance,** so the letter habit fills in when it has no preference. The ladder is still all-or-nothing: 9 or 10, or 0. It's a switch, and a persona is a far stronger push than a small LoRA is likely to be.
+- **The combined lottery score nearly hides this.** Underweighting a rare *bad* outcome makes a gamble look better, and underweighting a rare *good* one makes it look worse, so a general shift toward risk moves the two groups in opposite directions. A cautious model even scores *higher* on "underweighting". The experiment's world has a rare *cost*, so the rare-bad group is the closest analog. It's only 2 of 6 problems. This is decision 3. The mock's `risk_tilt` assumes one direction across all problems, which this shows is too simple.
+
+**Temperature doesn't help.** Same patterns at each setting, with sample counts of 10, 50 and 20 per cell:
+
+| Temperature | Holt-Laury mean | Scores seen | Lotteries overall | Verdict |
+|---|---|---|---|---|
+| 0.0 (greedy) | 3.83 | 0, 9, 10 | 0.406 | Position bias |
+| 0.7 | 3.61 | 0, 9, 10 | 0.431 | Position bias |
+| 1.0 | 3.35 | 0, 9, 10 | 0.425 | Position bias |
+
+**One row at a time helps with one wording.** 300 samples, temperature 0.7, 10 per row and template, so only about 3 to 7 per row and order: treat these as rough. `holt_laury_rows/` is a pilot, and it's not pre-registered. Share choosing safe, rows 1 to 10:
+
+| Template | Order | Row 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `percent` | safe first | .60 | .71 | .50 | .40 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `percent` | risky first | .60 | .67 | .50 | .40 | .67 | 0 | 0 | 0 | 0 | 0 |
+| `fractions` | safe first | 1 | 1 | .67 | 1 | .67 | 0 | 0 | 1 | 1 | 0 |
+| `fractions` | risky first | .33 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `die` | safe first | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 0 |
+| `die` | risky first | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+`percent` is what a working instrument should look like: it falls across rows, it's about the same in both orders, and it has values between 0 and 1 that a small shift could move. `die` is still pure position, and `fractions` mostly is.
+
+**Sampling is repeatable on real Qwen.** Rerunning 63 keys in a separate process gave identical text 63 times out of 63. Many of those cells are near-deterministic anyway, so this supports the seeding method without fully proving it.
+
+### Proposed fixes, before anything downstream
+
+1. **Score with log-probabilities instead of sampling.** I'd try this first. Read P(A) from the model directly and average across both orders. That cancels position by construction, and it can show small shifts in cells stuck at 0 or 1, which sampling can't. It's not built: it needs logits, which `ask()` doesn't return, so it needs a small addition outside `llm_model.ask`.
+2. **Move Holt-Laury to one row per prompt,** with the `percent` wording, then write two more wordings and test them for the same behavior. This is decision 2.
+3. **Report the lotteries split by rare-bad and rare-good,** and pick the primary measure before any adapter exists. This is decision 3.
+4. **Drop or rewrite position-driven templates** based on this base-model data alone, before any adapter exists, so nothing is chosen because it shows an effect.
+5. **Add a smaller positive control.** A persona is a huge push. The real question is whether a small LoRA-sized shift would show, and no measurement here answers it. One option is mild wording, such as "You are slightly more careful than most people".
+6. **Temperature isn't a fix.** Keep 0.7 unless log-prob scoring replaces sampling.
+
+**Without a fix, a LoRA could change the letter habit, and the ladder score would read that as a change in risk preference.** I recommend not locking `PREREG.md` until 1 to 4 are settled. I changed nothing in the pre-registered instruments or contrasts in response to these results.
 
 ## Before and after
 
@@ -154,10 +194,14 @@ Each is a simple, reversible choice made so work could continue.
    - Qwen itself: free and local, but the items would carry the habits of the model under test, which could make them easier or harder for it in ways that look like an effect.
    - A different model through `--backend api`: avoids that, but costs money and adds a dependency.
    - Numbers come from a fixed grid in code either way, so the writer only supplies the words. Then: `mid_travel.generate`, review, `freeze`, and add the hash to `PREREG.md`.
-2. **Holt-Laury as one menu or row by row?** Built as one menu with all 10 rows, as humans saw it.
-   - One menu: matches the norms, costs one call, but rows influence each other and there's one answer per sample.
-   - Row by row: gives a smooth curve and allows log-probs, but it's a different task, and Filippin & Crosetto report that random row order greatly raises inconsistency in people.
-3. **Does Holt-Laury test the hypothesis directly?** Its "risky" option isn't a rare-event gamble in most rows. The prediction needs a step: underweighting rare costs means more risk taking in general. It's a broad risk measure, while the lotteries are the direct test. Keep both as main results, or make one primary? That affects Holm.
+2. **Holt-Laury as one menu or row by row?** The pre-registered version is one menu with all 10 rows, as humans saw it. The noise check shows that it mostly reads a letter habit in this model.
+   - One menu: matches the norms and costs one call, but gives only 0, 9 or 10 here.
+   - Row by row (`holt_laury_rows/`): gave a real curve with one of three wordings. It's a different task from what people did, so the norms fit less well, and Filippin & Crosetto report that random row order greatly raises inconsistency in people.
+3. **What should the main lottery and risk measures be?** This now has evidence behind it: the combined lottery score nearly hides a large forced shift, while its two halves show it clearly and in opposite directions. The drafted contrasts also predict fewer safe Holt-Laury choices and more underweighting at once, which only fits the rare-bad half.
+   - Rare-bad problems as primary: closest to the experiment's rare cost and most sensitive, but only 2 of Hertwig's 6 problems, and you'd want more items.
+   - Both halves, with opposite predicted directions: uses all 6 and gives a sharper test of underweighting specifically, as opposed to general boldness. It needs a real prediction for each.
+   - Keep the combined score: matches the paper's framing, but it's nearly blind to general shifts.
+   - Holt-Laury is also a broad risk measure, not a rare-event test. Keep both as main results or make one primary? That affects Holm.
 4. **Three seeds can't carry significance on their own.** A sign test over 3 seeds can't get below p = .25. The permutation test shuffles samples within seeds, so it says "these adapters differ", not "training reliably produces this". The direction rule covers that gap informally. Options: keep it, or train 6 or more seeds and test at seed level, which is slower but a stronger claim.
 5. **The pass rule when more than 3 seeds run.** The brief says the right direction in at least 3 seeds. I also required none going the wrong way (`max_seeds_wrong: 0`), since 3 right and 2 wrong would otherwise pass. Stricter, but a single noisy adapter can fail a real effect.
 6. **Guardrail margin vs question count.** At 342 MMLU questions, a mock with no real effect moved 1 to 4 points by chance, and intervals ran about 8 points wide. The mock's noise is independent per arm, so a real model's paired answers should be tighter, but ±1 point is unlikely to be resolvable. Options: keep the point-estimate rule and accept false alarms (current), use more questions (all 14,000 MMLU questions cost hours), or widen the margin.

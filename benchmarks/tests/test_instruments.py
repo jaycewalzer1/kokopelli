@@ -118,6 +118,15 @@ class LotteryItems(unittest.TestCase):
             gap = item["human_percent_H"]["experience"] - item["human_percent_H"]["description"]
             self.assertEqual(item["predicted_by_underweighting"], "H" if gap > 0 else "L", item["id"])
 
+    def test_rare_bad_group_matches_the_items(self):
+        """Rare and bad means the rare outcome is the worse outcome of its own option."""
+        from benchmarks.noise_check import RARE_BAD
+        for item in self.lot.items:
+            option = "H" if ", in H" in item["rare_event"] else "L"
+            rare_value = float(item["rare_event"].split(" ")[0])
+            other = item[option]["outcome"] if item[option]["outcome"] != rare_value else 0
+            self.assertEqual(rare_value < other, item["id"] in RARE_BAD, item["id"])
+
     def test_norms_file_matches_items(self):
         norms = yaml.safe_load((self.lot.folder / "norms.yaml").read_text())
         by_id = {n["id"]: n["mean"] for n in norms["norms"]}

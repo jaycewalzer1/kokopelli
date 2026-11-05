@@ -568,7 +568,7 @@ class Registry(unittest.TestCase):
 
 class NoiseCheck(Temp):
     def test_mock_spread_is_usable(self):
-        self.run_mock(arms=("fake_base",), instruments=("holt_laury", "lotteries"), samples=30)
+        self.run_mock(arms=("base",), instruments=("holt_laury", "lotteries"), samples=30)
         summary = noise_check.analyze(self.out)
         self.assertEqual(summary["holt_laury_verdict"].split(":")[0], "USABLE SPREAD")
         self.assertEqual(summary["n_results"], 90 + 540)
@@ -592,6 +592,11 @@ class NoiseCheck(Temp):
         self.assertEqual(len(curves), 6)
         pooled = lambda row: [c["safe_rate_by_row"][row] for c in curves if c["safe_rate_by_row"][row] is not None]
         self.assertGreater(sum(pooled(1)) / len(pooled(1)), sum(pooled(10)) / len(pooled(10)))
+
+    def test_verdicts_ignore_persona_controls(self):
+        """Fake arms are ignored here too: a folder with no plain base arm has nothing to give a verdict on."""
+        self.run_mock(arms=("fake_base",), instruments=("holt_laury",), samples=5)
+        self.assertEqual(noise_check.analyze(self.out)["holt_laury_verdict"], "NOT MEASURED")
 
     def test_position_comes_before_floor(self):
         """The real base model's pattern: 0 safe choices, but only because it picks A on every row."""

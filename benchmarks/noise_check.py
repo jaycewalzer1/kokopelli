@@ -19,7 +19,8 @@ from benchmarks.run import read_results
 
 FROZEN_MODAL_SHARE = 0.95   # The same answer this often means there's almost no spread.
 COIN_FLIP_INCONSISTENT = 0.5  # Half or more multiple-switching ladders means no stable preference.
-POSITION_GAP = 5.0  # Swapping the options moves the Holt-Laury score by at least half its 0-to-10 range.
+RARE_BAD = {"hbwe_1", "hbwe_3"}
+POSITION_GAP = 5.0 # Swapping the options moves the Holt-Laury score by at least half its 0-to-10 range.
 
 
 def holt_laury_summary(rows):
@@ -63,6 +64,22 @@ def lotteries_summary(rows):
                           "chose_H": _mean([row["extras"]["chosen"] == "H" for row in valid]),
                           "chose_H_when_H_first": _mean(h_first), "chose_H_when_L_first": _mean(l_first)})
     return pd.DataFrame(table)
+
+
+def lotteries_by_rare_kind(rows):
+    """The underweighting rate, split by whether the rare outcome is bad or good news.
+
+    From Hertwig et al.'s Table 1. Rare and bad: problem 1 (0 instead of 4) and 3 (-32 instead of 0). Rare and good: problems
+    2, 5, 6 (a prize) and 4 (0 instead of -4). Underweighting a rare bad outcome makes the gamble look better, so it takes
+    the risk. Underweighting a rare good outcome makes the gamble look worse, so it plays safe. The one score mixes
+    the two, so a general shift toward risk raises one half and lowers the other, and they partly cancel.
+    """
+    table = {}
+    for row in rows:
+        if row["instrument"] == "lotteries" and row["valid"]:
+            kind = "rare_bad" if row["item_id"] in RARE_BAD else "rare_good"
+            table.setdefault(row["arm"], {}).setdefault(kind, []).append(row["score"])
+    return {arm: {kind: {"rate": _mean(scores), "n": len(scores)} for kind, scores in kinds.items()} for arm, kinds in table.items()}
 
 
 def rows_summary(rows):
@@ -151,11 +168,15 @@ def analyze(out):
     record_path = Path(out) / "run_record.json"
     record = json.loads(record_path.read_text()) if record_path.exists() else {}
     hl, lot = holt_laury_summary(rows), lotteries_summary(rows)
+    # The same folder can hold persona controls. Verdicts describe the plain base model only.
+    hl_base = hl[hl.arm == "base"] if not hl.empty else hl
+    lot_base = lot[lot.arm == "base"] if not lot.empty else lot
     return {
         "backend": record.get("backend"), "real": record.get("real"), "sampling": record.get("sampling"),
         "n_results": len(rows), "invalid": sum(not row["valid"] for row in rows),
-        "holt_laury": hl.to_dict("records"), "holt_laury_verdict": verdict_holt_laury(hl),
-        "lotteries": lot.to_dict("records"), "lotteries_verdict": verdict_lotteries(lot),
+        "holt_laury": hl.to_dict("records"), "holt_laury_verdict": verdict_holt_laury(hl_base),
+        "lotteries": lot.to_dict("records"), "lotteries_verdict": verdict_lotteries(lot_base),
+        "lotteries_by_rare_kind": lotteries_by_rare_kind(rows),
         "holt_laury_rows": rows_summary(rows),
         "controls": {name: control_shift(rows, name) for name in ("holt_laury", "lotteries")},
         "mean_latency_s": float(np.mean([row["latency_s"] for row in rows])) if rows else None,
