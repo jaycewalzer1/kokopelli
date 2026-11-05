@@ -36,9 +36,9 @@ class APIBackend(Backend):
     def prepare_arm(self, arm, seed):
         adapter = arm.adapter_for(seed)
         check_not_fake(adapter)
-        if adapter and not arm.api_model:
+        if arm.is_trained and not arm.api_model:
             # Falling back to the base model's name would run the base model and label the results as this arm.
-            raise ValueError(f"Arm {arm.name} has an adapter but no api_model, so the server wouldn't know to apply it.")
+            raise ValueError(f"Arm {arm.name} has an adapter or weights but no api_model, so the server wouldn't know to apply it.")
         self.model = (arm.api_model or arm.model).format(seed=seed)
         from benchmarks.backends.base import adapter_hash
         return {"model_id": self.model, "adapter_path": adapter, "adapter_hash": adapter_hash(adapter)}

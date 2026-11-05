@@ -23,7 +23,7 @@ from benchmarks import freeze, leakage, prereg
 from benchmarks.backends import get_backend
 from benchmarks.backends.base import GenRequest
 from benchmarks.core import BANNED_IN_PROMPTS, BENCHMARKS, REPO, Parsed, option_order, sha256_file, stable_int
-from benchmarks.registry import load_arm, load_instrument, load_sampling
+from benchmarks.registry import load_arm, load_contrasts, load_instrument, load_sampling
 
 EXIT_REFUSED, EXIT_LEAK, EXIT_MORE_TO_DO = 2, 3, 75  # 75 is the usual "try again later" exit code.
 RESULTS, RECORD, SUMMARY = "results.jsonl", "run_record.json", "summary.parquet"
@@ -193,10 +193,16 @@ def refusals(args, arms, instruments, backend_is_real):
     if args.exploratory and not args.real:
         raise Refused("--exploratory only means something for real runs. Mock runs don't need it.")
     if args.exploratory:
-        # Noise checks can run before the pre-registration is locked, but no result about an adapter can sneak through this door.
-        with_adapter = [arm.name for arm in arms if arm.adapter]
-        if with_adapter:
-            raise Refused(f"--exploratory is for the base model only, so no effect can be peeked at. These have adapters: {with_adapter}")
+        # Noise checks can run before the pre-registration is locked, but no result about training can sneak through this door.
+        trained = [arm.name for arm in arms if arm.is_trained]
+        if trained:
+            raise Refused(f"--exploratory is for the base model only, so no effect can be peeked at. These are trained: {trained}")
+    if args.real and not args.exploratory:
+        # A locked pre-registration covers only the arms it names. Testing another one is the owner's decision.
+        registered = {name for contrast in load_contrasts()["contrasts"] for name in (contrast["a"], contrast["b"])}
+        unregistered = [arm.name for arm in arms if arm.is_trained and arm.name not in registered]
+        if unregistered:
+            raise Refused(f"{unregistered} aren't in configs/contrasts.yaml, so the pre-registration doesn't cover them. Adding an arm is the owner's decision.")
     has_prefix = [arm.name for arm in arms if arm.prompt_prefix]
     if has_prefix and args.real and not args.exploratory:
         raise Refused(f"{has_prefix} change the prompt, which breaks the rule that prompts match across arms. They are controls, for --exploratory only.")
@@ -213,7 +219,7 @@ def refusals(args, arms, instruments, backend_is_real):
 
 def run(args):
     args.out = Path(args.out) if args.out else BENCHMARKS / "results" / args.run_id
-    arms = [load_arm(name) for name in args.arms]
+    arms = [load_arm(name, [args.arms_dir] if args.arms_dir else None) for name in args.arms]
     overrides = dict(pair.split("=", 1) for pair in args.items_override)
     instruments = [load_instrument(name, overrides.get(name)) for name in args.instruments]
     sampling = {**load_sampling(), **{k: v for k, v in (("temperature", args.temperature), ("max_tokens", args.max_tokens)) if v is not None}}
@@ -296,6 +302,7 @@ def parser():
     p.add_argument("--temperature", type=float)
     p.add_argument("--max-tokens", dest="max_tokens", type=int)
     p.add_argument("--batch-size", dest="batch_size", type=int)
+    p.add_argument("--arms-dir", dest="arms_dir", help="Look for arm configs here first. before_after.py uses this.")
     p.add_argument("--progress", type=int, default=0, help="Print progress every N samples")
     p.add_argument("--minutes", type=float, help="Stop cleanly after this long, with exit code 75, so others get a GPU turn")
     return p

@@ -23,17 +23,28 @@ class Arm:
     api_model: str | None = None
     later: bool = False
     prompt_prefix: str = ""     # Positive controls only. run.py refuses it outside exploratory runs.
+    weights: str | None = None  # A folder of full weights, such as fused/ from homeostatic.export, used instead of an adapter.
 
     def adapter_for(self, seed):
         """Adapter paths can hold {seed}, because each seed is its own trained adapter."""
-        if not self.adapter:
+        return self._path(self.adapter, seed)
+
+    def weights_for(self, seed):
+        return self._path(self.weights, seed)
+
+    @property
+    def is_trained(self):
+        return bool(self.adapter or self.weights)
+
+    def _path(self, value, seed):
+        if not value:
             return None
-        path = Path(self.adapter.format(seed=seed))
+        path = Path(value.format(seed=seed))
         return str(path if path.is_absolute() else REPO / path)
 
 
 def load_arm(name, arm_dirs=None):
-    for folder in arm_dirs or ARM_DIRS:
+    for folder in [*(arm_dirs or []), *ARM_DIRS]:
         path = Path(folder) / f"{name}.yaml"
         if path.exists():
             return Arm(**yaml.safe_load(path.read_text()))

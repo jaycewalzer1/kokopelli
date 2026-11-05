@@ -33,6 +33,8 @@ class VLLMBackend(Backend):
         self.lora = None
 
     def prepare_arm(self, arm, seed):
+        if arm.weights:
+            raise ValueError(f"Arm {arm.name} uses full weights, but this backend keeps one base model loaded and swaps adapters. Use its adapter instead.")
         adapter = arm.adapter_for(seed)
         check_not_fake(adapter)
         if adapter:

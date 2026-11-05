@@ -21,7 +21,7 @@ class MockBackend(Backend):
         self.arm_name, self.risk_tilt, self.malformed_rate = "", 0.0, 0.0
 
     def prepare_arm(self, arm, seed):
-        adapter = arm.adapter_for(seed)
+        adapter = arm.adapter_for(seed) or arm.weights_for(seed)
         fake = read_fake_marker(adapter) or {}
         settings = arm.mock or {}
         self.arm_name = arm.name

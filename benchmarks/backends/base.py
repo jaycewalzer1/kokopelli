@@ -1,6 +1,7 @@
 """The interface all backends share, plus adapter fingerprinting."""
 import hashlib
 import json
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -36,7 +37,10 @@ def adapter_hash(adapter_path):
     digest = hashlib.sha256()
     for path in files:
         digest.update(path.name.encode())
-        digest.update(path.read_bytes())
+        # In pieces, because fused weights are about 18 GB and reading them whole would need that much memory.
+        with path.open("rb") as file:
+            for chunk in iter(lambda: file.read(2**20), b""):
+                digest.update(chunk)
     return digest.hexdigest()
 
 
@@ -70,6 +74,10 @@ class Backend:
     def openai_endpoint(self, arm):
         """(base_url, model name) for tools that talk to an OpenAI-style server, such as the guardrail harness."""
         raise NotImplementedError(f"{self.name} has no OpenAI-style endpoint for outside tools.")
+
+    def run_harness_command(self, arm, build_command):
+        """Run an outside tool against this arm. build_command(base_url, model) returns its command line."""
+        subprocess.run(build_command(*self.openai_endpoint(arm)), check=True)
 
     def close(self):
         pass

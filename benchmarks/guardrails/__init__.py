@@ -11,7 +11,6 @@ import json
 import os
 import random
 import shutil
-import subprocess
 from pathlib import Path
 
 from benchmarks.core import Instrument, stable_int
@@ -81,10 +80,10 @@ class Guardrail(Instrument):
             self._write_mock_samples(out_dir, arm, seed, (arm.mock or {}).get("guardrail_shift_points", 0.0))
             return self.read_samples(out_dir)
 
-        command = self.command(*backend.openai_endpoint(arm), out_dir)
-        if not shutil.which(command[0]):
-            raise FileNotFoundError(f"Can't find {command[0]}. Install lm-eval[api,ifeval] in a separate venv and set {LM_EVAL_ENV} to its lm-eval path.")
-        subprocess.run(command, check=True)
+        program = self.command("http://unused", "unused", out_dir)[0]
+        if not shutil.which(program):
+            raise FileNotFoundError(f"Can't find {program}. Install lm-eval[api,ifeval] in a separate venv and set {LM_EVAL_ENV} to its lm-eval path.")
+        backend.run_harness_command(arm, lambda base_url, model: self.command(base_url, model, out_dir))
         return self.read_samples(out_dir)
 
     def score(self, parsed, item, order):
