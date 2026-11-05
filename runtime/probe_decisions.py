@@ -53,12 +53,14 @@ def read_reply(raw, visible):
     return {"action": " ".join(str(value) for value in action.values()), "diary": decision.diary, "error": None}
 
 
-def probe(run_dir, ask):
-    """ask(prompt, images, temperature) returns the model's raw reply."""
+def probe(run_dir, ask, only_ticks=None):
+    """ask(prompt, images, temperature) returns the model's raw reply. only_ticks limits it to those ticks."""
     run_dir = Path(run_dir)
     rows = []
     with tempfile.TemporaryDirectory(prefix="wmloop_") as folder:
         for tick in replay.summarize(run_dir)["ticks"]:
+            if only_ticks and tick["tick"] not in only_ticks:
+                continue
             images = [str(run_dir / path) for path in tick["agent_input"]["images"]]
             visible = tick["sim"]["visible"]
             for name, (prompt, pictures) in variants(tick["agent_input"]["prompt"], visible, images, folder).items():
@@ -81,10 +83,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run", type=Path)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--ticks", type=int, nargs="*", help="only these ticks; default is all of them")
     args = parser.parse_args()
     from llm_model import ask
 
-    rows = probe(args.run, lambda prompt, images, temperature: ask(prompt, images, max_tokens=300, temperature=temperature))
+    rows = probe(args.run, lambda prompt, images, temperature: ask(prompt, images, max_tokens=300, temperature=temperature), args.ticks)
     summary = {"tally": tally(rows), "rows": rows}
     args.out.write_text(json.dumps(summary, indent=2))
     print(json.dumps(summary["tally"], indent=2))

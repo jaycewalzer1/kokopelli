@@ -32,7 +32,7 @@ The low-memory run, at 256x256 with 20 steps, took 222 s for 3 ticks. The machin
 
 Most likely to bite first:
 
-0. **What drives the agent's choices.** Over 20 real ticks it does change course, so it isn't stuck. `runtime/probe_decisions.py` re-asked 3 logged moments, about 27 replies, so these are first reads:
+0. **The agent may get stuck.** With the prompt's example removed, 20 real ticks gave 18 waits, with the same diary line from tick 6 to tick 20 (`runs/wmloop_agent_20b`). With the example it varied more (`runs/wmloop_agent_20`), so that earlier variety isn't reliable. Both ran on the mock world model. Possibly a feedback loop: at temperature 0, identical notes make a nearly identical prompt. The prompt also never tells it the result of its last action. A 30 minute run says little until this is understood. `runtime/probe_decisions.py` re-asked 3 logged moments, about 27 replies, so these are first reads:
    - Frames matter: blank frames moved it from the door to Ana.
    - Hidden notes didn't change its action, only some diary wording, so its notes aren't what picks the action. They may still explain its repeated phrases.
    - A named target in the prompt's example changed its choice, so the prompt no longer names one.

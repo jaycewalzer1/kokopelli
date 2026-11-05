@@ -44,6 +44,7 @@ class VariantTest(unittest.TestCase):
         self.assertEqual(len(rows), 2 * (5 + probe.SAMPLES_AT_TEMPERATURE))
         self.assertTrue(all(Path(path).exists() or "blank" in path for _, images, _ in calls for path in images))
         self.assertEqual(probe.tally(rows)["as_logged t=0.0"], {"wait": 2})
+        self.assertEqual({row["tick"] for row in probe.probe(folder, ask, only_ticks=[2])}, {2})
 
 
 if __name__ == "__main__":
