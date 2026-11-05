@@ -36,7 +36,7 @@ $PY -m mlx_vlm.convert --hf-path models/Qwen3-VL-8B-Instruct --mlx-path models/Q
 $PY -m runtime.run --ticks 3 --wm cosmos --agent qwen --low-memory --context life --life-db out/overnight/latest/life.db --life-run 2
 ```
 
-`--low-memory` means smaller clips, 8-bit Cosmos and 4-bit Qwen. Measured on one short run, it halves the time and takes about 11 GB off Qwen's peak, but barely lowers Cosmos's: the runner loads the full model before shrinking it. So it still needs about 28 GB free-and-used at its peak. Use it for demos, not experiment results, because a quantized model behaves differently from the one being trained. Every tick logs the machine's peak RAM per stage; see the Timing tab in the viewer. SimWorld itself can't run on a Mac.
+`--low-memory` means smaller clips, 8-bit Cosmos and 4-bit Qwen. Measured on one short run, it halves the time and takes about 11 GB off Qwen's peak, but barely lowers Cosmos's: the runner loads the full model before shrinking it. The machine still peaked at 28 GB while Cosmos ran, about 15 GB above where it started. Use it for demos, not experiment results, because a quantized model behaves differently from the one being trained. Every tick logs the machine's peak RAM per stage; see the Timing tab in the viewer. SimWorld itself can't run on a Mac.
 
 ## On NVIDIA GPUs
 
