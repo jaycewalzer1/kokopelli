@@ -4,6 +4,7 @@
 # Each round asks the queue for a turn of at most 30 minutes, at priority 40, and stops when the run reports it's done.
 # Exit code 75 means the time budget ran out and more remains, so it rejoins the line and higher priorities go first.
 # A kill or a hang loses at most the sample in progress, because results are appended per sample and resume skips them.
+# EVALS_TEMPERATURE picks the temperature. Each temperature needs its own <out dir>, because a run's sampling is fixed.
 #
 #   benchmarks/noise_check_turns.sh <out dir> <samples> <instruments...> -- <arms...>
 #   benchmarks/noise_check_turns.sh benchmarks/results/noise_t07 50 holt_laury lotteries -- base
