@@ -170,6 +170,37 @@ class PreemptionTest(unittest.TestCase):
         self.assertEqual(config.sim_settings, {"port": 9, "tick_interval_s": 0.1})
 
 
+class ConditioningSizeTest(unittest.TestCase):
+    def test_frames_of_different_sizes_fail_instead_of_turning_into_garbage(self):
+        with self.assertRaisesRegex(ValueError, "differ in size"):
+            write_clip([np.zeros((256, 448, 3), np.uint8), np.zeros((256, 256, 3), np.uint8)], folder() / "bad.mp4")
+
+    def test_a_sim_frame_of_another_size_goes_to_cosmos_at_the_render_size(self):
+        import sys as system
+        import types
+        from unittest import mock
+
+        from runtime.adapters.cosmos import CosmosWorldModel
+        from runtime.frames import read_clip, save_rgb
+        from runtime.interfaces import ChunkRequest, CondFrame
+
+        place = folder()
+        cond = [CondFrame(save_rgb(np.zeros((256, 448, 3), np.uint8), place / "sim.png"), "sim")]
+        cond += [CondFrame(save_rgb(np.zeros((256, 256, 3), np.uint8), place / f"{i}.png"), "wm") for i in range(4)]
+        seen = {}
+
+        def fake_generate(script, prompt, output, size, frames, steps, seed, extra):
+            seen["clip"] = read_clip(extra[1])
+            seen["cond_frames"] = extra[3]
+            return output
+
+        fake = types.SimpleNamespace(_generate=fake_generate)
+        with mock.patch.dict(system.modules, {"world_model": fake}):
+            CosmosWorldModel("256x256", 20).render_chunk(ChunkRequest("p", cond, None, str(place / "out.mp4"), 1, 0, 16, 7))
+        self.assertEqual(seen["clip"].shape, (5, 256, 256, 3))
+        self.assertEqual(seen["cond_frames"], "5")
+
+
 class TextStartTest(unittest.TestCase):
     def test_real_video_on_the_mock_sim_starts_from_the_prompt_without_re_anchoring(self):
         from runtime.mocks.world_model import MockWorldModel

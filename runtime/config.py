@@ -49,7 +49,7 @@ class Config:
     @property
     def text_start(self):
         """A real world model with the mock sim: the sim's grid drawing is no use as a picture of the world."""
-        return self.sim == "mock" and self.wm != "mock"
+        return self.sim == "mock" and self.wm == "cosmos"
 
     @property
     def wm_settings(self):

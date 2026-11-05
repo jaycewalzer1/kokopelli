@@ -2,7 +2,7 @@
 import tempfile
 from pathlib import Path
 
-from runtime.frames import load_rgb, write_clip
+from runtime.frames import load_rgb, resized, write_clip
 from runtime.interfaces import WorldModel
 
 
@@ -23,6 +23,6 @@ class CosmosWorldModel(WorldModel):
             return str(_generate("img2video.py", request.prompt, request.output, *settings, extra))
         # The runner takes conditioning frames as the end of a video, so a re-anchored set goes in as a short clip.
         with tempfile.TemporaryDirectory(prefix="wmloop_") as folder:
-            clip = write_clip([load_rgb(frame.path) for frame in request.cond], Path(folder) / "cond.mp4")
+            clip = write_clip([resized(load_rgb(frame.path), self.size) for frame in request.cond], Path(folder) / "cond.mp4")
             extra = ("--video", str(Path(clip).resolve()), "--cond-frames", str(len(request.cond)), *self.extra)
             return str(_generate("img2video.py", request.prompt, request.output, *settings, extra))

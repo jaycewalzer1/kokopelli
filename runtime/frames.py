@@ -23,9 +23,21 @@ def save_rgb(frame, path):
     return str(path)
 
 
+def resized(frame, size):
+    """A frame at size, written like 448x256. The sim and the world model don't always render at the same size."""
+    width, height = (int(n) for n in size.split("x"))
+    if frame.shape[:2] == (height, width):
+        return frame
+    return np.asarray(Image.fromarray(frame).resize((width, height), Image.LANCZOS))
+
+
 def write_clip(frames, path):
     """Encode frames, all the same size, to an mp4."""
     height, width = frames[0].shape[:2]
+    # ffmpeg reads a stream of bytes, so a different-sized frame wouldn't fail. It would quietly become garbage frames.
+    sizes = {frame.shape for frame in frames}
+    if len(sizes) > 1:
+        raise ValueError(f"frames differ in size: {sorted(sizes)}")
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{width}x{height}",
                     "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p", str(path)],

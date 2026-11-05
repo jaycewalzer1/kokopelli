@@ -135,7 +135,7 @@ def config_from(args):
         values.setdefault("agent_weights", LOW_MEMORY_WEIGHTS)
     if args.sim_settings:
         values["sim_settings"] = json.loads(args.sim_settings)
-    if values["sim"] == "mock" and values["wm"] != "mock":
+    if values["sim"] == "mock" and values["wm"] == "cosmos":
         # Re-anchoring would paste the mock's grid into real video. Scores are still logged, but mean little here.
         values["drift_control"] = False
     if values["wm"] == "cosmos_server":
