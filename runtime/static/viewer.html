@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run Replay</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="/design.css">
+<link rel="stylesheet" href="/viewer.css">
+</head>
+<body>
+<main>
+  <header>
+    <span class="eyebrow ruled" id="run-name">Run</span>
+    <h1 id="headline">Loading the log</h1>
+    <p class="small muted" id="moment"></p>
+  </header>
+
+  <div id="alarms" hidden></div>
+  <dl class="stats mono" id="stats"></dl>
+
+  <section class="controls" aria-label="Tick controls">
+    <button id="play" class="btn-primary">Play</button>
+    <button id="prev" aria-label="Previous tick">Back</button>
+    <button id="next" aria-label="Next tick">Next</button>
+    <input id="slider" type="range" min="0" value="0" aria-label="Tick">
+  </section>
+
+  <section class="views">
+    <figure>
+      <figcaption class="eyebrow">What the agent watched</figcaption>
+      <video id="clip" muted playsinline controls></video>
+      <p class="small muted" id="clip-note"></p>
+    </figure>
+    <figure>
+      <figcaption class="eyebrow">What is true in the sim</figcaption>
+      <img id="truth" alt="The sim's own render at the end of this tick">
+      <div class="tabs" role="tablist" id="truth-tabs"></div>
+    </figure>
+  </section>
+
+  <section>
+    <span class="eyebrow ruled">Drift from the sim</span>
+    <svg id="chart" role="img" aria-label="Drift score over the run" preserveAspectRatio="none"></svg>
+    <p class="small muted" id="chart-note"></p>
+  </section>
+
+  <section class="card">
+    <span class="eyebrow">This tick's decision</span>
+    <h2 id="action"></h2>
+    <p id="diary"></p>
+    <p class="small muted" id="decision-note"></p>
+    <div class="strip" id="strip" aria-label="The frames the agent was shown"></div>
+  </section>
+
+  <section>
+    <div class="tabs" role="tablist" id="detail-tabs"></div>
+    <pre class="mono detail" id="detail"></pre>
+  </section>
+</main>
+<script src="/viewer.js"></script>
+</body>
+</html>
