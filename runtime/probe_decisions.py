@@ -1,7 +1,8 @@
 """Why does the agent repeat itself? Re-ask real Qwen the same logged moments, changing one thing at a time.
 
-Each variant removes one possible cause: its own earlier notes, what it saw, the example in the prompt, or the order of
-the things it can see. Replies are read and tallied. Nothing here touches the run or its log.
+Each variant removes one possible cause: its own earlier notes, what it saw, or the order of the things it can see. An
+earlier version also varied a worked example in the prompt, which moved its choice, so the prompt no longer has one.
+Replies are read and tallied. Nothing here touches the run or its log.
 """
 import argparse
 import json
@@ -18,19 +19,12 @@ from runtime.frames import load_rgb, save_rgb
 
 NOTES = re.compile(r"Your notes:\n.*?\n\nThe (\d+) images", re.DOTALL)
 SEEN = re.compile(r"You can see: (.*)\.\n")
-EXAMPLE_TARGET = '"target": "door"}, "diary"'
 SAMPLES_AT_TEMPERATURE = 3
 SAMPLE_TEMPERATURE = 0.7
 
 
 def without_notes(prompt):
     return NOTES.sub(r"Your notes:\n(none yet)\n\nThe \1 images", prompt)
-
-
-def other_example(prompt, visible):
-    """The example names door, which might be why it picks door. Use the last thing it can see that isn't door."""
-    other = next(name for name in reversed(visible) if name != "door")
-    return prompt.replace(EXAMPLE_TARGET, f'"target": "{other}"}}, "diary"')
 
 
 def reversed_list(prompt, visible):
@@ -45,7 +39,7 @@ def blank_frames(images, folder):
 def variants(prompt, visible, images, folder):
     blank = blank_frames(images, folder)
     return {"as_logged": (prompt, images), "no_notes": (without_notes(prompt), images), "blank_frames": (prompt, blank),
-            "no_notes_blank_frames": (without_notes(prompt), blank), "other_example": (other_example(prompt, visible), images),
+            "no_notes_blank_frames": (without_notes(prompt), blank),
             "reversed_list": (reversed_list(prompt, visible), images)}
 
 

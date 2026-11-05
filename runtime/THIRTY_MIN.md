@@ -32,7 +32,12 @@ The low-memory run, at 256x256 with 20 steps, took 222 s for 3 ticks. The machin
 
 Most likely to bite first:
 
-0. **The agent may just repeat itself.** In the passing run Qwen gave the same action and the same diary line on all 3 ticks, at temperature 0. Three ticks can't show whether it ever changes course. If it's still doing this over 10 ticks, a 30 minute run says little, so check this in gate 9, or sooner with `--wm mock --agent qwen`, which is quick.
+0. **What drives the agent's choices.** Over 20 real ticks it does change course, so it isn't stuck. `runtime/probe_decisions.py` re-asked 3 logged moments, about 27 replies, so these are first reads:
+   - Frames matter: blank frames moved it from the door to Ana.
+   - Hidden notes didn't change its action, only some diary wording, so its notes aren't what picks the action. They may still explain its repeated phrases.
+   - A named target in the prompt's example changed its choice, so the prompt no longer names one.
+   - List order didn't matter, and 0.7 temperature still gave the door 9 of 9, so at this moment it's a real preference.
+   - It sometimes targets things from the life text, such as a clock, which the sim doesn't have. Those replies are rejected. This is the scene mismatch in the first owner decision below.
 1. **Do SimWorld's actions play out while paused?** The adapter steps a paused game, but every SimWorld example runs unpaused. If movement doesn't advance on paused ticks, stepping needs a redesign. Gate 6 answers this. `runtime/SIMWORLD.md` has the full list.
 2. **Does `/v1/models` exist on the vLLM-Omni Cosmos server?** The README shows it on plain vLLM, not with `--omni`. The PACE job waits on it, so if it's missing the job fails at startup. The fix is a small change to the wait and to preflight. Gate 7 answers this.
 3. **Is Cosmos's video good enough across a whole run?** Each chunk continues from one frame, so motion may not carry between chunks. A re-anchor may also show as a jump. Only gate 9 can show this.

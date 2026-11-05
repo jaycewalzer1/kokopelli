@@ -44,8 +44,9 @@ class Decision(BaseModel):
 
 
 ACTION_ADAPTER = TypeAdapter(Action)
-ACTION_HELP = """Reply with one JSON object and nothing else. For example:
-{"action": {"type": "look_at", "target": "door"}, "diary": "A note to yourself, if you want one."}
+# No real target in the template: a probe showed that naming one in an example changes what the agent chooses.
+ACTION_HELP = """Reply with one JSON object and nothing else, in this form:
+{"action": <one action from the list>, "diary": "A note to yourself, if you want one."}
 The action is one of:
 {"type": "move_to", "target": "<something you can see>"}
 {"type": "look_at", "target": "<something you can see>"}

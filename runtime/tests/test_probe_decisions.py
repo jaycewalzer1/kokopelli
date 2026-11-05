@@ -24,11 +24,6 @@ class VariantTest(unittest.TestCase):
         self.assertNotIn("pigeons", cleared)
         self.assertEqual(cleared, prompt())
 
-    def test_the_example_really_changes(self):
-        changed = probe.other_example(prompt(), VISIBLE)
-        self.assertNotEqual(changed, prompt())
-        self.assertIn('{"type": "look_at", "target": "ana"}, "diary"', changed)
-
     def test_the_list_really_reverses(self):
         self.assertIn("You can see: ana, ball, door.", probe.reversed_list(prompt(), VISIBLE))
 
@@ -46,7 +41,7 @@ class VariantTest(unittest.TestCase):
             return '{"action": {"type": "wait"}}'
 
         rows = probe.probe(folder, ask)
-        self.assertEqual(len(rows), 2 * (6 + probe.SAMPLES_AT_TEMPERATURE))
+        self.assertEqual(len(rows), 2 * (5 + probe.SAMPLES_AT_TEMPERATURE))
         self.assertTrue(all(Path(path).exists() or "blank" in path for _, images, _ in calls for path in images))
         self.assertEqual(probe.tally(rows)["as_logged t=0.0"], {"wait": 2})
 
