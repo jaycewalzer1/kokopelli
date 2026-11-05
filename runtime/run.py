@@ -1,0 +1,160 @@
+"""Run the agent in a world model. See runtime/README.md."""
+import argparse
+import json
+import sys
+import time
+from dataclasses import fields
+from pathlib import Path
+
+from runtime import checkpoint, replay
+from runtime.adapters.life_db import LifeContext, copy_database
+from runtime.autonomy import counterfactual
+from runtime.config import WM_PRESETS, Config
+from runtime.event_log import JsonlLog
+from runtime.leak_guard import LeakError
+from runtime.loop import Loop
+from runtime.mocks.agent import NullAgent, ScriptedAgent
+from runtime.mocks.context import MockContext
+from runtime.mocks.sim import MockSim
+from runtime.mocks.world_model import MockWorldModel
+
+RUNS = Path("runs")
+BACKENDS = {"mock": {"sim": "mock", "wm": "mock", "agent": "mock", "context": "mock", "wm_preset": "mock"},
+            "real": {"sim": "simworld", "wm": "cosmos", "agent": "qwen", "context": "life", "wm_preset": "full"}}
+
+
+def make_sim(config):
+    if config.sim == "mock":
+        return MockSim()
+    from runtime.adapters.simworld_bridge import make_simworld
+    return make_simworld(config)
+
+
+def make_world_model(config):
+    if config.wm == "mock":
+        return MockWorldModel()
+    from runtime.adapters.cosmos import CosmosWorldModel
+    return CosmosWorldModel(config.wm_settings["size"], config.wm_settings["steps"])
+
+
+def make_agent(config):
+    if config.agent == "mock":
+        return ScriptedAgent(config.seed)
+    if config.agent == "null":
+        return NullAgent()
+    from runtime.adapters.qwen import MlxQwenAgent, ServerQwenAgent
+    return ServerQwenAgent(config.agent_url, config.agent_model) if config.agent_url else MlxQwenAgent()
+
+
+def make_context(config, out):
+    if config.context == "mock":
+        return MockContext()
+    copy = out / "life_copy.db"
+    if not copy.exists():
+        copy_database(config.life_db, copy)
+    return LifeContext(copy, config.life_run, config.start_time)
+
+
+def git_commit():
+    import subprocess
+    run = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True)
+    return run.stdout.strip() or None
+
+
+def finish(config, out, sim_factory, log):
+    """The parts that look at the whole run: the joined video, and what a do-nothing agent would have done."""
+    clips = [out / chunk["clip"] for tick in replay.summarize(out)["ticks"] for chunk in tick["chunks"]]
+    if clips:
+        try:
+            from blend import blend
+            final = blend(clips, out / "final.mp4", overlap_frames=config.cond_frames)
+            log.append("stitched", None, {"video": str(Path(final).relative_to(out)), "clips": len(clips)})
+        except Exception as error:  # The run's data is already safe, so a failed join shouldn't look like a failed run.
+            log.append("stitched", None, {"video": None, "error": str(error)[-300:]})
+    if config.counterfactual and config.sim == "mock":
+        start = replay.load(out, verify=False)
+        first = next(event for event in start if event["kind"] == "sim_reset")["data"]["state"]["sim_time"]
+        log.append("counterfactual", None, counterfactual(sim_factory, config, first, replay.trajectory(out)))
+    summary = replay.summarize(out)
+    log.append("run_end", None, summary["run"]["totals"])
+    return summary
+
+
+def run(config, out, sim=None, world_model=None, agent=None, context=None, resume=False):
+    """Run or continue a run in out. The pieces can be passed in, which is how the tests break things on purpose."""
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "config.json").write_text(json.dumps(config.to_dict(), indent=2))
+    log = JsonlLog(out / "events.jsonl")
+    context = context or make_context(config, out)
+    loop = Loop(config, out, sim or make_sim(config), world_model or make_world_model(config), agent or make_agent(config), context, log)
+    saved = checkpoint.load(out) if resume else None
+    try:
+        if resume and saved:
+            loop.resume(saved)
+        else:
+            log.append("run_start", None, {"config": config.to_dict(), "seed": config.seed, "git": git_commit(), "started": time.time()})
+            loop.start()
+        loop.run()
+        return finish(config, out, lambda: make_sim(config), log)
+    finally:
+        loop.sim.close()
+        log.close()
+
+
+def config_from(args):
+    backend = BACKENDS[args.backend]
+    values = {**backend, "seed": args.seed, "ticks": args.ticks, "drift_control": not args.no_drift_control,
+              "counterfactual": not args.no_counterfactual}
+    for name in ("sim", "wm", "agent", "context", "wm_preset", "start_time", "life_db", "life_run", "agent_url", "drift_threshold"):
+        value = getattr(args, name)
+        if value is not None:
+            values[name] = value
+    if values["context"] == "life" and not values.get("life_db"):
+        sys.exit("--context life needs --life-db")
+    return Config(**values)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--ticks", type=int, default=5, help="each is 30 sim-seconds; 60 is the full half hour")
+    parser.add_argument("--backend", choices=BACKENDS, default="mock")
+    parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--resume", metavar="RUN_ID", help="continue a run from its last finished tick")
+    parser.add_argument("--no-drift-control", action="store_true")
+    parser.add_argument("--no-counterfactual", action="store_true")
+    parser.add_argument("--out", type=Path, help="default: runs/<run_id>/")
+    parser.add_argument("--sim", choices=["mock", "simworld"])
+    parser.add_argument("--wm", choices=["mock", "cosmos"])
+    parser.add_argument("--agent", choices=["mock", "null", "qwen"])
+    parser.add_argument("--context", choices=["mock", "life"])
+    parser.add_argument("--wm-preset", choices=WM_PRESETS)
+    parser.add_argument("--start-time", help="ISO time the half hour starts")
+    parser.add_argument("--life-db", help="life tree database; a run copies it and never writes to the original")
+    parser.add_argument("--life-run", type=int)
+    parser.add_argument("--agent-url", help="an OpenAI-style server such as vLLM, instead of local MLX")
+    parser.add_argument("--drift-threshold", type=float)
+    args = parser.parse_args()
+
+    RUNS.mkdir(exist_ok=True)
+    (RUNS / ".gitignore").write_text("*\n")
+    if args.resume:
+        out = Path(args.resume) if Path(args.resume).is_dir() else RUNS / args.resume
+        known = {field.name for field in fields(Config)}
+        config = Config(**{k: v for k, v in json.loads((out / "config.json").read_text()).items() if k in known})
+        config.ticks = max(config.ticks, args.ticks) if "--ticks" in sys.argv else config.ticks
+    else:
+        config = config_from(args)
+        out = args.out or RUNS / f"wmloop_{time.strftime('%Y%m%d_%H%M%S')}_seed{config.seed}"
+    try:
+        summary = run(config, out, resume=bool(args.resume))
+    except LeakError as error:
+        sys.exit(f"LEAK ALARM, run stopped: {error}")
+    totals = summary["run"]["totals"]
+    print(f"{out}: {totals['ticks']} ticks, {totals['reanchors']} re-anchors, autonomy {totals['autonomy']}, "
+          f"{totals['invalid_replies']} invalid replies, {totals['seconds'].get('total', 0):.1f}s")
+    print(f"View it with: python -m runtime.viewer {out}")
+
+
+if __name__ == "__main__":
+    main()
