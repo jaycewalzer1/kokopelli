@@ -360,7 +360,7 @@ def verdicts(tests, runs, data, home, bench):
     results.append(("Cosmos clip collection", "RUNNING" if time.time() - data["at"] < 1200 else "STOPPED",
                     f"{data['clips']} clips, {data['failed']} failed; median {data['median_seconds']} s, recent {data['recent_seconds']} s; last started {age(data['at'])}"))
     mind_runs = sorted(path.name for path in (ROOT / "out/mind").glob("*/"))
-    real_mind = [name for name in mind_runs if "qwen" in name and list((ROOT / "out/mind" / name).glob("events.jsonl"))]
+    real_mind = [name for name in mind_runs if "qwen" in name and (ROOT / "out/mind" / name / "feelings.jsonl").exists()]
     ok, evidence = tested("mind")
     state = "FAILING" if ok is False else "HAS A REAL QWEN RUN" if real_mind else "MOCKS ONLY"
     results.append(("Mind loop (replaced the teacher)", state, f"{evidence}. Runs: {', '.join(mind_runs) or 'none'}. Open decisions in `mind/OPEN_DECISIONS.md`"))
