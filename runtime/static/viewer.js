@@ -18,7 +18,9 @@ function details(tick) {
     "Agent prompt": tick.agent_input.prompt,
     "Agent replies": tick.outputs.map((o) => `try ${o.attempt}, ${o.valid ? "valid" : `rejected: ${o.error}`}, ${o.seconds}s\n${o.raw}`).join("\n\n"),
     "Sim state": JSON.stringify(tick.sim.state, null, 2),
-    "Timing": Object.entries(tick.timing.seconds).map(([stage, value]) => `${stage.padEnd(12)}${value.toFixed(3)}s`).join("\n"),
+    "Timing": Object.entries(tick.timing.seconds).map(([stage, value]) => `${stage.padEnd(12)}${value.toFixed(3)}s`).join("\n")
+      + "\n\nPeak RAM on the whole machine\n"
+      + Object.entries(tick.timing.memory_gb || {}).map(([stage, value]) => `${stage.padEnd(12)}${value === null ? "n/a" : `${value} GB`}`).join("\n"),
   };
 }
 
@@ -104,12 +106,17 @@ function draw(run) {
   drawChart(run);
 }
 
+function peakMemory(totals) {
+  const peaks = Object.values(totals.peak_memory_gb || {});
+  return peaks.length ? `${Math.max(...peaks)} GB` : "n/a";
+}
+
 function stats(run, name) {
   const totals = run.totals;
   const away = run.counterfactual ? `${run.counterfactual.final_distance} cells` : "not run";
   const rows = [["Ticks", totals.ticks], ["Differs from tree", totals.autonomy === null ? "n/a" : `${Math.round(totals.autonomy * 100)}%`],
     ["From null agent", away], ["Re-anchors", totals.reanchors], ["Invalid replies", totals.invalid_replies],
-    ["Compute", `${(totals.seconds.total || 0).toFixed(1)}s`], ["Cost", `$${totals.cost_usd.toFixed(2)}`], ["Events", totals.events]];
+    ["Compute", `${(totals.seconds.total || 0).toFixed(1)}s`], ["Peak RAM", peakMemory(totals)], ["Cost", `$${totals.cost_usd.toFixed(2)}`], ["Events", totals.events]];
   byId("stats").replaceChildren(...rows.flatMap(([label, value]) => {
     const wrap = document.createElement("div");
     const term = document.createElement("dt");

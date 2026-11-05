@@ -19,6 +19,7 @@ from runtime.mocks.sim import MockSim
 from runtime.mocks.world_model import MockWorldModel
 
 RUNS = Path("runs")
+LOW_MEMORY_WEIGHTS = "models/Qwen3-VL-8B-Instruct-4bit"
 BACKENDS = {"mock": {"sim": "mock", "wm": "mock", "agent": "mock", "context": "mock", "wm_preset": "mock"},
             "real": {"sim": "simworld", "wm": "cosmos", "agent": "qwen", "context": "life", "wm_preset": "full"}}
 
@@ -26,7 +27,10 @@ BACKENDS = {"mock": {"sim": "mock", "wm": "mock", "agent": "mock", "context": "m
 def make_sim(config):
     if config.sim == "mock":
         return MockSim()
-    from runtime.adapters.simworld_bridge import make_simworld
+    try:
+        from runtime.adapters.simworld_bridge import make_simworld
+    except ModuleNotFoundError:
+        sys.exit("The SimWorld bridge isn't on this branch yet. Use --sim mock for now.")
     return make_simworld(config)
 
 
@@ -34,7 +38,7 @@ def make_world_model(config):
     if config.wm == "mock":
         return MockWorldModel()
     from runtime.adapters.cosmos import CosmosWorldModel
-    return CosmosWorldModel(config.wm_settings["size"], config.wm_settings["steps"])
+    return CosmosWorldModel(config.wm_settings["size"], config.wm_settings["steps"], config.wm_quantize)
 
 
 def make_agent(config):
@@ -43,7 +47,7 @@ def make_agent(config):
     if config.agent == "null":
         return NullAgent()
     from runtime.adapters.qwen import MlxQwenAgent, ServerQwenAgent
-    return ServerQwenAgent(config.agent_url, config.agent_model) if config.agent_url else MlxQwenAgent()
+    return ServerQwenAgent(config.agent_url, config.agent_model) if config.agent_url else MlxQwenAgent(config.agent_weights)
 
 
 def make_context(config, out):
@@ -106,10 +110,13 @@ def config_from(args):
     backend = BACKENDS[args.backend]
     values = {**backend, "seed": args.seed, "ticks": args.ticks, "drift_control": not args.no_drift_control,
               "counterfactual": not args.no_counterfactual}
-    for name in ("sim", "wm", "agent", "context", "wm_preset", "start_time", "life_db", "life_run", "agent_url", "drift_threshold"):
+    for name in ("sim", "wm", "agent", "context", "wm_preset", "start_time", "life_db", "life_run", "agent_url", "drift_threshold", "agent_weights", "wm_quantize"):
         value = getattr(args, name)
         if value is not None:
             values[name] = value
+    if args.low_memory:
+        values["wm_preset"], values["wm_quantize"] = "tiny", 8
+        values.setdefault("agent_weights", LOW_MEMORY_WEIGHTS)
     if values["context"] == "life" and not values.get("life_db"):
         sys.exit("--context life needs --life-db")
     return Config(**values)
@@ -134,6 +141,9 @@ def main():
     parser.add_argument("--life-run", type=int)
     parser.add_argument("--agent-url", help="an OpenAI-style server such as vLLM, instead of local MLX")
     parser.add_argument("--drift-threshold", type=float)
+    parser.add_argument("--low-memory", action="store_true", help="smaller clips, 8-bit Cosmos, 4-bit Qwen; see runtime/README.md")
+    parser.add_argument("--agent-weights", help="a folder of Qwen weights to use instead of the full ones")
+    parser.add_argument("--wm-quantize", type=int, choices=[8], help="load Cosmos in 8 bits")
     args = parser.parse_args()
 
     RUNS.mkdir(exist_ok=True)

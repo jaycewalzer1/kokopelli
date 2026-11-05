@@ -16,8 +16,14 @@ def _with_retry_note(agent_input):
 
 
 class MlxQwenAgent(AgentPolicy):
+    def __init__(self, weights=None):
+        self.weights = weights
+
     def decide(self, agent_input):
-        from llm_model import ask  # Imported here because mlx only exists on Apple silicon.
+        import llm_model  # Imported here because mlx only exists on Apple silicon.
+        if self.weights:
+            llm_model.LLM_MODEL_WEIGHTS = self.weights
+        ask = llm_model.ask
         return ask(_with_retry_note(agent_input), agent_input.images, max_tokens=MAX_TOKENS)
 
     def release(self):

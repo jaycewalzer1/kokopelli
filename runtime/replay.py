@@ -54,15 +54,18 @@ def summarize(run_dir):
             run["alarms"].append({"tick": tick, **data})
         elif kind == "resume":
             run["resumes"] += 1
-        elif kind in ("run_start", "sim_reset", "run_end", "counterfactual", "stitched"):
+        elif kind in ("run_start", "sim_reset", "run_end", "counterfactual", "stitched", "memory_baseline"):
             run[kind] = data
     done = [ticks[key] for key in sorted(ticks) if "timing" in ticks[key]]
-    seconds = {}
+    seconds, memory = {}, {}
     for tick in done:
+        for stage, value in tick["timing"].get("memory_gb", {}).items():
+            if value is not None:
+                memory[stage] = max(memory.get(stage, 0), value)
         for stage, value in tick["timing"]["seconds"].items():
             seconds[stage] = round(seconds.get(stage, 0) + value, 3)
     differs = [tick["autonomy"]["differs"] for tick in done if "autonomy" in tick]
-    run["totals"] = {"ticks": len(done), "seconds": seconds, "cost_usd": round(sum(t["timing"]["cost_usd"] for t in done), 4),
+    run["totals"] = {"ticks": len(done), "seconds": seconds, "peak_memory_gb": memory, "cost_usd": round(sum(t["timing"]["cost_usd"] for t in done), 4),
                      "reanchors": sum(len(t["reanchors"]) for t in done), "fallbacks": sum("fallback" in t for t in done),
                      "invalid_replies": sum(not o["valid"] for t in done for o in t["outputs"]),
                      "autonomy": round(sum(differs) / len(differs), 3) if differs else None, "events": len(events)}

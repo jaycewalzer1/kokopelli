@@ -8,6 +8,7 @@ from runtime.actions import InvalidDecision, action_dict, parse_decision
 from runtime.frames import evenly_spaced, file_hash, read_clip, save_rgb
 from runtime.interfaces import AgentInput, ChunkRequest, CondFrame
 from runtime.leak_guard import LeakError, drop_future
+from runtime.memory import MemorySampler
 from runtime.prompt_builder import build_agent_prompt, build_wm_prompt
 
 
@@ -26,6 +27,7 @@ class Loop:
         self.cond = []
         self.since_anchor = 0
         self.visible = []
+        self.memory = MemorySampler().start()
 
     def _rel(self, path):
         return str(Path(path).resolve().relative_to(self.out.resolve()))
@@ -48,18 +50,24 @@ class Loop:
         self.log.append("resume", None, {"from_tick": self.next_tick, "log_offset": saved["log_offset"]})
 
     def run(self):
-        while self.next_tick <= self.config.ticks:
-            self.tick(self.next_tick)
-            self.next_tick += 1
+        self.log.append("memory_baseline", None, {"used_gb": self.memory.baseline})
+        try:
+            while self.next_tick <= self.config.ticks:
+                self.tick(self.next_tick)
+                self.next_tick += 1
+        finally:
+            self.memory.close()
 
     def tick(self, tick):
         started = time.perf_counter()
-        seconds = {}
+        seconds, memory = {}, {}
+        self.memory.take()
         self.log.append("tick_start", tick, {"action_applied": self.pending})
 
         clock = time.perf_counter()
         step = self.sim.step(self.pending, tick)
         seconds["sim"] = time.perf_counter() - clock
+        memory["sim"] = self.memory.take()
         now = step.state["sim_time"]
         self.visible = step.visible
         self.log.append("sim_step", tick, {"state": step.state, "captures": [self._capture_data(c) for c in step.captures],
@@ -77,10 +85,12 @@ class Loop:
         self.agent.release()
         sampled = self._render(tick, prompt, step, seconds)
         seconds["wm"] = time.perf_counter() - clock - seconds["drift"]
+        memory["wm"] = self.memory.take()
 
         clock = time.perf_counter()
         decision = self._decide(tick, now, context, sampled)
         seconds["agent"] = time.perf_counter() - clock
+        memory["agent"] = self.memory.take()
 
         self._score_autonomy(tick, now, decision)
         self.pending = action_dict(decision.action)
@@ -90,7 +100,7 @@ class Loop:
         seconds["checkpoint"] = time.perf_counter() - clock
         seconds["total"] = time.perf_counter() - started
         compute = seconds["sim"] + seconds["wm"] + seconds["agent"]
-        self.log.append("tick_end", tick, {"seconds": {key: round(value, 4) for key, value in seconds.items()},
+        self.log.append("tick_end", tick, {"seconds": {key: round(value, 4) for key, value in seconds.items()}, "memory_gb": memory,
                                            "cost_usd": round(compute / 3600 * self.config.gpu_dollars_per_hour, 6)})
 
     def _guarded(self, tick, now, function, *args):
