@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Life generator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="/static/design.css">
+<link rel="stylesheet" href="/static/panel.css">
+</head>
+<body>
+<nav class="sidebar" aria-label="Views">
+  <div class="wordmark">Kokopelli</div>
+  <a href="/" aria-current="page">Life generator</a>
+  <a href="/training">Homeostatic training</a>
+</nav>
+<div class="view">
+<header>
+  <div class="brand">Life generator</div>
+  <select id="runs" aria-label="Run"></select>
+  <details id="new-run">
+    <summary>New run</summary>
+    <form id="seed-form" class="popover card">
+      <label>Prompt <textarea name="prompt" rows="2"></textarea></label>
+      <label>Birth date <input name="birth_date" type="date" required></label>
+      <label>Place <input name="place"></label>
+      <label>Era <input name="era"></label>
+      <label>Family <small>One "name: relationship" per line</small> <textarea name="family" rows="2"></textarea></label>
+      <label>Temperament <input name="temperament"></label>
+      <label>Anchors <small>One "1995-10-10T10:20:30 what happens" per line</small> <textarea name="anchors" rows="2"></textarea></label>
+      <label>Random seed <input name="rng_seed" type="number"></label>
+      <label>Hidden target <small>Never shown, and never sent to the generator</small> <textarea name="hidden_target" rows="2"></textarea></label>
+      <button type="submit">Create run</button>
+    </form>
+  </details>
+  <div class="controls">
+    <label class="speed">Speed <select id="speed"><option value="0.1">Slow</option><option value="0.03" selected>Normal</option><option value="0">Max</option></select></label>
+    <button type="button" id="step">Step</button>
+    <button type="button" id="replay">Replay</button>
+    <button type="button" id="primary" class="btn-primary">Run</button>
+  </div>
+</header>
+<div class="page">
+  <main class="board">
+    <div id="graph-wrap">
+      <svg id="graph" role="img" aria-label="The life as a tree. Drag to pan, scroll to zoom, hover a node to preview its line, click a node to open it."></svg>
+      <div id="tip" class="card" hidden>
+        <div id="tip-label"></div>
+        <div id="tip-meta"></div>
+        <div id="tip-summary"></div>
+      </div>
+      <div class="status" role="status">
+        <div id="status-line"><i></i><span id="status-text">Loading</span></div>
+        <div id="facts"></div>
+        <div id="notice"></div>
+        <p class="keys">The gold line is the path in view. When you look elsewhere, the dark line is the agent. Click a node or cell to open it. Arrow keys move, Esc goes back to the agent, Space runs or pauses, R replays.</p>
+      </div>
+      <button type="button" id="back" hidden>Back to agent</button>
+      <div class="view-buttons">
+        <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+        <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
+        <button type="button" id="whole" aria-label="Show the whole life"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path></svg></button>
+      </div>
+    </div>
+    <div class="time">
+      <div id="rulers"></div>
+      <div class="scrubber">
+        <input id="scrub" type="range" min="0" max="0" value="0" aria-label="Move through the run's events">
+        <div class="scrub-row">
+          <div id="scrub-text"></div>
+          <div class="legend">
+            <span><i class="closed"></i>Written</span>
+            <span><i class="agent"></i>Agent is here</span>
+            <span><i class="ghost"></i>Not written yet</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <aside aria-label="Details">
+    <div id="inspector"></div>
+    <div id="log" aria-label="Recent events"></div>
+  </aside>
+</div>
+</div>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

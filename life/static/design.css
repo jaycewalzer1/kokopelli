@@ -1,0 +1,122 @@
+/* The Kokopelli Labs design system, from DESIGN.md. Colors, type and components live here; pages only lay them out. */
+:root {
+  color-scheme: light dark;
+  --surface-100: #F3EEE6;
+  --surface-200: #EAE3D8;
+  --umber: #3B2A22;
+  --hairline: #CFC4B4;
+  --ink: #2B1E18;
+  --ink-muted: #6E6056;
+  --clay: #8F4739;
+  --gold: #9A7B40;
+  --danger: #9E2A22;
+  --on-umber: var(--surface-100);
+  --sage: #5E6B4E;
+  --slate: #4F5F6B;
+  --dust-rose: #8A5A62;
+  --walnut: #5A4334;
+
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Work Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --space-2: 8px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-12: 48px;
+
+  --radius-none: 0px;
+  --radius-sm: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface-100: #14100D;
+    --surface-200: #1E1814;
+    --umber: #33271F;
+    --hairline: #3A302A;
+    --ink: #EDE5DA;
+    --ink-muted: #A89A8C;
+    --clay: #C07A62;
+    --gold: #C4A66B;
+    --danger: #E8877C;
+    --on-umber: var(--ink);
+    --sage: #9AA88A;
+    --slate: #8E9EAA;
+    --dust-rose: #C2939A;
+    --walnut: #B39A86;
+  }
+}
+
+:root[data-theme="dark"] {
+  --surface-100: #14100D;
+  --surface-200: #1E1814;
+  --umber: #33271F;
+  --hairline: #3A302A;
+  --ink: #EDE5DA;
+  --ink-muted: #A89A8C;
+  --clay: #C07A62;
+  --gold: #C4A66B;
+  --danger: #E8877C;
+  --on-umber: var(--ink);
+  --sage: #9AA88A;
+  --slate: #8E9EAA;
+  --dust-rose: #C2939A;
+  --walnut: #B39A86;
+  color-scheme: dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
+
+body {
+  background: var(--surface-100);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+}
+
+/* Type */
+h1, h2, h3, p { margin: 0; }
+.display { font: 300 64px/64px var(--font-serif); letter-spacing: -0.02em; }
+h1, .h1 { font: 300 40px/44px var(--font-serif); }
+h2, .h2 { font: 400 28px/34px var(--font-serif); }
+.label { font: 500 14px/20px var(--font-sans); }
+.small { font: 400 13px/18px var(--font-sans); }
+.mono { font: 400 13px/20px var(--font-mono); }
+.eyebrow { font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); }
+/* The signature move: an eyebrow, a hairline, then a headline. */
+.eyebrow.ruled { display: block; padding-bottom: var(--space-2); margin-bottom: var(--space-2); border-bottom: 1px solid var(--hairline); }
+
+:focus-visible { outline: 1px solid var(--clay); outline-offset: 2px; }
+
+/* Buttons */
+button, summary, .btn-primary, .btn-secondary { font: 500 14px/20px var(--font-sans); box-sizing: border-box; padding: 10px 16px; color: var(--ink); background: transparent; border: 1px solid var(--hairline); border-radius: var(--radius-sm); cursor: pointer; }
+button:hover:not(:disabled), summary:hover { border-color: var(--ink); }
+button:disabled { opacity: .4; cursor: default; }
+.btn-primary { background: var(--clay); border-color: var(--clay); color: var(--surface-100); }
+button.btn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--clay) 92%, black); border-color: color-mix(in srgb, var(--clay) 92%, black); }
+
+/* Link */
+a, .link { color: var(--ink); text-decoration: underline 1px var(--gold); text-underline-offset: 4px; }
+
+/* Card */
+.card { background: var(--surface-200); border: 1px solid var(--hairline); border-radius: var(--radius-none); padding: var(--space-4); }
+
+/* Inputs */
+input, select, textarea { font: 400 16px/24px var(--font-sans); box-sizing: border-box; padding: var(--space-2) 0; background: transparent; color: var(--ink); border: 0; border-bottom: 1px solid var(--hairline); border-radius: var(--radius-sm); }
+input:focus, select:focus, textarea:focus { outline: 0; border-bottom-color: var(--clay); }
+
+/* Tabs */
+.tabs { display: flex; gap: var(--space-4); border-bottom: 1px solid var(--hairline); }
+.tab { font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); background: transparent; border: 0; border-bottom: 1px solid transparent; border-radius: var(--radius-none); padding: var(--space-2) 0; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--gold); }
+
+/* Hero and footer */
+.hero-band, .footer-band { background: var(--umber); color: var(--on-umber); padding: var(--space-12) var(--space-6); }
+.hero-band hr, .footer-band hr { border: 0; border-top: 1px solid var(--gold); margin: var(--space-4) 0; }
+
+/* Charts: ink lines, clay for the series that matters, gold for reference lines, hairline grid, no fills. */
+.chart-line { fill: none; stroke: var(--ink); stroke-width: 1px; }
+.chart-key { fill: none; stroke: var(--clay); stroke-width: 1px; }
+.chart-reference { fill: none; stroke: var(--gold); stroke-width: 1px; }
+.chart-grid { fill: none; stroke: var(--hairline); stroke-width: 1px; }
