@@ -62,6 +62,17 @@ class GpuQueue(unittest.TestCase):
                                                      "queued_at": 0, "running": True}))
         self.assertEqual(self.start("next", 1, "true").wait(timeout=20), 0)
 
+    def test_moving_a_waiting_job_changes_the_order(self):
+        holder = self.start("holder", 0, "sleep", "2")
+        time.sleep(0.4)
+        first = self.start("first", 10, "true")
+        second = self.start("second", 20, "true")
+        time.sleep(0.4)
+        subprocess.run([sys.executable, str(GPU), "move", "--name", "second", "--priority", "5"], env=self.env, check=True, stdout=subprocess.DEVNULL)
+        for job in (holder, first, second):
+            self.assertEqual(job.wait(timeout=20), 0)
+        self.assertEqual([e["name"] for e in self.events() if e["event"] == "started"], ["holder", "second", "first"])
+
     def test_giving_up_is_reported(self):
         holder = self.start("holder", 0, "sleep", "2")
         time.sleep(0.4)

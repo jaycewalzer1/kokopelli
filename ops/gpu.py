@@ -150,6 +150,19 @@ def status(_args):
     return 0
 
 
+def move(args):
+    """Change a waiting job's priority. The queue reads priorities from the ticket files."""
+    with LOCK.open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        matches = [t for t in tickets() if t["name"] == args.name and not t.get("running")]
+        for ticket in matches:
+            ticket["priority"] = args.priority
+            (QUEUE / f"{ticket['id']}.json").write_text(json.dumps(ticket))
+            log_event(event="moved", id=ticket["id"], name=args.name, priority=args.priority)
+    print(f"moved {len(matches)} waiting job(s)")
+    return 0 if matches else 1
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="action", required=True)
@@ -162,6 +175,10 @@ def main():
     run_parser.add_argument("command", nargs="+")
     run_parser.set_defaults(handler=run)
     commands.add_parser("status").set_defaults(handler=status)
+    move_parser = commands.add_parser("move")
+    move_parser.add_argument("--name", required=True)
+    move_parser.add_argument("--priority", type=int, required=True)
+    move_parser.set_defaults(handler=move)
     args = parser.parse_args()
     STATE.mkdir(parents=True, exist_ok=True)
     QUEUE.mkdir(parents=True, exist_ok=True)

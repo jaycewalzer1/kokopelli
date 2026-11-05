@@ -256,9 +256,10 @@ def agent_runs():
         config = json.loads(config_file.read_text())
         events = read_jsonl(folder / "events.jsonl")
         end = next((e["data"] for e in events if e.get("kind") == "run_end"), None)
+        chosen = [json.dumps(e["data"].get("action"), sort_keys=True) for e in events if e.get("kind") == "decision" and not e["data"].get("forced")]
         runs.append({"name": folder.name, "wm": config.get("wm"), "agent": config.get("agent"), "sim": config.get("sim"),
                      "ticks": config.get("ticks"), "finished": bool(end), "video": (folder / "final.mp4").exists(),
-                     "seconds": (end or {}).get("seconds", {}).get("total"), "fallbacks": (end or {}).get("fallbacks"),
+                     "seconds": (end or {}).get("seconds", {}).get("total"), "fallbacks": (end or {}).get("fallbacks"), "choices": len(chosen), "distinct": len(set(chosen)),
                      "at": folder.stat().st_mtime, "path": str(folder)})
     return runs
 
@@ -287,7 +288,8 @@ def ledger_jobs():
     jobs = {}
     for event in read_jsonl(gpu.LEDGER):
         job = jobs.setdefault(event["id"], {"name": event["name"], "state": "queued"})
-        job["state"] = event["event"]
+        if event["event"] != "moved":
+            job["state"] = event["event"]
         job.update({k: event[k] for k in ("waited", "exit_code", "seconds", "peak_rss_gb", "log", "timed_out") if k in event})
         job["at"] = event["at"]
     return list(jobs.values())
@@ -317,13 +319,15 @@ def verdicts(tests, runs, data, home, bench):
     decided = [run for run in both if run["ticks"] and (run["fallbacks"] or 0) < run["ticks"]]
     if ok is False:
         state = "FAILING"
-    elif decided:
+    elif any(run["distinct"] > 1 for run in decided):
         state = "WORKS, both real models"
+    elif decided:
+        state = "RUNS, BUT THE AGENT REPEATS ONE ACTION"
     elif both:
         state = "RENDERS, BUT AGENT MADE NO VALID DECISION"
     else:
         state = "PARTLY, one real model" if real else "MOCKS ONLY"
-    results.append(("Agent loop", state, f"{evidence}. Finished real-model runs: {len(both)} with both models, {len(decided)} of those with a valid decision"))
+    results.append(("Agent loop", state, f"{evidence}. Finished real-model runs: {len(both)} with both models, {len(decided)} of those with valid decisions, {sum(run['distinct'] > 1 for run in decided)} of those with more than one distinct action"))
 
     ok, evidence = tested("simworld")
     results.append(("SimWorld adapter", "FAILING" if ok is False else "FAKE SERVER ONLY", f"{evidence}. Needs PACE to reach real Unreal"))
