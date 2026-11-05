@@ -115,9 +115,15 @@ def _sanity(rows):
 
 
 def _consistency(rows):
-    table = [{"arm": r["arm"], "multiple": r["extras"]["multiple_switching"], "dominated": r["extras"]["dominated"], "consistent": r["extras"]["consistent"]}
+    """Rates per arm, plus the pre-registered sensitivity check: mean safe choices with inconsistent ladders left out."""
+    table = [{"arm": r["arm"], "multiple": r["extras"]["multiple_switching"], "dominated": r["extras"]["dominated"], "consistent": r["extras"]["consistent"],
+              "safe_all": r["score"], "safe_consistent": r["score"] if r["extras"]["consistent"] else None}
              for r in rows if r["valid"] and r["instrument"] == "holt_laury"]
-    return pd.DataFrame(table).groupby("arm", as_index=False).mean() if table else pd.DataFrame()
+    if not table:
+        return pd.DataFrame()
+    frame = pd.DataFrame(table)
+    frame["safe_consistent"] = pd.to_numeric(frame["safe_consistent"])
+    return frame.groupby("arm", as_index=False).mean()
 
 
 def _warnings(data):
@@ -150,6 +156,13 @@ def _contrast_cells(row):
             fmt(row["d"]), fmt(row["p"], 4), fmt(row["p_holm"], 4), f"{row['seeds_right']}/{row['seeds_total']}" if row["kind"] == "difference" else "-", row["status"]]
 
 
+CONSISTENCY_HEADERS = ["arm", "multiple switching", "dominated", "consistent", "safe choices, all", "safe choices, consistent only"]
+
+
+def _consistency_rows(data):
+    return [[r.arm, fmt(r.multiple), fmt(r.dominated), fmt(r.consistent), fmt(r.safe_all), fmt(r.safe_consistent)] for _, r in data["consistency"].iterrows()]
+
+
 CONTRAST_HEADERS = ["contrast", "arms", "instrument", "difference", "95% CI", "d", "p", "p (Holm)", "seeds right", "status"]
 
 
@@ -170,7 +183,7 @@ def to_markdown(data):
         templates = _sorted_arms(data["templates"][data["templates"].instrument == name])
         parts += ["", "Per template:", "", _md_table(["template", "arm", "n", "mean", "95% CI"], [[r.template, r.arm, r.n, fmt(r["mean"], 3), f"[{fmt(r.ci_low, 3)}, {fmt(r.ci_high, 3)}]"] for _, r in templates.sort_values("template").iterrows()]), ""]
     if not data["consistency"].empty:
-        parts += ["## Holt-Laury consistency", "", _md_table(["arm", "multiple switching", "dominated", "consistent"], [[r.arm, fmt(r.multiple), fmt(r.dominated), fmt(r.consistent)] for _, r in data["consistency"].iterrows()]), ""]
+        parts += ["## Holt-Laury consistency", "", _md_table(CONSISTENCY_HEADERS, _consistency_rows(data)), ""]
     if not data["sanity"].empty:
         parts += ["## Travel sanity items", "", _md_table(["arm", "share correct"], [[r.arm, fmt(r.correct)] for _, r in data["sanity"].iterrows()]), ""]
     parts += ["## Parse failures", "", _md_table(["instrument", "arm", "n", "retried", "invalid", "invalid rate"], [[r.instrument, r.arm, r.n, r.retried, r.invalid, fmt(r.invalid_rate, 3)] for _, r in data["failures"].iterrows()]), ""]
@@ -262,7 +275,7 @@ def to_html(data):
         parts.append('</section>')
 
     if not data["consistency"].empty:
-        parts.append('<section><span class="eyebrow ruled">Holt-Laury</span><h2>Consistency</h2>' + _table(["arm", "multiple switching", "dominated", "consistent"], [[r.arm, fmt(r.multiple), fmt(r.dominated), fmt(r.consistent)] for _, r in data["consistency"].iterrows()]) + '</section>')
+        parts.append('<section><span class="eyebrow ruled">Holt-Laury</span><h2>Consistency</h2>' + _table(CONSISTENCY_HEADERS, _consistency_rows(data)) + '<p class="small" style="margin-top:8px">The last two columns are a sensitivity check: if they tell different stories, inconsistent answers are driving the result.</p></section>')
     if not data["sanity"].empty:
         parts.append('<section><span class="eyebrow ruled">Travel</span><h2>Sanity items</h2>' + _table(["arm", "share correct"], [[r.arm, fmt(r.correct)] for _, r in data["sanity"].iterrows()]) + '</section>')
     parts.append('<section><span class="eyebrow ruled">Data quality</span><h2>Parse failures</h2>' + _table(["instrument", "arm", "n", "retried", "invalid", "rate"], [[r.instrument, r.arm, r.n, r.retried, r.invalid, fmt(r.invalid_rate, 3)] for _, r in data["failures"].iterrows()]) + '</section>')

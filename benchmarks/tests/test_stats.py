@@ -155,6 +155,14 @@ class PlantedEffects(unittest.TestCase):
         for text in ("Parse failures", "Human norms", "Per template", "Bootstrap".lower()):
             self.assertIn(text, page)
 
+    def test_sensitivity_check_leaves_out_inconsistent_ladders(self):
+        rows = [r for r in self.rows if r["instrument"] == "holt_laury" and r["arm"] == "fake_base" and r["valid"]]
+        kept = [r["score"] for r in rows if r["extras"]["consistent"]]
+        table = report._consistency(self.rows).set_index("arm")
+        self.assertAlmostEqual(table.loc["fake_base", "safe_consistent"], sum(kept) / len(kept))
+        self.assertAlmostEqual(table.loc["fake_base", "safe_all"], sum(r["score"] for r in rows) / len(rows))
+        self.assertLess(len(kept), len(rows))
+
     def test_parse_failures_are_reported(self):
         table = stats.parse_failures(self.rows)
         self.assertGreater(table.retried.sum(), 0)
