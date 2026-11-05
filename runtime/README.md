@@ -27,6 +27,21 @@ $PY -m runtime.run --ticks 3 --wm cosmos --wm-preset demo --agent qwen \
   --context life --life-db out/overnight/latest/life.db --life-run 2
 ```
 
+## Using less RAM
+
+On a 36 GB Mac the loop unloads Qwen before Cosmos renders, so they take turns. To need less:
+
+```sh
+$PY -m mlx_vlm.convert --hf-path models/Qwen3-VL-8B-Instruct --mlx-path models/Qwen3-VL-8B-Instruct-4bit -q --q-bits 4   # once
+$PY -m runtime.run --ticks 3 --wm cosmos --agent qwen --low-memory --context life --life-db out/overnight/latest/life.db --life-run 2
+```
+
+`--low-memory` means smaller clips, 8-bit Cosmos and 4-bit Qwen. Use it for demos, not experiment results, because a quantized model behaves differently from the one being trained. Every tick logs the machine's peak RAM per stage; see the Timing tab in the viewer. SimWorld itself can't run on a Mac.
+
+## On NVIDIA GPUs
+
+`--wm cosmos_server --wm-url <vLLM-Omni server>` follows the model README's rollout, which conditions each chunk on one frame. A re-anchor there replaces that one frame, so it pulls harder than replacing the oldest of five, and may show as a jump. This has only been tested against a fake server.
+
 ## What each file does
 
 | File | What it holds |

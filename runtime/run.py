@@ -21,7 +21,7 @@ from runtime.mocks.world_model import MockWorldModel
 RUNS = Path("runs")
 LOW_MEMORY_WEIGHTS = "models/Qwen3-VL-8B-Instruct-4bit"
 BACKENDS = {"mock": {"sim": "mock", "wm": "mock", "agent": "mock", "context": "mock", "wm_preset": "mock"},
-            "real": {"sim": "simworld", "wm": "cosmos", "agent": "qwen", "context": "life", "wm_preset": "full"}}
+            "real": {"sim": "simworld", "wm": "cosmos_server", "agent": "qwen", "context": "life", "wm_preset": "gpu_full"}}
 
 
 def make_sim(config):
@@ -37,8 +37,18 @@ def make_sim(config):
 def make_world_model(config):
     if config.wm == "mock":
         return MockWorldModel()
+    if config.wm == "cosmos_server":
+        from runtime.adapters.cosmos_server import CosmosServerWorldModel
+        return CosmosServerWorldModel(config.wm_url, config.wm_settings["size"], config.wm_settings["steps"], negative_prompt())
     from runtime.adapters.cosmos import CosmosWorldModel
     return CosmosWorldModel(config.wm_settings["size"], config.wm_settings["steps"], config.wm_quantize)
+
+
+def negative_prompt():
+    """What the model README sends with every request, if the weights are here to read it from."""
+    from settings import WORLD_MODEL_WEIGHTS
+    path = WORLD_MODEL_WEIGHTS / "assets" / "negative_prompt.json"
+    return json.dumps(json.loads(path.read_text())) if path.exists() else None
 
 
 def make_agent(config):
@@ -110,13 +120,17 @@ def config_from(args):
     backend = BACKENDS[args.backend]
     values = {**backend, "seed": args.seed, "ticks": args.ticks, "drift_control": not args.no_drift_control,
               "counterfactual": not args.no_counterfactual}
-    for name in ("sim", "wm", "agent", "context", "wm_preset", "start_time", "life_db", "life_run", "agent_url", "drift_threshold", "agent_weights", "wm_quantize"):
+    for name in ("sim", "wm", "agent", "context", "wm_preset", "start_time", "life_db", "life_run", "agent_url", "drift_threshold", "agent_weights", "wm_quantize", "wm_url"):
         value = getattr(args, name)
         if value is not None:
             values[name] = value
     if args.low_memory:
         values["wm_preset"], values["wm_quantize"] = "tiny", 8
         values.setdefault("agent_weights", LOW_MEMORY_WEIGHTS)
+    if values["wm"] == "cosmos_server":
+        values["cond_frames"] = 1
+        if not values.get("wm_url"):
+            sys.exit("--wm cosmos_server needs --wm-url")
     if values["context"] == "life" and not values.get("life_db"):
         sys.exit("--context life needs --life-db")
     return Config(**values)
@@ -132,7 +146,7 @@ def main():
     parser.add_argument("--no-counterfactual", action="store_true")
     parser.add_argument("--out", type=Path, help="default: runs/<run_id>/")
     parser.add_argument("--sim", choices=["mock", "simworld"])
-    parser.add_argument("--wm", choices=["mock", "cosmos"])
+    parser.add_argument("--wm", choices=["mock", "cosmos", "cosmos_server"])
     parser.add_argument("--agent", choices=["mock", "null", "qwen"])
     parser.add_argument("--context", choices=["mock", "life"])
     parser.add_argument("--wm-preset", choices=WM_PRESETS)
@@ -143,6 +157,7 @@ def main():
     parser.add_argument("--drift-threshold", type=float)
     parser.add_argument("--low-memory", action="store_true", help="smaller clips, 8-bit Cosmos, 4-bit Qwen; see runtime/README.md")
     parser.add_argument("--agent-weights", help="a folder of Qwen weights to use instead of the full ones")
+    parser.add_argument("--wm-url", help="a vLLM-Omni server running Cosmos, for --wm cosmos_server")
     parser.add_argument("--wm-quantize", type=int, choices=[8], help="load Cosmos in 8 bits")
     args = parser.parse_args()
 

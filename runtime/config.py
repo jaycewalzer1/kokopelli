@@ -6,6 +6,9 @@ WM_PRESETS = {
     "mock": {"size": "448x256", "chunk_frames": [24, 24], "steps": 0},
     "demo": {"size": "448x256", "chunk_frames": [16], "steps": 30},
     "tiny": {"size": "256x256", "chunk_frames": [16], "steps": 20},
+    # Sizes and frame counts the model README lists. Each chunk shares one frame, so 4 x 180 + 1 is 30 seconds at 24 fps.
+    "gpu_demo": {"size": "832x480", "chunk_frames": [81], "steps": 35},
+    "gpu_full": {"size": "832x480", "chunk_frames": [181] * 4, "steps": 35},
     "full": {"size": "448x256", "chunk_frames": [84] * 8 + [88], "steps": 30},
 }
 
@@ -25,6 +28,7 @@ class Config:
     agent_model: str = "Qwen/Qwen3-VL-8B-Instruct"
     agent_weights: str | None = None
     wm_quantize: int = 0
+    wm_url: str | None = None
 
     tick_seconds: int = 30
     check_every: int = 15
