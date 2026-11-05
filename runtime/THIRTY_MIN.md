@@ -28,6 +28,13 @@ Passing real run, on the Mac at 448x256, 16 frames per tick, so about 0.7 s of v
 
 The low-memory run, at 256x256 with 20 steps, took 222 s for 3 ticks. The machine's peak while Qwen ran fell from 30.9 to 20.0 GB, but its peak while Cosmos ran only fell from 29.5 to 28.2 GB, so 8-bit Cosmos barely reduces its peak. These compare one short run each, from baselines of 12 and 13 GB.
 
+The longest real run, `runs/wmloop_real_20`, was 20 ticks of real Cosmos and Qwen on the mock sim, same seed and settings as above: 2963 s, of which Cosmos was 2691 s (about 135 s a tick) and Qwen 270 s. The machine's peak RAM was 30.4 GB. It gave 18 identical waits, and 9.4 s of video. It showed two things:
+
+- **Real frames don't unstick the agent.** Ticks 2 to 19 are the same `wait` with the same diary line, so it locks in sooner than on the mock world model (`runs/wmloop_agent_20b`, from tick 6). This is one run at one seed.
+- **The picture falls apart without re-anchoring.** Each chunk continues from the last chunk's frame, and the sim is a mock, so nothing pulls it back. Tick 4 is soft, tick 8 is smeared, and by tick 20 the child and the gate are no longer recognizable. Edge strength at 16 pixel boundaries, compared with elsewhere, rose from 1.03 to 1.85 and average brightness fell from 53 to 35. Neither the drift score nor `runtime.check_video` flags this: drift is measured against the mock's grid picture, so it reads about 0.99 throughout, and the video check only looks for cuts, black and frozen stretches. The agent's frames were this degraded too, which weakens the first finding for the later ticks.
+
+`autonomy` reads 1.0 on this run even though the agent's actions changed nothing compared with the null agent (`final_distance` 0.0). It only says that the choice differed from the life default, so don't read it as the agent doing something.
+
 ## What could change the plan
 
 Most likely to bite first:
@@ -40,7 +47,7 @@ Most likely to bite first:
    - It sometimes targets things from the life text, such as a clock, which the sim doesn't have. Those replies are rejected. This is the scene mismatch in the first owner decision below.
 1. **Do SimWorld's actions play out while paused?** The adapter steps a paused game, but every SimWorld example runs unpaused. If movement doesn't advance on paused ticks, stepping needs a redesign. Gate 6 answers this. `runtime/SIMWORLD.md` has the full list.
 2. **Does `/v1/models` exist on the vLLM-Omni Cosmos server?** The README shows it on plain vLLM, not with `--omni`. The PACE job waits on it, so if it's missing the job fails at startup. The fix is a small change to the wait and to preflight. Gate 7 answers this.
-3. **Is Cosmos's video good enough across a whole run?** Each chunk continues from one frame, so motion may not carry between chunks. A re-anchor may also show as a jump. Only gate 9 can show this.
+3. **Is Cosmos's video good enough across a whole run?** Without re-anchoring it isn't: `runs/wmloop_real_20` is unrecognizable by tick 20. Whether re-anchoring every 60 sim-seconds holds it together is untested, because re-anchoring needs real sim frames. Each chunk also continues from one frame, so motion may not carry between chunks, and a re-anchor may show as a jump. Only gate 9 can show this.
 4. **Cosmos's safety guardrails may refuse a prompt.** That comes back as a 4xx error, which stops the run instead of retrying. It's resumable, but the same prompt would refuse again.
 5. **GPU type and count on PACE.** The job assumes 3 GPUs on one node, one each. NVIDIA recommends H200s for Cosmos, and I don't know what PACE offers or whether smaller cards fit it.
 
