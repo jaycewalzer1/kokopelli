@@ -7,7 +7,7 @@ In order. Each gate should pass before spending on the next. A full run is 60 ti
 | # | Gate | Check | Status | Blocked by |
 |---|---|---|---|---|
 | 1 | Loop works end to end | `python -m unittest discover -s runtime/tests -t .`, both Pythons | Done on fakes | |
-| 2 | Tools hold up at full scale | 60 ticks in the real shape on mocks, then `runtime.check_video --expect-seconds 1800` | Running | |
+| 2 | Tools hold up at full scale | 60 ticks in the real shape on mocks, then `runtime.check_video --expect-seconds 1800` | Done on mocks: 240 clips joined into 43,201 frames, exactly 1800.0 s, in about 6.5 minutes. Its speed and storage don't predict a real run | |
 | 3 | Real models in the loop | 3 ticks on the Mac: real Cosmos and Qwen, mock sim, real life text | Queued at priority 10 | Machine's turn |
 | 4 | Lower-RAM mode | 4-bit Qwen conversion, then 3 ticks with `--low-memory` | Queued at priorities 20 and 30 | Gate 3 |
 | 5 | PACE access filled in | `CHANGE_ME` values in `scripts/pace/env.sh` and both `.sbatch` files; `WMLOOP_DRY_RUN=1 bash scripts/pace/wmloop_run.sbatch` | Not started | Owner: account, partition, GPU type |
