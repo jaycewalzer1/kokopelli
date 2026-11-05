@@ -456,9 +456,12 @@ def report():
 
 
 def watch(until_hour):
-    last_tests = last_backup = 0
+    tests_file = STATE / "tests_latest.json"
+    last_tests = tests_file.stat().st_mtime if tests_file.exists() else 0
+    last_backup = 0
     deadline = time.time() + ((until_hour - time.localtime().tm_hour) % 24) * 3600
     while time.time() < deadline:
+        safe_report()  # First, because the test suites take minutes and the report shouldn't go stale behind them.
         if time.time() - last_backup > 1800:
             print(time.ctime(), "backup", backup(), flush=True)
             last_backup = time.time()
@@ -466,11 +469,15 @@ def watch(until_hour):
             results = run_suites()
             print(time.ctime(), "tests", {name: row["ok"] for name, row in results.items()}, flush=True)
             last_tests = time.time()
-        try:
-            report()
-        except Exception as error:  # A bad file from another agent shouldn't end the night's watching.
-            print(time.ctime(), "report failed:", repr(error), flush=True)
+            safe_report()
         time.sleep(300)
+
+
+def safe_report():
+    try:
+        report()
+    except Exception as error:  # A bad file from another agent shouldn't end the night's watching.
+        print(time.ctime(), "report failed:", repr(error), flush=True)
 
 
 def main():
