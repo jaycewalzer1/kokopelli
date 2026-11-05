@@ -259,7 +259,7 @@ def agent_runs():
         chosen = [json.dumps(e["data"].get("action"), sort_keys=True) for e in events if e.get("kind") == "decision" and not e["data"].get("forced")]
         runs.append({"name": folder.name, "wm": config.get("wm"), "agent": config.get("agent"), "sim": config.get("sim"),
                      "ticks": config.get("ticks"), "finished": bool(end), "video": (folder / "final.mp4").exists(),
-                     "seconds": (end or {}).get("seconds", {}).get("total"), "fallbacks": (end or {}).get("fallbacks"), "choices": len(chosen), "distinct": len(set(chosen)),
+                     "seconds": (end or {}).get("seconds", {}).get("total"), "fallbacks": (end or {}).get("fallbacks"), "choices": len(chosen), "distinct": len(set(chosen)), "top_share": max(map(chosen.count, chosen), default=0) / max(len(chosen), 1),
                      "at": folder.stat().st_mtime, "path": str(folder)})
     return runs
 
@@ -317,17 +317,18 @@ def verdicts(tests, runs, data, home, bench):
     real = [run for run in runs if run["finished"] and (run["wm"] != "mock" or run["agent"] != "mock")]
     both = [run for run in real if run["wm"] != "mock" and run["agent"] != "mock"]
     decided = [run for run in both if run["ticks"] and (run["fallbacks"] or 0) < run["ticks"]]
+    longest = max(decided, key=lambda run: run["ticks"], default=None)
     if ok is False:
         state = "FAILING"
-    elif any(run["distinct"] > 1 for run in decided):
+    elif longest and longest["top_share"] < 0.8:
         state = "WORKS, both real models"
-    elif decided:
+    elif longest:
         state = "RUNS, BUT THE AGENT REPEATS ONE ACTION"
     elif both:
         state = "RENDERS, BUT AGENT MADE NO VALID DECISION"
     else:
         state = "PARTLY, one real model" if real else "MOCKS ONLY"
-    results.append(("Agent loop", state, f"{evidence}. Finished real-model runs: {len(both)} with both models, {len(decided)} of those with valid decisions, {sum(run['distinct'] > 1 for run in decided)} of those with more than one distinct action"))
+    results.append(("Agent loop", state, f"{evidence}. Finished real-model runs: {len(both)} with both models, {len(decided)} of those with valid decisions, {sum(run['distinct'] > 1 for run in decided)} of those with more than one distinct action" + (f". Longest, {longest['name']}: {longest['ticks']} ticks, one action made {longest['top_share']:.0%} of its choices" if longest else "")))
 
     ok, evidence = tested("simworld")
     results.append(("SimWorld adapter", "FAILING" if ok is False else "FAKE SERVER ONLY", f"{evidence}. Needs PACE to reach real Unreal"))
