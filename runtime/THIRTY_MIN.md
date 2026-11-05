@@ -8,7 +8,7 @@ In order. Each gate should pass before spending on the next. A full run is 60 ti
 |---|---|---|---|---|
 | 1 | Loop works end to end | `python -m unittest discover -s runtime/tests -t .`, both Pythons | Done on fakes | |
 | 2 | Tools hold up at full scale | 60 ticks in the real shape on mocks, then `runtime.check_video --expect-seconds 1800` | Done on mocks: 240 clips joined into 43,201 frames, exactly 1800.0 s, in about 6.5 minutes. Its speed and storage don't predict a real run | |
-| 3 | Real models in the loop | 3 ticks on the Mac: real Cosmos and Qwen, mock sim, real life text. Passes only with valid decisions that weren't forced waits | First try failed: real video and timings, but all 6 replies rejected. Parser and prompt fixed, rerun queued | Machine's turn |
+| 3 | Real models in the loop | 3 ticks on the Mac: real Cosmos and Qwen, mock sim, real life text. Passes only with valid decisions that weren't forced waits | Passed: `runs/wmloop_demo_real2`, 3 of 3 valid on the first try, video with no cuts. See the repeat warning under "What could change the plan" | |
 | 4 | Lower-RAM mode | 4-bit Qwen conversion (done: 5.4 GB), then 3 ticks with `--low-memory` | Running | |
 | 5 | PACE access filled in | `CHANGE_ME` values in `scripts/pace/env.sh` and both `.sbatch` files; `WMLOOP_DRY_RUN=1 bash scripts/pace/wmloop_run.sbatch` | Not started | Owner: account, partition, GPU type |
 | 6 | SimWorld on a real server | `sbatch scripts/pace/wmloop_gate.sbatch`; every checklist line passes | Not started | Gate 5, package download |
@@ -24,12 +24,13 @@ In order. Each gate should pass before spending on the next. A full run is 60 ti
 
 ## Measured so far
 
-First real run, on the Mac at 448x256, 16 frames per tick, so about 0.7 s of video rather than 30 s: 512 s for 3 ticks, of which Cosmos was 457 s and Qwen 55 s with two tries each. The machine's peak RAM was 30.8 GB from a 12.3 GB baseline, with Cosmos and Qwen taking turns.
+Passing real run, on the Mac at 448x256, 16 frames per tick, so about 0.7 s of video rather than 30 s: 436 s for 3 ticks, of which Cosmos was 395 s and Qwen 41 s. The machine's peak RAM was 30.9 GB from a 12.0 GB baseline, with Cosmos and Qwen taking turns.
 
 ## What could change the plan
 
 Most likely to bite first:
 
+0. **The agent may just repeat itself.** In the passing run Qwen gave the same action and the same diary line on all 3 ticks, at temperature 0. Three ticks can't show whether it ever changes course. If it's still doing this over 10 ticks, a 30 minute run says little, so check this in gate 9, or sooner with `--wm mock --agent qwen`, which is quick.
 1. **Do SimWorld's actions play out while paused?** The adapter steps a paused game, but every SimWorld example runs unpaused. If movement doesn't advance on paused ticks, stepping needs a redesign. Gate 6 answers this. `runtime/SIMWORLD.md` has the full list.
 2. **Does `/v1/models` exist on the vLLM-Omni Cosmos server?** The README shows it on plain vLLM, not with `--omni`. The PACE job waits on it, so if it's missing the job fails at startup. The fix is a small change to the wait and to preflight. Gate 7 answers this.
 3. **Is Cosmos's video good enough across a whole run?** Each chunk continues from one frame, so motion may not carry between chunks. A re-anchor may also show as a jump. Only gate 9 can show this.
