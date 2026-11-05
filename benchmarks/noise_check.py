@@ -19,6 +19,7 @@ from benchmarks.run import read_results
 
 FROZEN_MODAL_SHARE = 0.95   # The same answer this often means there's almost no spread.
 COIN_FLIP_INCONSISTENT = 0.5  # Half or more multiple-switching ladders means no stable preference.
+POSITION_GAP = 5.0  # Swapping the options moves the Holt-Laury score by at least half its 0-to-10 range.
 
 
 def holt_laury_summary(rows):
@@ -41,6 +42,8 @@ def holt_laury_summary(rows):
             "multiple_switching": _mean([row["extras"]["multiple_switching"] for row in valid]),
             "dominated": _mean([row["extras"]["dominated"] for row in valid]),
             "safe_when_safe_first": _mean(safe_first), "safe_when_risky_first": _mean(risky_first),
+            # A preference survives swapping the options. This gap is how much the score follows position instead.
+            "position_gap": abs(_mean(safe_first) - _mean(risky_first)) if safe_first and risky_first else None,
         })
     return pd.DataFrame(table)
 
@@ -53,10 +56,27 @@ def lotteries_summary(rows):
             valid = [row for row in part if row["valid"]]
             scores = [row["score"] for row in valid]
             first = [row["parsed_choice"] == "A" for row in valid]
+            h_first = [row["extras"]["chosen"] == "H" for row in valid if row["option_order"].startswith("H")]
+            l_first = [row["extras"]["chosen"] == "H" for row in valid if row["option_order"].startswith("L")]
             table.append({"arm": arm, "template": template, "item": item, "n": len(part), "valid": len(valid),
                           "underweighting_rate": _mean(scores), "chose_listed_first": _mean(first),
-                          "chose_H": _mean([row["extras"]["chosen"] == "H" for row in valid])})
+                          "chose_H": _mean([row["extras"]["chosen"] == "H" for row in valid]),
+                          "chose_H_when_H_first": _mean(h_first), "chose_H_when_L_first": _mean(l_first)})
     return pd.DataFrame(table)
+
+
+def rows_summary(rows):
+    """The one-row-at-a-time pilot: the share choosing safe on each row, in each option order. A good curve falls from
+    near 1 on row 1 to near 0 on row 10, and looks the same whichever option is listed first."""
+    table = []
+    for (arm, template), group in _groups(rows, "holt_laury_rows"):
+        for order in ("safe,risky", "risky,safe"):
+            curve = {}
+            for row in range(1, 11):
+                scores = [r["score"] for r in group if r["valid"] and r["extras"]["row"] == row and r["option_order"] == order]
+                curve[row] = round(_mean(scores), 2) if scores else None
+            table.append({"arm": arm, "template": template, "order": order, "safe_rate_by_row": curve})
+    return table
 
 
 def _groups(rows, instrument):
@@ -74,9 +94,13 @@ def _mean(values):
 
 def verdict_holt_laury(table):
     """Plain-language reading. The thresholds are rules of thumb, chosen before seeing real data, except the floor and
-    ceiling rule. That was added after the first 28 real samples piled up at 0 safe choices, so don't treat it as blind."""
+    ceiling rule and the position rule. Those were added after seeing the real base-model results, so they aren't blind.
+
+    Position comes first: a pile-up at 0 or 10 means nothing if it comes from answering the same letter on every row."""
     if table.empty:
         return "NOT MEASURED"
+    if "position_gap" in table and (table.position_gap.astype(float) >= POSITION_GAP).mean() >= 0.5:
+        return "POSITION BIAS: most templates' scores follow which option is listed first, not what it pays"
     for column, label in (("at_floor_0_safe", "FLOOR: most answers are 0 safe choices, so a move toward more risk can't show"),
                           ("at_ceiling_10_safe", "CEILING: most answers are 10 safe choices, so a move toward more caution can't show")):
         if column in table and (table[column].astype(float) >= 0.5).mean() >= 0.5:
@@ -132,6 +156,7 @@ def analyze(out):
         "n_results": len(rows), "invalid": sum(not row["valid"] for row in rows),
         "holt_laury": hl.to_dict("records"), "holt_laury_verdict": verdict_holt_laury(hl),
         "lotteries": lot.to_dict("records"), "lotteries_verdict": verdict_lotteries(lot),
+        "holt_laury_rows": rows_summary(rows),
         "controls": {name: control_shift(rows, name) for name in ("holt_laury", "lotteries")},
         "mean_latency_s": float(np.mean([row["latency_s"] for row in rows])) if rows else None,
     }

@@ -586,6 +586,18 @@ class NoiseCheck(Temp):
         table = pd.DataFrame([{"modal_share": 0.85, "multiple_switching": 0.0, "at_floor_0_safe": 0.85, "at_ceiling_10_safe": 0.0}] * 3)
         self.assertTrue(noise_check.verdict_holt_laury(table).startswith("FLOOR"))
 
+    def test_rows_pilot_runs_end_to_end_and_gives_a_curve(self):
+        self.run_mock(instruments=("holt_laury_rows",), samples=20)
+        curves = noise_check.analyze(self.out)["holt_laury_rows"]
+        self.assertEqual(len(curves), 6)
+        pooled = lambda row: [c["safe_rate_by_row"][row] for c in curves if c["safe_rate_by_row"][row] is not None]
+        self.assertGreater(sum(pooled(1)) / len(pooled(1)), sum(pooled(10)) / len(pooled(10)))
+
+    def test_position_comes_before_floor(self):
+        """The real base model's pattern: 0 safe choices, but only because it picks A on every row."""
+        table = pd.DataFrame([{"modal_share": 0.6, "multiple_switching": 0.0, "at_floor_0_safe": 0.6, "at_ceiling_10_safe": 0.0, "position_gap": 8.5}] * 3)
+        self.assertTrue(noise_check.verdict_holt_laury(table).startswith("POSITION BIAS"))
+
     def test_empty_says_not_measured(self):
         self.assertEqual(noise_check.verdict_holt_laury(pd.DataFrame()), "NOT MEASURED")
 

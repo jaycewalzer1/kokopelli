@@ -154,6 +154,33 @@ class PromptRules(unittest.TestCase):
             self.assertIsNotNone(BANNED_IN_PROMPTS.search(text))
 
 
+class RowsPilot(unittest.TestCase):
+    def setUp(self):
+        from benchmarks.holt_laury_rows import HoltLauryRows
+        self.rows = HoltLauryRows()
+
+    def test_ten_separate_items_from_the_same_verified_file(self):
+        self.assertEqual(len(self.rows.items), 10)
+        self.assertEqual(self.rows.items_path.resolve(), HoltLaury().items_path.resolve())
+
+    def test_prompts_are_one_row_with_no_row_number(self):
+        for template in self.rows.templates:
+            prompt = self.rows.build_prompt(self.rows.items[4], template, ["safe", "risky"])
+            self.assertIsNone(BANNED_IN_PROMPTS.search(prompt))
+            self.assertNotIn("Decision 5", prompt)
+            self.assertEqual(prompt.count("$3.85"), 1)
+
+    def test_score_undoes_position(self):
+        item = self.rows.items[0]
+        self.assertEqual(self.rows.score(Parsed("A", True), item, ["safe", "risky"]).score, 1)
+        self.assertEqual(self.rows.score(Parsed("A", True), item, ["risky", "safe"]).score, 0)
+
+    def test_not_in_the_pre_registration(self):
+        from benchmarks.prereg import CONTRASTS, PREREG
+        self.assertNotIn("holt_laury_rows", CONTRASTS.read_text())
+        self.assertNotIn("holt_laury_rows", PREREG.read_text())
+
+
 class OptionOrder(unittest.TestCase):
     def test_same_key_same_order(self):
         self.assertEqual(option_order(("a", "b"), "x", "i", "t", 0, 5), option_order(("a", "b"), "x", "i", "t", 0, 5))

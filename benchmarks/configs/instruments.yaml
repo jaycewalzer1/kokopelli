@@ -9,6 +9,10 @@ instruments:
     role: main
     transfer: far
     norms: holt_laury/norms.yaml
+  holt_laury_rows:
+    class: benchmarks.holt_laury_rows:HoltLauryRows
+    role: pilot   # Not pre-registered. Tests a fix for the position bias found in the noise check.
+    transfer: far
   lotteries:
     class: benchmarks.lotteries:Lotteries
     role: main
