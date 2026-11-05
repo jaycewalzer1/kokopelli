@@ -1,6 +1,7 @@
 name: rendered_lived
 model: Qwen/Qwen3-VL-8B-Instruct
 adapter: out/adapters/rendered_lived/seed{seed}
+api_model: rendered_lived_seed{seed}
 seed: 0
 later: true
 training_text:

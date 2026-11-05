@@ -46,6 +46,17 @@ def _strata_labels(frame):
     return frame[STRATA].astype(str).agg("|".join, axis=1).to_numpy()
 
 
+def _one_sample_each(frame):
+    """True when each (seed, item, template) holds one sample, as with a guardrail's questions."""
+    return len(frame) > 0 and frame.groupby(STRATA).size().max() == 1
+
+
+def _ci_labels(frame):
+    """What a bootstrap may redraw within. With one sample per stratum, redrawing inside a stratum changes nothing and
+    gives a falsely exact interval of zero width. So in that case the items themselves are redrawn, within each seed."""
+    return frame.seed.astype(str).to_numpy() if _one_sample_each(frame) else _strata_labels(frame)
+
+
 def _matched(frame, arm_a, arm_b):
     """Only strata both arms have, so a difference can't come from one arm having answered different items."""
     a, b = frame[frame.arm == arm_a], frame[frame.arm == arm_b]
@@ -117,8 +128,13 @@ def difference_ci(a, b, n_boot=2000, seed=0):
     if a.empty or b.empty:
         return (float("nan"), float("nan"))
     rng = np.random.default_rng(seed)
+    if _one_sample_each(a) and _one_sample_each(b):
+        # Both arms answered the same questions, so compare question by question. Easy questions are easy for both,
+        # and pairing removes that shared variation, which makes the interval properly narrower.
+        pairs = a[STRATA + ["score"]].merge(b[STRATA + ["score"]], on=STRATA, suffixes=("_a", "_b"))
+        return bootstrap_ci((pairs.score_a - pairs.score_b).to_numpy(float), strata=pairs.seed.astype(str).to_numpy(), n_boot=n_boot, seed=seed)
     def boots(frame):
-        values, labels = frame.score.to_numpy(float), _strata_labels(frame)
+        values, labels = frame.score.to_numpy(float), _ci_labels(frame)
         total = np.zeros(n_boot)
         for label in pd.unique(labels):
             group = values[labels == label]
@@ -132,7 +148,7 @@ def arm_table(frame):
     """Mean and bootstrap CI per arm and instrument."""
     rows = []
     for (instrument, arm), group in frame.groupby(["instrument", "arm"]):
-        low, high = bootstrap_ci(group.score, strata=_strata_labels(group))
+        low, high = bootstrap_ci(group.score, strata=_ci_labels(group))
         rows.append({"instrument": instrument, "arm": arm, "n": len(group), "mean": group.score.mean(),
                      "sd": group.score.std(), "ci_low": low, "ci_high": high})
     return pd.DataFrame(rows)
@@ -142,7 +158,7 @@ def template_table(frame):
     """The same, per paraphrase. If one wording shows an effect and the others don't, the effect belongs to the wording."""
     rows = []
     for (instrument, template, arm), group in frame.groupby(["instrument", "template", "arm"]):
-        low, high = bootstrap_ci(group.score, strata=_strata_labels(group))
+        low, high = bootstrap_ci(group.score, strata=_ci_labels(group))
         rows.append({"instrument": instrument, "template": template, "arm": arm, "n": len(group), "mean": group.score.mean(), "ci_low": low, "ci_high": high})
     return pd.DataFrame(rows)
 

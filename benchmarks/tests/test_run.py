@@ -222,6 +222,14 @@ class Refusals(Temp):
         with self.assertRaisesRegex(ValueError, "fake"):
             APIBackend("http://127.0.0.1:1/v1").prepare_arm(load_arm("fake_lived"), 0)
 
+    def test_api_refuses_an_adapter_it_cant_name(self):
+        """Otherwise the base model would answer under the adapter arm's label."""
+        from benchmarks.backends.api import APIBackend
+        arm = load_arm("lived")
+        arm.api_model = None
+        with self.assertRaisesRegex(ValueError, "no api_model"):
+            APIBackend("http://127.0.0.1:1/v1").prepare_arm(arm, 0)
+
     def test_llm_model_backend_refuses_adapters(self):
         from benchmarks.backends.llm_model_backend import LLMModelBackend
         backend = LLMModelBackend.__new__(LLMModelBackend)

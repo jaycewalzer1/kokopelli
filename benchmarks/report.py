@@ -41,12 +41,13 @@ p { max-width: 65ch; }
 .small { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
 section { margin-top: var(--space-12); }
 .card { background: var(--surface-200); border: 1px solid var(--hairline); padding: var(--space-4); margin-top: var(--space-4); }
-.alert { border-left: 1px solid var(--danger); padding-left: var(--space-4); margin-top: var(--space-4); }
+.alert { border-left: 1px solid var(--ink-muted); padding-left: var(--space-4); margin-top: var(--space-4); }
 .scroll { overflow-x: auto; margin-top: var(--space-4); }
 table { border-collapse: collapse; width: 100%; font: 400 13px/20px var(--font-mono); }
 th { text-align: left; font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); }
 th, td { padding: var(--space-2); border-bottom: 1px solid var(--hairline); vertical-align: top; white-space: nowrap; }
-td.wrap { white-space: normal; min-width: 200px; }
+td.wrap { white-space: normal; min-width: 168px; }
+.sub { display: block; color: var(--ink-muted); }
 .mark { display: inline-block; width: 8px; height: 8px; margin-right: var(--space-2); border: 1px solid var(--ink-muted); }
 .mark.pass { background: var(--sage); border-color: var(--sage); }
 .chart { margin-top: var(--space-4); }
@@ -65,7 +66,7 @@ footer { margin-top: var(--space-12); padding-top: var(--space-4); border-top: 1
 @media (max-width: 600px) {
   main { padding: var(--space-6) var(--space-4); }
   h1 { font-size: 32px; line-height: 36px; }
-  .row, .axis-row { grid-template-columns: 88px 1fr 76px; }
+  .row, .axis-row { grid-template-columns: 104px 1fr 48px; }
 }
 """
 
@@ -229,11 +230,13 @@ def to_html(data):
         parts.append(f'<div class="alert"><p>{_e(note)}</p></div>')
 
     if not data["contrasts"].empty:
+        # Status comes right after the name, so it's visible without scrolling at any width.
         cells = []
         for _, row in data["contrasts"].iterrows():
             values = _contrast_cells(row)
-            cells.append(values[:-1] + [_status_cell(row["status"])])
-        parts.append(f'<section><span class="eyebrow ruled">Against the pre-registration</span><h2>Contrasts</h2>{_table(CONTRAST_HEADERS, cells)}'
+            name = f'<td>{_e(row["id"])}<span class="sub">{_e(values[1])}</span></td>'
+            cells.append([name, _status_cell(row["status"])] + values[3:-1])
+        parts.append(f'<section><span class="eyebrow ruled">Against the pre-registration</span><h2>Contrasts</h2>{_table(["contrast", "status"] + CONTRAST_HEADERS[3:-1], cells)}'
                      '<p class="small" style="margin-top:8px">Difference is the first arm minus the second. Holm-corrected p-values cover the difference contrasts together.</p></section>')
 
     accents_used = False

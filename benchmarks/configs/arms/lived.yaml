@@ -1,6 +1,7 @@
 name: lived
 model: Qwen/Qwen3-VL-8B-Instruct
 adapter: out/adapters/lived/seed{seed}
+api_model: lived_seed{seed}
 seed: 0
 training_text:
   - out/adapters/lived/seed{seed}/training_text/*

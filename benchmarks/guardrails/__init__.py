@@ -27,6 +27,7 @@ class Guardrail(Instrument):
     limit = None            # Questions per task. None means all.
     metric_key = ""
     mock_rate = 0.7
+    mock_questions = 200    # About as many as the real task, so mock intervals are a fair size.
 
     def load_items(self):
         meta = {"verified": True, "items": "Owned by lm-evaluation-harness. Its results file records the dataset hashes.",
@@ -69,7 +70,7 @@ class Guardrail(Instrument):
         rate = self.mock_rate + shift_points / 100
         path = Path(out_dir) / f"samples_{self.tasks[0]}_2000-01-01T00-00-00.jsonl"
         with path.open("w") as file:
-            for doc_id in range(self.limit or 200):
+            for doc_id in range(self.mock_questions):
                 correct = rng.random() < rate
                 file.write(json.dumps({"doc_id": doc_id, "filtered_resps": ["mock"], self.metric_key: float(correct)}) + "\n")
 
@@ -97,6 +98,7 @@ class IFEval(Guardrail):
     tasks = ("ifeval",)
     metric_key = "prompt_level_strict_acc"
     mock_rate = 0.75
+    mock_questions = 541
 
 
 class MMLU(Guardrail):
@@ -109,3 +111,4 @@ class MMLU(Guardrail):
     limit = 6
     metric_key = "exact_match"
     mock_rate = 0.65
+    mock_questions = 342

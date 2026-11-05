@@ -180,6 +180,42 @@ class Guardrail(unittest.TestCase):
         self.assertTrue(stats.evaluate_contrasts(self.frame(0), self.CONFIG).iloc[0]["status"].startswith("pass"))
 
 
+class OneSamplePerQuestion(unittest.TestCase):
+    """Guardrails have one sample per question. Redrawing inside a question once gave a zero-width interval."""
+
+    def frame(self, shared=True):
+        rng = np.random.default_rng(0)
+        easy = rng.random(400) < 0.7
+        rows = []
+        for arm in ("base", "lived"):
+            answers = easy ^ (rng.random(400) < 0.05) if shared else rng.random(400) < 0.7
+            rows += [{"arm": arm, "instrument": "mmlu", "item_id": f"q{i}", "template": "harness", "seed": 0, "sample": 0, "score": float(answers[i]) * 100} for i in range(400)]
+        return pd.DataFrame(rows)
+
+    def width(self, frame):
+        low, high = stats.difference_ci(frame[frame.arm == "lived"], frame[frame.arm == "base"])
+        return high - low
+
+    def test_arm_interval_has_real_width(self):
+        row = stats.arm_table(self.frame()).iloc[0]
+        self.assertGreater(row.ci_high - row.ci_low, 5)
+
+    def test_difference_interval_has_real_width(self):
+        self.assertGreater(self.width(self.frame()), 1)
+
+    def test_pairing_narrows_the_interval(self):
+        self.assertLess(self.width(self.frame(shared=True)), self.width(self.frame(shared=False)))
+
+    def test_wide_interval_is_labeled_point_estimate_only(self):
+        config = {"settings": {"alpha": 0.05, "min_seeds_right": 3, "max_seeds_wrong": 0}, "contrasts": [
+            {"id": "g", "kind": "guardrail", "instrument": "mmlu", "a": "lived", "b": "base", "margin": 100.0}]}
+        frame = self.frame()
+        wide_margin = stats.evaluate_contrasts(frame, config).iloc[0]
+        self.assertEqual(wide_margin["status"], "pass")
+        config["contrasts"][0]["margin"] = abs(wide_margin["difference"]) + 0.01
+        self.assertIn("point estimate only", stats.evaluate_contrasts(frame, config).iloc[0]["status"])
+
+
 class RealContrastsFile(unittest.TestCase):
     def test_parses_and_names_known_things(self):
         config = yaml.safe_load((Path(stats.__file__).parent / "configs" / "contrasts.yaml").read_text())
