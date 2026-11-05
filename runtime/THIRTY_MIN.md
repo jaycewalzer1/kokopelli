@@ -32,7 +32,7 @@ The low-memory run, at 256x256 with 20 steps, took 222 s for 3 ticks. The machin
 
 Most likely to bite first:
 
-0. **The agent may get stuck.** With the prompt's example removed, 20 real ticks gave 18 waits, with the same diary line from tick 6 to tick 20 (`runs/wmloop_agent_20b`). With the example it varied more (`runs/wmloop_agent_20`), so that earlier variety isn't reliable. Both ran on the mock world model. Possibly a feedback loop: at temperature 0, identical notes make a nearly identical prompt. The prompt also never tells it the result of its last action. A 30 minute run says little until this is understood. `runtime/probe_decisions.py` re-asked 3 logged moments, about 27 replies, so these are first reads:
+0. **The agent may get stuck.** With the prompt's example removed, 20 real ticks gave 18 waits, with the same diary line from tick 6 to tick 20 (`runs/wmloop_agent_20b`). With the example it varied more (`runs/wmloop_agent_20`), so that earlier variety isn't reliable. Both ran on the mock world model. Probing ticks 12 and 20 points at its own notes: hiding them changed the action on both, while 0.7 temperature still gave 6 of 6 waits, and neither reversing the list nor more randomness broke it. Hiding notes only made it start over, walking back to the bench, so that's amnesia rather than a fix. The prompt also never tells it the result of its last action. A 30 minute run says little until this is fixed. `runtime/probe_decisions.py` re-asked 3 logged moments, about 27 replies, so these are first reads:
    - Frames matter: blank frames moved it from the door to Ana.
    - Hidden notes didn't change its action, only some diary wording, so its notes aren't what picks the action. They may still explain its repeated phrases.
    - A named target in the prompt's example changed its choice, so the prompt no longer names one.
@@ -48,6 +48,7 @@ Most likely to bite first:
 
 | Decision | Why it matters | Needed by |
 |---|---|---|
+| How should the agent's notes work? | They're what keeps it stuck. Options: show repeated notes once, tell it what its last action did and what changed, keep notes for sleep and training only, or summarize them. This changes what the agent is, so it also affects the benchmark comparison. | Gate 9 |
 | Which half hour of which life? | The latest real tree only has text for a few days at age 2, in an apartment, and SimWorld is an outdoor city. The sim, the prompt and the agent's life will disagree until these match. | Gate 9 |
 | Write more of the tree, or use coarse nodes? | Most moments have no `sec30` node, so the prompt reuses the deepest node for many ticks. | Gate 9 |
 | What counts as the tree's "default" action? | The autonomy metric uses a stand-in mapping, `VERB_TO_ACTION` in `adapters/life_db.py`. | Gate 13 |
