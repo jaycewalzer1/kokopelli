@@ -35,6 +35,22 @@ The longest real run, `runs/wmloop_real_20`, was 20 ticks of real Cosmos and Qwe
 
 `autonomy` reads 1.0 on this run even though the agent's actions changed nothing compared with the null agent (`final_distance` 0.0). It only says that the choice differed from the life default, so don't read it as the agent doing something.
 
+## Filter mode (owner's decision)
+
+The owner chose to make the sim the source of truth and have the world model repaint it: `--wm-filter depth` or `seg`, on `nvidia/Cosmos3-Nano-Sim-Transfer`. Every frame's geometry comes from the sim, so there's no drift control or re-anchoring on this path. It's tested on mocks and a fake server only. To reach a real run:
+
+1. **Let SimWorld capture every frame.** At 24 fps it needs `tick_interval_s` of 1/24, and `SimWorldConfig` refuses captures inside the first `velocity_window_s`. Both are unsolved, and each capture costs a velocity snapshot.
+2. **Measure render speed on real SimWorld.** A 30 minute run is 43,200 frames. Only this can say whether that's practical.
+3. **Serve the right model.** `vllm serve nvidia/Cosmos3-Nano-Sim-Transfer --omni --model-class-name Cosmos3NanoSimTransferPipeline --deploy-config /app/vllm-omni/vllm_omni/deploy/cosmos3_nano_sim_transfer.yaml`. The server must be able to read the run folder, because `control_path` is a path on its filesystem. `scripts/pace/wmloop_run.sbatch` doesn't do this yet.
+4. **Check a session continues across requests.** `reset` is only sent on the first request. The model card only shows one-request sessions, so if this doesn't carry appearance, expect a seam at every chunk.
+5. **Check the depth picture.** Near bright and far black is read off one NVIDIA sample by eye, and the 0.5 m to 100 m range is a guess.
+
+The model card lists 14.6 frames/s on an H100 at 480p, which is about 49 minutes for 43,200 frames, rendering only. The scene has to exist in the sim, so this makes "which half hour of which life" a blocker: the text can restyle what's there, but not add an apartment to a city.
+
+## Notes
+
+Notes are now a folder of markdown, `memory/` in each run, in Google's Open Knowledge Format v0.2 (`runtime/notebook.py`). A note at least 90% similar to an existing one updates it, so the prompt shows it once. The prompt also says what the agent last chose and what changed in view. The agent can't open files yet, so it only gets its 5 most recently touched notes.
+
 ## What could change the plan
 
 Most likely to bite first:

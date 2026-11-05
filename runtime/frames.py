@@ -8,6 +8,9 @@ from PIL import Image
 
 from blend import FPS, probe
 
+NEAR_CM = 50.0
+FAR_CM = 10000.0
+
 
 def file_hash(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16]
@@ -29,6 +32,16 @@ def resized(frame, size):
     if frame.shape[:2] == (height, width):
         return frame
     return np.asarray(Image.fromarray(frame).resize((width, height), Image.LANCZOS))
+
+
+def control_frame(path, size):
+    """A sim render as one frame of a control video. NVIDIA's sample depth video has near bright and far black."""
+    if str(path).endswith(".npy"):
+        depth = np.nan_to_num(np.load(path), nan=FAR_CM, posinf=FAR_CM).clip(NEAR_CM, FAR_CM)
+        # A fixed range, so the picture doesn't flicker as things enter and leave the view.
+        gray = (255 * (1 - np.log(depth / NEAR_CM) / np.log(FAR_CM / NEAR_CM))).astype(np.uint8)
+        return resized(np.stack([gray] * 3, axis=-1), size)
+    return resized(load_rgb(path), size)
 
 
 def write_clip(frames, path):

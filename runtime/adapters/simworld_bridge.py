@@ -51,7 +51,9 @@ def to_sim_action(action):
 
 def to_capture(capture):
     renders = capture.renders
-    return Capture(round(capture.offset_s), renders["rgb"].path, renders["depth"].path, renders["segmentation"].path,
+    # Filter mode captures between whole seconds, and those offsets have to stay distinct.
+    offset = int(capture.offset_s) if capture.offset_s == int(capture.offset_s) else capture.offset_s
+    return Capture(offset, renders["rgb"].path, renders["depth"].path, renders["segmentation"].path,
                    {name: render.sha256[:16] for name, render in renders.items()})
 
 

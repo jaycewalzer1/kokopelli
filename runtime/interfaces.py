@@ -38,6 +38,7 @@ class ChunkRequest:
     chunk: int
     frames: int
     seed: int
+    control: str | None = None
 
 
 @dataclass

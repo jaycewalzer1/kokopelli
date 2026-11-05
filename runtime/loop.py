@@ -5,11 +5,12 @@ from pathlib import Path
 
 from runtime import checkpoint, drift
 from runtime.actions import InvalidDecision, action_dict, parse_decision, was_reshaped
-from runtime.frames import evenly_spaced, file_hash, read_clip, save_rgb
+from runtime.frames import control_frame, evenly_spaced, file_hash, read_clip, save_rgb, write_clip
 from runtime.interfaces import AgentInput, ChunkRequest, CondFrame
 from runtime.leak_guard import LeakError, drop_future
 from runtime.memory import MemorySampler
-from runtime.prompt_builder import build_agent_prompt, build_wm_prompt
+from runtime.notebook import latest, remember, write_bundle
+from runtime.prompt_builder import build_agent_prompt, build_wm_prompt, outcome_text
 
 
 def text_hash(text):
@@ -27,6 +28,7 @@ class Loop:
         self.cond = []
         self.since_anchor = 0
         self.visible = []
+        self.outcome = None
         self.memory = MemorySampler().start()
 
     def _rel(self, path):
@@ -36,13 +38,14 @@ class Loop:
         start = self.config.start_time or self.context.start_time()
         first = self.sim.reset(self.config.seed, start, self.out, self.config.capture_offsets)
         # Real video can't start from the mock sim's grid drawing, so it starts from the prompt alone.
-        self.cond = [] if self.config.text_start else [CondFrame(first.captures[0].rgb, "sim")]
+        self.cond = [] if self.config.text_start or self.config.wm_filter else [CondFrame(first.captures[0].rgb, "sim")]
         self.visible = first.visible
         self.log.append("sim_reset", 0, {"state": first.state, "capture": self._capture_data(first.captures[0]), "visible": first.visible})
 
     def resume(self, saved):
         self.next_tick = saved["next_tick"]
         self.pending, self.notes, self.since_anchor, self.visible = saved["pending"], saved["notes"], saved["since_anchor"], saved["visible"]
+        write_bundle(self.out / "memory", self.notes)
         self.cond = [CondFrame(str(self.out / frame["path"]), frame["source"]) for frame in saved["cond"]]
         start = self.config.start_time or self.context.start_time()
         self.sim.reset(self.config.seed, start, self.out, self.config.capture_offsets)
@@ -70,13 +73,15 @@ class Loop:
         seconds["sim"] = time.perf_counter() - clock
         memory["sim"] = self.memory.take()
         now = step.state["sim_time"]
+        self.outcome = outcome_text(self.pending, self.visible, step.visible, step.state.get("last_result")) if tick > 1 else None
         self.visible = step.visible
-        self.log.append("sim_step", tick, {"state": step.state, "captures": [self._capture_data(c) for c in step.captures],
+        self.log.append("sim_step", tick, {"state": step.state, "captures": [self._capture_data(c) for c in self._logged_captures(step)],
                                            "visible": step.visible, "seconds": step.seconds})
 
         clock = time.perf_counter()
         context = self._guarded(tick, now, self.context.context_at, now)
-        prompt, _ = self._guarded(tick, now, build_wm_prompt, context, step.state, self.pending, self.config.wm_style, now)
+        prompt, _ = self._guarded(tick, now, build_wm_prompt, context, step.state, self.pending, self.config.wm_style, now,
+                                 not self.config.wm_filter)
         seconds["prompt"] = time.perf_counter() - clock
         self.log.append("wm_prompt", tick, {"text": prompt, "hash": text_hash(prompt), "context": context, "now": now,
                                             "dropped_future": context["dropped"], "leak_check": "passed",
@@ -84,7 +89,7 @@ class Loop:
 
         clock = time.perf_counter()
         self.agent.release()
-        sampled = self._render(tick, prompt, step, seconds)
+        sampled = self._filter(tick, prompt, step, seconds) if self.config.wm_filter else self._render(tick, prompt, step, seconds)
         seconds["wm"] = time.perf_counter() - clock - seconds["drift"]
         memory["wm"] = self.memory.take()
 
@@ -111,6 +116,43 @@ class Loop:
         except LeakError as error:
             self.log.append("leak_alarm", tick, {"error": str(error), "now": now})
             raise
+
+    def _logged_captures(self, step):
+        """Filter mode captures every frame. The control clip's hash covers those, so only the checked moments go in the log."""
+        if not self.config.wm_filter:
+            return step.captures
+        return [c for c in step.captures if c is step.captures[-1] or float(c.offset_s) % self.config.check_every == 0]
+
+    def _filter(self, tick, prompt, step, seconds):
+        """The sim decides every frame and the world model only repaints them, so there's no drift to check or re-anchor."""
+        settings = self.config.wm_settings
+        folder = self.out / "ticks" / f"{tick:04d}"
+        per_chunk = max(1, round(self.config.agent_frames / len(settings["chunk_frames"])))
+        sampled, start = [], 0
+        seconds["drift"] = 0.0
+        for index, frames in enumerate(settings["chunk_frames"]):
+            part = step.captures[start:start + frames]
+            start += frames
+            control = write_clip([control_frame(getattr(c, self.config.wm_filter), settings["size"]) for c in part],
+                                 folder / f"control_{index:02d}.mp4")
+            output = folder / f"wm_{index:02d}.mp4"
+            request = ChunkRequest(prompt, [], part[-1], str(output), tick, index, frames, self.config.seed, control)
+            clock = time.perf_counter()
+            self.world_model.render_chunk(request)
+            render_seconds = time.perf_counter() - clock
+            video = read_clip(output)
+            samples = [save_rgb(video[i], folder / f"wm_{index:02d}_sample_{i:03d}.png") for i in evenly_spaced(len(video), per_chunk)]
+            sampled += samples
+            self.log.append("wm_chunk", tick, {"chunk": index, "clip": self._rel(output), "hash": file_hash(output), "frames": len(video),
+                                               "seconds": round(render_seconds, 4), "seed": self.config.seed,
+                                               "control": self._rel(control), "control_hash": file_hash(control),
+                                               "samples": [self._rel(path) for path in samples]})
+        kept = {id(c) for c in self._logged_captures(step)}
+        for capture in step.captures:  # At 24 fps these would be 4,000 files a tick, and the control clips hold what matters.
+            if id(capture) not in kept:
+                for path in (capture.rgb, capture.depth, capture.seg):
+                    Path(path).unlink(missing_ok=True)
+        return [sampled[i] for i in evenly_spaced(len(sampled), self.config.agent_frames)]
 
     def _render(self, tick, prompt, step, seconds):
         settings = self.config.wm_settings
@@ -160,8 +202,8 @@ class Loop:
 
     def _decide(self, tick, now, context, images):
         notes, _ = drop_future(self.notes, now)
-        notes = notes[-self.config.notes_shown:]
-        prompt, _ = self._guarded(tick, now, build_agent_prompt, context, notes, self.visible, len(images), now)
+        notes = latest(notes, self.config.notes_shown)
+        prompt, _ = self._guarded(tick, now, build_agent_prompt, context, notes, self.visible, len(images), now, self.outcome)
         self.log.append("agent_input", tick, {"prompt": prompt, "hash": text_hash(prompt), "images": [self._rel(p) for p in images],
                                               "image_hashes": [file_hash(p) for p in images], "notes": notes, "leak_check": "passed"})
         error, forced = None, False
@@ -181,7 +223,7 @@ class Loop:
             decision, forced = parse_decision('{"action": {"type": "wait"}}', self.visible), True
             self.log.append("agent_fallback", tick, {"action": "wait", "reason": error})
         if decision.diary:
-            self.notes.append({"t": now, "text": decision.diary})
+            write_bundle(self.out / "memory", remember(self.notes, now, decision.diary))
         self.log.append("decision", tick, {"action": action_dict(decision.action), "diary": decision.diary, "forced": forced})
         return decision, forced
 

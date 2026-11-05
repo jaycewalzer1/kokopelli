@@ -5,6 +5,7 @@ import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs
 
 import numpy as np
 
@@ -19,6 +20,8 @@ from runtime.run import run
 def parts(handler):
     """Split a multipart request into its fields, the way the real server would."""
     body = handler.rfile.read(int(handler.headers["Content-Length"]))
+    if handler.headers["Content-Type"].startswith("application/x-www-form-urlencoded"):
+        return {name: values[0].encode() for name, values in parse_qs(body.decode()).items()}
     message = email.message_from_bytes(b"Content-Type: " + handler.headers["Content-Type"].encode() + b"\r\n\r\n" + body)
     return {part.get_param("name", header="content-disposition"): part.get_payload(decode=True) for part in message.get_payload()}
 
@@ -97,7 +100,7 @@ class ServerTest(unittest.TestCase):
             frame.write_bytes(b"not really a png")
 
             class Request:
-                prompt, frames, seed = "p", 81, 1
+                prompt, frames, seed, control = "p", 81, 1, None
                 cond = [type("Frame", (), {"path": str(frame)})]
                 output = f"{folder}/out.mp4"
 
@@ -108,7 +111,7 @@ class ServerTest(unittest.TestCase):
         model = CosmosServerWorldModel("http://127.0.0.1:1", "832x480", 35)
 
         class Request:
-            cond = [object(), object()]
+            cond, control = [object(), object()], None
 
         with self.assertRaisesRegex(ValueError, "one frame"):
             model.render_chunk(Request)

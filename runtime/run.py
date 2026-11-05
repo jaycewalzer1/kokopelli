@@ -37,7 +37,7 @@ def make_world_model(config):
         return MockWorldModel()
     if config.wm == "cosmos_server":
         from runtime.adapters.cosmos_server import CosmosServerWorldModel
-        return CosmosServerWorldModel(config.wm_url, config.wm_settings["size"], config.wm_settings["steps"], negative_prompt())
+        return CosmosServerWorldModel(config.wm_url, config.wm_settings["size"], config.wm_settings["steps"], negative_prompt(), config.wm_filter or "depth")
     from runtime.adapters.cosmos import CosmosWorldModel
     return CosmosWorldModel(config.wm_settings["size"], config.wm_settings["steps"], config.wm_quantize)
 
@@ -87,7 +87,7 @@ def finish(config, out, sim_factory, log):
     clips = [out / chunk["clip"] for tick in replay.summarize(out)["ticks"] for chunk in tick["chunks"]]
     if clips:
         try:
-            final = stitch(clips, out / "final.mp4", config.cond_frames)
+            final = stitch(clips, out / "final.mp4", 0 if config.wm_filter else config.cond_frames)
             log.append("stitched", None, {"video": str(Path(final).relative_to(out)), "clips": len(clips)})
         except Exception as error:  # The run's data is already safe, so a failed join shouldn't look like a failed run.
             log.append("stitched", None, {"video": None, "error": str(error)[-300:]})
@@ -126,7 +126,7 @@ def config_from(args):
     backend = BACKENDS[args.backend]
     values = {**backend, "seed": args.seed, "ticks": args.ticks, "drift_control": not args.no_drift_control,
               "counterfactual": not args.no_counterfactual, "mind": args.mind}
-    for name in ("sim", "wm", "agent", "context", "wm_preset", "start_time", "life_db", "life_run", "agent_url", "drift_threshold", "agent_weights", "wm_quantize", "wm_url", "cond_frames"):
+    for name in ("sim", "wm", "agent", "context", "wm_preset", "start_time", "life_db", "life_run", "agent_url", "drift_threshold", "agent_weights", "wm_quantize", "wm_url", "cond_frames", "wm_filter"):
         value = getattr(args, name)
         if value is not None:
             values[name] = value
@@ -138,6 +138,12 @@ def config_from(args):
     if values["sim"] == "mock" and values["wm"] == "cosmos":
         # Re-anchoring would paste the mock's grid into real video. Scores are still logged, but mean little here.
         values["drift_control"] = False
+    if values.get("wm_filter"):
+        if values["wm"] == "cosmos":
+            sys.exit("--wm-filter needs Cosmos3-Nano-Sim-Transfer, which has no Mac port. Use --wm cosmos_server or --wm mock")
+        values["drift_control"] = False
+        if args.wm_preset is None:
+            values["wm_preset"] = "filter" if values["wm"] == "cosmos_server" else "filter_mock"
     if values["wm"] == "cosmos_server":
         values["cond_frames"] = 1
         if not values.get("wm_url"):
@@ -182,6 +188,7 @@ def main():
     parser.add_argument("--mind", action="store_true", help="wrap the agent in the feeling loop from mind/")
     parser.add_argument("--sim-settings", help="SimWorldConfig fields as JSON, such as the port")
     parser.add_argument("--wm-url", help="a vLLM-Omni server running Cosmos, for --wm cosmos_server")
+    parser.add_argument("--wm-filter", choices=["depth", "seg"], help="render every frame in the sim and have the world model repaint them, using this as the control video")
     parser.add_argument("--wm-quantize", type=int, choices=[8], help="load Cosmos in 8 bits")
     args = parser.parse_args()
 

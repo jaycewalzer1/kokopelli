@@ -4,7 +4,7 @@ import random
 import numpy as np
 from PIL import Image, ImageDraw
 
-from runtime.frames import load_rgb, write_clip
+from runtime.frames import load_rgb, read_clip, write_clip
 from runtime.interfaces import WorldModel
 
 DRIFT_PER_CHUNK = 0.002
@@ -16,6 +16,8 @@ class MockWorldModel(WorldModel):
         self.drift = 0.0
 
     def render_chunk(self, request):
+        if request.control:
+            return self._filter(request)
         draw = random.Random(f"{request.seed}:{request.tick}:{request.chunk}")
         # A sim frame among the conditioning frames pulls the result back, as a re-anchor should.
         if any(frame.source == "sim" for frame in request.cond):
@@ -26,6 +28,10 @@ class MockWorldModel(WorldModel):
         drawn = [self._frame(target, request, i, new) for i in range(new)]
         cond = [load_rgb(frame.path) for frame in request.cond]
         return write_clip([*cond, *drawn], request.output)
+
+    def _filter(self, request):
+        # Repaints the control video and nothing else, so nothing can build up from one chunk to the next.
+        return write_clip([np.asarray(frame // 2 + 40, np.uint8) for frame in read_clip(request.control)], request.output)
 
     def _frame(self, target, request, index, total):
         # Sliding the picture sideways breaks layout agreement, which is the error drift control looks for.

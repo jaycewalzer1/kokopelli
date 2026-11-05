@@ -155,7 +155,9 @@ class MockSim(PhysicsSim):
     def _capture(self, tick, offset):
         folder = self.out_dir / "ticks" / f"{tick:04d}"
         folder.mkdir(parents=True, exist_ok=True)
-        paths = {name: folder / f"sim_{offset:02d}_{name}.png" for name in ("rgb", "depth", "seg")}
+        # Filter mode captures every frame, so its offsets aren't whole seconds.
+        label = f"{offset:02d}" if isinstance(offset, int) else f"{offset:07.3f}"
+        paths = {name: folder / f"sim_{label}_{name}.png" for name in ("rgb", "depth", "seg")}
         Image.fromarray(self._rgb()).save(paths["rgb"])
         Image.fromarray(self._depth()).save(paths["depth"])
         Image.fromarray(self._seg()).save(paths["seg"])

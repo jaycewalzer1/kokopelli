@@ -10,6 +10,9 @@ WM_PRESETS = {
     "gpu_demo": {"size": "832x480", "chunk_frames": [81], "steps": 35},
     "gpu_full": {"size": "832x480", "chunk_frames": [181] * 4, "steps": 35},
     "full": {"size": "448x256", "chunk_frames": [84] * 8 + [88], "steps": 30},
+    # Filter mode: the sim renders every frame, so a tick is 720 frames at 24 fps. The model card caps a request at 600.
+    "filter": {"size": "832x480", "chunk_frames": [360, 360], "steps": 4},
+    "filter_mock": {"size": "448x256", "chunk_frames": [12, 12], "steps": 0},
 }
 
 
@@ -30,6 +33,7 @@ class Config:
     mind: bool = False
     wm_quantize: int = 0
     wm_url: str | None = None
+    wm_filter: str | None = None
 
     tick_seconds: int = 30
     check_every: int = 15
@@ -57,6 +61,9 @@ class Config:
 
     @property
     def capture_offsets(self):
+        if self.wm_filter:
+            total = sum(self.wm_settings["chunk_frames"])
+            return [round(self.tick_seconds * (i + 1) / total, 4) for i in range(total)]
         return list(range(self.check_every, self.tick_seconds + 1, self.check_every))
 
     def to_dict(self):
