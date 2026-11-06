@@ -411,40 +411,59 @@ class Life:
                  f"**Situation:** {self.args.situation}\n\n**Vision:** {self.vision.name}\n")
         with SimWorldPhysics(self.cfg) as sim:
             self.sim = sim
-            cap = sim.reset(seed=0)
-            state, frame = cap.state, cap.renders["rgb"].path
-            self.follow(state)
-            self.snapshot(state, frame, 0)
-            decide = True
-            for step in range(self.args.steps):
-                self.sim_t = state.sim_time_s
-                if decide:
-                    thought, act, diary = self.decide(state, frame)
-                    shutil.copy(frame, self.out / "frames" / f"{step:04d}.png")
-                    if diary:
-                        self.diary.append(f"[{state.time_of_day.clock}] {diary}")
-                    self.last_thought, self.last_action = thought, act
-                    self.say(f"\n### {state.time_of_day.clock} — step {step}\n![](frames/{step:04d}.png)\n\n"
-                             f"*{thought}*\n\n**→** `{json.dumps(act)}`")
-                    self.heard = []
-                    self.recent.append(f"[{state.time_of_day.clock}] " + json.dumps({k: v for k, v in act.items()}))
-                    sim_action, problem = self.to_sim(act, state)
-                    self.problem = problem
-                    if problem:
-                        self.last = problem
-                else:
-                    act, self.problem = {"type": "continue"}, None
-                    sim_action = self.next_leg() if self.new_leg else {"type": "continue"}
-                self.log("act", action=act, sim_action=sim_action)
-                result = sim.step(sim_action)
-                state, frame = result.final_state, result.captures[-1].renders["rgb"].path
-                self.follow(state)
-                self.new_leg = False
-                decide = self.after(act, sim_action, result, state)
-                self.snapshot(state, frame, step + 1)
+            try:
+                self._live(sim)
+            finally:
+                self.halt(sim)
         self.running = False
         self.snapshot(None, None, None)
         self.say(f"\n---\nRun folder: {self.out}")
+
+    def halt(self, sim):
+        """Stop everyone before the adapter un-pauses the game. Otherwise residents keep walking in a straight
+        line forever, leave the map and fall, and the far-out actors crashed UE 5.8's scene culling (~25 min later)."""
+        for spec in self.cfg.npcs:
+            try:
+                sim.wire.request(f"vbp {spec.actor_name} StopPedestrian", resend=False)
+            except Exception as e:
+                print(f"(could not stop {spec.id}: {e})")
+        try:
+            sim.wire.request("vbp GEN_BP_Humanoid_0 StopAgent", resend=False)
+        except Exception as e:
+            print(f"(could not stop the agent: {e})")
+
+    def _live(self, sim):
+        cap = sim.reset(seed=0)
+        state, frame = cap.state, cap.renders["rgb"].path
+        self.follow(state)
+        self.snapshot(state, frame, 0)
+        decide = True
+        for step in range(self.args.steps):
+            self.sim_t = state.sim_time_s
+            if decide:
+                thought, act, diary = self.decide(state, frame)
+                shutil.copy(frame, self.out / "frames" / f"{step:04d}.png")
+                if diary:
+                    self.diary.append(f"[{state.time_of_day.clock}] {diary}")
+                self.last_thought, self.last_action = thought, act
+                self.say(f"\n### {state.time_of_day.clock} — step {step}\n![](frames/{step:04d}.png)\n\n"
+                         f"*{thought}*\n\n**→** `{json.dumps(act)}`")
+                self.heard = []
+                self.recent.append(f"[{state.time_of_day.clock}] " + json.dumps({k: v for k, v in act.items()}))
+                sim_action, problem = self.to_sim(act, state)
+                self.problem = problem
+                if problem:
+                    self.last = problem
+            else:
+                act, self.problem = {"type": "continue"}, None
+                sim_action = self.next_leg() if self.new_leg else {"type": "continue"}
+            self.log("act", action=act, sim_action=sim_action)
+            result = sim.step(sim_action)
+            state, frame = result.final_state, result.captures[-1].renders["rgb"].path
+            self.follow(state)
+            self.new_leg = False
+            decide = self.after(act, sim_action, result, state)
+            self.snapshot(state, frame, step + 1)
 
     def after(self, act, sim_action, result, state):
         """Update the route and what the agent will be told. Returns True if Qwen should decide now."""
