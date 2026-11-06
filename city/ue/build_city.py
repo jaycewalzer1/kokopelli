@@ -363,7 +363,7 @@ class Plan:
     def plan_ground(self):
         W, H = self.w["meta"]["size_m"]
         # meadow skirt round the plan ("the rest of the mile"), under everything else
-        slabs = [{"rect_cm": rect([-2000, -2000, 2000, 2000]), "z0": 0, "z1": 0.6, "mat": "Moss", "tint": [104, 132, 62], "scale": 40},
+        slabs = [{"rect_cm": rect([-2000, -2000, 2000, 2000]), "z0": 0, "z1": 0.6, "mat": "Plain", "tint": [64, 86, 32], "scale": 40},
                  {"rect_cm": rect([0, 0, W, H]), "z0": 0, "z1": 2, "mat": "Moss", "tint": [104, 142, 66]}]
         meadow = [132, 150, 74]
         slabs.append({"rect_cm": rect(self.edges["parkway"]["bounds_m"]), "z0": 0, "z1": 2.5, "mat": "Moss", "tint": [116, 152, 70]})
@@ -435,13 +435,17 @@ class Plan:
             mx, my = (pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2
             d = math.hypot(mx - W / 2, my - H / 2)
             return {"pts": [pt(q) for q in pts], "h": round(rnd.uniform(250, 420)), "w": 380, "step": 1.6 if d < 700 else 3.0,
-                    "shadow": d < 750, "tint": rnd.choice([[60, 98, 46], [72, 110, 50], [54, 90, 44]])}
+                    "shadow": d < 500, "cull_cm": 0 if d < 900 else 170000, "tint": rnd.choice([[60, 98, 46], [72, 110, 50], [54, 90, 44]])}
+
+        def plain_tint(t):
+            # flat colour roughly matching the textured materials' average look at a distance
+            return [int(t[0] * 0.62), int(t[1] * 0.66), int(t[2] * 0.5)]
 
         def keep_p(x, y):  # hedge density: full near the city, thinner far out (instances are the GPU cost)
             return 0.38 if math.hypot(x - W / 2, y - H / 2) < 900 else 0.24
 
         def copse_p(x, y):
-            return 0.018 if math.hypot(x - W / 2, y - H / 2) < 900 else 0.007
+            return 0.018 if math.hypot(x - W / 2, y - H / 2) < 900 else 0.004
 
         def near_city(x, y, pad):
             return -pad < x < W + pad and -pad < y < H + pad
@@ -460,7 +464,7 @@ class Plan:
                     continue
                 crop = pick()
                 if crop[1] == "orchard":
-                    slabs.append({"rect_cm": rect([x0, y0, x1, y1]), "z0": 0, "z1": 0.9, "mat": "Moss", "tint": [118, 146, 66], "scale": 30})
+                    slabs.append({"rect_cm": rect([x0, y0, x1, y1]), "z0": 0, "z1": 0.9, "mat": "Plain", "tint": plain_tint([118, 146, 66]), "scale": 30})
                     d = math.hypot((x0 + x1) / 2 - W / 2, (y0 + y1) / 2 - H / 2)
                     if d < 1000:
                         sp = rnd.choice(["apple", "persimmon", "fruit"]) if d < 600 else "fruit"
@@ -473,7 +477,10 @@ class Plan:
                                 xx += step
                             yy += step
                     continue
-                slabs.append({"rect_cm": rect([x0, y0, x1, y1]), "z0": 0, "z1": round(rnd.uniform(0.8, 1.2), 2), "mat": crop[1], "tint": crop[2], "scale": crop[3]})
+                far = True  # flat colour everywhere: the textured materials tiled visibly at field scale
+                # far fields get the flat-colour material: their texture is sub-pixel from any view but cost ~2 ms of shading
+                slabs.append({"rect_cm": rect([x0, y0, x1, y1]), "z0": 0, "z1": round(rnd.uniform(0.8, 1.2), 2), "mat": "Plain" if far else crop[1],
+                              "tint": plain_tint(crop[2]) if far else crop[2], "scale": crop[3]})
         # hedgerows on some field edges, with copse trees standing in them; poplar windbreaks on a few
         for i in range(len(xs)):
             for j in range(len(ys) - 1):
@@ -508,8 +515,8 @@ class Plan:
                 trees.append([round(cx + math.cos(a) * rr, 1), round(cy + math.sin(a) * rr, 1), rnd.choice(["copse", "copse", "copse", "cypress", "poplar"]), round(rnd.uniform(0.9, 1.4), 2)])
         # backdrop hills: two rows round the floor edge (the floor ends at +-2 km), nearer row green, outer row higher
         hills = []
-        for row, (dist, hmin, hmax, rmin, rmax, tint) in enumerate([(1950, 50, 130, 300, 560, [112, 142, 78]), (2450, 160, 380, 500, 900, [84, 110, 70])]):
-            n = 28 if row == 0 else 22
+        for row, (dist, hmin, hmax, rmin, rmax, tint) in enumerate([(1950, 50, 130, 300, 560, [112, 142, 78]), (2500, 200, 420, 700, 1100, [84, 110, 70])]):
+            n = 28 if row == 0 else 12  # outer row: few big hills (mostly fogged; each costs shading)
             for k in range(n):
                 t = 2 * math.pi * (k + rnd.uniform(-0.3, 0.3)) / n
                 # square-ish ring hugging the floor edge
@@ -517,7 +524,7 @@ class Plan:
                 m = max(abs(cx), abs(cy))
                 cx, cy = cx / m * dist, cy / m * dist
                 rx, ry = rnd.uniform(rmin, rmax), rnd.uniform(rmin, rmax)
-                hills.append({"c": pt((cx, cy)), "r": [c(rx), c(ry), c(rnd.uniform(hmin, hmax))], "mat": "Moss", "tint": tint, "scale": 200})
+                hills.append({"c": pt((cx, cy)), "r": [c(rx), c(ry), c(rnd.uniform(hmin, hmax))], "mat": "Plain", "tint": [int(tint[0] * 0.62), int(tint[1] * 0.66), int(tint[2] * 0.5)], "scale": 200})
         self.surround_trees = trees
         self.landscape_counts = {"fields": sum(1 for s_ in slabs if s_.get("z1", 0) <= 1.2 and s_.get("scale", 0) >= 30), "hedges": len(hedges), "trees": len(trees), "hills": len(hills)}
         return {"hedges": hedges, "hills": hills}
@@ -836,7 +843,7 @@ class Plan:
         for t in self.surround_trees:
             (near if math.hypot(t[0] - 300, t[1] - 300) < 750 else far).append(t)
         self.add_trees("CITY_trees_surround", near, gi=False)
-        self.add_trees("CITY_trees_far", far, shadow=False)
+        self.add_trees("CITY_trees_far", [[t[0], t[1], t[2] + "@far", t[3]] for t in far], shadow=False)
 
     def add_trees(self, name, trees, shadow=True, gi=True):
         if trees:
@@ -846,6 +853,7 @@ class Plan:
             if not shadow:
                 cfg["shadow"] = False
                 cfg["gi"] = False
+                cfg["cull_cm"] = 170000
             self.add("SWCityTrees", name, cfg)
 
     def build(self):
@@ -859,6 +867,9 @@ class Plan:
         self.plan_places()
         self.plan_plaza()
         self.plan_trees()
+        # configure the big landscape actor last: built first, it measured ~1.4 ms slower per frame (aerial) for
+        # the same geometry (an ordering effect inside the renderer; reproducible with a full rebuild)
+        self.actors.sort(key=lambda a: a[1] == "CITY_landscape")
         return self.actors
 
 
