@@ -1,4 +1,5 @@
 """Utility functions for calling the world model. Cosmos runs from its own environment."""
+import os
 import subprocess
 from pathlib import Path
 
@@ -38,3 +39,17 @@ def continue_video(prompt, video, output, size="448x256", frames=16, steps=30, s
     """Generate a clip whose first cond_frames (1 + 4n) repeat the end of a video, carrying on its motion."""
     extra = ("--video", str(Path(video).resolve()), "--cond-frames", str(cond_frames))
     return _generate("img2video.py", prompt, output, size, frames, steps, seed, extra)
+
+
+def filter_video(prompt, control, output, size="448x256", frames=16, cond_frames=5, steps=30, seed=7, chunks=None):
+    """Repaint an edge video from edges.py, in overlapping chunks. Each starts from the last cond_frames of the one before."""
+    output = Path(output).resolve()
+    command = [str(WORLD_MODEL_RUNNER / ".venv" / "bin" / "python"), str(Path(__file__).resolve().parent / "world_filter.py"), prompt,
+               "--control", str(Path(control).resolve()), "--output", str(output), "--model-dir", str(WORLD_MODEL_WEIGHTS),
+               "--size", size, "--frames", str(frames), "--cond-frames", str(cond_frames), "--steps", str(steps), "--seed", str(seed)]
+    if chunks is not None:
+        command += ["--chunks", str(chunks)]
+    result = subprocess.run(command, cwd=WORLD_MODEL_RUNNER, capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(WORLD_MODEL_RUNNER)})
+    if result.returncode:
+        raise RuntimeError(f"world_filter.py failed: {result.stderr[-800:]}")
+    return output
