@@ -5,6 +5,11 @@
 #include "Components/BoxComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/DirectionalLightComponent.h"
+#include "Components/VolumetricCloudComponent.h"
+#include "Engine/DirectionalLight.h"
+#include "Engine/PostProcessVolume.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "DynamicRHI.h"
 #include "EngineUtils.h"
 #include "Misc/App.h"
@@ -297,6 +302,71 @@ void ASWCityManager::GetFrameStats(FString& Stats)
 		Frames, SumDelta / N, MaxDelta, SumGame / N, SumRender / N, SumGpu / N, Frames ? 1000.0 / (SumDelta / N) : 0.0, Actors, Comps, Tris, Inst);
 }
 
+void ASWCityManager::Look(const FString& Json, FString& Result)
+{
+	TSharedPtr<FJsonObject> Obj;
+	if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Obj) || !Obj.IsValid())
+	{
+		Result = TEXT("bad json");
+		return;
+	}
+	UWorld* World = GetWorld();
+	TArray<FString> Out;
+	if (const TSharedPtr<FJsonObject>* Cloud = nullptr; Obj->TryGetObjectField(TEXT("cloud"), Cloud))
+	{
+		for (TActorIterator<AVolumetricCloud> It(World); It; ++It)
+		{
+			UVolumetricCloudComponent* C = It->FindComponentByClass<UVolumetricCloudComponent>();
+			if (!C) continue;
+			UMaterialInstanceDynamic* Mid = Cast<UMaterialInstanceDynamic>(C->GetMaterial());
+			if (!Mid && C->GetMaterial())
+			{
+				Mid = UMaterialInstanceDynamic::Create(C->GetMaterial(), C);
+				C->SetMaterial(Mid);
+			}
+			if (!Mid) continue;
+			for (const auto& Kv : (*Cloud)->Values)
+			{
+				double V = 0;
+				if (Kv.Value.IsValid() && Kv.Value->TryGetNumber(V)) Mid->SetScalarParameterValue(FName(*Kv.Key), float(V));
+				float Cur = 0.f;
+				const bool bHas = Mid->GetScalarParameterValue(FName(*Kv.Key), Cur);
+				Out.Add(FString::Printf(TEXT("\"%s\": %s"), *Kv.Key, bHas ? *FString::SanitizeFloat(Cur) : TEXT("null")));
+			}
+			for (const TCHAR* K : {TEXT("layer_bottom_km"), TEXT("layer_height_km")})
+			{
+				double V = 0;
+				if (Obj->TryGetNumberField(K, V)) (FCString::Strcmp(K, TEXT("layer_bottom_km")) == 0) ? C->SetLayerBottomAltitude(float(V)) : C->SetLayerHeight(float(V));
+			}
+			break;
+		}
+	}
+	if (TActorIterator<ADirectionalLight> It(World); It)
+	{
+		double V = 0;
+		if (Obj->TryGetNumberField(TEXT("sun_pitch"), V))
+		{
+			FRotator R = It->GetActorRotation();
+			R.Pitch = V;
+			It->SetActorRotation(R);
+		}
+		if (Obj->TryGetNumberField(TEXT("sun_yaw"), V))
+		{
+			FRotator R = It->GetActorRotation();
+			R.Yaw = V;
+			It->SetActorRotation(R);
+		}
+		if (Obj->TryGetNumberField(TEXT("sun_intensity"), V)) It->GetLightComponent()->SetIntensity(float(V));
+	}
+	if (TActorIterator<APostProcessVolume> It(World); It)
+	{
+		double V = 0;
+		if (Obj->TryGetNumberField(TEXT("saturation"), V)) It->Settings.ColorSaturation = FVector4(V, V, V, 1.0);
+		if (Obj->TryGetNumberField(TEXT("contrast"), V)) It->Settings.ColorContrast = FVector4(1, 1, 1, V);
+	}
+	Result = TEXT("{") + FString::Join(Out, TEXT(", ")) + TEXT("}");
+}
+
 // =============================================================================================
 // Ground
 
@@ -373,8 +443,62 @@ bool ASWCityGround::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 			}
 			else
 			{
-				const FLinearColor C = Rng.F() < 0.35 ? Col::Leaf(Rng.I(4)) : Col::Flower(Rng.I(6));
-				Inst.Add(P(EPrim::Blob), M(EMat::Foliage), C, Xf(Pt, FVector(Rng.R(0.12, 0.3), Rng.R(0.12, 0.3), Rng.R(0.1, 0.25))), false, 25000);
+				const FLinearColor C = Rng.F() < 0.25 ? Col::Leaf(Rng.I(4)) : Col::Flower(Rng.I(6));
+				Inst.Add(P(EPrim::Blob), M(EMat::Foliage), C, Xf(Pt, FVector(Rng.R(0.09, 0.2), Rng.R(0.09, 0.2), Rng.R(0.08, 0.16))), false, 25000);
+			}
+		}
+	}
+	// Things in the sky (city/VIBE.md 7: Isono's balloons, birds over every painting). No shadows: they are
+	// small, high and would only add virtual-shadow-map pages.
+	// "balloons": [[x_cm, y_cm, z_cm, colour index], ...]: striped hot-air balloon, ~16 m tall.
+	for (const TSharedPtr<FJsonValue>& V : J::Arr(Obj, TEXT("balloons")) ? *J::Arr(Obj, TEXT("balloons")) : TArray<TSharedPtr<FJsonValue>>())
+	{
+		const TArray<double> Bv = J::Nums(V.IsValid() ? &V->AsArray() : nullptr);
+		if (Bv.Num() < 3) continue;
+		const FVector C = L(Bv[0], Bv[1], Bv[2]);
+		const int32 Ci = Bv.Num() > 3 ? int32(Bv[3]) : 0;
+		static const FColor Env[][3] = {{FColor(222, 64, 52), FColor(246, 200, 64), FColor(80, 160, 90)},
+										 {FColor(246, 206, 70), FColor(74, 150, 196), FColor(232, 110, 60)},
+										 {FColor(240, 240, 232), FColor(214, 90, 140), FColor(96, 170, 120)}};
+		const FColor* E = Env[((Ci % 3) + 3) % 3];
+		const double Yaw = Rng.R(0, 360);
+		// envelope: lower body, a contrasting belt, crown; then the narrowing skirt and the basket on ropes
+		// body, then three thin full-height slabs crossing the centre: their caps poke through the body as six
+		// vertical gore stripes (Isono's balloons; horizontal bands read as a hamburger)
+		Inst.Add(P(EPrim::Blob), M(EMat::Fabric), FLinearColor(E[0]), Xf(C, FVector(7.0, 7.0, 8.2), Yaw), false, 0.0);
+		for (int32 k = 0; k < 3; ++k)
+		{
+			Inst.Add(P(EPrim::Blob), M(EMat::Fabric), FLinearColor(k == 1 ? E[2] : E[1]), Xf(C, FVector(7.12, 1.5, 8.3), Yaw + 60 * k), false, 0.0);
+		}
+		Inst.Add(P(EPrim::Cone), M(EMat::Fabric), FLinearColor(E[0]), FTransform(FRotator(180, Yaw, 0), C + FVector(0, 0, -420), FVector(7.6, 7.6, 3.4)), false, 0.0);
+		Inst.Add(P(EPrim::Cube), M(EMat::Timber), Col::Bamboo(), Xf(C + FVector(0, 0, -1000), FVector(1.3, 1.3, 1.0), Yaw), false, 0.0);
+		for (int32 k = 0; k < 4; ++k)
+		{
+			const double A = FMath::DegreesToRadians(Yaw + 45 + 90 * k);
+			const FVector Top = C + FVector(FMath::Cos(A) * 160, FMath::Sin(A) * 160, -770), Bot = C + FVector(FMath::Cos(A) * 60, FMath::Sin(A) * 60, -950);
+			const FVector D = Top - Bot;
+			Inst.Add(P(EPrim::Cylinder), M(EMat::Metal), Col::Metal(), FTransform(FRotationMatrix::MakeFromZ(D.GetSafeNormal()).Rotator(), Bot, FVector(0.04, 0.04, D.Size() / 100)), false, 0.0);
+		}
+	}
+	// "birds": [[x_cm, y_cm, z_cm, count, spread_cm], ...]: a loose flock of small dark V shapes.
+	for (const TSharedPtr<FJsonValue>& V : J::Arr(Obj, TEXT("birds")) ? *J::Arr(Obj, TEXT("birds")) : TArray<TSharedPtr<FJsonValue>>())
+	{
+		const TArray<double> Fv = J::Nums(V.IsValid() ? &V->AsArray() : nullptr);
+		if (Fv.Num() < 3) continue;
+		const FVector C = L(Fv[0], Fv[1], Fv[2]);
+		const int32 N = Fv.Num() > 3 ? int32(Fv[3]) : 12;
+		const double Sp = Fv.Num() > 4 ? Fv[4] : 2500.0;
+		const double Heading = Rng.R(0, 360);
+		for (int32 i = 0; i < N; ++i)
+		{
+			const FVector Pb = C + FVector(Rng.R(-1, 1) * Sp, Rng.R(-1, 1) * Sp * 0.6, Rng.R(-0.25, 0.25) * Sp);
+			const double Yw = Heading + Rng.R(-15, 15), Flap = Rng.R(10, 30), Wing = Rng.R(28, 40);
+			for (int32 s = -1; s <= 1; s += 2)
+			{
+				// each wing a thin slab hinged at the body, raised by Flap degrees
+				const FRotator R(0, Yw, s * Flap);
+				const FVector Off = R.RotateVector(FVector(0, s * Wing * 0.5, 0));
+				Inst.Add(P(EPrim::Cube), M(EMat::Plain), Srgb(46, 44, 42), FTransform(R, Pb + Off, FVector(0.12, Wing / 100, 0.02)), false, 60000);
 			}
 		}
 	}
@@ -442,7 +566,7 @@ bool ASWCityLane::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 				if (Rng.F() < 0.3) continue;
 				const double Cc = Side ? Rng.R(C1 - 200, C1 - 80) : Rng.R(C0 + 80, C0 + 200);
 				const FVector Pt = bAlongX ? FVector(A, Cc, Top + 4) : FVector(Cc, A, Top + 4);
-				const FLinearColor Tint = Rng.F() < 0.25 ? Col::Flower(Rng.I(6)) : Col::Leaf(Rng.I(4));
+				const FLinearColor Tint = Rng.F() < 0.4 ? Col::Flower(Rng.I(6)) : Col::Leaf(Rng.I(4));
 				ASWCityTrees::AddShrub(Inst, Pt, Rng.R(35, 70), Tint, Rng.Next(), 30000);
 			}
 		}
@@ -705,7 +829,7 @@ const FSpecies GSpecies[] = {
 	{TEXT("fig"), 160, 24, 380, 260, TS::Spreading, {FColor(52, 96, 46), FColor(70, 118, 56), FColor(94, 136, 62)}, FColor(120, 70, 110), 0.f, FColor(150, 140, 126)},
 	{TEXT("persimmon"), 200, 20, 300, 320, TS::Orchard, {FColor(76, 116, 48), FColor(96, 136, 58), FColor(124, 156, 66)}, FColor(238, 128, 36), 1.f, FColor(80, 64, 52)},
 	{TEXT("pawpaw"), 180, 16, 200, 420, TS::Columnar, {FColor(56, 104, 46), FColor(74, 124, 54), FColor(100, 142, 60)}, FColor(0, 0, 0), 0.f, FColor(110, 96, 84)},
-	{TEXT("chestnut"), 380, 36, 600, 560, TS::Layered, {FColor(48, 86, 40), FColor(66, 106, 46), FColor(92, 128, 58)}, FColor(240, 230, 200), 0.10f, FColor(84, 66, 52)},
+	{TEXT("chestnut"), 380, 36, 600, 560, TS::Layered, {FColor(48, 86, 40), FColor(66, 106, 46), FColor(92, 128, 58)}, FColor(240, 230, 200), 0.22f, FColor(84, 66, 52)},
 	{TEXT("fruit"), 160, 18, 280, 260, TS::Orchard, {FColor(84, 128, 56), FColor(104, 146, 64), FColor(132, 164, 72)}, FColor(250, 236, 238), 0.f, FColor(96, 80, 66)},
 	{TEXT("apple"), 160, 18, 290, 260, TS::Orchard, {FColor(78, 122, 52), FColor(98, 140, 60), FColor(128, 160, 70)}, FColor(204, 46, 40), 1.f, FColor(96, 80, 66)},
 	{TEXT("birch"), 480, 16, 230, 620, TS::Columnar, {FColor(98, 140, 58), FColor(126, 162, 68), FColor(160, 184, 84)}, FColor(0, 0, 0), 0.f, FColor(228, 224, 214)},
@@ -715,6 +839,8 @@ const FSpecies GSpecies[] = {
 	{TEXT("roof"), 130, 12, 180, 200, TS::Small, {FColor(70, 116, 52), FColor(92, 138, 62), FColor(124, 160, 70)}, FColor(214, 80, 150), 0.12f, FColor(98, 80, 62)},
 	{TEXT("jacaranda"), 260, 24, 500, 300, TS::Spreading, {FColor(124, 98, 182), FColor(150, 122, 204), FColor(176, 150, 222)}, FColor(96, 136, 64), 0.2f, FColor(96, 80, 66)},
 	{TEXT("copse"), 300, 36, 560, 520, TS::Small, {FColor(48, 84, 40), FColor(66, 104, 46), FColor(92, 126, 56)}, FColor(0, 0, 0), 0.f, FColor(88, 72, 58)},
+	// vibe pass: red-flowering spreader (flame tree / poinciana), the red crowns in every Isono painting
+	{TEXT("flame"), 260, 26, 520, 300, TS::Spreading, {FColor(58, 108, 46), FColor(78, 128, 54), FColor(102, 146, 60)}, FColor(244, 92, 56), 0.6f, FColor(100, 82, 66)},
 	{TEXT("bamboo"), 750, 4, 110, 0, TS::Bamboo, {FColor(92, 138, 52), FColor(116, 156, 60), FColor(146, 174, 72)}, FColor(150, 164, 76), 0.f, FColor(150, 162, 80)},
 };
 
@@ -849,7 +975,10 @@ void ASWCityTrees::AddTree(FInstances& Out, const FString& InName, const FVector
 			{
 				const double A = A0 + 2 * PI * i / Ring + Rng.R(-0.25, 0.25);
 				const double Rad = Rt * Rng.R(0.5, 0.62);
-				const bool bBloom = S.BloomFrac > 0 && Rng.F() < S.BloomFrac;
+				// red/orange blossom only on the top tier: from the street the lower tier is seen from below, in
+				// shade, where red reads as brown rock (vibe pass, flame tree)
+				const bool bRedBloom = S.Bloom.R > S.Bloom.G * 2;
+				const bool bBloom = S.BloomFrac > 0 && Rng.F() < S.BloomFrac && !(bSpread && bRedBloom && t == 0);
 				FLinearColor T = bBloom ? Shade(S.Bloom, Light) : LeafT(Tier);
 				// flowering spreaders (cherry, jacaranda): the lower tier is leaf green; blossom from below read as brown rock
 				if (bSpread && t == 0 && S.Bloom.G > S.Bloom.R) T = Shade(S.Bloom, Light * (i % 2 ? 0.85f : 1.0f));
@@ -964,7 +1093,7 @@ bool ASWCityTrees::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 		const double Sc = T->Num() > 3 ? (*T)[3]->AsNumber() : 1.0;
 		if (Sp == TEXT("shrub"))
 		{
-			AddShrub(Inst, Base, 80 * Sc, Rng.F() < 0.2 ? Col::Flower(Rng.I(6)) : Col::Leaf(Rng.I(4)), Rng.Next(), 40000);
+			AddShrub(Inst, Base, 80 * Sc, Rng.F() < 0.35 ? Col::Flower(Rng.I(6)) : Col::Leaf(Rng.I(4)), Rng.Next(), 40000);
 		}
 		else
 		{
@@ -1490,10 +1619,45 @@ bool ASWCityOpenSpace::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 	else if (Kind == TEXT("village_green"))
 	{
 		B.Box(LawnS, FVector(Mn, 0), FVector(Mx, 5));
-		for (int32 k = 0; k < 7; ++k)
+		// picnics (VIBE.md 6: Isono's picnickers on the lawn): blanket, basket, cushions, sometimes a parasol;
+		// and pairs of timber deck chairs. Built into the actor's merged mesh, so they add no draw calls.
+		const int32 Wicker = B.Slot(EMat::Timber, Col::Bamboo());
+		for (int32 k = 0; k < 12; ++k)
 		{
 			const FVector2D Pc(Rng.R(Mn.X + 1500, Mx.X - 1500), Rng.R(Mn.Y + 1200, Mx.Y - 1200));
-			B.OBox(B.Slot(EMat::Fabric, Col::Flower(k)), FVector(Pc, 6), FVector(110, 80, 1), FRotator(0, Rng.R(0, 180), 0));
+			const double Yw = Rng.R(0, 180);
+			const FQuat Qp = FRotator(0, Yw, 0).Quaternion();
+			auto At = [&](double X, double Y, double Z) { return FVector(Pc, 0) + Qp.RotateVector(FVector(X, Y, Z)); };
+			B.OBox(B.Slot(EMat::Fabric, Col::Flower(k)), At(0, 0, 6), FVector(110, 80, 1), FRotator(0, Yw, 0));
+			B.OBox(Wicker, At(60, 40, 20), FVector(22, 15, 14), FRotator(0, Yw + 10, 0));
+			B.OBox(B.Slot(EMat::Fabric, Col::Flower(k + 3)), At(-70, -30, 14), FVector(25, 25, 7), FRotator(0, Yw + 30, 0));
+			B.OBox(B.Slot(EMat::Fabric, Col::Flower(k + 1)), At(-60, 35, 14), FVector(25, 25, 7), FRotator(0, Yw - 20, 0));
+			if (k % 3 == 0)
+			{
+				// striped parasol: pole + 8 alternating canopy wedges
+				const FVector Top = At(-90, -70, 230);
+				B.Pole(Wood, At(-90, -70, 0), Top, 3);
+				for (int32 w = 0; w < 8; ++w)
+				{
+					const double A = 2 * PI * (w + 0.5) / 8;
+					B.OBox(B.Slot(EMat::Fabric, w % 2 ? Srgb(246, 240, 228) : Col::Flower(k)), Top + FVector(FMath::Cos(A) * 70, FMath::Sin(A) * 70, -22),
+						FVector(75, 28, 1.5), FRotator(-17, FMath::RadiansToDegrees(A), 0));
+				}
+			}
+		}
+		for (int32 k = 0; k < 8; ++k)
+		{
+			const FVector2D Pc(Rng.R(Mn.X + 1200, Mx.X - 1200), Rng.R(Mn.Y + 900, Mx.Y - 900));
+			const double Yw = Rng.R(0, 360);
+			const FQuat Qp = FRotator(0, Yw, 0).Quaternion();
+			for (int32 c = 0; c < 2; ++c)
+			{
+				auto At = [&](double X, double Y, double Z) { return FVector(Pc, 0) + Qp.RotateVector(FVector(X, Y + c * 90, Z)); };
+				// deck chair: canvas seat sloping back, timber side frames
+				B.OBox(B.Slot(EMat::Fabric, Col::Flower(k + c * 2)), At(0, 0, 40), FVector(55, 26, 2), FRotator(-30, Yw, 0));
+				B.OBox(Wood, At(0, -28, 30), FVector(55, 2, 3), FRotator(-30, Yw, 0));
+				B.OBox(Wood, At(0, 28, 30), FVector(55, 2, 3), FRotator(-30, Yw, 0));
+			}
 		}
 		for (int32 k = 0; k < 900; ++k)
 			Inst.Add(P(EPrim::Blob), M(EMat::Foliage), k % 3 ? Col::Flower(3) : Col::Flower(2), Xf(FVector(Rng.R(Mn.X, Mx.X), Rng.R(Mn.Y, Mx.Y), 5), FVector(0.08, 0.08, 0.05)), false, 15000);

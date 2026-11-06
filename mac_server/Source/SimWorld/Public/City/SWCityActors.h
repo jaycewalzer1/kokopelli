@@ -98,6 +98,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SimWorld|City")
 	void ResetFrameStats();
 
+	/** Live look tuning (vibe pass): {"cloud": {"<scalar param>": v, ...}, "sun_pitch": deg, "sun_intensity": lux,
+	 *  "saturation": s}. Values are not saved: bake the chosen ones into SWEnvironment.cpp. Returns the cloud
+	 *  material's current values of the named params (pass {"cloud": {"Name": null}} to only read). */
+	UFUNCTION(BlueprintCallable, Category = "SimWorld|City")
+	void Look(const FString& Json, FString& Result);
+
 private:
 	int32 Frames = 0;
 	double SumDelta = 0, SumGame = 0, SumRender = 0, SumGpu = 0, MaxDelta = 0;

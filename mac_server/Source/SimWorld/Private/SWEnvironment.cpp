@@ -5,12 +5,14 @@
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/SkyLightComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/VolumetricCloudComponent.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/ExponentialHeightFog.h"
 #include "Engine/PostProcessVolume.h"
 #include "Engine/SkyLight.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "EngineUtils.h"
 #include "SWCommon.h"
 
@@ -47,18 +49,19 @@ SW::FEnvironment SW::FindOrSpawnEnvironment(UWorld* World)
 	Env.Sun = FindFirst<ADirectionalLight>(World);
 	if (!Env.Sun)
 	{
-		// Late-afternoon sun FROM the southwest (world.json: x east, y south == UE +X, +Y). The light points
-		// toward the northeast, i.e. direction (+X, -Y): yaw -45. Pitch -18 = sun 18 deg above the horizon.
-		const FTransform Transform(FRotator(-18.0, -45.0, 0.0), FVector(0.0, 0.0, 1000.0));
+		// Vibe pass (city/VIBE.md): a clear early-summer midday-to-early-afternoon, not golden hour. The board's
+		// kept pictures are crisp, high-sun daylight under a cerulean sky; the hand-removed ones are golden/sepia.
+		// Sun FROM the southwest (world.json: x east, y south == UE +X, +Y), light travelling toward the
+		// northeast (+X, -Y): yaw -45. Pitch -40 = sun 40 deg up: short, dappled shadows under trees.
+		const FTransform Transform(FRotator(-40.0, -45.0, 0.0), FVector(0.0, 0.0, 1000.0));
 		Env.Sun = SpawnDeferred<ADirectionalLight>(World, TEXT("SWSun"), Transform);
 		if (UDirectionalLightComponent* Light = Cast<UDirectionalLightComponent>(Env.Sun->GetLightComponent()))
 		{
 			Light->SetMobility(EComponentMobility::Movable); // no baked lighting in this project
-			Light->SetIntensity(14.f);                       // lux
+			Light->SetIntensity(11.f);                       // lux (a high sun puts ~2x more light on the ground than the old 18 deg one)
 			Light->SetAtmosphereSunLight(true);
-			// Golden key. The sun colour also tints the whole sky, which greys it; SkyLuminanceFactor
-			// below puts the blue back.
-			Light->SetLightColor(FLinearColor(1.0f, 0.84f, 0.65f));
+			// Near-white, faintly warm key: colours stay true and saturated (the atmosphere adds its own warmth).
+			Light->SetLightColor(FLinearColor(1.0f, 0.96f, 0.90f));
 			Light->SetLightSourceAngle(1.2f);                 // slightly soft shadow edges
 			Light->SetVolumetricScatteringIntensity(0.f);
 		}
@@ -75,11 +78,12 @@ SW::FEnvironment SW::FindOrSpawnEnvironment(UWorld* World)
 		Env.Atmosphere = SpawnDeferred<ASkyAtmosphere>(World, TEXT("SWSkyAtmosphere"), Transform);
 		if (USkyAtmosphereComponent* Sky = Env.Atmosphere->GetComponent())
 		{
-			// A touch more Mie haze than Earth default: golden glow around the low sun, soft distance.
-			Sky->SetMieScatteringScale(0.005f);
-			Sky->SetSkyLuminanceFactor(FLinearColor(0.75f, 1.0f, 1.5f));  // Ghibli cerulean despite the warm sun
+			// Clean summer air: less Mie haze than Earth default so the sky stays a deep cerulean (Isono, Ghibli),
+			// a slight blue push in sky luminance, and aerial perspective only at real distance.
+			Sky->SetMieScatteringScale(0.0025f);
+			Sky->SetSkyLuminanceFactor(FLinearColor(0.85f, 1.0f, 1.25f));
 			Sky->SetMieAnisotropy(0.8f);
-			Sky->SetAerialPespectiveViewDistanceScale(1.5f);
+			Sky->SetAerialPespectiveViewDistanceScale(1.0f);
 		}
 		Env.Atmosphere->FinishSpawning(Transform);
 	}
@@ -109,16 +113,48 @@ SW::FEnvironment SW::FindOrSpawnEnvironment(UWorld* World)
 		if (UExponentialHeightFogComponent* Fog = Env.Fog->GetComponent())
 		{
 			// Thin warm valley haze that only reads past ~50 m: depth without greying the near city.
-			Fog->SetFogDensity(0.005f);
+			Fog->SetFogDensity(0.002f);
 			Fog->SetFogHeightFalloff(0.12f);
 			Fog->SetStartDistance(4000.f);
-			Fog->SetFogMaxOpacity(0.85f);
-			Fog->SetFogInscatteringColor(FLinearColor(0.16f, 0.22f, 0.32f));
-			Fog->SetDirectionalInscatteringColor(FLinearColor(0.60f, 0.42f, 0.22f));
+			Fog->SetFogMaxOpacity(0.55f); // was 0.85: the backdrop hills went flat slate
+			// light horizon blue: the old dark blue-grey turned the backdrop hills slate (Isono's distance is pale)
+			Fog->SetFogInscatteringColor(FLinearColor(0.34f, 0.46f, 0.62f));
+			Fog->SetDirectionalInscatteringColor(FLinearColor(0.40f, 0.38f, 0.32f)); // neutral, not golden
 			Fog->SetDirectionalInscatteringExponent(6.f);
 			Fog->SetVolumetricFog(false);
 		}
 		Env.Fog->FinishSpawning(Transform);
+	}
+
+	// White cumulus: the board's most repeated sky element (Isono, Ghibli, Coconut Club). Engine default
+	// cloud material, layer lowered so the clouds sit as fat banks above the horizon rather than a high veil.
+	if (!FindFirst<AVolumetricCloud>(World))
+	{
+		const FTransform Transform(FVector::ZeroVector);
+		AVolumetricCloud* Clouds = SpawnDeferred<AVolumetricCloud>(World, TEXT("SWClouds"), Transform);
+		if (UVolumetricCloudComponent* C = Clouds ? Clouds->FindComponentByClass<UVolumetricCloudComponent>() : nullptr)
+		{
+			C->SetLayerBottomAltitude(1.6f); // km
+			C->SetLayerHeight(3.5f);         // km
+			C->SetViewSampleCountScale(0.3f);        // cost knob: 30% of the default ray-march samples (~2 ms -> less on street views)
+			C->SetShadowViewSampleCountScale(0.3f);
+			C->SetReflectionViewSampleCountScale(0.25f);
+			C->SetShadowReflectionViewSampleCountScale(0.25f);
+		}
+		if (Clouds) Clouds->FinishSpawning(Transform);
+		// Fat, separate cumulus in a blue sky (tuned live with `vbp CITY_manager Look`): the engine default
+		// (coverage -0.2, scale 256, density 0.008) gives thin wisps; higher coverage goes overcast.
+		if (UVolumetricCloudComponent* C = Clouds ? Clouds->FindComponentByClass<UVolumetricCloudComponent>() : nullptr)
+		{
+			if (UMaterialInterface* Base = C->GetMaterial())
+			{
+				UMaterialInstanceDynamic* Mid = UMaterialInstanceDynamic::Create(Base, C);
+				Mid->SetScalarParameterValue(TEXT("Cloud_GlobalCoverage"), -0.15f);
+				Mid->SetScalarParameterValue(TEXT("Layout_CloudGlobalScale"), 90.f); // smaller cells: discrete clouds
+				Mid->SetScalarParameterValue(TEXT("Cloud_GlobalDensity"), 0.04f);    // denser: crisp white edges
+				C->SetMaterial(Mid);
+			}
+		}
 	}
 
 	// Unbound post-process "look": gentle bloom, slight warmth and saturation, soft vignette.
@@ -132,12 +168,14 @@ SW::FEnvironment SW::FindOrSpawnEnvironment(UWorld* World)
 		FPostProcessSettings& S = PP->Settings;
 		S.bOverride_BloomIntensity = true;            S.BloomIntensity = 0.45f;
 		S.bOverride_BloomThreshold = true;            S.BloomThreshold = 1.0f;
-		S.bOverride_ColorSaturation = true;           S.ColorSaturation = FVector4(1.1f, 1.1f, 1.1f, 1.f);
-		S.bOverride_ColorContrast = true;             S.ColorContrast = FVector4(1.0f, 1.0f, 1.0f, 0.97f);
-		S.bOverride_ColorGain = true;                 S.ColorGain = FVector4(1.06f, 1.0f, 0.89f, 1.f);         // golden hour warmth
-		S.bOverride_ColorGainShadows = true;          S.ColorGainShadows = FVector4(0.95f, 1.0f, 1.08f, 1.f); // cool shadows
-		S.bOverride_ColorGainHighlights = true;       S.ColorGainHighlights = FVector4(1.07f, 1.0f, 0.88f, 1.f); // warm highlights
-		S.bOverride_VignetteIntensity = true;         S.VignetteIntensity = 0.3f;
+		// Daylight grade (VIBE.md 2): saturated and true, a touch of contrast, faintly cool shadows, near-neutral
+		// highlights. No golden-hour gain: the user removed the golden/sepia pictures by hand.
+		S.bOverride_ColorSaturation = true;           S.ColorSaturation = FVector4(1.12f, 1.12f, 1.12f, 1.f);
+		S.bOverride_ColorContrast = true;             S.ColorContrast = FVector4(1.0f, 1.0f, 1.0f, 1.06f);
+		S.bOverride_ColorGain = true;                 S.ColorGain = FVector4(1.02f, 1.0f, 0.97f, 1.f);
+		S.bOverride_ColorGainShadows = true;          S.ColorGainShadows = FVector4(0.96f, 1.0f, 1.06f, 1.f); // cool shadows
+		S.bOverride_ColorGainHighlights = true;       S.ColorGainHighlights = FVector4(1.0f, 1.0f, 0.98f, 1.f);
+		S.bOverride_VignetteIntensity = true;         S.VignetteIntensity = 0.2f;
 		S.bOverride_LumenSkylightLeaking = true;      S.LumenSkylightLeaking = 0.03f; // softer, airier shadows
 		S.bOverride_SceneFringeIntensity = true;      S.SceneFringeIntensity = 0.f;
 		PP->FinishSpawning(Transform);

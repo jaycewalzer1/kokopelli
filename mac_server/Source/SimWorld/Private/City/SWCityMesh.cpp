@@ -131,9 +131,13 @@ UMaterialInterface* SWCity::GetMaterial(EMat Mat, const FLinearColor& Tint, floa
 		// relative to the colour we picked as "natural" for that material.
 		const FLinearColor Ref = RefColor(Mat);
 		FLinearColor T(Tint.R / FMath::Max(Ref.R, 0.002f), Tint.G / FMath::Max(Ref.G, 0.002f), Tint.B / FMath::Max(Ref.B, 0.002f), 1.0f);
-		T.R = FMath::Clamp(T.R, 0.0f, 1.8f);
-		T.G = FMath::Clamp(T.G, 0.0f, 1.8f);
-		T.B = FMath::Clamp(T.B, 0.0f, 1.8f);
+		// Foliage is a green texture, so a red or pink blossom needs a big per-channel boost: linear red of a
+		// flower (~0.9) over the green reference's red (~0.07) is ~12x. The old 1.8 cap turned every flower,
+		// blossom and fruit brown (vibe pass). Other materials keep the 1.8 cap (their tints are small shifts).
+		const float Cap = Mat == EMat::Foliage ? 14.0f : 1.8f;
+		T.R = FMath::Clamp(T.R, 0.0f, Cap);
+		T.G = FMath::Clamp(T.G, 0.0f, Cap);
+		T.B = FMath::Clamp(T.B, 0.0f, Cap);
 		if (Mat == EMat::Metal && Tint.GetMax() < 0.12f)
 		{
 			Mid->SetScalarParameterValue(TEXT("Steel"), 1.0f); // dark steel instead of bronze
