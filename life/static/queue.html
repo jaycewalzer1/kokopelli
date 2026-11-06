@@ -23,16 +23,37 @@
 <div class="view">
 <header>
   <div class="brand">GPU queue</div>
+  <div id="headline" class="headline"></div>
   <div id="status-line" role="status"><i></i><span id="status-text">Loading</span></div>
 </header>
-<main class="queue">
-  <section id="now" aria-label="The job on the GPU now"></section>
-  <section id="staged" aria-label="Ready to start"></section>
-  <section id="line" aria-label="Waiting for a turn"></section>
-  <section id="timeline" aria-label="The last twelve hours"></section>
-  <section id="ledger" aria-label="Every past job"></section>
+<main class="board">
+  <section class="panel now" id="now" aria-label="On the GPU now"></section>
+  <section class="panel gauge" aria-label="GPU busy">
+    <div class="panel-head"><span class="eyebrow">GPU busy</span><span class="eyebrow">last 15 min</span></div>
+    <div class="reading"><span id="busy-value">–</span><small>%</small></div>
+    <canvas id="busy-chart" aria-label="GPU busy over the last 15 minutes" role="img"></canvas>
+  </section>
+  <section class="panel gauge" aria-label="Memory in use">
+    <div class="panel-head"><span class="eyebrow">Memory in use</span><span class="eyebrow" id="memory-total"></span></div>
+    <div class="reading"><span id="memory-value">–</span><small>GB</small></div>
+    <canvas id="memory-chart" aria-label="Memory in use over the last 15 minutes" role="img"></canvas>
+  </section>
+  <section class="panel timeline" aria-label="The last twelve hours">
+    <div class="panel-head"><span class="eyebrow">Last 12 hours</span><span id="legend" class="legend"></span></div>
+    <div id="timeline" class="chart-box"></div>
+  </section>
+  <section class="panel line" aria-label="Waiting for a turn">
+    <div class="panel-head"><span class="eyebrow" id="line-title">Waiting</span><span class="eyebrow">lowest number goes next · a running job is never stopped</span><span id="default-where"></span></div>
+    <div id="line" class="train"></div>
+  </section>
+  <section class="panel recent" aria-label="Recent results">
+    <div class="panel-head"><span class="eyebrow" id="recent-title">Recent</span><span class="eyebrow" id="recent-counts"></span></div>
+    <div id="recent"></div>
+  </section>
 </main>
 </div>
+<aside id="drawer" class="drawer" aria-label="Job details" hidden></aside>
+<div id="notice" class="notice" role="status" hidden></div>
 <script type="module" src="/static/queue.js"></script>
 </body>
 </html>
