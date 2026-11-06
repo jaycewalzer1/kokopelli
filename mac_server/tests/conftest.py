@@ -182,6 +182,9 @@ def world(ucv):
     """(UnrealCV, Communicator) with a clean slate of suite-owned objects."""
     from simworld.communicator.communicator import Communicator
     purge(ucv)
+    # Time-control tests leave a fixed timestep on, which runs the game faster than real time.
+    for cmd in ('vset /action/tick_intervel 0', 'vset /action/set_fixed_frame_rate 0', 'vset /action/game/resume'):
+        ucv.client.request(cmd)
     reset_counters()
     comm = Communicator(ucv)
     yield ucv, comm

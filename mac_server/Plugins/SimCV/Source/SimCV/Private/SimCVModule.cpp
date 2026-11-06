@@ -177,7 +177,22 @@ bool FSimCVModule::Tick(float DeltaTime)
 			}
 			if (!P.Server->Dequeue(Request))
 			{
-				break;
+				// Busy client: briefly wait for its next request instead of a whole frame.
+				const double LingerEnd = FPlatformTime::Seconds() + Settings->LingerMs / 1000.0;
+				bool bGot = false;
+				while (Processed > 0 && FPlatformTime::Seconds() < FMath::Min(LingerEnd, Deadline))
+				{
+					FPlatformProcess::SleepNoStats(0.00005f);
+					if (P.Server->Dequeue(Request))
+					{
+						bGot = true;
+						break;
+					}
+				}
+				if (!bGot)
+				{
+					break;
+				}
 			}
 
 			if (P.BatchRemaining > 0 && Request.Connection->Id != P.BatchConnectionId)

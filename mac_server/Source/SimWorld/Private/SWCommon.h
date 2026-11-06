@@ -30,6 +30,9 @@ namespace SW
 	UStaticMeshComponent* AddShape(AActor* Owner, USceneComponent* Parent, ESWShape Shape, const FVector& Center,
 		const FVector& Size, const FLinearColor& Color, bool bCollision);
 
+	/** The running game (or PIE) world, else the editor world, like SimCV::GetWorld. */
+	UWorld* GetGameWorld();
+
 	/** Case-insensitive name lookup (FName semantics), like SimCV's own FindActor. */
 	AActor* FindActorByName(UWorld* World, const FString& Name);
 

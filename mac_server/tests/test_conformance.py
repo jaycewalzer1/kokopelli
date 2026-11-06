@@ -753,7 +753,7 @@ def test_object_mask_uses_set_color(world):
     ucv, _ = world
     req(ucv, 'vset /objects/spawn_bp_asset /Game/CityDatabase/blueprints/BP_Building_01.BP_Building_01_C CT_MaskBldg')
     ucv.set_location((3000, 0, 0), 'CT_MaskBldg')
-    ucv.set_scale((3, 3, 3), 'CT_MaskBldg')
+    ucv.set_scale((1, 1, 1), 'CT_MaskBldg')  # placeholder pivot is the centre; 3x would enclose the camera
     ucv.set_color('CT_MaskBldg', (255, 0, 255))
     ucv.set_camera_resolution(0, (160, 120))
     ucv.set_camera_location(0, (0, 0, 300))

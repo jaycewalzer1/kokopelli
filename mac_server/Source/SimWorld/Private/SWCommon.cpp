@@ -2,6 +2,7 @@
 
 #include "Components/StaticMeshComponent.h"
 #include "Dom/JsonObject.h"
+#include "Engine/Engine.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -108,6 +109,27 @@ UStaticMeshComponent* SW::AddShape(AActor* Owner, USceneComponent* Parent, ESWSh
 	Mesh->RegisterComponent();
 	Owner->AddInstanceComponent(Mesh);
 	return Mesh;
+}
+
+UWorld* SW::GetGameWorld()
+{
+	if (!GEngine)
+	{
+		return nullptr;
+	}
+	UWorld* Fallback = nullptr;
+	for (const FWorldContext& Context : GEngine->GetWorldContexts())
+	{
+		if (Context.WorldType == EWorldType::Game || Context.WorldType == EWorldType::PIE)
+		{
+			return Context.World();
+		}
+		if (Context.WorldType == EWorldType::Editor)
+		{
+			Fallback = Context.World();
+		}
+	}
+	return Fallback;
 }
 
 AActor* SW::FindActorByName(UWorld* World, const FString& Name)
@@ -225,7 +247,7 @@ const FSWPropInfo* SW::FindPropInfo(const FString& Name, ESWPropKind Kind)
 		for (int32 At = Lower.Find(Key); At != INDEX_NONE; At = Lower.Find(Key, ESearchCase::CaseSensitive, ESearchDir::FromStart, At + 1))
 		{
 			const int32 End = At + Key.Len();
-			const bool bStartOk = At == 0 || !IsWordChar(Lower[At - 1]) || Lower[At - 1] == TEXT('_');
+			const bool bStartOk = At == 0 || !IsWordChar(Lower[At - 1]);
 			const bool bEndOk = End == Lower.Len() || !IsWordChar(Lower[End]);
 			if (bStartOk && bEndOk)
 			{

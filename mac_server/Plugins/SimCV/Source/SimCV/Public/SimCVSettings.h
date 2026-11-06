@@ -25,9 +25,24 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "Server", meta = (ClampMin = 1))
 	float TickBudgetMs = 30.f;
 
+	/**
+	 * After handling a request, keep waiting this long for the next one before ending the frame.
+	 * Clients send one request at a time, so without this a burst runs at one request per frame.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "Server", meta = (ClampMin = 0))
+	float LingerMs = 4.f;
+
 	/** Relative to the project Config directory. */
 	UPROPERTY(config, EditAnywhere, Category = "Server")
 	FString RedirectsFile = TEXT("SimCVRedirects.json");
+
+	/**
+	 * Fixed exposure compensation (stops, higher = brighter) for lit captures. Auto exposure would
+	 * undo weather changes, and on-demand captures never get the frames it needs to adapt.
+	 * -2 suits the 10 lux default sun.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "Camera")
+	float LitExposureEV100 = -2.f;
 
 	UPROPERTY(config, EditAnywhere, Category = "Camera", meta = (ClampMin = 1))
 	int32 DefaultWidth = 640;

@@ -4,6 +4,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "SimCVSettings.h"
 #include "SimCVWorld.h"
 #include "TextureResource.h"
 
@@ -15,6 +16,14 @@ USimCVCameraComponent::USimCVCameraComponent()
 	bAlwaysPersistRenderingState = true;
 	CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
 	FOVAngle = 90.f;
+
+	PostProcessSettings.bOverride_AutoExposureMethod = true;
+	PostProcessSettings.AutoExposureMethod = AEM_Manual;
+	PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
+	PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = false;
+	PostProcessSettings.bOverride_AutoExposureBias = true;
+	PostProcessSettings.AutoExposureBias = GetDefault<USimCVSettings>()->LitExposureEV100;
+	PostProcessBlendWeight = 1.f;
 }
 
 void USimCVCameraComponent::OnRegister()

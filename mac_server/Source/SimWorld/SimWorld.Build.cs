@@ -1,3 +1,4 @@
+using System.IO;
 using UnrealBuildTool;
 
 public class SimWorld : ModuleRules
@@ -6,9 +7,21 @@ public class SimWorld : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine" });
+		PrivateIncludePaths.Add(Path.Combine(ModuleDirectory, "Private"));
 
-		// Game classes register extra commands / expose UFUNCTIONs for vbp through SimCV.
-		PrivateDependencyModuleNames.Add("SimCV");
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"DeveloperSettings", // USWSettings
+		});
+
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			// Cameras (USimCVCameraComponent), settings, and exact-key vbp routes registered on its router.
+			"SimCV",
+			"Json",
+		});
 	}
 }

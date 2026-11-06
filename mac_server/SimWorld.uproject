@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "",
+	"EngineAssociation": "5.8",
 	"Category": "",
 	"Description": "Native macOS rebuild of the SimWorld Unreal server (UnrealCV-compatible via the SimCV plugin).",
 	"Modules": [

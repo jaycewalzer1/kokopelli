@@ -144,7 +144,7 @@ void ASWHumanoid::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimiti
 
 	// Walking into a wall reports a hit every frame; count one per contact.
 	const double Now = GetWorld()->GetTimeSeconds();
-	double& Last = LastHitTime.FindOrAdd(Other, -1.0e9);
+	double& Last = LastHitTime.FindOrAdd(TWeakObjectPtr<AActor>(Other), -1.0e9);
 	if (Now - Last > SameContactSeconds)
 	{
 		++*Counter;

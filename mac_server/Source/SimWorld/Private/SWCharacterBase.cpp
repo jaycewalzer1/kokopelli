@@ -197,8 +197,8 @@ void ASWCharacterBase::Tick(float DeltaSeconds)
 		Direction = FVector(ToTarget.GetSafeNormal(), 0.0);
 		if (!bRotating)
 		{
-			const float TargetYaw = FMath::RadiansToDegrees(FMath::Atan2(ToTarget.Y, ToTarget.X));
-			const float Yaw = FMath::FixedTurn(GetActorRotation().Yaw, TargetYaw, PathTurnRate * DeltaSeconds);
+			const float TargetYaw = static_cast<float>(FMath::RadiansToDegrees(FMath::Atan2(ToTarget.Y, ToTarget.X)));
+			const float Yaw = FMath::FixedTurn(static_cast<float>(GetActorRotation().Yaw), TargetYaw, PathTurnRate * DeltaSeconds);
 			SetActorRotation(FRotator(0.0, Yaw, 0.0));
 		}
 	}
