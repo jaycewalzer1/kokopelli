@@ -78,6 +78,6 @@ Add a short entry for what you own and what you're touching. Update it when your
 
 ## Sim-to-real filter test, and the model runs page (working tree on `main`, uncommitted)
 
-- **Status:** The 10-second SimWorld clip is recorded in `out/filter_test/test_clip/` (rgb, depth npy, segmentation, poses, 30 fps). The three Mac filter runs (Cosmos3-Nano MLX on sim depth, SD1.5 DMD + depth ControlNet on sim depth, the same on DepthAnythingV2) wait on weight downloads and the GPU queue.
+- **Status:** The test clip is the Moss-Commons sky bridge walk with a moving head (`out/filter_test/test_clip/`; the garden take is `test_clip_garden/`). Weights are downloaded and the controls made. The three runs are queued at p20-22 (`filter_sd15_simdepth`, `filter_sd15_dadepth`, `filter_cosmos_simdepth`), waiting behind the SimWorld hold. Metrics and the comparison video come after.
 - **Owns:** `filter_test/`, `out/filter_test/`. The dev panel's runs page is now "Model runs" (still `/worlds`): type tabs from `world_runs.TYPES`, group by source or type, sort, and a Sim-to-real test group. Touched `life/world_runs.py`, `life/static/worlds.*`, `tests/test_life_world_runs.py`, and the sidebar label on every page.
 - **Runs:** captures connect to the packaged SimWorld server on 9001 (one client only; ask the simcity session first), with no NPCs and `StopAgent` before closing. Model runs go through the GPU queue.
