@@ -47,6 +47,9 @@ VIEWS = {
     "market_street": (462.5, 101, 1.7, 3, 268, 80),
     "landscape_north": (300, -40, 45, -9, 270, 75),
     "willow_bank": (556, 300, 2.0, 1, 200, 80),
+    # realism pilot (city/realism/): the bridge walk's first pose, and the gardens/dome glance
+    "bridge_walk": (356.2, 115, 19.67, 2, 0, 90),
+    "bridge_glance": (366, 115, 19.67, -4, 45, 90),
 }
 
 
@@ -94,7 +97,7 @@ def main():
         req(f"vset /camera/0/location {x * 100} {y * 100} {z * 100}")
         req(f"vset /camera/0/rotation {pitch} {yaw} 0")
         perf = {}
-        for label, cam in (("overview", VIEWS["aerial_overview"]), ("street", VIEWS["street_fern"])):
+        for label, cam in (("overview", VIEWS["aerial_overview"]), ("street", VIEWS["street_fern"]), ("bridge", VIEWS["bridge_walk"])):
             x, y, z, pitch, yaw, fov = cam
             # the player viewport (camera 0's pawn) is what the window renders every frame
             req(f"vset /camera/0/location {x * 100} {y * 100} {z * 100}")

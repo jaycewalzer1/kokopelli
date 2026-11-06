@@ -1,0 +1,1157 @@
+{
+ "shot": "bridge",
+ "clip": "out/filter_test/test_clip/ (300 frames, 30 fps = 10 s, 1280x720, 90 deg FOV, 14:00, walk x 356->372 m, y 115 m, 17.5 m up, facing east)",
+ "how_to_use": "Send `prompt` (a JSON string, as in NVIDIA's example1_upsampled_prompt.json) as the text prompt. `caption` is the same thing as an object for reading. Change `resolution`/`duration`/`fps` inside it to match the run (world_filter.py default is 448x256, 24 fps chunks; Sim-Transfer is 480p). `carries` lists, for each sentence, the VIBE.md qualities and kept moodboard images it carries and the part of the sim frame it matches.",
+ "negative_prompt_support": {
+  "Cosmos3-Nano-Sim-Transfer": "Not used. It is a DMD-distilled 4-step model (model_index.json fixed_step_sampler_config) with guidance baked in; the README says the request sets neither steps nor guidance, and with no classifier-free guidance there is no negative branch to steer away from.",
+  "Cosmos3-Nano base via world_filter.py": "Used. world_filter.py runs guidance 3.0 and builds its negative branch from pipeline._negative_prompt_text, which cosmos3_mlx loads from models/Cosmos3-Nano/assets/negative_prompt.json. world_filter.py has no flag to pass another one yet; `negative_prompt` below is ready for when it does (a --negative option there, owned by the world-filter session)."
+ },
+ "negative_prompt": {
+  "subjects": [
+   {
+    "description": "Blurry, poorly defined subjects with inconsistent shapes and unrealistic proportions.",
+    "appearance_details": "Distorted features, visible compression artifacts, muddy textures lacking fine detail, color bleeding between elements, and unnatural skin tones or surface textures that appear artificial or computer-generated.",
+    "relationship": "Subjects appear disconnected from the environment, floating or improperly grounded in the scene without proper occlusion or spatial coherence.",
+    "location": "Subjects are poorly placed within the frame, appearing at awkward positions that violate basic compositional rules.",
+    "relative_size": "Inconsistent scale relationships between subjects and the environment, with objects appearing too large or too small relative to their surroundings.",
+    "orientation": "Unnatural orientations that defy physics and spatial logic.",
+    "pose": "Stiff, mannequin-like poses with unnatural joint angles and impossible limb positions that look computer-generated.",
+    "action": "Incoherent motion with visible frame-to-frame discontinuities. Movement appears as a slideshow rather than smooth animation. Limbs and appendages pop between positions without interpolation.",
+    "state_changes": "Visual state transitions are abrupt and jarring. Colors shift without motivation. Surface textures flicker between different materials randomly. Outlines shimmer and vibrate.",
+    "clothing": "Clothing appears painted on with no sense of material weight or drape. Fabric textures are flat and repeat visibly.",
+    "expression": "Frozen, uncanny valley expressions or expressions that change abruptly without natural transition.",
+    "gender": "",
+    "age": "",
+    "skin_tone_and_texture": "Waxy, plastic-looking skin with visible artifacts and inconsistent texture resolution across the frame.",
+    "facial_features": "Asymmetric facial features, extra fingers or limbs, teeth that appear blurry or malformed.",
+    "number_of_subjects": 0,
+    "number_of_arms": 0,
+    "number_of_legs": 0
+   },
+   {
+    "description": "Extremely low-quality subjects with visible rendering artifacts, broken mesh geometry, and completely unrealistic proportions throughout.",
+    "appearance_details": "Distorted features, visible compression artifacts, muddy textures lacking fine detail, color bleeding between elements, and unnatural skin tones or surface textures that appear artificial or computer-generated.",
+    "relationship": "Subjects appear disconnected from the environment, floating or improperly grounded in the scene without proper occlusion or spatial coherence.",
+    "location": "Subjects are poorly placed within the frame, appearing at awkward positions that violate basic compositional rules.",
+    "relative_size": "Inconsistent scale relationships between subjects and the environment, with objects appearing too large or too small relative to their surroundings.",
+    "orientation": "Unnatural orientations that defy physics and spatial logic.",
+    "pose": "Stiff, mannequin-like poses with unnatural joint angles and impossible limb positions that look computer-generated.",
+    "action": "Incoherent motion with visible frame-to-frame discontinuities. Movement appears as a slideshow rather than smooth animation. Limbs and appendages pop between positions without interpolation.",
+    "state_changes": "Visual state transitions are abrupt and jarring. Colors shift without motivation. Surface textures flicker between different materials randomly. Outlines shimmer and vibrate.",
+    "clothing": "Clothing appears painted on with no sense of material weight or drape. Fabric textures are flat and repeat visibly.",
+    "expression": "Frozen, uncanny valley expressions or expressions that change abruptly without natural transition.",
+    "gender": "",
+    "age": "",
+    "skin_tone_and_texture": "Waxy, plastic-looking skin with visible artifacts and inconsistent texture resolution across the frame.",
+    "facial_features": "Asymmetric facial features, extra fingers or limbs, teeth that appear blurry or malformed.",
+    "number_of_subjects": 0,
+    "number_of_arms": 0,
+    "number_of_legs": 0
+   },
+   {
+    "description": "Poorly generated subjects exhibiting all hallmarks of failed neural rendering — flickering edges, inconsistent depth, and uncanny spatial relationships.",
+    "appearance_details": "Distorted features, visible compression artifacts, muddy textures lacking fine detail, color bleeding between elements, and unnatural skin tones or surface textures that appear artificial or computer-generated.",
+    "relationship": "Subjects appear disconnected from the environment, floating or improperly grounded in the scene without proper occlusion or spatial coherence.",
+    "location": "Subjects are poorly placed within the frame, appearing at awkward positions that violate basic compositional rules.",
+    "relative_size": "Inconsistent scale relationships between subjects and the environment, with objects appearing too large or too small relative to their surroundings.",
+    "orientation": "Unnatural orientations that defy physics and spatial logic.",
+    "pose": "Stiff, mannequin-like poses with unnatural joint angles and impossible limb positions that look computer-generated.",
+    "action": "Incoherent motion with visible frame-to-frame discontinuities. Movement appears as a slideshow rather than smooth animation. Limbs and appendages pop between positions without interpolation.",
+    "state_changes": "Visual state transitions are abrupt and jarring. Colors shift without motivation. Surface textures flicker between different materials randomly. Outlines shimmer and vibrate.",
+    "clothing": "Clothing appears painted on with no sense of material weight or drape. Fabric textures are flat and repeat visibly.",
+    "expression": "Frozen, uncanny valley expressions or expressions that change abruptly without natural transition.",
+    "gender": "",
+    "age": "",
+    "skin_tone_and_texture": "Waxy, plastic-looking skin with visible artifacts and inconsistent texture resolution across the frame.",
+    "facial_features": "Asymmetric facial features, extra fingers or limbs, teeth that appear blurry or malformed.",
+    "number_of_subjects": 0,
+    "number_of_arms": 0,
+    "number_of_legs": 0
+   }
+  ],
+  "background_setting": "A poorly rendered, flat background with visible seams, repeated textures, and inconsistent depth cues. The environment lacks volumetric depth and appears as a painted backdrop rather than a three-dimensional space. Vegetation looks like flat cutouts with no volumetric depth. The background appears to have been composited from multiple source materials at different resolutions, creating visible seams and edge artifacts where elements meet. Textures swim and shift across surfaces in a way that breaks the illusion of solidity — patterns drift laterally rather than staying anchored to the geometry they belong to. Background elements flicker in and out of existence between frames, particularly at the edges of the field of view. The rendering resolution is visibly lower for distant elements, creating a jarring transition between near and far objects. Cloud textures repeat obviously in the sky with visible tiling. Water surfaces lack proper reflection and refraction, appearing as flat animated textures. Fog and atmospheric effects pop in and out rather than smoothly transitioning. Trees and vegetation exhibit obvious LOD (level-of-detail) switching. Building facades have inconsistent window spacing and pattern repetition. The overall scene feels like a poorly assembled collage of individually rendered elements rather than a coherent whole.",
+  "lighting": {
+   "conditions": "Golden-hour sepia haze, sun burning through smog, flat white overcast, grey dull sky, orange colour cast",
+   "direction": "Inconsistent light sources — shadows point in multiple contradictory directions, breaking physical plausibility.",
+   "shadows": "Hard-edged, unrealistic shadows that pop in and out of existence between frames. Some objects cast no shadows while others have impossibly dark ones that don't animate smoothly with the object's motion. Shadow edges exhibit visible staircase aliasing artifacts. Shadow maps appear to have been rendered at extremely low resolution, creating blocky patterns. Self-shadowing on characters shows visible peter-panning artifacts where shadows detach from their source. Contact shadows between objects and the ground appear and disappear as objects move slightly. Shadow color is pure black with no ambient contribution, creating an unnaturally harsh contrast that flattens the image. Multiple shadow cascades have visible boundaries where resolution changes. The shadow rendering appears to be temporally unstable — even static objects have shadows that shimmer and crawl frame to frame, breaking the illusion of a stable light source.",
+   "illumination_effect": "No bounce light, no ambient occlusion, no subtle color interactions between surfaces. The scene looks like a poorly lit 3D render from the early 2000s."
+  },
+  "aesthetics": {
+   "composition": "Cluttered, poorly framed composition with no clear focal point. Important elements are cut off by the frame edges. The rule of thirds is completely ignored, leading to an unbalanced and visually unpleasant arrangement.",
+   "color_scheme": "Brownish, desaturated, sepia or golden grade; neon; garish oversaturated candy colours",
+   "mood_atmosphere": "Unsettling, uncanny atmosphere that fails to evoke any intended emotional response. The scene feels lifeless and sterile despite attempting to portray dynamic action.",
+   "patterns": "Visible tiling artifacts in textures, moiré patterns, and aliasing on edges."
+  },
+  "cinematography": {
+   "camera_motion": "Extremely shaky, unstable camera with visible rolling shutter artifacts. The motion is jerky and discontinuous, causing motion sickness and making the scene impossible to follow.",
+   "framing": "Poorly framed shots that cut off important elements and include unnecessary empty space.",
+   "camera_angle": "Awkward, disorienting camera angles that provide no useful spatial information about the scene. The camera path exhibits visible mathematical artifacts suggesting simple interpolation between keyframes rather than natural camera operation. Camera motion is completely disconnected from the scene content — panning away from action, dollying during dialogue, and shaking during still moments. The camera appears to pass through solid objects occasionally. Zoom is applied digitally rather than optically, revealing progressively worse resolution. Camera motion exhibits non-physical acceleration profiles — instant starts and stops rather than smooth ease-in/ease-out. Rolling shutter simulation is applied inconsistently, present in some frames but not others. The camera occasionally exhibits impossible motion like teleporting between positions. Virtual camera stabilization creates an uncanny floating sensation disconnected from any physical camera rig.",
+   "depth_of_field": "Uniform focus throughout, creating a flat, documentary-like appearance with no cinematic depth separation.",
+   "focus": "Soft, out-of-focus imagery with visible chromatic aberration and lens distortion that was not corrected in post-processing.",
+   "lens_focal_length": "Inappropriate focal length causing barrel distortion and unnatural perspective compression."
+  },
+  "style_medium": "3D video-game render, cartoon, illustration, anime background painting, digital concept art",
+  "artistic_style": "Computer graphics look: smooth untextured plastic surfaces, uniform repeating tiles, rounded blob-shaped foliage, toy-like proportions, flat colour fills, outlines",
+  "context": "A poorly produced video with numerous technical and artistic flaws that detract from any intended narrative or visual impact. Looks like a video game, an architectural visualisation or a painting rather than a photograph.",
+  "actions": [
+   {
+    "time": "0:00-0:08",
+    "description": "Subjects attempt to move but their motion is jerky, temporally inconsistent, and physically implausible. Background elements flicker and shift between frames."
+   }
+  ],
+  "text_and_signage_elements": [],
+  "segments": [
+   {
+    "segment_index": 0,
+    "time_range": "0:00-0:08",
+    "description": "A single continuous shot suffering from severe temporal inconsistencies — subjects that morph and deform between frames, backgrounds that shift and wobble, and rendering quality that fluctuates visibly over time. Motion blur is applied incorrectly, smearing in directions that don't match actual movement. Frame-to-frame coherence breaks down with individual pixels changing color randomly in flat areas. Texture detail level fluctuates between frames as if the rendering budget varied shot to shot. Color grading drifts over the duration with no creative motivation. Noise patterns change between frames in ways that draw attention rather than being invisible. Overall visual quality degrades progressively from start to finish.",
+    "key_changes": "No meaningful progression or narrative development. Visual quality degrades over time.",
+    "camera": "Unstable, poorly controlled camera work with visible mathematical interpolation artifacts."
+   }
+  ],
+  "transitions": [],
+  "temporal_caption": "The scene opens at 0.0 seconds with a poorly rendered establishing shot that immediately reveals low production quality. At 1.0 seconds, subjects begin to move but their motion is jerky and inconsistent, with limbs bending at unnatural angles and objects clipping through each other. From 2.0 to 4.0 seconds, the camera shakes violently while the scene exhibits visible compression artifacts, color banding in the sky, and flickering in the shadows. Between 4.0 and 6.0 seconds, temporal coherence breaks down as elements appear and disappear between frames, textures swim and morph unnaturally, and the lighting shifts abruptly without physical cause. In the final 2 seconds, the overall visual quality deteriorates further with increasing noise, blur, and a general loss of spatial coherence that makes the scene nearly unwatchable. Additionally, the frame rate appears inconsistent with visible judder and stuttering throughout. Color temperature shifts randomly between warm and cool tones with no motivation. The encode quality degrades in complex regions showing macro-blocking and mosquito noise around moving edges. Temporal noise patterns are spatially correlated, creating swimming artifacts on flat surfaces.",
+  "audio_description": "",
+  "physical_realism": "No adherence to physical laws. Objects defy gravity, pass through solid surfaces, and change mass and momentum without cause. Fluid dynamics, cloth simulation, and rigid body physics are all fundamentally broken. Furthermore, conservation of energy is violated as objects gain or lose kinetic energy spontaneously. Elastic collisions produce inelastic results and vice versa. Surface friction is inconsistent — objects slide on rough surfaces while sticking to smooth ones. Air resistance appears to affect only some objects while others move through the atmosphere unimpeded."
+ },
+ "beats": [
+  {
+   "time": "0:00-0:02",
+   "what": "The walker moves forward looking straight down the bridge, the garden arch and the stair tower ahead in the centre.",
+   "frames": "frames 0-60"
+  },
+  {
+   "time": "0:02-0:03",
+   "what": "The head turns left; the view swings over the left railing to the meadows, rows of columnar trees and the hills.",
+   "frames": "frames 60-100, yaw -38"
+  },
+  {
+   "time": "0:03-0:04",
+   "what": "The head turns back to the front as the arch comes close.",
+   "frames": "frames 100-120"
+  },
+  {
+   "time": "0:04-0:08",
+   "what": "The head turns right and tilts down over the railing: the solar roof and copper dome of the library, the flowering garden street below, and the long planted apartment block beyond.",
+   "frames": "frames 120-255, yaw +42 then +58"
+  },
+  {
+   "time": "0:08-0:10",
+   "what": "The head swings back toward the stair tower, now close, its overhanging planted roof and hanging vines across the top of the frame.",
+   "frames": "frames 255-299"
+  }
+ ],
+ "variants": [
+  {
+   "id": "a_faithful_photoreal",
+   "reasoning": "Maximal realism. Every visible shape the controls impose (deck, rails, planter boxes, arch, tower, library roof and dome, garden street, planted block, fields, hills, sky) is named, in the same screen place, so the text and the controls agree. The vision is carried only by physical description: real species (bougainvillea, star jasmine, hydrangea, hornbeam, cypress), real materials and how they age (larch silvering, oak worn by hands, verdigris with rain streaks, rammed earth layers), and a time of day. No style or genre words. Field structure and length match NVIDIA's upsampled captions (theirs are 980 and 1,266 tokens; this is about 1,400), which is what the model was trained on. Like NVIDIA's transfer example, it has no time-coded actions: the controls already carry the motion, and the camera turns are named once in camera_motion. The per-second beats are kept in `beats` below for reference.",
+   "tokens": 1408,
+   "prompt": "{\"subjects\": [{\"description\": \"A four-metre-wide timber footbridge high above a town street, its weathered larch deck running straight ahead to a timber stair tower.\", \"appearance_details\": \"Boards silver-grey at the ends and honey-brown where feet wear them, with dark screw heads, hairline splits and grit in the gaps. Chest-high oiled oak handrails, darkened by hands, on square posts with close-set vertical cedar balusters. Low timber planter boxes with stone caps flank the near end, creeping thyme spilling over.\", \"location\": \"Lower half of the frame, receding to a vanishing point at the centre\", \"relative_size\": \"Large within frame\", \"orientation\": \"Running straight away from the camera\", \"clothing\": \"\", \"expression\": \"\", \"gender\": \"\", \"age\": \"\", \"skin_tone_and_texture\": \"\", \"facial_features\": \"\", \"number_of_subjects\": 1, \"number_of_arms\": 0, \"number_of_legs\": 0}, {\"description\": \"Partway along, a garden arch of two bent chestnut poles spans the deck, carrying magenta bougainvillea in full flower and rounded, tightly clipped clumps of small-leaved evergreen.\", \"appearance_details\": \"Bark-on poles lashed at the joints, fallen pink bracts on the boards, clumps lime green in sun and dark beneath, a small cream paper lantern hanging from the top.\", \"location\": \"Centre of frame, framing the far end of the bridge, then passing overhead at the left edge\", \"relative_size\": \"Medium, growing larger\", \"orientation\": \"Facing the camera\", \"clothing\": \"\", \"expression\": \"\", \"gender\": \"\", \"age\": \"\", \"skin_tone_and_texture\": \"\", \"facial_features\": \"\", \"number_of_subjects\": 1, \"number_of_arms\": 0, \"number_of_legs\": 0}, {\"description\": \"At the far end, the stair and lift tower: an open square timber pavilion with a thin overhanging flat roof, grasses and wildflowers growing on top, ivy and star jasmine hanging from the eaves.\", \"appearance_details\": \"Silvering timber posts and beams, woven bamboo screens, a dark glass lift shaft reflecting the sky.\", \"location\": \"Centre of frame at the end of the deck\", \"relative_size\": \"Small at first, filling the upper frame by the end\", \"orientation\": \"Facing the camera\", \"clothing\": \"\", \"expression\": \"\", \"gender\": \"\", \"age\": \"\", \"skin_tone_and_texture\": \"\", \"facial_features\": \"\", \"number_of_subjects\": 1, \"number_of_arms\": 0, \"number_of_legs\": 0}, {\"description\": \"Below and to the right, the flat roof of a three-storey library covered in rows of dark blue solar panels, with a copper observatory dome at its near corner.\", \"appearance_details\": \"The dome is copper weathered to blue-green verdigris with rain streaks, on a drum of dusty-rose layered rammed earth; the panels are dusty and reflect the clouds.\", \"location\": \"Right third of frame, lower than the bridge\", \"relative_size\": \"Medium; large when the camera looks right\", \"orientation\": \"Seen from above at an angle\", \"clothing\": \"\", \"expression\": \"\", \"gender\": \"\", \"age\": \"\", \"skin_tone_and_texture\": \"\", \"facial_features\": \"\", \"number_of_subjects\": 1, \"number_of_arms\": 0, \"number_of_legs\": 0}], \"background_setting\": \"Down to the right, a garden street runs away between buildings: pale stone paving with moss in the joints and a narrow water channel, lined with deep beds of pink and lavender hydrangeas, orange daylilies, purple salvia and white roses, and a small timber pergola. Beyond it, a long five-storey timber apartment block whose facade is a grid of deep balconies planted with shrubs and small trees, jasmine and Boston ivy hanging between them. To the left, beyond the rooftops, open country: hay meadows, a strip of lavender, rows of slender columnar hornbeams and Italian cypresses, low hedges and a long timber-roofed walkway. Low wooded hills close the horizon, softened by distance haze. A deep clear blue sky full of large white cumulus clouds with soft grey undersides. The bridge is empty; far below, two people walk slowly along the garden street.\", \"lighting\": {\"conditions\": \"Clear, bright early-afternoon sunshine in early summer; crisp, near-white daylight, not golden.\", \"direction\": \"High sun from the right and slightly behind the camera.\", \"shadows\": \"Short crisp shadows; the balusters stripe the deck with diagonal shadows; cool blue shade under the arch and tower roof.\", \"illumination_effect\": \"Saturated, true colour with neutral highlights and no orange cast.\"}, \"aesthetics\": {\"composition\": \"First-person view down the bridge, railings converging on the tower; when the head turns, a railing crosses the lower frame with the town below.\", \"color_scheme\": \"Honey and silver-grey timber, emerald and lime green, magenta and lavender flowers, verdigris copper, dusty rose earth, deep blue sky.\", \"mood_atmosphere\": \"Calm, quiet, unhurried and fresh, with a gentle breeze moving the leaves.\", \"patterns\": \"Repeating balusters and their shadow stripes, rows of solar panels, the grid of planted balconies.\"}, \"cinematography\": {\"camera_motion\": \"Handheld first-person walk with a slight bob; the view turns left, then right and down over the railing, then back to the tower.\", \"framing\": \"Wide shot\", \"camera_angle\": \"Eye level, 1.7 m above the deck, looking slightly down when turning to the railing.\", \"depth_of_field\": \"Deep; everything sharp from the near boards to the hills\", \"focus\": \"The bridge deck and whatever the walker looks at\", \"lens_focal_length\": \"Wide-angle, about 18 mm full-frame equivalent\"}, \"style_medium\": \"Live-action video\", \"artistic_style\": \"Photographic realism with natural, ungraded colour, as recorded by a real camera\", \"context\": \"Walking across a planted timber footbridge between two rooftops in a small, green, low-rise town on a summer afternoon.\", \"text_and_signage_elements\": [], \"resolution\": {\"H\": 480, \"W\": 832}, \"aspect_ratio\": \"16,9\", \"duration\": \"10s\", \"fps\": 30}",
+   "caption": {
+    "subjects": [
+     {
+      "description": "A four-metre-wide timber footbridge high above a town street, its weathered larch deck running straight ahead to a timber stair tower.",
+      "appearance_details": "Boards silver-grey at the ends and honey-brown where feet wear them, with dark screw heads, hairline splits and grit in the gaps. Chest-high oiled oak handrails, darkened by hands, on square posts with close-set vertical cedar balusters. Low timber planter boxes with stone caps flank the near end, creeping thyme spilling over.",
+      "location": "Lower half of the frame, receding to a vanishing point at the centre",
+      "relative_size": "Large within frame",
+      "orientation": "Running straight away from the camera",
+      "clothing": "",
+      "expression": "",
+      "gender": "",
+      "age": "",
+      "skin_tone_and_texture": "",
+      "facial_features": "",
+      "number_of_subjects": 1,
+      "number_of_arms": 0,
+      "number_of_legs": 0
+     },
+     {
+      "description": "Partway along, a garden arch of two bent chestnut poles spans the deck, carrying magenta bougainvillea in full flower and rounded, tightly clipped clumps of small-leaved evergreen.",
+      "appearance_details": "Bark-on poles lashed at the joints, fallen pink bracts on the boards, clumps lime green in sun and dark beneath, a small cream paper lantern hanging from the top.",
+      "location": "Centre of frame, framing the far end of the bridge, then passing overhead at the left edge",
+      "relative_size": "Medium, growing larger",
+      "orientation": "Facing the camera",
+      "clothing": "",
+      "expression": "",
+      "gender": "",
+      "age": "",
+      "skin_tone_and_texture": "",
+      "facial_features": "",
+      "number_of_subjects": 1,
+      "number_of_arms": 0,
+      "number_of_legs": 0
+     },
+     {
+      "description": "At the far end, the stair and lift tower: an open square timber pavilion with a thin overhanging flat roof, grasses and wildflowers growing on top, ivy and star jasmine hanging from the eaves.",
+      "appearance_details": "Silvering timber posts and beams, woven bamboo screens, a dark glass lift shaft reflecting the sky.",
+      "location": "Centre of frame at the end of the deck",
+      "relative_size": "Small at first, filling the upper frame by the end",
+      "orientation": "Facing the camera",
+      "clothing": "",
+      "expression": "",
+      "gender": "",
+      "age": "",
+      "skin_tone_and_texture": "",
+      "facial_features": "",
+      "number_of_subjects": 1,
+      "number_of_arms": 0,
+      "number_of_legs": 0
+     },
+     {
+      "description": "Below and to the right, the flat roof of a three-storey library covered in rows of dark blue solar panels, with a copper observatory dome at its near corner.",
+      "appearance_details": "The dome is copper weathered to blue-green verdigris with rain streaks, on a drum of dusty-rose layered rammed earth; the panels are dusty and reflect the clouds.",
+      "location": "Right third of frame, lower than the bridge",
+      "relative_size": "Medium; large when the camera looks right",
+      "orientation": "Seen from above at an angle",
+      "clothing": "",
+      "expression": "",
+      "gender": "",
+      "age": "",
+      "skin_tone_and_texture": "",
+      "facial_features": "",
+      "number_of_subjects": 1,
+      "number_of_arms": 0,
+      "number_of_legs": 0
+     }
+    ],
+    "background_setting": "Down to the right, a garden street runs away between buildings: pale stone paving with moss in the joints and a narrow water channel, lined with deep beds of pink and lavender hydrangeas, orange daylilies, purple salvia and white roses, and a small timber pergola. Beyond it, a long five-storey timber apartment block whose facade is a grid of deep balconies planted with shrubs and small trees, jasmine and Boston ivy hanging between them. To the left, beyond the rooftops, open country: hay meadows, a strip of lavender, rows of slender columnar hornbeams and Italian cypresses, low hedges and a long timber-roofed walkway. Low wooded hills close the horizon, softened by distance haze. A deep clear blue sky full of large white cumulus clouds with soft grey undersides. The bridge is empty; far below, two people walk slowly along the garden street.",
+    "lighting": {
+     "conditions": "Clear, bright early-afternoon sunshine in early summer; crisp, near-white daylight, not golden.",
+     "direction": "High sun from the right and slightly behind the camera.",
+     "shadows": "Short crisp shadows; the balusters stripe the deck with diagonal shadows; cool blue shade under the arch and tower roof.",
+     "illumination_effect": "Saturated, true colour with neutral highlights and no orange cast."
+    },
+    "aesthetics": {
+     "composition": "First-person view down the bridge, railings converging on the tower; when the head turns, a railing crosses the lower frame with the town below.",
+     "color_scheme": "Honey and silver-grey timber, emerald and lime green, magenta and lavender flowers, verdigris copper, dusty rose earth, deep blue sky.",
+     "mood_atmosphere": "Calm, quiet, unhurried and fresh, with a gentle breeze moving the leaves.",
+     "patterns": "Repeating balusters and their shadow stripes, rows of solar panels, the grid of planted balconies."
+    },
+    "cinematography": {
+     "camera_motion": "Handheld first-person walk with a slight bob; the view turns left, then right and down over the railing, then back to the tower.",
+     "framing": "Wide shot",
+     "camera_angle": "Eye level, 1.7 m above the deck, looking slightly down when turning to the railing.",
+     "depth_of_field": "Deep; everything sharp from the near boards to the hills",
+     "focus": "The bridge deck and whatever the walker looks at",
+     "lens_focal_length": "Wide-angle, about 18 mm full-frame equivalent"
+    },
+    "style_medium": "Live-action video",
+    "artistic_style": "Photographic realism with natural, ungraded colour, as recorded by a real camera",
+    "context": "Walking across a planted timber footbridge between two rooftops in a small, green, low-rise town on a summer afternoon.",
+    "text_and_signage_elements": [],
+    "resolution": {
+     "H": 480,
+     "W": 832
+    },
+    "aspect_ratio": "16,9",
+    "duration": "10s",
+    "fps": 30
+   },
+   "carries": [
+    {
+     "field": "subjects[0].description",
+     "text": "A four-metre-wide timber footbridge high above a town street, its weathered larch deck running straight ahead to a timber stair tower.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "12c4a4ec735c",
+      "e929f29cc9ee"
+     ],
+     "geometry": "deck + rails fill the lower half in every frame; vanishing point near centre (frames 0000-0100)"
+    },
+    {
+     "field": "subjects[0].appearance_details",
+     "text": "Boards silver-grey at the ends and honey-brown where feet wear them, with dark screw heads, hairline splits and grit in the gaps.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "de1e4899d847",
+      "3d76a0d47a89",
+      "e929f29cc9ee"
+     ],
+     "geometry": "transverse boards, as in the sim deck"
+    },
+    {
+     "field": "subjects[0].appearance_details",
+     "text": "Chest-high oiled oak handrails, darkened by hands, on square posts with close-set vertical cedar balusters.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "12c4a4ec735c",
+      "daade5134c59"
+     ],
+     "geometry": "the sim's baluster rails on both sides; the right rail crosses the lower frame diagonally while looking right (0149-0250)"
+    },
+    {
+     "field": "subjects[0].appearance_details",
+     "text": "Low timber planter boxes with stone caps flank the near end, creeping thyme spilling over.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "daade5134c59",
+      "a404a3a3cc94"
+     ],
+     "geometry": "boxes in the bottom corners of frame 0000"
+    },
+    {
+     "field": "subjects[1].description",
+     "text": "Partway along, a garden arch of two bent chestnut poles spans the deck, carrying magenta bougainvillea in full flower and rounded, tightly clipped clumps of small-leaved evergreen.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "11bb4c0ad5e2",
+      "28072b34a9d0",
+      "9ede10e3e51a"
+     ],
+     "geometry": "the arbour with cushion crowns and the pink blossom crown (0050-0149)"
+    },
+    {
+     "field": "subjects[1].appearance_details",
+     "text": "Bark-on poles lashed at the joints, fallen pink bracts on the boards, clumps lime green in sun and dark beneath, a small cream paper lantern hanging from the top.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "11bb4c0ad5e2",
+      "90cf64448d13"
+     ],
+     "geometry": "the sim's hanging white tag under the pink crown"
+    },
+    {
+     "field": "subjects[2].description",
+     "text": "At the far end, the stair and lift tower: an open square timber pavilion with a thin overhanging flat roof, grasses and wildflowers growing on top, ivy and star jasmine hanging from the eaves.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "7158e81aabaa",
+      "129473520e6f",
+      "28072b34a9d0"
+     ],
+     "geometry": "landing_commons_west, centre of 0000-0100 and filling the frame by 0299"
+    },
+    {
+     "field": "subjects[2].appearance_details",
+     "text": "Silvering timber posts and beams, woven bamboo screens, a dark glass lift shaft reflecting the sky.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "28072b34a9d0",
+      "e942be46d019",
+      "90cf64448d13"
+     ],
+     "geometry": "dark glazed panel at the tower's centre"
+    },
+    {
+     "field": "subjects[3].description",
+     "text": "Below and to the right, the flat roof of a three-storey library covered in rows of dark blue solar panels, with a copper observatory dome at its near corner.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "51da750e8159",
+      "aa91bad1aa52"
+     ],
+     "geometry": "the library roof (13.5 m, below the 17.5 m deck) and dome, right side of every frame"
+    },
+    {
+     "field": "subjects[3].appearance_details",
+     "text": "The dome is copper weathered to blue-green verdigris with rain streaks, on a drum of dusty-rose layered rammed earth; the panels are dusty and reflect the clouds.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)",
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)"
+     ],
+     "images": [
+      "b4970f245701",
+      "8c15170e420e",
+      "85a683f9f9aa"
+     ],
+     "geometry": "world.json commons palette: rose earth, verdigris, warm glass"
+    },
+    {
+     "field": "background_setting",
+     "text": "Down to the right, a garden street runs away between buildings: pale stone paving with moss in the joints and a narrow water channel, lined with deep beds of pink and lavender hydrangeas, orange daylilies, purple salvia and white roses, and a small timber pergola.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)",
+      "8. Water that holds the sky (water / sound)"
+     ],
+     "images": [
+      "a404a3a3cc94",
+      "b645a8fdfa9c",
+      "623179efd1ce"
+     ],
+     "geometry": "the flowering lane and pergola seen in 0149-0250; world.json lanes: permeable stone, moss joints, water runnels"
+    },
+    {
+     "field": "background_setting",
+     "text": "Beyond it, a long five-storey timber apartment block whose facade is a grid of deep balconies planted with shrubs and small trees, jasmine and Boston ivy hanging between them.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "9e668dceb256",
+      "a9a4dc0f1f79",
+      "623179efd1ce",
+      "daade5134c59"
+     ],
+     "geometry": "the long gridded green facade across the right half of 0149-0250"
+    },
+    {
+     "field": "background_setting",
+     "text": "To the left, beyond the rooftops, open country: hay meadows, a strip of lavender, rows of slender columnar hornbeams and Italian cypresses, low hedges and a long timber-roofed walkway.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "4. Big old trees and dappled shade (scale / intimacy)"
+     ],
+     "images": [
+      "aa91bad1aa52",
+      "11bb4c0ad5e2",
+      "28072b34a9d0"
+     ],
+     "geometry": "the left glance (0060-0100): fields, columnar tree rows, walkway roof"
+    },
+    {
+     "field": "background_setting",
+     "text": "Low wooded hills close the horizon, softened by distance haze.",
+     "vibe": [
+      "1. Clear cerulean sky with big white cumulus (light / weather)"
+     ],
+     "images": [
+      "a404a3a3cc94",
+      "7872720915d2"
+     ],
+     "geometry": "the sim's backdrop hills band behind everything"
+    },
+    {
+     "field": "background_setting",
+     "text": "A deep clear blue sky full of large white cumulus clouds with soft grey undersides.",
+     "vibe": [
+      "1. Clear cerulean sky with big white cumulus (light / weather)"
+     ],
+     "images": [
+      "def46dad836a",
+      "9ede10e3e51a",
+      "7158e81aabaa",
+      "3c7bfe2b7d79"
+     ],
+     "geometry": "upper 40 % of most frames is sky with clouds"
+    },
+    {
+     "field": "background_setting",
+     "text": "The bridge is empty; far below, two people walk slowly along the garden street.",
+     "vibe": [
+      "6. Few people, unhurried, doing ordinary things (signs of life)"
+     ],
+     "images": [
+      "aa91bad1aa52",
+      "575a4771197a",
+      "28072b34a9d0"
+     ],
+     "geometry": "people only far away, where depth is coarse, so they don't fight the controls"
+    },
+    {
+     "field": "lighting.conditions",
+     "text": "Clear, bright early-afternoon sunshine in early summer; crisp, near-white daylight, not golden.",
+     "vibe": [
+      "1. Clear cerulean sky with big white cumulus (light / weather)",
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)"
+     ],
+     "images": [
+      "f3a3e86b27ca",
+      "12c4a4ec735c",
+      "28072b34a9d0"
+     ],
+     "geometry": "capture.json clock 14:00"
+    },
+    {
+     "field": "lighting.direction",
+     "text": "High sun from the right and slightly behind the camera.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)"
+     ],
+     "images": [],
+     "geometry": "baluster shadows in the sim fall forward-left across the deck"
+    },
+    {
+     "field": "lighting.shadows",
+     "text": "Short crisp shadows; the balusters stripe the deck with diagonal shadows; cool blue shade under the arch and tower roof.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)",
+      "4. Big old trees and dappled shade (scale / intimacy)"
+     ],
+     "images": [
+      "28072b34a9d0",
+      "e942be46d019"
+     ],
+     "geometry": "matches the sim's shadow stripes on the deck"
+    },
+    {
+     "field": "lighting.illumination_effect",
+     "text": "Saturated, true colour with neutral highlights and no orange cast.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)",
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)"
+     ],
+     "images": [
+      "b645a8fdfa9c",
+      "f3a3e86b27ca"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "aesthetics.composition",
+     "text": "First-person view down the bridge, railings converging on the tower; when the head turns, a railing crosses the lower frame with the town below.",
+     "vibe": [],
+     "images": [],
+     "geometry": "head.jsonl yaw: 0, -38, 0, +42..58, +13"
+    },
+    {
+     "field": "aesthetics.color_scheme",
+     "text": "Honey and silver-grey timber, emerald and lime green, magenta and lavender flowers, verdigris copper, dusty rose earth, deep blue sky.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)",
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "41ce7cceb2f2",
+      "85a683f9f9aa",
+      "b645a8fdfa9c"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "aesthetics.mood_atmosphere",
+     "text": "Calm, quiet, unhurried and fresh, with a gentle breeze moving the leaves.",
+     "vibe": [
+      "6. Few people, unhurried, doing ordinary things (signs of life)"
+     ],
+     "images": [
+      "46a20df40629",
+      "90cf64448d13"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "aesthetics.patterns",
+     "text": "Repeating balusters and their shadow stripes, rows of solar panels, the grid of planted balconies.",
+     "vibe": [],
+     "images": [],
+     "geometry": "strong repeated edges in the controls"
+    },
+    {
+     "field": "cinematography.camera_motion",
+     "text": "Handheld first-person walk with a slight bob; the view turns left, then right and down over the railing, then back to the tower.",
+     "vibe": [],
+     "images": [],
+     "geometry": "head.py springs and figure-8 bob"
+    },
+    {
+     "field": "cinematography.camera_angle",
+     "text": "Eye level, 1.7 m above the deck, looking slightly down when turning to the railing.",
+     "vibe": [],
+     "images": [],
+     "geometry": "head pitch -5 to -14 degrees in the glances"
+    },
+    {
+     "field": "cinematography.lens_focal_length",
+     "text": "Wide-angle, about 18 mm full-frame equivalent",
+     "vibe": [],
+     "images": [],
+     "geometry": "90 degree horizontal FOV, 16:9"
+    },
+    {
+     "field": "context",
+     "text": "Walking across a planted timber footbridge between two rooftops in a small, green, low-rise town on a summer afternoon.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "6. Few people, unhurried, doing ordinary things (signs of life)"
+     ],
+     "images": [
+      "12c4a4ec735c",
+      "aa91bad1aa52"
+     ],
+     "geometry": ""
+    }
+   ]
+  },
+  {
+   "id": "b_light",
+   "reasoning": "Same scene, same order, about a third the words. Use it if (a) fights the controls: long, specific text can make the model paint things the depth map has no room for (a bench where the depth says empty paving), or invent detail that flickers between chunks. Kept: the big shapes, the light, the sky, and the colours that carry the vision. Dropped: most wear details and species, the planter boxes, people. About 470 tokens, so it also fits if the distilled checkpoint really caps text at 512 tokens (config.json text_cache_max_len).",
+   "tokens": 472,
+   "prompt": "{\"subjects\": [{\"description\": \"A weathered timber footbridge high above a town, oak handrails on close-set balusters, leading to an open timber stair tower with a planted roof and hanging vines.\", \"appearance_details\": \"A pole arch carries magenta bougainvillea.\", \"location\": \"Lower half and centre of frame\", \"relative_size\": \"Large within frame\", \"orientation\": \"Running straight away from the camera\", \"clothing\": \"\", \"expression\": \"\", \"gender\": \"\", \"age\": \"\", \"skin_tone_and_texture\": \"\", \"facial_features\": \"\", \"number_of_subjects\": 1, \"number_of_arms\": 0, \"number_of_legs\": 0}], \"background_setting\": \"Below right: a solar-panel roof with a verdigris copper dome, a street lined with pink and lavender flowering shrubs, a timber apartment block with planted balconies. Left: meadows, columnar trees, wooded hills. Deep blue sky, big white cumulus.\", \"lighting\": {\"conditions\": \"Clear summer afternoon sun, near-white, not golden.\", \"direction\": \"High sun from the right.\", \"shadows\": \"Crisp baluster shadows on the deck.\", \"illumination_effect\": \"True, saturated colour.\"}, \"aesthetics\": {\"composition\": \"First-person view down the bridge.\", \"color_scheme\": \"Honey timber, green, magenta, blue sky.\", \"mood_atmosphere\": \"Calm, quiet, unhurried.\", \"patterns\": \"Balusters\"}, \"cinematography\": {\"camera_motion\": \"Handheld walk, looking left and right.\", \"framing\": \"Wide shot\", \"camera_angle\": \"Eye level\", \"depth_of_field\": \"Deep\", \"focus\": \"The bridge\", \"lens_focal_length\": \"18 mm wide\"}, \"style_medium\": \"Live-action video\", \"artistic_style\": \"Photographic realism, natural colour\", \"context\": \"A rooftop footbridge in a small green town.\", \"text_and_signage_elements\": [], \"resolution\": {\"H\": 480, \"W\": 832}, \"aspect_ratio\": \"16,9\", \"duration\": \"10s\", \"fps\": 30}",
+   "caption": {
+    "subjects": [
+     {
+      "description": "A weathered timber footbridge high above a town, oak handrails on close-set balusters, leading to an open timber stair tower with a planted roof and hanging vines.",
+      "appearance_details": "A pole arch carries magenta bougainvillea.",
+      "location": "Lower half and centre of frame",
+      "relative_size": "Large within frame",
+      "orientation": "Running straight away from the camera",
+      "clothing": "",
+      "expression": "",
+      "gender": "",
+      "age": "",
+      "skin_tone_and_texture": "",
+      "facial_features": "",
+      "number_of_subjects": 1,
+      "number_of_arms": 0,
+      "number_of_legs": 0
+     }
+    ],
+    "background_setting": "Below right: a solar-panel roof with a verdigris copper dome, a street lined with pink and lavender flowering shrubs, a timber apartment block with planted balconies. Left: meadows, columnar trees, wooded hills. Deep blue sky, big white cumulus.",
+    "lighting": {
+     "conditions": "Clear summer afternoon sun, near-white, not golden.",
+     "direction": "High sun from the right.",
+     "shadows": "Crisp baluster shadows on the deck.",
+     "illumination_effect": "True, saturated colour."
+    },
+    "aesthetics": {
+     "composition": "First-person view down the bridge.",
+     "color_scheme": "Honey timber, green, magenta, blue sky.",
+     "mood_atmosphere": "Calm, quiet, unhurried.",
+     "patterns": "Balusters"
+    },
+    "cinematography": {
+     "camera_motion": "Handheld walk, looking left and right.",
+     "framing": "Wide shot",
+     "camera_angle": "Eye level",
+     "depth_of_field": "Deep",
+     "focus": "The bridge",
+     "lens_focal_length": "18 mm wide"
+    },
+    "style_medium": "Live-action video",
+    "artistic_style": "Photographic realism, natural colour",
+    "context": "A rooftop footbridge in a small green town.",
+    "text_and_signage_elements": [],
+    "resolution": {
+     "H": 480,
+     "W": 832
+    },
+    "aspect_ratio": "16,9",
+    "duration": "10s",
+    "fps": 30
+   },
+   "carries": [
+    {
+     "field": "subjects[0].description",
+     "text": "A weathered timber footbridge high above a town, oak handrails on close-set balusters, leading to an open timber stair tower with a planted roof and hanging vines.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "12c4a4ec735c",
+      "e929f29cc9ee",
+      "7158e81aabaa"
+     ],
+     "geometry": "deck, rails, tower: the shapes the depth control is sure about"
+    },
+    {
+     "field": "subjects[0].appearance_details",
+     "text": "A pole arch carries magenta bougainvillea.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)"
+     ],
+     "images": [
+      "11bb4c0ad5e2",
+      "9ede10e3e51a"
+     ],
+     "geometry": "the arbour"
+    },
+    {
+     "field": "background_setting",
+     "text": "Below right: a solar-panel roof with a verdigris copper dome, a street lined with pink and lavender flowering shrubs, a timber apartment block with planted balconies.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "623179efd1ce",
+      "9e668dceb256",
+      "51da750e8159"
+     ],
+     "geometry": "right-side view 0149-0250"
+    },
+    {
+     "field": "background_setting",
+     "text": "Left: meadows, columnar trees, wooded hills.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "4. Big old trees and dappled shade (scale / intimacy)"
+     ],
+     "images": [
+      "aa91bad1aa52"
+     ],
+     "geometry": "left glance and backdrop"
+    },
+    {
+     "field": "background_setting",
+     "text": "Deep blue sky, big white cumulus.",
+     "vibe": [
+      "1. Clear cerulean sky with big white cumulus (light / weather)"
+     ],
+     "images": [
+      "def46dad836a",
+      "9ede10e3e51a"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "lighting.conditions",
+     "text": "Clear summer afternoon sun, near-white, not golden.",
+     "vibe": [
+      "1. Clear cerulean sky with big white cumulus (light / weather)",
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)"
+     ],
+     "images": [
+      "f3a3e86b27ca",
+      "28072b34a9d0"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "lighting.shadows",
+     "text": "Crisp baluster shadows on the deck.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)"
+     ],
+     "images": [],
+     "geometry": ""
+    },
+    {
+     "field": "lighting.illumination_effect",
+     "text": "True, saturated colour.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)"
+     ],
+     "images": [
+      "b645a8fdfa9c"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "aesthetics.color_scheme",
+     "text": "Honey timber, green, magenta, blue sky.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)",
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)"
+     ],
+     "images": [],
+     "geometry": ""
+    },
+    {
+     "field": "aesthetics.mood_atmosphere",
+     "text": "Calm, quiet, unhurried.",
+     "vibe": [
+      "6. Few people, unhurried, doing ordinary things (signs of life)"
+     ],
+     "images": [],
+     "geometry": ""
+    },
+    {
+     "field": "context",
+     "text": "A rooftop footbridge in a small green town.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)"
+     ],
+     "images": [],
+     "geometry": ""
+    }
+   ]
+  },
+  {
+   "id": "c_documentary_phone",
+   "reasoning": "Same scene described as an ordinary person's phone clip. Phone footage is the most common 'real video' in web-scale training data, so asking for it pulls hardest away from a game look: auto exposure, slightly blown clouds, mild compression, small step bobs. It also explains away the head-bob and quick pans in the controls instead of letting the model read them as glitches. Costs: less colour richness and a flatter, plainer look than (a); it may under-saturate the flowers the board wants.",
+   "tokens": 1309,
+   "prompt": "{\"subjects\": [{\"description\": \"A four-metre-wide timber footbridge high above a town street, its weathered larch deck running straight ahead to a timber stair tower.\", \"appearance_details\": \"The boards are silver-grey at their ends and honey-brown where feet wear them, with dark screw heads, hairline splits and grit in the gaps. Chest-high oiled oak handrails on square posts, with close-set vertical cedar balusters between them; low timber planter boxes with stone caps at the near end.\", \"location\": \"Lower half of the frame, receding to a vanishing point at the centre\", \"relative_size\": \"Large within frame\", \"orientation\": \"Running straight away from the camera\", \"clothing\": \"\", \"expression\": \"\", \"gender\": \"\", \"age\": \"\", \"skin_tone_and_texture\": \"\", \"facial_features\": \"\", \"number_of_subjects\": 1, \"number_of_arms\": 0, \"number_of_legs\": 0}, {\"description\": \"Partway along, a garden arch of two bent chestnut poles spans the deck, carrying magenta bougainvillea in full flower and rounded, tightly clipped clumps of small-leaved evergreen.\", \"appearance_details\": \"Bark-on poles lashed at the joints, fallen pink bracts on the boards, a small cream paper lantern hanging from the top.\", \"location\": \"Centre of frame, framing the far end of the bridge, then passing overhead at the left edge\", \"relative_size\": \"Medium, growing larger\", \"orientation\": \"Facing the camera\", \"clothing\": \"\", \"expression\": \"\", \"gender\": \"\", \"age\": \"\", \"skin_tone_and_texture\": \"\", \"facial_features\": \"\", \"number_of_subjects\": 1, \"number_of_arms\": 0, \"number_of_legs\": 0}, {\"description\": \"At the far end, the stair and lift tower: an open square timber pavilion with a thin overhanging flat roof, grasses and wildflowers growing on top, ivy and star jasmine hanging from the eaves.\", \"appearance_details\": \"Silvering timber posts and beams, woven bamboo screens, a dark glass lift shaft reflecting the sky.\", \"location\": \"Centre of frame at the end of the deck\", \"relative_size\": \"Small at first, filling the upper frame by the end\", \"orientation\": \"Facing the camera\", \"clothing\": \"\", \"expression\": \"\", \"gender\": \"\", \"age\": \"\", \"skin_tone_and_texture\": \"\", \"facial_features\": \"\", \"number_of_subjects\": 1, \"number_of_arms\": 0, \"number_of_legs\": 0}, {\"description\": \"Below and to the right, the flat roof of a three-storey library covered in rows of dark blue solar panels, with a copper observatory dome at its near corner.\", \"appearance_details\": \"The dome is copper weathered to blue-green verdigris with rain streaks, on a drum of dusty-rose layered rammed earth; the panels are dusty and reflect the clouds.\", \"location\": \"Right third of frame, lower than the bridge\", \"relative_size\": \"Medium; large when the camera looks right\", \"orientation\": \"Seen from above at an angle\", \"clothing\": \"\", \"expression\": \"\", \"gender\": \"\", \"age\": \"\", \"skin_tone_and_texture\": \"\", \"facial_features\": \"\", \"number_of_subjects\": 1, \"number_of_arms\": 0, \"number_of_legs\": 0}], \"background_setting\": \"Down to the right: a garden street of pale stone paving and a narrow water channel, with beds of pink and lavender hydrangeas and orange daylilies, and a long timber apartment block with balconies full of shrubs and hanging ivy. To the left: meadows, a strip of lavender, rows of columnar trees, and wooded hills on the horizon. Deep blue sky with big white cumulus clouds, the brightest parts slightly blown out. The bridge is empty; two small figures walk along the street far below.\", \"lighting\": {\"conditions\": \"Clear, bright early-afternoon sunshine in early summer; crisp, near-white daylight, not golden.\", \"direction\": \"High sun from the right and slightly behind the camera.\", \"shadows\": \"Short crisp shadows; the balusters stripe the deck with diagonal shadows; cool blue shade under the arch and tower roof.\", \"illumination_effect\": \"Saturated, true colour with neutral highlights and no orange cast.\"}, \"aesthetics\": {\"composition\": \"Casual, unframed point-of-view: the phone points down the bridge, swings left, then right and down over the railing, then back.\", \"color_scheme\": \"Honey and silver-grey timber, emerald and lime green, magenta and lavender flowers, verdigris copper, dusty rose earth, deep blue sky.\", \"mood_atmosphere\": \"Ordinary, calm, a quiet weekday; wind gently moving the leaves.\", \"patterns\": \"Repeating balusters and their shadow stripes, rows of solar panels, the grid of planted balconies.\"}, \"cinematography\": {\"camera_motion\": \"Handheld phone held at eye level while walking: small bobs with each step, slight tilts, quick pans left and right.\", \"framing\": \"Wide shot\", \"camera_angle\": \"Eye level, 1.7 m above the deck, tilting down toward the railing when panning right.\", \"depth_of_field\": \"Deep, as with any phone\", \"focus\": \"Everything in focus\", \"lens_focal_length\": \"Phone main camera at its wide setting, about 18 mm equivalent\"}, \"style_medium\": \"Live-action video, handheld smartphone footage\", \"artistic_style\": \"Unedited documentary phone video: automatic exposure and white balance, slightly clipped bright clouds, mild sharpening and compression, natural colour\", \"context\": \"Someone films their walk across a planted footbridge between two rooftops in a small green town, to show a friend the view.\", \"text_and_signage_elements\": [], \"resolution\": {\"H\": 480, \"W\": 832}, \"aspect_ratio\": \"16,9\", \"duration\": \"10s\", \"fps\": 30}",
+   "caption": {
+    "subjects": [
+     {
+      "description": "A four-metre-wide timber footbridge high above a town street, its weathered larch deck running straight ahead to a timber stair tower.",
+      "appearance_details": "The boards are silver-grey at their ends and honey-brown where feet wear them, with dark screw heads, hairline splits and grit in the gaps. Chest-high oiled oak handrails on square posts, with close-set vertical cedar balusters between them; low timber planter boxes with stone caps at the near end.",
+      "location": "Lower half of the frame, receding to a vanishing point at the centre",
+      "relative_size": "Large within frame",
+      "orientation": "Running straight away from the camera",
+      "clothing": "",
+      "expression": "",
+      "gender": "",
+      "age": "",
+      "skin_tone_and_texture": "",
+      "facial_features": "",
+      "number_of_subjects": 1,
+      "number_of_arms": 0,
+      "number_of_legs": 0
+     },
+     {
+      "description": "Partway along, a garden arch of two bent chestnut poles spans the deck, carrying magenta bougainvillea in full flower and rounded, tightly clipped clumps of small-leaved evergreen.",
+      "appearance_details": "Bark-on poles lashed at the joints, fallen pink bracts on the boards, a small cream paper lantern hanging from the top.",
+      "location": "Centre of frame, framing the far end of the bridge, then passing overhead at the left edge",
+      "relative_size": "Medium, growing larger",
+      "orientation": "Facing the camera",
+      "clothing": "",
+      "expression": "",
+      "gender": "",
+      "age": "",
+      "skin_tone_and_texture": "",
+      "facial_features": "",
+      "number_of_subjects": 1,
+      "number_of_arms": 0,
+      "number_of_legs": 0
+     },
+     {
+      "description": "At the far end, the stair and lift tower: an open square timber pavilion with a thin overhanging flat roof, grasses and wildflowers growing on top, ivy and star jasmine hanging from the eaves.",
+      "appearance_details": "Silvering timber posts and beams, woven bamboo screens, a dark glass lift shaft reflecting the sky.",
+      "location": "Centre of frame at the end of the deck",
+      "relative_size": "Small at first, filling the upper frame by the end",
+      "orientation": "Facing the camera",
+      "clothing": "",
+      "expression": "",
+      "gender": "",
+      "age": "",
+      "skin_tone_and_texture": "",
+      "facial_features": "",
+      "number_of_subjects": 1,
+      "number_of_arms": 0,
+      "number_of_legs": 0
+     },
+     {
+      "description": "Below and to the right, the flat roof of a three-storey library covered in rows of dark blue solar panels, with a copper observatory dome at its near corner.",
+      "appearance_details": "The dome is copper weathered to blue-green verdigris with rain streaks, on a drum of dusty-rose layered rammed earth; the panels are dusty and reflect the clouds.",
+      "location": "Right third of frame, lower than the bridge",
+      "relative_size": "Medium; large when the camera looks right",
+      "orientation": "Seen from above at an angle",
+      "clothing": "",
+      "expression": "",
+      "gender": "",
+      "age": "",
+      "skin_tone_and_texture": "",
+      "facial_features": "",
+      "number_of_subjects": 1,
+      "number_of_arms": 0,
+      "number_of_legs": 0
+     }
+    ],
+    "background_setting": "Down to the right: a garden street of pale stone paving and a narrow water channel, with beds of pink and lavender hydrangeas and orange daylilies, and a long timber apartment block with balconies full of shrubs and hanging ivy. To the left: meadows, a strip of lavender, rows of columnar trees, and wooded hills on the horizon. Deep blue sky with big white cumulus clouds, the brightest parts slightly blown out. The bridge is empty; two small figures walk along the street far below.",
+    "lighting": {
+     "conditions": "Clear, bright early-afternoon sunshine in early summer; crisp, near-white daylight, not golden.",
+     "direction": "High sun from the right and slightly behind the camera.",
+     "shadows": "Short crisp shadows; the balusters stripe the deck with diagonal shadows; cool blue shade under the arch and tower roof.",
+     "illumination_effect": "Saturated, true colour with neutral highlights and no orange cast."
+    },
+    "aesthetics": {
+     "composition": "Casual, unframed point-of-view: the phone points down the bridge, swings left, then right and down over the railing, then back.",
+     "color_scheme": "Honey and silver-grey timber, emerald and lime green, magenta and lavender flowers, verdigris copper, dusty rose earth, deep blue sky.",
+     "mood_atmosphere": "Ordinary, calm, a quiet weekday; wind gently moving the leaves.",
+     "patterns": "Repeating balusters and their shadow stripes, rows of solar panels, the grid of planted balconies."
+    },
+    "cinematography": {
+     "camera_motion": "Handheld phone held at eye level while walking: small bobs with each step, slight tilts, quick pans left and right.",
+     "framing": "Wide shot",
+     "camera_angle": "Eye level, 1.7 m above the deck, tilting down toward the railing when panning right.",
+     "depth_of_field": "Deep, as with any phone",
+     "focus": "Everything in focus",
+     "lens_focal_length": "Phone main camera at its wide setting, about 18 mm equivalent"
+    },
+    "style_medium": "Live-action video, handheld smartphone footage",
+    "artistic_style": "Unedited documentary phone video: automatic exposure and white balance, slightly clipped bright clouds, mild sharpening and compression, natural colour",
+    "context": "Someone films their walk across a planted footbridge between two rooftops in a small green town, to show a friend the view.",
+    "text_and_signage_elements": [],
+    "resolution": {
+     "H": 480,
+     "W": 832
+    },
+    "aspect_ratio": "16,9",
+    "duration": "10s",
+    "fps": 30
+   },
+   "carries": [
+    {
+     "field": "subjects[0].description",
+     "text": "A four-metre-wide timber footbridge high above a town street, its weathered larch deck running straight ahead to a timber stair tower.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "12c4a4ec735c",
+      "e929f29cc9ee"
+     ],
+     "geometry": "deck + rails fill the lower half in every frame; vanishing point near centre (frames 0000-0100)"
+    },
+    {
+     "field": "subjects[0].appearance_details",
+     "text": "The boards are silver-grey at their ends and honey-brown where feet wear them, with dark screw heads, hairline splits and grit in the gaps.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "de1e4899d847",
+      "e929f29cc9ee"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "subjects[0].appearance_details",
+     "text": "Chest-high oiled oak handrails on square posts, with close-set vertical cedar balusters between them; low timber planter boxes with stone caps at the near end.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "12c4a4ec735c",
+      "daade5134c59"
+     ],
+     "geometry": "rails + planter boxes"
+    },
+    {
+     "field": "subjects[1].description",
+     "text": "Partway along, a garden arch of two bent chestnut poles spans the deck, carrying magenta bougainvillea in full flower and rounded, tightly clipped clumps of small-leaved evergreen.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "11bb4c0ad5e2",
+      "28072b34a9d0",
+      "9ede10e3e51a"
+     ],
+     "geometry": "the arbour with cushion crowns and the pink blossom crown (0050-0149)"
+    },
+    {
+     "field": "subjects[1].appearance_details",
+     "text": "Bark-on poles lashed at the joints, fallen pink bracts on the boards, a small cream paper lantern hanging from the top.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "90cf64448d13"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "subjects[2].description",
+     "text": "At the far end, the stair and lift tower: an open square timber pavilion with a thin overhanging flat roof, grasses and wildflowers growing on top, ivy and star jasmine hanging from the eaves.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "7158e81aabaa",
+      "129473520e6f",
+      "28072b34a9d0"
+     ],
+     "geometry": "landing_commons_west, centre of 0000-0100 and filling the frame by 0299"
+    },
+    {
+     "field": "subjects[2].appearance_details",
+     "text": "Silvering timber posts and beams, woven bamboo screens, a dark glass lift shaft reflecting the sky.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "28072b34a9d0",
+      "e942be46d019",
+      "90cf64448d13"
+     ],
+     "geometry": "dark glazed panel at the tower's centre"
+    },
+    {
+     "field": "subjects[3].description",
+     "text": "Below and to the right, the flat roof of a three-storey library covered in rows of dark blue solar panels, with a copper observatory dome at its near corner.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "51da750e8159",
+      "aa91bad1aa52"
+     ],
+     "geometry": "the library roof (13.5 m, below the 17.5 m deck) and dome, right side of every frame"
+    },
+    {
+     "field": "subjects[3].appearance_details",
+     "text": "The dome is copper weathered to blue-green verdigris with rain streaks, on a drum of dusty-rose layered rammed earth; the panels are dusty and reflect the clouds.",
+     "vibe": [
+      "5. Handmade, aged, mossy materials (patina)",
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)"
+     ],
+     "images": [
+      "b4970f245701",
+      "8c15170e420e",
+      "85a683f9f9aa"
+     ],
+     "geometry": "world.json commons palette: rose earth, verdigris, warm glass"
+    },
+    {
+     "field": "background_setting",
+     "text": "Down to the right: a garden street of pale stone paving and a narrow water channel, with beds of pink and lavender hydrangeas and orange daylilies, and a long timber apartment block with balconies full of shrubs and hanging ivy.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)",
+      "8. Water that holds the sky (water / sound)"
+     ],
+     "images": [
+      "623179efd1ce",
+      "9e668dceb256",
+      "a404a3a3cc94"
+     ],
+     "geometry": "right-side view"
+    },
+    {
+     "field": "background_setting",
+     "text": "To the left: meadows, a strip of lavender, rows of columnar trees, and wooded hills on the horizon.",
+     "vibe": [
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "4. Big old trees and dappled shade (scale / intimacy)"
+     ],
+     "images": [
+      "aa91bad1aa52"
+     ],
+     "geometry": "left glance"
+    },
+    {
+     "field": "background_setting",
+     "text": "Deep blue sky with big white cumulus clouds, the brightest parts slightly blown out.",
+     "vibe": [
+      "1. Clear cerulean sky with big white cumulus (light / weather)"
+     ],
+     "images": [
+      "def46dad836a",
+      "7158e81aabaa"
+     ],
+     "geometry": "phone auto-exposure clips bright clouds"
+    },
+    {
+     "field": "background_setting",
+     "text": "The bridge is empty; two small figures walk along the street far below.",
+     "vibe": [
+      "6. Few people, unhurried, doing ordinary things (signs of life)"
+     ],
+     "images": [
+      "575a4771197a",
+      "aa91bad1aa52"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "lighting.conditions",
+     "text": "Clear, bright early-afternoon sunshine in early summer; crisp, near-white daylight, not golden.",
+     "vibe": [
+      "1. Clear cerulean sky with big white cumulus (light / weather)",
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)"
+     ],
+     "images": [
+      "f3a3e86b27ca",
+      "12c4a4ec735c",
+      "28072b34a9d0"
+     ],
+     "geometry": "capture.json clock 14:00"
+    },
+    {
+     "field": "lighting.direction",
+     "text": "High sun from the right and slightly behind the camera.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)"
+     ],
+     "images": [],
+     "geometry": "baluster shadows in the sim fall forward-left across the deck"
+    },
+    {
+     "field": "lighting.shadows",
+     "text": "Short crisp shadows; the balusters stripe the deck with diagonal shadows; cool blue shade under the arch and tower roof.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)",
+      "4. Big old trees and dappled shade (scale / intimacy)"
+     ],
+     "images": [
+      "28072b34a9d0",
+      "e942be46d019"
+     ],
+     "geometry": "matches the sim's shadow stripes on the deck"
+    },
+    {
+     "field": "lighting.illumination_effect",
+     "text": "Saturated, true colour with neutral highlights and no orange cast.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)",
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)"
+     ],
+     "images": [
+      "b645a8fdfa9c",
+      "f3a3e86b27ca"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "aesthetics.composition",
+     "text": "Casual, unframed point-of-view: the phone points down the bridge, swings left, then right and down over the railing, then back.",
+     "vibe": [],
+     "images": [],
+     "geometry": "same yaw sequence"
+    },
+    {
+     "field": "aesthetics.color_scheme",
+     "text": "Honey and silver-grey timber, emerald and lime green, magenta and lavender flowers, verdigris copper, dusty rose earth, deep blue sky.",
+     "vibe": [
+      "2. Crisp, near-white daylight; saturated, true colour (time of day / grade)",
+      "3. Lush, overflowing, soft planting with flowers in it (density of life / wildness)",
+      "5. Handmade, aged, mossy materials (patina)"
+     ],
+     "images": [
+      "41ce7cceb2f2",
+      "85a683f9f9aa",
+      "b645a8fdfa9c"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "aesthetics.mood_atmosphere",
+     "text": "Ordinary, calm, a quiet weekday; wind gently moving the leaves.",
+     "vibe": [
+      "6. Few people, unhurried, doing ordinary things (signs of life)"
+     ],
+     "images": [
+      "46a20df40629"
+     ],
+     "geometry": ""
+    },
+    {
+     "field": "aesthetics.patterns",
+     "text": "Repeating balusters and their shadow stripes, rows of solar panels, the grid of planted balconies.",
+     "vibe": [],
+     "images": [],
+     "geometry": "strong repeated edges in the controls"
+    },
+    {
+     "field": "cinematography.camera_motion",
+     "text": "Handheld phone held at eye level while walking: small bobs with each step, slight tilts, quick pans left and right.",
+     "vibe": [],
+     "images": [],
+     "geometry": "head.py bob 1.8 cm, roll 0.6 deg"
+    },
+    {
+     "field": "context",
+     "text": "Someone films their walk across a planted footbridge between two rooftops in a small green town, to show a friend the view.",
+     "vibe": [
+      "6. Few people, unhurried, doing ordinary things (signs of life)"
+     ],
+     "images": [
+      "575a4771197a"
+     ],
+     "geometry": ""
+    }
+   ]
+  }
+ ],
+ "negative_prompt_tokens": 2829
+}
