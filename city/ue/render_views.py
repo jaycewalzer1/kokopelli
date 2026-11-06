@@ -42,6 +42,11 @@ VIEWS = {
     "commons_plaza": (470, 132, 1.7, 2, 205, 85),
     "parkway": (40, 18, 1.7, 2, 10, 80),
     "food_forest": (22, 250, 1.7, 2, 280, 80),
+    # added in the polish pass (no "final/" counterpart)
+    "canopy_raised": (132, 179.4, 19.8, -6, 0, 80),
+    "market_street": (462.5, 101, 1.7, 3, 268, 80),
+    "landscape_north": (300, -40, 45, -9, 270, 75),
+    "willow_bank": (556, 300, 2.0, 1, 200, 80),
 }
 
 

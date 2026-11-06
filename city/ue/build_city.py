@@ -39,6 +39,47 @@ COLORS = {
 }
 
 
+# Per-block facade/roof styles (fields read by SWCityBuilding as st_*). Each block gets its own timber tone,
+# wall finish, bay rhythm, balcony type, green walls and roof profile so the eight blocks don't read as clones.
+STYLES = {
+    # sage/cream/brass: cream lime render, timber galleries (Kampung Admiralty), pitched sedum+PV roofs
+    "fern": dict(st_timber=[204, 160, 108], st_core="render", st_render=[238, 226, 200], st_bay_cm=300, st_win=0.55, st_tall=True,
+                 st_balcony="gallery", st_green=0.0, st_roof="gable", st_fins="timber"),
+    # deep green/terracotta/linen: dark timber Bosco Verticale, deep staggered balconies, rooftop pavilions
+    "moss": dict(st_timber=[150, 106, 70], st_timber_dark=[104, 70, 46], st_core="timber", st_bay_cm=360, st_win=0.6,
+                 st_balcony="bosco", st_green=0.12, st_roof="pavilions", st_earth=[196, 112, 76]),
+    # white oak/pale gold/sky blue: pale timber, narrow bays, tall windows, sawtooth PV roofs
+    "birch": dict(st_timber=[226, 196, 152], st_timber_dark=[178, 140, 96], st_core="timber", st_bay_cm=260, st_win=0.7, st_tall=True,
+                  st_balcony="default", st_roof="sawtooth", st_fins="none"),
+    # indigo/copper/sand: WOHA-ish, sand render, copper fins, vertical gardens
+    "reed": dict(st_timber=[128, 92, 66], st_timber_dark=[86, 60, 44], st_core="render", st_render=[216, 196, 160], st_bay_cm=420,
+                 st_win=0.68, st_balcony="bosco", st_green=0.3, st_roof="pavilions", st_fins="copper"),
+    # rust/steel/clover: red rammed earth, deep small windows, sawtooth roofs
+    "clover": dict(st_timber=[182, 132, 90], st_core="earth", st_earth=[184, 104, 72], st_bay_cm=340, st_win=0.42,
+                   st_balcony="sparse", st_green=0.1, st_roof="sawtooth"),
+    # tomato/ochre/olive: ochre render, galleries, pitched roofs, shutters
+    "sorrel": dict(st_timber=[196, 146, 96], st_core="render", st_render=[226, 180, 112], st_bay_cm=320, st_win=0.5,
+                   st_balcony="gallery", st_roof="gable", st_shutters=True),
+    # slate/coral/white: white render, silvered timber, vertical gardens, pavilions
+    "heron": dict(st_timber=[178, 166, 150], st_timber_dark=[120, 110, 100], st_core="render", st_render=[244, 240, 230], st_bay_cm=300,
+                  st_win=0.6, st_tall=True, st_balcony="default", st_green=0.2, st_roof="pavilions", st_fins="none"),
+}
+
+
+def top_cut(floors, depth):
+    """Court-side / street-side setback of the top floor (mirrors SWCityBuilding's per-floor cuts), metres."""
+    court, street = 0.0, 0.0
+    if floors >= 6:
+        court, street = 6.0, 3.0
+    elif floors == 5:
+        court = 3.5
+    elif floors >= 3:
+        court = 3.0
+    if depth < 12:
+        court = min(court, depth * 0.2)
+    return court, street
+
+
 def rgb(name):
     return list(COLORS.get(name.lower().strip(), (180, 170, 150)))
 
@@ -122,8 +163,82 @@ class Plan:
                 out.append(side)
         return out
 
+    # ---- canopy walk geometry (mirrors SWCityBuilding) -----------------------------------------
+    def bar_frame(self, b):
+        """(along_x, cross_lo, cross_hi, court_minus) for a bar: cross axis is y for bars along x."""
+        x0, y0, x1, y1 = b["footprint_m"]
+        along_x = (x1 - x0) >= (y1 - y0)
+        st = self.street_sides(b["footprint_m"])
+        sm, sp = ("N", "S") if along_x else ("W", "E")
+        street_m, street_p = sm in st, sp in st
+        court_minus = street_p and not street_m  # C++: CourtSide 0 (v-) only when v+ is the street
+        lo, hi = (y0, y1) if along_x else (x0, x1)
+        return along_x, lo, hi, court_minus
+
+    def deck_line(self, b):
+        """Cross-axis world coordinate of the canopy-walk deck on this bar's roof, or None."""
+        if b.get("cell") not in self.walk_nodes or b.get("floors", 0) == 0 or b.get("type"):
+            return None
+        h = b["height_m"]
+        along_x, lo, hi, court_minus = self.bar_frame(b)
+        court, street = top_cut(b["floors"], hi - lo)
+        rlo = lo + (court if court_minus else street)
+        rhi = hi - (street if court_minus else court)
+        if abs(h - WALK_M) < 0.6:
+            return (rlo + rhi) / 2
+        if WALK_M - 10 < h < WALK_M - 0.6:
+            return rlo + 2.4 if court_minus else rhi - 2.4  # raised deck: keep to the court side, clear of landing towers
+        return None
+
+    def is_loggia(self, b):
+        return b.get("cell") in self.walk_nodes and b.get("floors", 0) >= 6 and abs((b["floors"] - 1) * b["height_m"] / b["floors"] - WALK_M) < 0.6
+
+    def plan_walk_joins(self):
+        """Spur points (deck_spurs), terrace gaps and deck lines that make the canopy walk continuous inside each block."""
+        self.spurs, self.tgaps = {}, {}
+        bars = [b for b in self.w["buildings"] if b.get("floors", 0) > 0 and not b.get("type") and b.get("cell") in self.walk_nodes]
+        for wb in bars:
+            along_x, lo, hi, _ = self.bar_frame(wb)
+            dl = self.deck_line(wb)
+            if along_x or dl is None:
+                continue
+            x0, y0, x1, y1 = wb["footprint_m"]
+            for nb in bars:
+                if nb is wb or nb.get("cell") != wb.get("cell"):
+                    continue
+                n_along_x = self.bar_frame(nb)[0]
+                nx0, ny0, nx1, ny1 = nb["footprint_m"]
+                if not n_along_x or not (nx0 - 0.5 <= dl <= nx1 + 0.5):
+                    continue
+                face = ny1 if abs(ny1 - y0) < 0.6 else (ny0 if abs(ny0 - y1) < 0.6 else None)
+                if face is None:
+                    continue
+                if self.deck_line(nb) is not None:
+                    self.spurs.setdefault(nb["id"], []).append(pt((dl, face)))
+                elif self.is_loggia(nb):
+                    self.tgaps.setdefault(nb["id"], []).append(pt((dl, face)))
+        for l in self.w["buildings"]:
+            if l.get("type") != "canopy_landing" or not l.get("on"):
+                continue
+            host = self.blds[l["on"]]
+            dl = self.deck_line(host)
+            if dl is None:
+                continue
+            along_x = self.bar_frame(host)[0]
+            lx0, ly0, lx1, ly1 = l["footprint_m"]
+            if along_x:
+                self.spurs.setdefault(host["id"], []).append(pt(((lx0 + lx1) / 2, ly0 if dl < ly0 else ly1)))
+            else:
+                self.spurs.setdefault(host["id"], []).append(pt((lx0 if dl < lx0 else lx1, (ly0 + ly1) / 2)))
+        for br in self.bridges:
+            for end in br["span_m"]:
+                for b in bars:
+                    if inside(end, b["footprint_m"], 0.5) and self.is_loggia(b):
+                        self.tgaps.setdefault(b["id"], []).append(pt(end))
+
     def plan_buildings(self):
         landings = [b for b in self.w["buildings"] if b.get("type") == "canopy_landing"]
+        self.plan_walk_joins()
         for b in self.w["buildings"]:
             fp = b["footprint_m"]
             bid = b["id"]
@@ -173,8 +288,23 @@ class Plan:
                 for end in br["span_m"]:
                     if inside(end, fp, 0.5) and abs(b["height_m"] - self.bridge_elev) < 0.6:
                         spurs.append(pt(end))
+            spurs += self.spurs.get(bid, [])
             if spurs:
                 base["deck_spurs_cm"] = spurs
+            if self.tgaps.get(bid):
+                base["terrace_gaps_cm"] = self.tgaps[bid]
+            dl = self.deck_line(b)
+            if dl is not None:
+                along_x = self.bar_frame(b)[0]
+                base["deck_line_cm"] = pt(((fp[0] + fp[2]) / 2, dl) if along_x else (dl, (fp[1] + fp[3]) / 2))
+            if kind == "bar":
+                st = dict(STYLES.get(b.get("cell"), {}))
+                # within a block: the 6-storey solar-glass bar keeps glass floors; the south bar keeps its earth base
+                if "solar glass" in base["materials"] and st.get("st_core") == "earth":
+                    st["st_core"] = "timber"
+                if bid.endswith("_south"):
+                    st.pop("st_roof", None)
+                base.update(st)
             keep = [{"rect_cm": rect(l["footprint_m"])} for l in landings if l.get("on") == bid]
             if keep:
                 base["keep_clear"] = keep
@@ -233,7 +363,7 @@ class Plan:
     def plan_ground(self):
         W, H = self.w["meta"]["size_m"]
         # meadow skirt round the plan ("the rest of the mile"), under everything else
-        slabs = [{"rect_cm": rect([-700, -700, W + 700, H + 700]), "z0": 0, "z1": 1, "mat": "Moss", "tint": [112, 140, 64]},
+        slabs = [{"rect_cm": rect([-2000, -2000, 2000, 2000]), "z0": 0, "z1": 0.6, "mat": "Moss", "tint": [104, 132, 62], "scale": 40},
                  {"rect_cm": rect([0, 0, W, H]), "z0": 0, "z1": 2, "mat": "Moss", "tint": [104, 142, 66]}]
         meadow = [132, 150, 74]
         slabs.append({"rect_cm": rect(self.edges["parkway"]["bounds_m"]), "z0": 0, "z1": 2.5, "mat": "Moss", "tint": [116, 152, 70]})
@@ -247,7 +377,27 @@ class Plan:
             {"rect_cm": rect(self.edges["parkway"]["bounds_m"]), "kind": "flowers", "count": 2600, "z": 2.5},
             {"rect_cm": rect(self.edges["creek_corridor"]["bounds_m"]), "kind": "flowers", "count": 2400, "z": 2.5},
         ]
-        self.add("SWCityGround", "CITY_ground", {"loc_cm": [0, 0, 0], "slabs": slabs, "scatter": scatter})
+        # macro variation: soft blotches of different meadow tints/scales over the big green areas
+        rnd = random.Random(77)
+        for area in (self.edges["parkway"]["bounds_m"], self.edges["creek_corridor"]["bounds_m"]):
+            ax0, ay0, ax1, ay1 = area
+            n = int((ax1 - ax0) * (ay1 - ay0) / 900)
+            for _ in range(n):
+                cx, cy = rnd.uniform(ax0, ax1), rnd.uniform(ay0, ay1)
+                r = rnd.uniform(6, 16)
+                poly = []
+                for k in range(10):
+                    t = 2 * math.pi * k / 10
+                    rr = r * rnd.uniform(0.6, 1.0)
+                    poly.append([min(max(cx + math.cos(t) * rr * 1.4, ax0), ax1), min(max(cy + math.sin(t) * rr, ay0), ay1)])
+                tint = rnd.choice([[150, 156, 76], [96, 136, 62], [124, 150, 70], [168, 160, 84], [88, 122, 60]])
+                slabs.append({"poly_cm": [pt(q) for q in poly], "z0": 0, "z1": round(rnd.uniform(2.6, 3.0), 2), "mat": rnd.choice(["Moss", "GreenRoof"]),
+                              "tint": tint, "scale": rnd.choice([10, 16, 24, 40])})
+        # the surrounding landscape is its own actor, kept out of Lumen's scene (it doubled the GI cost)
+        land_slabs = [slabs[0]]
+        land = self.plan_landscape(land_slabs)
+        self.add("SWCityGround", "CITY_ground", {"loc_cm": [0, 0, 0], "slabs": slabs[1:], "scatter": scatter})
+        self.add("SWCityGround", "CITY_landscape", {"loc_cm": [0, 0, 0], "slabs": land_slabs, "gi": False, **land})
         # edges as open spaces
         fs = self.edges["farm_south"]["bounds_m"]
         excl = [{"rect_cm": rect(b["footprint_m"])} for b in self.w["buildings"] if inside(((b["footprint_m"][0] + b["footprint_m"][2]) / 2, (b["footprint_m"][1] + b["footprint_m"][3]) / 2), fs)]
@@ -258,6 +408,185 @@ class Plan:
         fw2 = [fw[0], fw[1], fw[2], min(fw[3], hub[1] - 1)]
         self.add("SWCityOpenSpace", "CITY_space_farm_west", {"kind": "food_forest", "rect_cm": rect(fw2),
                                                              "loc_cm": [c((fw2[0] + fw2[2]) / 2), c((fw2[1] + fw2[3]) / 2), 0]})
+
+    # ---- the surrounding landscape --------------------------------------------------------------
+    def plan_landscape(self, slabs):
+        """Patchwork fields with tracks, hedgerows with copses, poplar windbreaks, orchards and a ring of backdrop hills
+        over the 4 km floor (world -2000..2000 m), all outside the city plan."""
+        rnd = random.Random(4242)
+        W, H = self.w["meta"]["size_m"]
+        hedges, trees = [], []
+        crops = [  # (weight, mat, tint, scale)
+            (30, "Moss", [108, 140, 62], 30), (12, "GreenRoof", [138, 152, 72], 60), (10, "GreenRoof", [196, 170, 92], 90),
+            (8, "GreenRoof", [214, 186, 104], 120), (8, "Path", [128, 98, 70], 30), (12, "GreenRoof", [96, 140, 58], 40),
+            (4, "GreenRoof", [150, 120, 170], 30), (6, "Moss", [84, 118, 54], 50), (10, "orchard", None, 0)]
+        total = sum(cr[0] for cr in crops)
+
+        def pick():
+            r = rnd.uniform(0, total)
+            for cr in crops:
+                r -= cr[0]
+                if r <= 0:
+                    return cr
+            return crops[0]
+
+        def hedge(pts):
+            # long cushions far out (instances are the cost), shadows only within ~1 km of the city
+            mx, my = (pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2
+            d = math.hypot(mx - W / 2, my - H / 2)
+            return {"pts": [pt(q) for q in pts], "h": round(rnd.uniform(250, 420)), "w": 380, "step": 1.6 if d < 700 else 3.0,
+                    "shadow": d < 750, "tint": rnd.choice([[60, 98, 46], [72, 110, 50], [54, 90, 44]])}
+
+        def keep_p(x, y):  # hedge density: full near the city, thinner far out (instances are the GPU cost)
+            return 0.38 if math.hypot(x - W / 2, y - H / 2) < 900 else 0.24
+
+        def copse_p(x, y):
+            return 0.018 if math.hypot(x - W / 2, y - H / 2) < 900 else 0.007
+
+        def near_city(x, y, pad):
+            return -pad < x < W + pad and -pad < y < H + pad
+
+        xs = [-1990.0]
+        while xs[-1] < 1990:
+            xs.append(xs[-1] + rnd.uniform(70, 170))
+        ys = [-1990.0]
+        while ys[-1] < 1990:
+            ys.append(ys[-1] + rnd.uniform(60, 150))
+        for i in range(len(xs) - 1):
+            for j in range(len(ys) - 1):
+                x0, x1, y0, y1 = xs[i] + 3, xs[i + 1] - 3, ys[j] + 3, ys[j + 1] - 3
+                # keep the city, its 25 m meadow apron and the parkway/farm edges clear
+                if x1 > -25 and x0 < W + 25 and y1 > -25 and y0 < H + 25:
+                    continue
+                crop = pick()
+                if crop[1] == "orchard":
+                    slabs.append({"rect_cm": rect([x0, y0, x1, y1]), "z0": 0, "z1": 0.9, "mat": "Moss", "tint": [118, 146, 66], "scale": 30})
+                    d = math.hypot((x0 + x1) / 2 - W / 2, (y0 + y1) / 2 - H / 2)
+                    if d < 1000:
+                        sp = rnd.choice(["apple", "persimmon", "fruit"]) if d < 600 else "fruit"
+                        step = 14.0 if d < 600 else 20.0
+                        yy = y0 + 4
+                        while yy < y1 - 3:
+                            xx = x0 + 4
+                            while xx < x1 - 3:
+                                trees.append([round(xx, 1), round(yy, 1), sp, round(rnd.uniform(0.9, 1.15), 2)])
+                                xx += step
+                            yy += step
+                    continue
+                slabs.append({"rect_cm": rect([x0, y0, x1, y1]), "z0": 0, "z1": round(rnd.uniform(0.8, 1.2), 2), "mat": crop[1], "tint": crop[2], "scale": crop[3]})
+        # hedgerows on some field edges, with copse trees standing in them; poplar windbreaks on a few
+        for i in range(len(xs)):
+            for j in range(len(ys) - 1):
+                x, y0, y1 = xs[i], ys[j], ys[j + 1]
+                if near_city(x, (y0 + y1) / 2, 30) or rnd.random() > keep_p(x, (y0 + y1) / 2):
+                    continue
+                hedges.append(hedge([(x, y0), (x, y1)]))
+                windbreak = rnd.random() < 0.12
+                cp = copse_p(x, (y0 + y1) / 2)
+                for t in range(int(y0) + 6, int(y1) - 4, 13 if windbreak else 1):
+                    if windbreak or rnd.random() < cp:
+                        trees.append([round(x + rnd.uniform(-1, 1), 1), float(t), "poplar" if windbreak else "copse", round(rnd.uniform(0.8, 1.3), 2)])
+        for j in range(len(ys)):
+            for i in range(len(xs) - 1):
+                y, x0, x1 = ys[j], xs[i], xs[i + 1]
+                if near_city((x0 + x1) / 2, y, 30) or rnd.random() > keep_p((x0 + x1) / 2, y):
+                    continue
+                hedges.append(hedge([(x0, y), (x1, y)]))
+                cp = copse_p((x0 + x1) / 2, y)
+                for t in range(int(x0) + 6, int(x1) - 4):
+                    if rnd.random() < cp:
+                        trees.append([float(t), round(y + rnd.uniform(-1, 1), 1), "copse", round(rnd.uniform(0.8, 1.3), 2)])
+        # woods: a few dense clumps
+        for _ in range(16):
+            while True:
+                cx, cy = rnd.uniform(-1800, 1800), rnd.uniform(-1800, 1800)
+                if not near_city(cx, cy, 150):
+                    break
+            r = rnd.uniform(40, 110)
+            for _ in range(int(r * r / 150)):
+                a, rr = rnd.uniform(0, 2 * math.pi), r * math.sqrt(rnd.random())
+                trees.append([round(cx + math.cos(a) * rr, 1), round(cy + math.sin(a) * rr, 1), rnd.choice(["copse", "copse", "copse", "cypress", "poplar"]), round(rnd.uniform(0.9, 1.4), 2)])
+        # backdrop hills: two rows round the floor edge (the floor ends at +-2 km), nearer row green, outer row higher
+        hills = []
+        for row, (dist, hmin, hmax, rmin, rmax, tint) in enumerate([(1950, 50, 130, 300, 560, [112, 142, 78]), (2450, 160, 380, 500, 900, [84, 110, 70])]):
+            n = 28 if row == 0 else 22
+            for k in range(n):
+                t = 2 * math.pi * (k + rnd.uniform(-0.3, 0.3)) / n
+                # square-ish ring hugging the floor edge
+                cx, cy = math.cos(t), math.sin(t)
+                m = max(abs(cx), abs(cy))
+                cx, cy = cx / m * dist, cy / m * dist
+                rx, ry = rnd.uniform(rmin, rmax), rnd.uniform(rmin, rmax)
+                hills.append({"c": pt((cx, cy)), "r": [c(rx), c(ry), c(rnd.uniform(hmin, hmax))], "mat": "Moss", "tint": tint, "scale": 200})
+        self.surround_trees = trees
+        self.landscape_counts = {"fields": sum(1 for s_ in slabs if s_.get("z1", 0) <= 1.2 and s_.get("scale", 0) >= 30), "hedges": len(hedges), "trees": len(trees), "hills": len(hills)}
+        return {"hedges": hedges, "hills": hills}
+
+    # ---- commons plaza: market street, shade sails, pool, planter benches, bikes, kiosks, flower beds ----------
+    def plan_plaza(self):
+        rnd = random.Random(515)
+        cm_ = self.cells["commons"]["bounds_m"]
+        solid = [b["footprint_m"] for b in self.w["buildings"] if b.get("cell") == "commons" and b["id"] not in ("chess_garden",)]
+        lawns = ([458, 140, 482, 186], [385, 102, 432, 136], [478, 104, 525, 126])
+        pal = [rgb(n) for n in self.palettes.get("commons", [])] + [[236, 122, 100], [226, 200, 120], [96, 160, 140], [240, 232, 214]]
+        props, taken = [], []
+
+        def free(p, r, on_lawn_ok=False):
+            if not inside(p, cm_, -r):
+                return False
+            if any(inside(p, q, r + 1.0) for q in solid):
+                return False
+            if not on_lawn_ok and any(inside(p, q, r * 0.5) for q in lawns):
+                return False
+            return all(math.hypot(p[0] - q[0], p[1] - q[1]) > r + qr for (q, qr) in taken)
+
+        def put(prop, p, r):
+            prop["p"] = pt(p)
+            props.append(prop)
+            taken.append((p, r))
+            self.obstacles.append((p[0], p[1], r + 1.5))
+
+        # market street between the market hall and the amphitheater: two rows of stalls under festoon lights
+        mx0, mx1 = 455.0, 470.0
+        for k, y in enumerate(range(49, 98, 7)):
+            put({"t": "stall", "yaw": 0, "c": pal[k % len(pal)]}, (mx0 + 3.2, y + 0.5), 1.6)
+            put({"t": "stall", "yaw": 180, "c": pal[(k + 2) % len(pal)]}, (mx1 - 3.2, y + 3.5), 1.6)
+        for y in range(52, 98, 12):
+            props.append({"t": "lights", "p": pt((mx0 + 0.8, y)), "q": pt((mx1 - 0.8, y + 4))})
+        # shade sails over the chess garden
+        for k, p in enumerate(((444, 113), (466, 113), (455, 128))):
+            props.append({"t": "sail", "p": pt(p), "yaw": 15 * k, "size": 1000, "c": [[240, 232, 214], [236, 122, 100], [226, 200, 120]][k]})
+        # reflecting pool with jets on the east lawn
+        props.append({"t": "pool", "p": pt((501, 115)), "rx": 1500, "ry": 380})
+        taken.append(((501, 115), 9.0))
+        self.obstacles.append((501, 115, 17))
+        # flower beds edging the lawn islands
+        for (x0, y0, x1, y1) in lawns:
+            for _ in range(3):
+                p = (rnd.uniform(x0 + 3, x1 - 3), rnd.choice([y0 + 1.5, y1 - 1.5]))
+                if free(p, 2.5, True):
+                    put({"t": "flowerbed", "yaw": 0, "lx": 500, "ly": 160}, p, 2.5)
+        # planter benches, cafe tables, kiosks, bike parking on the paving that's left
+        wants = [("planter_bench", 2.6, 8), ("tables", 3.2, 4), ("kiosk", 2.4, 3), ("bikes", 2.6, 4)]
+        for t, r, n in wants:
+            placed = 0
+            for _ in range(4000):
+                if placed >= n:
+                    break
+                p = (rnd.uniform(cm_[0] + 2, cm_[2] - 2), rnd.uniform(cm_[1] + 2, cm_[3] - 2))
+                if not free(p, r):
+                    continue
+                prop = {"t": t, "yaw": rnd.choice([0, 90, 180, 270])}
+                if t == "planter_bench":
+                    prop.update(size=300, tree=rnd.choice(["maple", "jacaranda", "flowering cherry", "birch"]), scale=0.9)
+                if t == "tables":
+                    prop["c"] = pal[placed % len(pal)]
+                if t == "bikes":
+                    prop["n"] = 6
+                put(prop, p, r)
+                placed += 1
+        self.add("SWCityOpenSpace", "CITY_space_commons_plaza", {"kind": "plaza", "rect_cm": rect(cm_), "props": props,
+                                                                  "loc_cm": [c((cm_[0] + cm_[2]) / 2), c((cm_[1] + cm_[3]) / 2), 0]})
 
     # ---- furniture + places --------------------------------------------------------------------
     def facing_into_lane(self, p):
@@ -371,7 +700,9 @@ class Plan:
 
     def plan_trees(self):
         rnd = random.Random(20261105)
-        species_by_lane = {"lane_x1": ["oak"], "lane_x2": ["maple"], "lane_y1": ["flowering cherry"], "lane_y2": ["maple", "flowering cherry", "oak"]}
+        species_by_lane = {"lane_x1": ["oak", "oak", "maple"], "lane_x2": ["jacaranda", "maple"], "lane_y1": ["flowering cherry"],
+                           "lane_y2": ["maple", "flowering cherry", "oak"], "lane_north_edge": ["poplar", "birch"],
+                           "lane_east_edge": ["birch", "poplar"], "lane_south_edge": ["apple", "fruit"], "lane_west_edge": ["birch"]}
         street = []
         for l in self.lanes:
             x0, y0, x1, y1 = l["rect_m"]
@@ -410,10 +741,10 @@ class Plan:
 
         fw = self.edges["farm_west"]["bounds_m"]
         hub = self.blds["mobility_hub"]["footprint_m"]
-        food = scatter([fw[0] + 1, fw[1] + 1, fw[2] - 2, hub[1] - 2], 7.0, 0.85, ["fig", "persimmon", "pawpaw", "chestnut", "fruit"], extra=[((fw[0] + fw[2]) / 2, y, 2.5) for y in range(34, 600, 3)])
+        food = scatter([fw[0] + 1, fw[1] + 1, fw[2] - 2, hub[1] - 2], 7.0, 0.85, ["fig", "persimmon", "pawpaw", "chestnut", "fruit", "apple", "bamboo"], extra=[((fw[0] + fw[2]) / 2, y, 2.5) for y in range(34, 600, 3)])
         self.add_trees("CITY_trees_food_forest", food)
         pk = self.edges["parkway"]["bounds_m"]
-        self.add_trees("CITY_trees_parkway", scatter([pk[0] + 2, pk[1] + 2, pk[2] - 2, pk[3] - 6], 13.0, 0.55, ["oak", "maple", "flowering cherry", "birch", "jacaranda"], (0.9, 1.25)))
+        self.add_trees("CITY_trees_parkway", scatter([pk[0] + 2, pk[1] + 2, pk[2] - 2, pk[3] - 6], 13.0, 0.55, ["oak", "maple", "flowering cherry", "birch", "jacaranda", "poplar", "cypress", "shade"], (0.9, 1.25)))
         creek = []
         if self.creek:
             cl = self.creek["centerline_m"]
@@ -431,7 +762,7 @@ class Plan:
                                 creek.append([round(p[0], 2), round(p[1], 2), "willow", round(rnd.uniform(0.85, 1.2), 2)])
                     t += 11
         cc = self.edges["creek_corridor"]["bounds_m"]
-        creek += scatter([cc[0] + 3, cc[1] + 2, cc[2] - 1, cc[3] - 2], 16.0, 0.35, ["birch", "oak", "shade"], (0.8, 1.1),
+        creek += scatter([cc[0] + 3, cc[1] + 2, cc[2] - 1, cc[3] - 2], 16.0, 0.35, ["birch", "oak", "shade", "poplar", "bamboo"], (0.8, 1.1),
                          extra=[(q[0], q[1], 7) for q in creek])
         self.add_trees("CITY_trees_creek", creek)
 
@@ -450,7 +781,12 @@ class Plan:
                         continue
                     if y not in (y0 + 6, y1 - 6) and rnd.random() < 0.55:
                         continue
-                    out.append([round(p[0], 2), round(p[1], 2), rnd.choice(["fruit", "fruit", "persimmon", "fig", "flowering cherry"]), round(rnd.uniform(0.85, 1.15), 2)])
+                    # orchard rows: one fruit per row line so rows read as an orchard
+                    row_sp = ["apple", "persimmon", "fruit", "apple", "fig", "flowering cherry"][int(y) % 6]
+                    out.append([round(p[0], 2), round(p[1], 2), row_sp, round(rnd.uniform(0.85, 1.15), 2)])
+            for (cx, cy) in ((x0 + 4, y0 + 4), (x1 - 4, y0 + 4), (x0 + 4, y1 - 4), (x1 - 4, y1 - 4)):
+                if abs(cx - gx) > 6:
+                    out.append([round(cx, 2), round(cy, 2), "bamboo", round(rnd.uniform(0.8, 1.0), 2)])
             self.add_trees(f"CITY_trees_{b['id']}", out)
 
         # Village Green: big shade trees round the lawn; the Commons: scattered trees between buildings
@@ -482,7 +818,7 @@ class Plan:
             if any(math.hypot(p[0] - q[0], p[1] - q[1]) < 8 for q in commons):
                 continue
             if self.tree_ok(p):
-                commons.append([round(p[0], 2), round(p[1], 2), rnd.choice(["jacaranda", "flowering cherry", "oak", "maple"]), round(rnd.uniform(0.85, 1.1), 2)])
+                commons.append([round(p[0], 2), round(p[1], 2), rnd.choice(["jacaranda", "flowering cherry", "oak", "maple", "bamboo", "willow"]), round(rnd.uniform(0.85, 1.1), 2)])
         # low planting islands between the commons buildings
         for _ in range(900):
             p = (rnd.uniform(cmb[0] + 2, cmb[2] - 2), rnd.uniform(cmb[1] + 2, cmb[3] - 2))
@@ -494,21 +830,23 @@ class Plan:
                 commons.append([round(p[0], 2), round(p[1], 2), "shrub", round(rnd.uniform(0.7, 1.4), 2)])
         self.add_trees("CITY_trees_commons", commons)
 
-        # distant woods round the plan so aerials don't end at the edge of the map
-        surround = []
-        for _ in range(1400):
-            p = (rnd.uniform(-450, 1050), rnd.uniform(-450, 1050))
-            if -15 < p[0] < 615 and -15 < p[1] < 615:
-                continue
-            # clumped: keep with a probability that varies smoothly in space
-            if (math.sin(p[0] / 37.0) + math.cos(p[1] / 29.0) + math.sin((p[0] + p[1]) / 53.0)) < 0.2:
-                continue
-            surround.append([round(p[0], 1), round(p[1], 1), rnd.choice(["oak", "oak", "maple", "chestnut", "birch", "willow" if p[0] > 600 else "shade"]), round(rnd.uniform(0.9, 1.4), 2)])
-        self.add_trees("CITY_trees_surround", surround)
+        # the surrounding landscape's trees (copses on hedgerows, woods, orchards, poplar windbreaks) come from plan_landscape
+        # near ring casts shadows; the far landscape doesn't (VSM cost), and it is read from the air anyway
+        near, far = [], []
+        for t in self.surround_trees:
+            (near if math.hypot(t[0] - 300, t[1] - 300) < 750 else far).append(t)
+        self.add_trees("CITY_trees_surround", near, gi=False)
+        self.add_trees("CITY_trees_far", far, shadow=False)
 
-    def add_trees(self, name, trees):
+    def add_trees(self, name, trees, shadow=True, gi=True):
         if trees:
-            self.add("SWCityTrees", name, {"loc_cm": [0, 0, 0], "trees": [[c(t[0]), c(t[1]), t[2], t[3]] for t in trees]})
+            cfg = {"loc_cm": [0, 0, 0], "trees": [[c(t[0]), c(t[1]), t[2], t[3]] for t in trees]}
+            if not gi:
+                cfg["gi"] = False
+            if not shadow:
+                cfg["shadow"] = False
+                cfg["gi"] = False
+            self.add("SWCityTrees", name, cfg)
 
     def build(self):
         self.plan_ground()
@@ -519,6 +857,7 @@ class Plan:
         self.plan_bridges()
         self.plan_furniture()
         self.plan_places()
+        self.plan_plaza()
         self.plan_trees()
         return self.actors
 
