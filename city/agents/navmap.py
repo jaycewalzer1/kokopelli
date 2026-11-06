@@ -56,6 +56,7 @@ class NavMap:
         boardwalk = next((p["polyline_m"] for p in self.w["paths"] if p["id"] == "creek_boardwalk"), [])
 
         self.free = bytearray(self.n * self.n)
+        self.solid = bytearray(self.n * self.n)  # walls only: water stops feet, not eyes
         for j in range(self.n):
             for i in range(self.n):
                 p = ((i + 0.5) * CELL_M, (j + 0.5) * CELL_M)
@@ -69,6 +70,7 @@ class NavMap:
                                 abs(p[0] - gx) <= PASSAGE_HALF_M - CLEARANCE_M if along_x else abs(p[1] - gy) <= PASSAGE_HALF_M - CLEARANCE_M):
                             blocked = False
                             break
+                self.solid[j * self.n + i] = 1 if blocked and any(_inside(p, m_) for m_ in masses) else 0
                 if not blocked and creek:
                     line = creek["centerline_m"]
                     near = min(_seg_dist(p, line[k], line[k + 1]) for k in range(len(line) - 1))
@@ -152,6 +154,16 @@ class NavMap:
             out.append(cells[far])
             k = far
         return out[1:]
+
+    def line_of_sight(self, a, b):
+        """True if no building wall stands between two points (metres). Ground level only."""
+        ca, cb = self.cell(a), self.cell(b)
+        n = max(1, int(math.dist(ca, cb) * 2))
+        for k in range(1, n):
+            c = (round(ca[0] + (cb[0] - ca[0]) * k / n), round(ca[1] + (cb[1] - ca[1]) * k / n))
+            if c not in (ca, cb) and self.solid[c[1] * self.n + c[0]]:
+                return False
+        return True
 
     def length(self, start, waypoints):
         pts = [start, *waypoints]

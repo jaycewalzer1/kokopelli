@@ -57,6 +57,9 @@ from runtime.adapters.simworld import BOX_ASSET, NpcSpec, SimWorldConfig, SimWor
 STEP_S = 15.0
 HEAR_M = 10.0
 SEE_PEOPLE_M = 40.0
+SEE_THINGS_M = 20.0
+SENSE_M = 6.0  # close enough to notice without looking (footsteps, peripheral vision)
+FOV_HALF_DEG = 60.0
 NEAR_PLACES = 6
 CHASE_M = 2.5
 
@@ -94,6 +97,17 @@ def bearing(from_xy, yaw_deg, to_xy):
         if abs(d) <= limit:
             return word
     return "behind you"
+
+
+def rough(d):
+    """Distances the way people estimate them."""
+    if d < 4:
+        return "right here"
+    if d < 20:
+        return f"a few metres ({5 * round(d / 5):.0f} m)" if d >= 8 else "a few steps away"
+    if d < 100:
+        return f"about {10 * round(d / 10):.0f} m"
+    return f"about {50 * round(d / 50):.0f} m"
 
 
 def compass(from_xy, to_xy):
@@ -153,7 +167,7 @@ class Cast:
             if place["name"].lower() in low or place_id.replace("_", " ") in low:
                 door = self.nav.doors[place_id]
                 d = math.dist(listener_xy, door)
-                parts.append(f"{place['name']}? That's about {d:.0f} m {compass(listener_xy, door)} of here." if d > 15
+                parts.append(f"{place['name']}? That's {rough(d)} {compass(listener_xy, door)} of here." if d > 15
                              else f"{place['name']}? You're standing at it!")
                 break
         if not parts:
@@ -212,6 +226,7 @@ class Life:
         self.blocked_count = 0
         self.new_leg = False
         self.approaching = None
+        self.running, self.last_thought, self.last_action = True, "", None
         self.vision = CosmosVision(self.out) if args.vision == "cosmos" else UnrealVision()
         bakery = self.nav.doors["fern_bakery"]
         self.objects = [SpawnSpec(id="bread_box", kind="object", asset=BOX_ASSET,
@@ -235,6 +250,9 @@ class Life:
 
     # the watchable view: camera 0 is the game window
     def follow(self, state):
+        """Camera 0 is the game window, i.e. whoever is at the keyboard. Only steer it when asked (--follow)."""
+        if not self.args.follow:
+            return
         a = state.agent.pose
         yaw = math.radians(a.rotation.yaw)
         x, y = a.location.x - 700 * math.cos(yaw), a.location.y - 700 * math.sin(yaw)
@@ -244,31 +262,67 @@ class Life:
         except Exception as e:  # the view is a nicety; never stop a life for it
             print(f"(camera follow failed: {e})")
 
+    def snapshot(self, state, frame, step):
+        """out/city_agents/<run>/live.json, rewritten atomically every step, for the dev panel's live view."""
+        path = self.out / "live.json"
+        snap = json.loads(path.read_text()) if path.exists() else {}
+        snap.update(run=self.out.name, updated=datetime.now().isoformat(timespec="seconds"),
+                    running=getattr(self, "running", True), who=self.args.who, situation=self.args.situation,
+                    vision=self.vision.name, last_thought=self.last_thought, last_action=self.last_action,
+                    last_result=self.last, heard=self.heard[-4:], diary=self.diary[-8:])
+        if state is not None:
+            me = m(state.agent.pose.location)
+            shutil.copy(frame, self.out / "frames" / "live.tmp.png")
+            (self.out / "frames" / "live.tmp.png").replace(self.out / "frames" / "live.png")
+            snap.update(step=step, clock=state.time_of_day.clock, frame="frames/live.png",
+                        agent={"x_m": round(me[0], 2), "y_m": round(me[1], 2), "yaw": round(state.agent.pose.rotation.yaw, 1),
+                               "carrying": state.agent.held_object, "place": self.nav.place_at(me)},
+                        npcs=[{"id": n.id, "name": self.cast.people[n.id]["name"], "role": self.cast.people[n.id]["role"],
+                               "x_m": round(m(n.pose.location)[0], 2), "y_m": round(m(n.pose.location)[1], 2)} for n in state.npcs],
+                        objects=[{"id": o.id, "x_m": round(m(o.pose.location)[0], 2), "y_m": round(m(o.pose.location)[1], 2),
+                                  "held_by": o.held_by} for o in state.objects if o.pose],
+                        route=[[round(x, 1), round(y, 1)] for x, y in self.route], goal=self.goal_place)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(snap, indent=1))
+        tmp.replace(path)
+
+    def sees(self, me, yaw, p, max_m):
+        """What a person standing here would notice: close enough to sense (sound, peripheral vision),
+        or in front of them, within range, and not behind a building."""
+        d = math.dist(me, p)
+        if d <= SENSE_M:
+            return True
+        ahead = abs((math.degrees(math.atan2(p[1] - me[1], p[0] - me[0])) - yaw + 540) % 360 - 180) <= FOV_HALF_DEG
+        return ahead and d <= max_m and self.nav.line_of_sight(me, p)
+
     def describe(self, state):
+        """The situation in a person's terms: no coordinates, rough distances, only what is in view.
+        Where the places are counts as knowledge: Mara has lived here for years."""
         me, yaw = m(state.agent.pose.location), state.agent.pose.rotation.yaw
         here = self.nav.place_at(me)
-        lines = [f"Time: {state.time_of_day.clock}.",
-                 f"You are {'at ' + self.nav.places[here]['name'] if here else 'out in the streets'} "
-                 f"(x={me[0]:.0f} m east, y={me[1]:.0f} m south), {state.agent.posture}, "
-                 f"carrying {state.agent.held_object or 'nothing'}."]
+        near = self.nav.place_at(me, 40.0)
+        where = (f"at {self.nav.places[here]['name']}" if here else
+                 f"out in the streets near {self.nav.places[near]['name']}" if near else "out in the streets")
+        lines = [f"Time: {state.time_of_day.clock[:5]}.",
+                 f"You are {where}, {state.agent.posture}, carrying {state.agent.held_object or 'nothing'}."]
         if self.route:
             lines.append(f"You are walking to {self.nav.places[self.goal_place]['name']}, "
-                         f"{self.nav.length(me, self.route):.0f} m to go.")
+                         f"{rough(self.nav.length(me, self.route))} to go.")
         people = []
         for npc in state.npcs:
-            p = self.cast.people[npc.id]
-            d = math.dist(me, m(npc.pose.location))
-            if d <= SEE_PEOPLE_M:
-                people.append(f"- {npc.id}: {p['name']}, {p['role']}, {d:.0f} m {bearing(me, yaw, m(npc.pose.location))}"
+            p, at = self.cast.people[npc.id], m(npc.pose.location)
+            if self.sees(me, yaw, at, SEE_PEOPLE_M):
+                d = math.dist(me, at)
+                people.append(f"- {npc.id}: {p['name']}, {p['role']}, {rough(d)} {bearing(me, yaw, at)}"
                               + (" (close enough to talk)" if d <= HEAR_M else ""))
-        lines.append("People you can see:\n" + ("\n".join(people) if people else "- nobody close by"))
-        things = [f"- {o.id}: {math.dist(me, m(o.pose.location)):.0f} m {bearing(me, yaw, m(o.pose.location))}"
-                  for o in state.objects if o.pose and not o.held_by and math.dist(me, m(o.pose.location)) < 25]
+        lines.append("People you notice:\n" + ("\n".join(people) if people else "- nobody"))
+        things = [f"- {o.id}: {rough(math.dist(me, m(o.pose.location)))} {bearing(me, yaw, m(o.pose.location))}"
+                  for o in state.objects if o.pose and not o.held_by and self.sees(me, yaw, m(o.pose.location), SEE_THINGS_M)]
         if things:
-            lines.append("Things nearby:\n" + "\n".join(things))
+            lines.append("Things you notice:\n" + "\n".join(things))
         ranked = sorted(self.nav.places.items(), key=lambda kv: math.dist(me, self.nav.doors[kv[0]]))
-        lines.append("Places (nearest first):\n" + "\n".join(
-            f"- {pid}: {p['name']} ({p['category'].replace('_', ' ')}), {math.dist(me, self.nav.doors[pid]):.0f} m "
+        lines.append("Places you know in the village (nearest first):\n" + "\n".join(
+            f"- {pid}: {p['name']} ({p['category'].replace('_', ' ')}), {rough(math.dist(me, self.nav.doors[pid]))} "
             f"{compass(me, self.nav.doors[pid])}" + (f" — {p['vibe']}" if k < NEAR_PLACES and p.get('vibe') else "")
             for k, (pid, p) in enumerate(ranked)))
         return "\n".join(lines)
@@ -360,6 +414,7 @@ class Life:
             cap = sim.reset(seed=0)
             state, frame = cap.state, cap.renders["rgb"].path
             self.follow(state)
+            self.snapshot(state, frame, 0)
             decide = True
             for step in range(self.args.steps):
                 self.sim_t = state.sim_time_s
@@ -368,6 +423,7 @@ class Life:
                     shutil.copy(frame, self.out / "frames" / f"{step:04d}.png")
                     if diary:
                         self.diary.append(f"[{state.time_of_day.clock}] {diary}")
+                    self.last_thought, self.last_action = thought, act
                     self.say(f"\n### {state.time_of_day.clock} — step {step}\n![](frames/{step:04d}.png)\n\n"
                              f"*{thought}*\n\n**→** `{json.dumps(act)}`")
                     self.heard = []
@@ -385,6 +441,9 @@ class Life:
                 self.follow(state)
                 self.new_leg = False
                 decide = self.after(act, sim_action, result, state)
+                self.snapshot(state, frame, step + 1)
+        self.running = False
+        self.snapshot(None, None, None)
         self.say(f"\n---\nRun folder: {self.out}")
 
     def after(self, act, sim_action, result, state):
@@ -458,10 +517,20 @@ def main():
     ap.add_argument("--situation", default=DEFAULT_SITUATION)
     ap.add_argument("--clock", default="14:00")
     ap.add_argument("--speed", type=float, default=1.6, help="walking speed, m/s")
+    ap.add_argument("--follow", action="store_true", help="steer the game window's camera behind the agent each step")
     ap.add_argument("--vision", choices=["unreal", "cosmos"], default="unreal")
     ap.add_argument("--weights", default=str(ROOT / "models" / "Qwen3-VL-8B-Instruct-4bit"),
                     help="Qwen weights folder; the full model needs ~18 GB")
-    Life(ap.parse_args()).run()
+    life = Life(ap.parse_args())
+    try:
+        life.run()
+    except Exception:
+        # Never got a first frame (e.g. the server's one connection was taken): don't leave an empty run behind.
+        if not (life.out / "live.json").exists():
+            life.events.close()
+            life.transcript.close()
+            shutil.rmtree(life.out, ignore_errors=True)
+        raise
 
 
 if __name__ == "__main__":
