@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
-# Kill any running SimWorld game, launch editor-game, wait until SimCV accepts connections.
-#   scripts/relaunch.sh [timeout_s]
+# Kill the SimWorld game of THIS project on THIS port (other agents' instances on other ports or
+# other project copies are left alone), launch editor-game, wait until SimCV accepts connections.
+#   CVPORT=9001 scripts/relaunch.sh [timeout_s]
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PORT="${CVPORT:-9000}"
-pkill -f "MacOS/UnrealEditor .*SimWorld.uproject" && sleep 2
+# run.sh passes "-cvport=$PORT" after the project path; match both so only our own instance dies.
+MATCH="MacOS/UnrealEditor $ROOT/SimWorld.uproject .*-cvport=$PORT( |\$)"
+if pkill -f "$MATCH"; then
+	for ((k = 0; k < 30; k++)); do pgrep -f "$MATCH" >/dev/null || break; sleep 1; done
+fi
 mkdir -p "$ROOT/Saved"
-(cd "$ROOT" && CVPORT=$PORT nohup scripts/run.sh editor-game > "$ROOT/Saved/run.out" 2>&1 &)
+(cd "$ROOT" && CVPORT=$PORT nohup scripts/run.sh editor-game > "$ROOT/Saved/run-$PORT.out" 2>&1 &)
 sleep 3
-PID=$(pgrep -f "MacOS/UnrealEditor $ROOT/SimWorld.uproject" | head -1)
+PID=$(pgrep -f "$MATCH" | head -1)
 for ((i = 0; i < ${1:-600}; i++)); do
 	if nc -z 127.0.0.1 "$PORT" 2>/dev/null; then echo "ready pid=$PID after ${i}s"; exit 0; fi
 	if [[ -z "$PID" ]] || ! kill -0 "$PID" 2>/dev/null; then

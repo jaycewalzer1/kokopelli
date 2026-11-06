@@ -22,6 +22,11 @@ public class SimWorld : ModuleRules
 			// Cameras (USimCVCameraComponent), settings, and exact-key vbp routes registered on its router.
 			"SimCV",
 			"Json",
+			// City (docs/CITY.md): runtime static meshes + frame timing
+			"MeshDescription",
+			"StaticMeshDescription",
+			"RenderCore",
+			"RHI",
 		});
 	}
 }
