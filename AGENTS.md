@@ -68,3 +68,10 @@ Add a short entry for what you own and what you're touching. Update it when your
 - **Status:** Testing on the Mac. `world_filter.py` adds edge control to Cosmos3-Nano without editing the runner; not yet connected to `runtime/`.
 - **Owns:** `edges.py`, `world_filter.py`, `filter_video` in `world_model.py`, `tests/test_edges.py`, `tests/test_world_filter.py`, `out/edge_filter/`.
 - **Runs:** through the GPU queue as `edge_filter_*`.
+
+## Watch the agent view (working tree on `main`, uncommitted)
+
+- **Status:** The dev panel's `/city-live` page: pick a city agent run, see its first-person frame, what it's doing and thinking, a top-down map with the agent, people, things and route, and the decision log. A live run is polled; a finished one is replayed decision by decision. Read-only.
+- **Owns:** `life/city_live.py`, `life/static/city-live.*`, `life/static/city-draw.js`, `tests/test_life_city_live.py`.
+- **Reads only:** `out/city_agents/` (written by `city/agents/live.py`, which it never changes), `city/world.json` via `/api/city`.
+- **Touched:** `life/panel.py` (the `/city-live` page, `/api/city-live/runs`, `/api/city-live/run`, `/api/city-live/frame`); a "Watch the agent" link in every page's sidebar; `life/static/city-plan.js` now imports its drawing from `city-draw.js` instead of holding it, with the moodboard plan unchanged. The live page reuses the `#plan-svg` styles in `moodboard.css` without editing them.
