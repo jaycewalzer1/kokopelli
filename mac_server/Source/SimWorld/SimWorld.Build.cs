@@ -27,6 +27,7 @@ public class SimWorld : ModuleRules
 			"StaticMeshDescription",
 			"RenderCore",
 			"RHI",
+			"InputCore", // EKeys for SWPlayerController's fly/walk keys
 		});
 
 		if (Target.Platform == UnrealTargetPlatform.Mac)

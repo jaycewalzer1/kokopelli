@@ -11,7 +11,8 @@
  * builds the city with generate_world.
  *
  * The player pawn is a spectator: camera 0 follows it, and it collides with neither characters
- * nor vehicles, so it never pushes the simulation around.
+ * nor vehicles, so it never pushes the simulation around. ASWPlayerController adds fly/walk/watch
+ * keys for the person at the window (F switches to a walking body that also ignores the simulated people).
  */
 UCLASS()
 class SIMWORLD_API ASWGameMode : public AGameModeBase

@@ -45,6 +45,9 @@ mkdir -p "$LOG_DIR"
 LOG="$LOG_DIR/simworld-$MODE-$(date +%Y%m%d-%H%M%S).log"
 
 ARGS=(-windowed -ResX="$RES_X" -ResY="$RES_Y" -cvport="$PORT" -log -ABSLOG="$LOG" -nosplash)
+# UE 5.8 crash workaround (see [SystemSettings] in Config/DefaultEngine.ini); repeated here so builds
+# packaged before that setting existed get it too.
+ARGS+=("-ini:Engine:[SystemSettings]:r.SceneCulling.Async.Update=0")
 [[ -n "${CVBIND:-}" ]] && ARGS+=(-cvbind="$CVBIND")
 
 case "$MODE" in

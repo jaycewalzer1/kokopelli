@@ -3,13 +3,15 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerStart.h"
-#include "GameFramework/SpectatorPawn.h"
+#include "SWPlayerController.h"
 #include "SWCommon.h"
 #include "SWEnvironment.h"
 
 ASWGameMode::ASWGameMode()
 {
-	DefaultPawnClass = ASpectatorPawn::StaticClass();
+	DefaultPawnClass = ASWSpectator::StaticClass();
+	PlayerControllerClass = ASWPlayerController::StaticClass();
+	HUDClass = ASWHUD::StaticClass();
 }
 
 void ASWGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
