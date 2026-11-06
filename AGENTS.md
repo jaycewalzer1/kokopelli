@@ -75,3 +75,9 @@ Add a short entry for what you own and what you're touching. Update it when your
 - **Owns:** `life/city_live.py`, `life/static/city-live.*`, `life/static/city-draw.js`, `tests/test_life_city_live.py`.
 - **Reads only:** `out/city_agents/` (written by `city/agents/live.py`, which it never changes), `city/world.json` via `/api/city`.
 - **Touched:** `life/panel.py` (the `/city-live` page, `/api/city-live/runs`, `/api/city-live/run`, `/api/city-live/frame`); a "Watch the agent" link in every page's sidebar; `life/static/city-plan.js` now imports its drawing from `city-draw.js` instead of holding it, with the moodboard plan unchanged. The live page reuses the `#plan-svg` styles in `moodboard.css` without editing them.
+
+## Sim-to-real filter test, and the model runs page (working tree on `main`, uncommitted)
+
+- **Status:** The 10-second SimWorld clip is recorded in `out/filter_test/test_clip/` (rgb, depth npy, segmentation, poses, 30 fps). The three Mac filter runs (Cosmos3-Nano MLX on sim depth, SD1.5 DMD + depth ControlNet on sim depth, the same on DepthAnythingV2) wait on weight downloads and the GPU queue.
+- **Owns:** `filter_test/`, `out/filter_test/`. The dev panel's runs page is now "Model runs" (still `/worlds`): type tabs from `world_runs.TYPES`, group by source or type, sort, and a Sim-to-real test group. Touched `life/world_runs.py`, `life/static/worlds.*`, `tests/test_life_world_runs.py`, and the sidebar label on every page.
+- **Runs:** captures connect to the packaged SimWorld server on 9001 (one client only; ask the simcity session first), with no NPCs and `StopAgent` before closing. Model runs go through the GPU queue.
