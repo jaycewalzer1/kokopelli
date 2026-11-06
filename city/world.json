@@ -1,0 +1,4005 @@
+{
+  "meta": {
+    "name": "Garden Village + Commons",
+    "version": "0.5-world-only",
+    "size_m": [
+      600,
+      600
+    ],
+    "coordinate_system": "origin at NW corner, x east, y south, meters",
+    "ground_elevation_m": 0,
+    "default_lighting": {
+      "time": "late afternoon",
+      "sun_from": "southwest",
+      "season": "late spring"
+    },
+    "notes": "Static world structure only. No agents, schedules, or events.",
+    "changes": [
+      "0.5: canopy walk and sky bridges at 17.5 m (level-5 roof) with five landing towers; mobility hub filed under farm_west; creek boardwalk bends around the swim pond; edge lanes widened from 5 to 6 m"
+    ]
+  },
+  "aesthetic": {
+    "style": "Solarpunk organic-futurist: mass timber, rammed earth, and glass solar skin, softened by plants everywhere",
+    "materials": [
+      "cross-laminated timber",
+      "rammed earth base walls in ochre and rose",
+      "tinted building-integrated solar glass",
+      "copper and brass trim that patinas green",
+      "permeable stone and moss lanes",
+      "woven bamboo shading"
+    ],
+    "signature_features": [
+      "Canopy walk: a continuous rooftop path at level 5 linking every block with sky bridges, rooftop greenhouses, and hammock decks",
+      "Living facades: vertical gardens and climbing jasmine on every south wall",
+      "Kinetic shading: bamboo louvers that track the sun and cast moving patterns on the lanes",
+      "Lantern lighting: warm low-glare path lights at knee height, dark sky above so the stars stay visible",
+      "Rotating murals: each block wall gets a new mural every season by an artist-in-residence",
+      "Water everywhere you can hear it: runnels in the lanes feed the creek"
+    ],
+    "block_palettes": {
+      "fern": [
+        "sage",
+        "cream",
+        "brass"
+      ],
+      "moss": [
+        "deep green",
+        "terracotta",
+        "linen"
+      ],
+      "birch": [
+        "white oak",
+        "pale gold",
+        "sky blue"
+      ],
+      "reed": [
+        "indigo",
+        "copper",
+        "sand"
+      ],
+      "clover": [
+        "rust",
+        "steel",
+        "clover green"
+      ],
+      "sorrel": [
+        "tomato red",
+        "ochre",
+        "olive"
+      ],
+      "heron": [
+        "slate",
+        "coral",
+        "white"
+      ],
+      "commons": [
+        "rose earth",
+        "verdigris",
+        "warm glass"
+      ]
+    },
+    "fashion_culture": "Handmade and mended clothing is high status. Natural dyes from the dye garden, visible mending, bold color, lots of layering and accessories. People dress up for Lantern Market."
+  },
+  "cells": [
+    {
+      "id": "fern",
+      "grid": [
+        0,
+        0
+      ],
+      "bounds_m": [
+        50,
+        40,
+        190,
+        190
+      ],
+      "type": "courtyard_block",
+      "name": "Fern Court",
+      "floors": [
+        4,
+        6
+      ],
+      "common_house": "fern_common",
+      "rooftop": [
+        "greenhouse",
+        "canopy_walk_node"
+      ]
+    },
+    {
+      "id": "moss",
+      "grid": [
+        0,
+        1
+      ],
+      "bounds_m": [
+        220,
+        40,
+        360,
+        190
+      ],
+      "type": "courtyard_block",
+      "name": "Moss Court",
+      "floors": [
+        4,
+        6
+      ],
+      "common_house": "moss_common",
+      "rooftop": [
+        "dye_garden",
+        "canopy_walk_node"
+      ]
+    },
+    {
+      "id": "commons",
+      "grid": [
+        0,
+        2
+      ],
+      "bounds_m": [
+        385,
+        40,
+        525,
+        190
+      ],
+      "type": "civic",
+      "name": "The Commons",
+      "rooftop": [
+        "observatory",
+        "canopy_walk_node"
+      ]
+    },
+    {
+      "id": "birch",
+      "grid": [
+        1,
+        0
+      ],
+      "bounds_m": [
+        50,
+        220,
+        190,
+        370
+      ],
+      "type": "courtyard_block",
+      "name": "Birch Court",
+      "floors": [
+        3,
+        5
+      ],
+      "notes": "Elders co-op mixed with young families on purpose",
+      "common_house": "birch_common",
+      "rooftop": [
+        "herb_terrace",
+        "canopy_walk_node"
+      ]
+    },
+    {
+      "id": "green",
+      "grid": [
+        1,
+        1
+      ],
+      "bounds_m": [
+        220,
+        220,
+        360,
+        370
+      ],
+      "type": "park",
+      "name": "Village Green"
+    },
+    {
+      "id": "reed",
+      "grid": [
+        1,
+        2
+      ],
+      "bounds_m": [
+        385,
+        220,
+        525,
+        370
+      ],
+      "type": "courtyard_block",
+      "name": "Reed Court",
+      "floors": [
+        4,
+        6
+      ],
+      "common_house": "reed_common",
+      "rooftop": [
+        "hammock_deck",
+        "canopy_walk_node"
+      ]
+    },
+    {
+      "id": "clover",
+      "grid": [
+        2,
+        0
+      ],
+      "bounds_m": [
+        50,
+        400,
+        190,
+        550
+      ],
+      "type": "courtyard_block",
+      "name": "Clover Court",
+      "floors": [
+        4,
+        6
+      ],
+      "common_house": "clover_common",
+      "rooftop": [
+        "solar_lab",
+        "canopy_walk_node"
+      ]
+    },
+    {
+      "id": "sorrel",
+      "grid": [
+        2,
+        1
+      ],
+      "bounds_m": [
+        220,
+        400,
+        360,
+        550
+      ],
+      "type": "courtyard_block",
+      "name": "Sorrel Court",
+      "floors": [
+        4,
+        6
+      ],
+      "common_house": "sorrel_common",
+      "rooftop": [
+        "greenhouse",
+        "canopy_walk_node"
+      ]
+    },
+    {
+      "id": "heron",
+      "grid": [
+        2,
+        2
+      ],
+      "bounds_m": [
+        385,
+        400,
+        525,
+        550
+      ],
+      "type": "courtyard_block",
+      "name": "Heron Court",
+      "floors": [
+        4,
+        6
+      ],
+      "common_house": "heron_common",
+      "rooftop": [
+        "dance_deck",
+        "canopy_walk_node"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "parkway",
+      "bounds_m": [
+        0,
+        0,
+        600,
+        34
+      ],
+      "type": "linear_park",
+      "name": "Green Cross Parkway",
+      "connects_to": "rest of the mile (north)"
+    },
+    {
+      "id": "creek_corridor",
+      "bounds_m": [
+        531,
+        0,
+        600,
+        600
+      ],
+      "type": "riparian_park",
+      "name": "Willow Creek",
+      "connects_to": "rest of the mile (east)"
+    },
+    {
+      "id": "farm_west",
+      "bounds_m": [
+        0,
+        34,
+        44,
+        600
+      ],
+      "type": "food_forest",
+      "name": "West Food Forest"
+    },
+    {
+      "id": "farm_south",
+      "bounds_m": [
+        44,
+        556,
+        531,
+        600
+      ],
+      "type": "farm",
+      "name": "South Plots"
+    }
+  ],
+  "buildings": [
+    {
+      "id": "fern_north",
+      "cell": "fern",
+      "footprint_m": [
+        50,
+        40,
+        190,
+        56
+      ],
+      "floors": 6,
+      "height_m": 21.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber + solar glass",
+      "palette": [
+        "sage",
+        "cream",
+        "brass"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            85,
+            40
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            40
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            155,
+            40
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            48.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "fern_south",
+      "cell": "fern",
+      "footprint_m": [
+        50,
+        174,
+        190,
+        190
+      ],
+      "floors": 4,
+      "height_m": 14.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "rammed earth base, timber upper",
+      "palette": [
+        "sage",
+        "cream",
+        "brass"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            85,
+            190
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            190
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            155,
+            190
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            182.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "fern_west",
+      "cell": "fern",
+      "footprint_m": [
+        50,
+        56,
+        66,
+        174
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, living facade",
+      "palette": [
+        "sage",
+        "cream",
+        "brass"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            50,
+            115.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            58.0,
+            115.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "fern_east",
+      "cell": "fern",
+      "footprint_m": [
+        174,
+        56,
+        190,
+        174
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, bamboo louvers",
+      "palette": [
+        "sage",
+        "cream",
+        "brass"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            190,
+            115.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            182.0,
+            115.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "fern_courtyard",
+      "cell": "fern",
+      "type": "courtyard",
+      "footprint_m": [
+        66,
+        56,
+        174,
+        174
+      ],
+      "features": [
+        "shared garden beds",
+        "fruit trees",
+        "long dining table",
+        "small play area",
+        "water runnel"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            120.0,
+            56
+          ],
+          "type": "gate from north bar passage"
+        },
+        {
+          "pos_m": [
+            120.0,
+            174
+          ],
+          "type": "gate from south bar passage"
+        }
+      ]
+    },
+    {
+      "id": "moss_north",
+      "cell": "moss",
+      "footprint_m": [
+        220,
+        40,
+        360,
+        56
+      ],
+      "floors": 6,
+      "height_m": 21.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber + solar glass",
+      "palette": [
+        "deep green",
+        "terracotta",
+        "linen"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            255,
+            40
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            290.0,
+            40
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            325,
+            40
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            290.0,
+            48.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "moss_south",
+      "cell": "moss",
+      "footprint_m": [
+        220,
+        174,
+        360,
+        190
+      ],
+      "floors": 4,
+      "height_m": 14.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "rammed earth base, timber upper",
+      "palette": [
+        "deep green",
+        "terracotta",
+        "linen"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            255,
+            190
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            290.0,
+            190
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            325,
+            190
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            290.0,
+            182.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "moss_west",
+      "cell": "moss",
+      "footprint_m": [
+        220,
+        56,
+        236,
+        174
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, living facade",
+      "palette": [
+        "deep green",
+        "terracotta",
+        "linen"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            220,
+            115.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            228.0,
+            115.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "moss_east",
+      "cell": "moss",
+      "footprint_m": [
+        344,
+        56,
+        360,
+        174
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, bamboo louvers",
+      "palette": [
+        "deep green",
+        "terracotta",
+        "linen"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            360,
+            115.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            352.0,
+            115.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "moss_courtyard",
+      "cell": "moss",
+      "type": "courtyard",
+      "footprint_m": [
+        236,
+        56,
+        344,
+        174
+      ],
+      "features": [
+        "shared garden beds",
+        "fruit trees",
+        "long dining table",
+        "small play area",
+        "water runnel"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            290.0,
+            56
+          ],
+          "type": "gate from north bar passage"
+        },
+        {
+          "pos_m": [
+            290.0,
+            174
+          ],
+          "type": "gate from south bar passage"
+        }
+      ]
+    },
+    {
+      "id": "birch_north",
+      "cell": "birch",
+      "footprint_m": [
+        50,
+        220,
+        190,
+        236
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber + solar glass",
+      "palette": [
+        "white oak",
+        "pale gold",
+        "sky blue"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            85,
+            220
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            220
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            155,
+            220
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            228.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "birch_south",
+      "cell": "birch",
+      "footprint_m": [
+        50,
+        354,
+        190,
+        370
+      ],
+      "floors": 3,
+      "height_m": 10.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "rammed earth base, timber upper",
+      "palette": [
+        "white oak",
+        "pale gold",
+        "sky blue"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            85,
+            370
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            370
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            155,
+            370
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            362.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "birch_west",
+      "cell": "birch",
+      "footprint_m": [
+        50,
+        236,
+        66,
+        354
+      ],
+      "floors": 4,
+      "height_m": 14.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, living facade",
+      "palette": [
+        "white oak",
+        "pale gold",
+        "sky blue"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            50,
+            295.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            58.0,
+            295.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "birch_east",
+      "cell": "birch",
+      "footprint_m": [
+        174,
+        236,
+        190,
+        354
+      ],
+      "floors": 4,
+      "height_m": 14.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, bamboo louvers",
+      "palette": [
+        "white oak",
+        "pale gold",
+        "sky blue"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            190,
+            295.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            182.0,
+            295.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "birch_courtyard",
+      "cell": "birch",
+      "type": "courtyard",
+      "footprint_m": [
+        66,
+        236,
+        174,
+        354
+      ],
+      "features": [
+        "shared garden beds",
+        "fruit trees",
+        "long dining table",
+        "small play area",
+        "water runnel"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            120.0,
+            236
+          ],
+          "type": "gate from north bar passage"
+        },
+        {
+          "pos_m": [
+            120.0,
+            354
+          ],
+          "type": "gate from south bar passage"
+        }
+      ]
+    },
+    {
+      "id": "reed_north",
+      "cell": "reed",
+      "footprint_m": [
+        385,
+        220,
+        525,
+        236
+      ],
+      "floors": 6,
+      "height_m": 21.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber + solar glass",
+      "palette": [
+        "indigo",
+        "copper",
+        "sand"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            420,
+            220
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            455.0,
+            220
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            490,
+            220
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            455.0,
+            228.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "reed_south",
+      "cell": "reed",
+      "footprint_m": [
+        385,
+        354,
+        525,
+        370
+      ],
+      "floors": 4,
+      "height_m": 14.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "rammed earth base, timber upper",
+      "palette": [
+        "indigo",
+        "copper",
+        "sand"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            420,
+            370
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            455.0,
+            370
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            490,
+            370
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            455.0,
+            362.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "reed_west",
+      "cell": "reed",
+      "footprint_m": [
+        385,
+        236,
+        401,
+        354
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, living facade",
+      "palette": [
+        "indigo",
+        "copper",
+        "sand"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            385,
+            295.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            393.0,
+            295.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "reed_east",
+      "cell": "reed",
+      "footprint_m": [
+        509,
+        236,
+        525,
+        354
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, bamboo louvers",
+      "palette": [
+        "indigo",
+        "copper",
+        "sand"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            525,
+            295.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            517.0,
+            295.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "reed_courtyard",
+      "cell": "reed",
+      "type": "courtyard",
+      "footprint_m": [
+        401,
+        236,
+        509,
+        354
+      ],
+      "features": [
+        "shared garden beds",
+        "fruit trees",
+        "long dining table",
+        "small play area",
+        "water runnel"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            455.0,
+            236
+          ],
+          "type": "gate from north bar passage"
+        },
+        {
+          "pos_m": [
+            455.0,
+            354
+          ],
+          "type": "gate from south bar passage"
+        }
+      ]
+    },
+    {
+      "id": "clover_north",
+      "cell": "clover",
+      "footprint_m": [
+        50,
+        400,
+        190,
+        416
+      ],
+      "floors": 6,
+      "height_m": 21.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber + solar glass",
+      "palette": [
+        "rust",
+        "steel",
+        "clover green"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            85,
+            400
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            400
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            155,
+            400
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            408.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "clover_south",
+      "cell": "clover",
+      "footprint_m": [
+        50,
+        534,
+        190,
+        550
+      ],
+      "floors": 4,
+      "height_m": 14.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "rammed earth base, timber upper",
+      "palette": [
+        "rust",
+        "steel",
+        "clover green"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            85,
+            550
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            550
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            155,
+            550
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            120.0,
+            542.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "clover_west",
+      "cell": "clover",
+      "footprint_m": [
+        50,
+        416,
+        66,
+        534
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, living facade",
+      "palette": [
+        "rust",
+        "steel",
+        "clover green"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            50,
+            475.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            58.0,
+            475.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "clover_east",
+      "cell": "clover",
+      "footprint_m": [
+        174,
+        416,
+        190,
+        534
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, bamboo louvers",
+      "palette": [
+        "rust",
+        "steel",
+        "clover green"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            190,
+            475.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            182.0,
+            475.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "clover_courtyard",
+      "cell": "clover",
+      "type": "courtyard",
+      "footprint_m": [
+        66,
+        416,
+        174,
+        534
+      ],
+      "features": [
+        "shared garden beds",
+        "fruit trees",
+        "long dining table",
+        "small play area",
+        "water runnel"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            120.0,
+            416
+          ],
+          "type": "gate from north bar passage"
+        },
+        {
+          "pos_m": [
+            120.0,
+            534
+          ],
+          "type": "gate from south bar passage"
+        }
+      ]
+    },
+    {
+      "id": "sorrel_north",
+      "cell": "sorrel",
+      "footprint_m": [
+        220,
+        400,
+        360,
+        416
+      ],
+      "floors": 6,
+      "height_m": 21.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber + solar glass",
+      "palette": [
+        "tomato red",
+        "ochre",
+        "olive"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            255,
+            400
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            290.0,
+            400
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            325,
+            400
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            290.0,
+            408.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "sorrel_south",
+      "cell": "sorrel",
+      "footprint_m": [
+        220,
+        534,
+        360,
+        550
+      ],
+      "floors": 4,
+      "height_m": 14.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "rammed earth base, timber upper",
+      "palette": [
+        "tomato red",
+        "ochre",
+        "olive"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            255,
+            550
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            290.0,
+            550
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            325,
+            550
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            290.0,
+            542.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "sorrel_west",
+      "cell": "sorrel",
+      "footprint_m": [
+        220,
+        416,
+        236,
+        534
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, living facade",
+      "palette": [
+        "tomato red",
+        "ochre",
+        "olive"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            220,
+            475.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            228.0,
+            475.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "sorrel_east",
+      "cell": "sorrel",
+      "footprint_m": [
+        344,
+        416,
+        360,
+        534
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, bamboo louvers",
+      "palette": [
+        "tomato red",
+        "ochre",
+        "olive"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            360,
+            475.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            352.0,
+            475.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "sorrel_courtyard",
+      "cell": "sorrel",
+      "type": "courtyard",
+      "footprint_m": [
+        236,
+        416,
+        344,
+        534
+      ],
+      "features": [
+        "shared garden beds",
+        "fruit trees",
+        "long dining table",
+        "small play area",
+        "water runnel"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            290.0,
+            416
+          ],
+          "type": "gate from north bar passage"
+        },
+        {
+          "pos_m": [
+            290.0,
+            534
+          ],
+          "type": "gate from south bar passage"
+        }
+      ]
+    },
+    {
+      "id": "heron_north",
+      "cell": "heron",
+      "footprint_m": [
+        385,
+        400,
+        525,
+        416
+      ],
+      "floors": 6,
+      "height_m": 21.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber + solar glass",
+      "palette": [
+        "slate",
+        "coral",
+        "white"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            420,
+            400
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            455.0,
+            400
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            490,
+            400
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            455.0,
+            408.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "heron_south",
+      "cell": "heron",
+      "footprint_m": [
+        385,
+        534,
+        525,
+        550
+      ],
+      "floors": 4,
+      "height_m": 14.0,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "rammed earth base, timber upper",
+      "palette": [
+        "slate",
+        "coral",
+        "white"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            420,
+            550
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            455.0,
+            550
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            490,
+            550
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            455.0,
+            542.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "heron_west",
+      "cell": "heron",
+      "footprint_m": [
+        385,
+        416,
+        401,
+        534
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, living facade",
+      "palette": [
+        "slate",
+        "coral",
+        "white"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            385,
+            475.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            393.0,
+            475.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "heron_east",
+      "cell": "heron",
+      "footprint_m": [
+        509,
+        416,
+        525,
+        534
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "ground_floor": "shops and workshops facing the lane",
+      "upper_floors": "homes",
+      "roof": "green roof, solar glass, canopy walk",
+      "materials": "CLT timber, bamboo louvers",
+      "palette": [
+        "slate",
+        "coral",
+        "white"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            525,
+            475.0
+          ],
+          "type": "shopfront"
+        },
+        {
+          "pos_m": [
+            517.0,
+            475.0
+          ],
+          "type": "courtyard passage"
+        }
+      ]
+    },
+    {
+      "id": "heron_courtyard",
+      "cell": "heron",
+      "type": "courtyard",
+      "footprint_m": [
+        401,
+        416,
+        509,
+        534
+      ],
+      "features": [
+        "shared garden beds",
+        "fruit trees",
+        "long dining table",
+        "small play area",
+        "water runnel"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            455.0,
+            416
+          ],
+          "type": "gate from north bar passage"
+        },
+        {
+          "pos_m": [
+            455.0,
+            534
+          ],
+          "type": "gate from south bar passage"
+        }
+      ]
+    },
+    {
+      "id": "market_hall",
+      "cell": "commons",
+      "footprint_m": [
+        395,
+        45,
+        455,
+        100
+      ],
+      "floors": 2,
+      "height_m": 9.0,
+      "description": "timber vaulted hall",
+      "palette": [
+        "rose earth",
+        "verdigris",
+        "warm glass"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            425.0,
+            100
+          ],
+          "type": "main entrance"
+        }
+      ]
+    },
+    {
+      "id": "amphitheater",
+      "cell": "commons",
+      "footprint_m": [
+        470,
+        45,
+        525,
+        100
+      ],
+      "floors": 0,
+      "height_m": 0,
+      "description": "open bowl stepping down toward the creek",
+      "palette": [
+        "rose earth",
+        "verdigris",
+        "warm glass"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            497.5,
+            100
+          ],
+          "type": "main entrance"
+        }
+      ]
+    },
+    {
+      "id": "library",
+      "cell": "commons",
+      "footprint_m": [
+        395,
+        140,
+        455,
+        188
+      ],
+      "floors": 3,
+      "height_m": 13.5,
+      "description": "library with rooftop observatory dome",
+      "palette": [
+        "rose earth",
+        "verdigris",
+        "warm glass"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            425.0,
+            188
+          ],
+          "type": "main entrance"
+        }
+      ]
+    },
+    {
+      "id": "chess_garden",
+      "cell": "commons",
+      "footprint_m": [
+        435,
+        105,
+        475,
+        135
+      ],
+      "floors": 0,
+      "height_m": 0,
+      "description": "open terrace with stone tables",
+      "palette": [
+        "rose earth",
+        "verdigris",
+        "warm glass"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            455.0,
+            135
+          ],
+          "type": "main entrance"
+        }
+      ]
+    },
+    {
+      "id": "bathhouse",
+      "cell": "commons",
+      "footprint_m": [
+        485,
+        130,
+        525,
+        188
+      ],
+      "floors": 1,
+      "height_m": 4.5,
+      "description": "cedar saunas opening onto the creek",
+      "palette": [
+        "rose earth",
+        "verdigris",
+        "warm glass"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            505.0,
+            188
+          ],
+          "type": "main entrance"
+        }
+      ]
+    },
+    {
+      "id": "willow_school",
+      "cell": "green",
+      "footprint_m": [
+        225,
+        222,
+        355,
+        255
+      ],
+      "floors": 2,
+      "height_m": 9.0,
+      "description": "K-8 school, classrooms open onto the green",
+      "palette": [
+        "natural timber"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            290.0,
+            255
+          ],
+          "type": "main entrance"
+        }
+      ]
+    },
+    {
+      "id": "playground",
+      "cell": "green",
+      "footprint_m": [
+        310,
+        335,
+        355,
+        368
+      ],
+      "floors": 0,
+      "height_m": 0,
+      "description": "natural playground, logs and sand",
+      "palette": [
+        "natural timber"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            332.5,
+            335
+          ],
+          "type": "main entrance"
+        }
+      ]
+    },
+    {
+      "id": "village_green",
+      "cell": "green",
+      "footprint_m": [
+        225,
+        260,
+        355,
+        368
+      ],
+      "floors": 0,
+      "height_m": 0,
+      "description": "open lawn, big shade trees at edges",
+      "palette": [
+        "natural timber"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            290.0,
+            260
+          ],
+          "type": "main entrance"
+        }
+      ]
+    },
+    {
+      "id": "mobility_hub",
+      "cell": "farm_west",
+      "footprint_m": [
+        5,
+        560,
+        44,
+        598
+      ],
+      "floors": 1,
+      "height_m": 4.5,
+      "description": "solar canopy over bike share and parcel lockers",
+      "palette": [
+        "natural timber"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            25.0,
+            560
+          ],
+          "type": "main entrance"
+        }
+      ]
+    },
+    {
+      "id": "greenhouse",
+      "cell": "farm_south",
+      "footprint_m": [
+        250,
+        562,
+        330,
+        595
+      ],
+      "floors": 1,
+      "height_m": 4.5,
+      "description": "glass greenhouse",
+      "palette": [
+        "natural timber"
+      ],
+      "entrances": [
+        {
+          "pos_m": [
+            290.0,
+            562
+          ],
+          "type": "main entrance"
+        }
+      ]
+    },
+    {
+      "id": "landing_fern_south",
+      "cell": "fern",
+      "type": "canopy_landing",
+      "on": "fern_south",
+      "footprint_m": [
+        116,
+        182,
+        124,
+        190
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "description": "stair and elevator tower on the roof of fern_south",
+      "materials": "CLT timber, woven bamboo screen",
+      "palette": [
+        "natural timber"
+      ]
+    },
+    {
+      "id": "landing_birch_south",
+      "cell": "birch",
+      "type": "canopy_landing",
+      "on": "birch_south",
+      "footprint_m": [
+        116,
+        362,
+        124,
+        370
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "description": "stair and elevator tower on the roof of birch_south",
+      "materials": "CLT timber, woven bamboo screen",
+      "palette": [
+        "natural timber"
+      ]
+    },
+    {
+      "id": "landing_reed_south",
+      "cell": "reed",
+      "type": "canopy_landing",
+      "on": "reed_south",
+      "footprint_m": [
+        451,
+        362,
+        459,
+        370
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "description": "stair and elevator tower on the roof of reed_south",
+      "materials": "CLT timber, woven bamboo screen",
+      "palette": [
+        "natural timber"
+      ]
+    },
+    {
+      "id": "landing_commons_west",
+      "cell": "commons",
+      "type": "canopy_landing",
+      "on": null,
+      "footprint_m": [
+        385,
+        111,
+        393,
+        119
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "description": "free-standing stair and elevator tower",
+      "materials": "CLT timber, woven bamboo screen",
+      "palette": [
+        "natural timber"
+      ]
+    },
+    {
+      "id": "landing_commons_south",
+      "cell": "commons",
+      "type": "canopy_landing",
+      "on": null,
+      "footprint_m": [
+        455,
+        180,
+        463,
+        190
+      ],
+      "floors": 5,
+      "height_m": 17.5,
+      "description": "free-standing stair and elevator tower",
+      "materials": "CLT timber, woven bamboo screen",
+      "palette": [
+        "natural timber"
+      ]
+    }
+  ],
+  "lanes": {
+    "surface": "permeable stone, moss joints, water runnels",
+    "notes": "All gaps between cells. Bikes slow, walkers priority.",
+    "segments": [
+      {
+        "id": "lane_x1",
+        "rect_m": [
+          190,
+          34,
+          220,
+          556
+        ]
+      },
+      {
+        "id": "lane_x2",
+        "rect_m": [
+          360,
+          34,
+          385,
+          556
+        ]
+      },
+      {
+        "id": "lane_y1",
+        "rect_m": [
+          44,
+          190,
+          531,
+          220
+        ]
+      },
+      {
+        "id": "lane_y2",
+        "rect_m": [
+          44,
+          370,
+          531,
+          400
+        ]
+      },
+      {
+        "id": "lane_west_edge",
+        "rect_m": [
+          44,
+          34,
+          50,
+          556
+        ]
+      },
+      {
+        "id": "lane_north_edge",
+        "rect_m": [
+          44,
+          34,
+          531,
+          40
+        ]
+      },
+      {
+        "id": "lane_east_edge",
+        "rect_m": [
+          525,
+          34,
+          531,
+          556
+        ]
+      },
+      {
+        "id": "lane_south_edge",
+        "rect_m": [
+          44,
+          550,
+          531,
+          556
+        ]
+      }
+    ]
+  },
+  "paths": [
+    {
+      "id": "green_loop",
+      "type": "trail",
+      "polyline_m": [
+        [
+          205,
+          205
+        ],
+        [
+          375,
+          205
+        ],
+        [
+          375,
+          385
+        ],
+        [
+          205,
+          385
+        ],
+        [
+          205,
+          205
+        ]
+      ],
+      "notes": "Ring around the green, joins the full 1.6 mi loop at the parkway and creek. Outdoor gym stations at each corner."
+    },
+    {
+      "id": "canopy_walk",
+      "type": "rooftop_path",
+      "elevation_m": 17.5,
+      "nodes": [
+        "fern",
+        "moss",
+        "commons",
+        "reed",
+        "heron",
+        "sorrel",
+        "clover",
+        "birch"
+      ],
+      "notes": "Continuous rooftop ring with sky bridges over each lane. Elevators at every block."
+    },
+    {
+      "id": "creek_boardwalk",
+      "type": "boardwalk",
+      "polyline_m": [
+        [
+          565,
+          0
+        ],
+        [
+          565,
+          250
+        ],
+        [
+          543,
+          265
+        ],
+        [
+          543,
+          335
+        ],
+        [
+          565,
+          350
+        ],
+        [
+          565,
+          600
+        ]
+      ]
+    }
+  ],
+  "sky_bridges": {
+    "elevation_m": 17.5,
+    "width_m": 4,
+    "segments": [
+      {
+        "id": "bridge_fern_moss",
+        "span_m": [
+          [
+            190,
+            115
+          ],
+          [
+            220,
+            115
+          ]
+        ]
+      },
+      {
+        "id": "bridge_moss_commons",
+        "span_m": [
+          [
+            360,
+            115
+          ],
+          [
+            385,
+            115
+          ]
+        ]
+      },
+      {
+        "id": "bridge_commons_reed",
+        "span_m": [
+          [
+            455,
+            190
+          ],
+          [
+            455,
+            220
+          ]
+        ]
+      },
+      {
+        "id": "bridge_reed_heron",
+        "span_m": [
+          [
+            455,
+            370
+          ],
+          [
+            455,
+            400
+          ]
+        ]
+      },
+      {
+        "id": "bridge_heron_sorrel",
+        "span_m": [
+          [
+            385,
+            475
+          ],
+          [
+            360,
+            475
+          ]
+        ]
+      },
+      {
+        "id": "bridge_sorrel_clover",
+        "span_m": [
+          [
+            220,
+            475
+          ],
+          [
+            190,
+            475
+          ]
+        ]
+      },
+      {
+        "id": "bridge_clover_birch",
+        "span_m": [
+          [
+            120,
+            400
+          ],
+          [
+            120,
+            370
+          ]
+        ]
+      },
+      {
+        "id": "bridge_birch_fern",
+        "span_m": [
+          [
+            120,
+            220
+          ],
+          [
+            120,
+            190
+          ]
+        ]
+      }
+    ]
+  },
+  "landscape": [
+    {
+      "id": "willow_creek",
+      "type": "creek",
+      "centerline_m": [
+        [
+          570,
+          0
+        ],
+        [
+          575,
+          100
+        ],
+        [
+          562,
+          200
+        ],
+        [
+          570,
+          260
+        ],
+        [
+          570,
+          340
+        ],
+        [
+          578,
+          450
+        ],
+        [
+          570,
+          600
+        ]
+      ],
+      "width_m": 8
+    },
+    {
+      "id": "swim_pond",
+      "type": "pond",
+      "ellipse_m": {
+        "center": [
+          570,
+          300
+        ],
+        "rx": 22,
+        "ry": 40
+      },
+      "depth_m": 2.5
+    },
+    {
+      "id": "lane_runnels",
+      "type": "water_channel",
+      "follows": [
+        "lane_y1",
+        "lane_y2"
+      ],
+      "width_m": 0.6,
+      "flows_to": "willow_creek"
+    },
+    {
+      "id": "street_trees",
+      "type": "tree_rows",
+      "follows": "all lanes",
+      "spacing_m": 10,
+      "species": [
+        "oak",
+        "maple",
+        "flowering cherry"
+      ]
+    },
+    {
+      "id": "food_forest_trees",
+      "type": "tree_cluster",
+      "area": "farm_west",
+      "density": "dense",
+      "species": [
+        "fig",
+        "persimmon",
+        "pawpaw",
+        "chestnut"
+      ]
+    },
+    {
+      "id": "plots",
+      "type": "garden_beds",
+      "area": "farm_south",
+      "density": "rows"
+    },
+    {
+      "id": "parkway_trees",
+      "type": "tree_cluster",
+      "area": "parkway",
+      "density": "open grove"
+    }
+  ],
+  "places": [
+    {
+      "id": "kettle_cafe",
+      "name": "The Kettle",
+      "cell": "fern",
+      "pos_m": [
+        90,
+        45
+      ],
+      "category": "cafe",
+      "capacity": 60,
+      "activities": [
+        "coffee",
+        "remote_work",
+        "chat",
+        "sketching"
+      ],
+      "vibe": "sunny, plants, long communal bar, chalkboard of today's math puzzle"
+    },
+    {
+      "id": "fern_bakery",
+      "name": "Rise Bakery",
+      "cell": "fern",
+      "pos_m": [
+        150,
+        45
+      ],
+      "category": "bakery",
+      "capacity": 20,
+      "activities": [
+        "buy_bread",
+        "chat"
+      ],
+      "vibe": "the morning line where everyone catches up"
+    },
+    {
+      "id": "clinic",
+      "name": "Moss Clinic",
+      "cell": "moss",
+      "pos_m": [
+        240,
+        45
+      ],
+      "category": "health",
+      "capacity": 40,
+      "activities": [
+        "checkup",
+        "physio",
+        "counseling"
+      ]
+    },
+    {
+      "id": "daycare",
+      "name": "Little Roots",
+      "cell": "moss",
+      "pos_m": [
+        340,
+        45
+      ],
+      "category": "childcare",
+      "capacity": 60,
+      "activities": [
+        "dropoff",
+        "pickup",
+        "play"
+      ]
+    },
+    {
+      "id": "loom_thread",
+      "name": "Loom & Thread",
+      "cell": "moss",
+      "pos_m": [
+        290,
+        185
+      ],
+      "category": "fashion_studio",
+      "capacity": 35,
+      "activities": [
+        "sewing",
+        "weaving",
+        "dyeing",
+        "swap_closet",
+        "fittings"
+      ],
+      "vibe": "fabric hanging from the ceiling, dye garden on the roof, open swap closet"
+    },
+    {
+      "id": "market_hall",
+      "name": "Market Hall",
+      "cell": "commons",
+      "pos_m": [
+        415,
+        75
+      ],
+      "category": "market",
+      "capacity": 400,
+      "activities": [
+        "eat",
+        "shop",
+        "sell_crafts",
+        "chat"
+      ],
+      "vibe": "timber vaulted roof, food stalls, long tables"
+    },
+    {
+      "id": "amphitheater",
+      "name": "Creekside Amphitheater",
+      "cell": "commons",
+      "pos_m": [
+        500,
+        70
+      ],
+      "category": "performance",
+      "capacity": 800,
+      "activities": [
+        "concert",
+        "theater",
+        "talks",
+        "watch"
+      ]
+    },
+    {
+      "id": "library",
+      "name": "Lantern Library",
+      "cell": "commons",
+      "pos_m": [
+        420,
+        165
+      ],
+      "category": "library",
+      "capacity": 150,
+      "activities": [
+        "read",
+        "study",
+        "math_circle",
+        "lecture"
+      ]
+    },
+    {
+      "id": "observatory",
+      "name": "Rooftop Observatory",
+      "cell": "commons",
+      "pos_m": [
+        420,
+        165
+      ],
+      "elevation_m": 20,
+      "category": "science",
+      "capacity": 30,
+      "activities": [
+        "stargazing",
+        "astronomy_club"
+      ]
+    },
+    {
+      "id": "chess_garden",
+      "name": "Chess Garden",
+      "cell": "commons",
+      "pos_m": [
+        455,
+        120
+      ],
+      "category": "games",
+      "capacity": 40,
+      "activities": [
+        "chess",
+        "go",
+        "board_games",
+        "watch"
+      ]
+    },
+    {
+      "id": "bathhouse",
+      "name": "Willow Bathhouse",
+      "cell": "commons",
+      "pos_m": [
+        510,
+        160
+      ],
+      "category": "wellness",
+      "capacity": 120,
+      "activities": [
+        "sauna",
+        "cold_plunge",
+        "soak",
+        "chat"
+      ],
+      "vibe": "cedar saunas that open onto the creek, the best place to make a new friend"
+    },
+    {
+      "id": "willow_school",
+      "name": "Willow School (K-8)",
+      "cell": "green",
+      "pos_m": [
+        290,
+        235
+      ],
+      "category": "school",
+      "capacity": 320,
+      "activities": [
+        "learn",
+        "teach",
+        "recess"
+      ]
+    },
+    {
+      "id": "village_green",
+      "name": "Village Green",
+      "cell": "green",
+      "pos_m": [
+        290,
+        315
+      ],
+      "category": "park",
+      "capacity": 600,
+      "activities": [
+        "picnic",
+        "play",
+        "frisbee",
+        "nap",
+        "yoga",
+        "busk"
+      ]
+    },
+    {
+      "id": "tea_house",
+      "name": "Still Water Tea House",
+      "cell": "reed",
+      "pos_m": [
+        400,
+        230
+      ],
+      "category": "cafe",
+      "capacity": 50,
+      "activities": [
+        "tea",
+        "conversation",
+        "reading"
+      ]
+    },
+    {
+      "id": "low_tide",
+      "name": "Low Tide",
+      "cell": "reed",
+      "pos_m": [
+        480,
+        230
+      ],
+      "category": "pub_music",
+      "capacity": 120,
+      "activities": [
+        "drink",
+        "open_mic",
+        "jam_session",
+        "dance"
+      ]
+    },
+    {
+      "id": "practice_pods",
+      "name": "Practice Pods",
+      "cell": "reed",
+      "pos_m": [
+        455,
+        360
+      ],
+      "category": "music_studio",
+      "capacity": 24,
+      "activities": [
+        "practice",
+        "record",
+        "lesson"
+      ]
+    },
+    {
+      "id": "slow_kitchen",
+      "name": "Slow Kitchen",
+      "cell": "birch",
+      "pos_m": [
+        120,
+        365
+      ],
+      "category": "community_kitchen",
+      "capacity": 40,
+      "activities": [
+        "cook",
+        "ferment",
+        "cooking_class",
+        "storytelling"
+      ],
+      "vibe": "elders teach recipes, kids do homework at the big table"
+    },
+    {
+      "id": "clover_works",
+      "name": "Clover Works",
+      "cell": "clover",
+      "pos_m": [
+        100,
+        405
+      ],
+      "category": "fab_lab",
+      "capacity": 50,
+      "activities": [
+        "repair",
+        "3d_print",
+        "cnc",
+        "electronics",
+        "robotics_club",
+        "bike_repair"
+      ],
+      "vibe": "repair cafe up front, full fab lab in back, kids' robotics on Saturdays"
+    },
+    {
+      "id": "grocery",
+      "name": "Sorrel Grocery + Deli",
+      "cell": "sorrel",
+      "pos_m": [
+        260,
+        405
+      ],
+      "category": "grocery",
+      "capacity": 80,
+      "activities": [
+        "shop",
+        "lunch"
+      ]
+    },
+    {
+      "id": "art_studios",
+      "name": "Heron Studios",
+      "cell": "heron",
+      "pos_m": [
+        410,
+        405
+      ],
+      "category": "art_studio",
+      "capacity": 60,
+      "activities": [
+        "paint",
+        "ceramics",
+        "print",
+        "open_studio"
+      ]
+    },
+    {
+      "id": "climb_gym",
+      "name": "Heron Climbing + Movement",
+      "cell": "heron",
+      "pos_m": [
+        500,
+        405
+      ],
+      "category": "gym",
+      "capacity": 100,
+      "activities": [
+        "boulder",
+        "lift",
+        "dance_class",
+        "yoga"
+      ]
+    },
+    {
+      "id": "swim_pond",
+      "name": "Willow Swim Pond",
+      "cell": "creek_corridor",
+      "pos_m": [
+        565,
+        300
+      ],
+      "category": "swimming",
+      "capacity": 150,
+      "activities": [
+        "swim",
+        "sunbathe",
+        "chat"
+      ]
+    },
+    {
+      "id": "food_forest",
+      "name": "West Food Forest",
+      "cell": "farm_west",
+      "pos_m": [
+        22,
+        300
+      ],
+      "category": "farm",
+      "capacity": 120,
+      "activities": [
+        "harvest",
+        "garden",
+        "walk",
+        "teach_kids"
+      ]
+    },
+    {
+      "id": "south_plots",
+      "name": "South Plots + Greenhouse",
+      "cell": "farm_south",
+      "pos_m": [
+        290,
+        578
+      ],
+      "category": "farm",
+      "capacity": 120,
+      "activities": [
+        "garden",
+        "harvest",
+        "compost"
+      ]
+    },
+    {
+      "id": "mobility_hub",
+      "name": "SW Mobility Hub",
+      "cell": "farm_west",
+      "pos_m": [
+        20,
+        580
+      ],
+      "category": "transit",
+      "capacity": 500,
+      "activities": [
+        "arrive",
+        "depart",
+        "bike_share",
+        "parcel_pickup"
+      ]
+    },
+    {
+      "id": "fern_common",
+      "name": "Fern Common House",
+      "cell": "fern",
+      "pos_m": [
+        120,
+        115
+      ],
+      "category": "common_house",
+      "capacity": 120,
+      "activities": [
+        "shared_dinner",
+        "kids_play",
+        "meeting"
+      ]
+    },
+    {
+      "id": "moss_common",
+      "name": "Moss Common House",
+      "cell": "moss",
+      "pos_m": [
+        290,
+        115
+      ],
+      "category": "common_house",
+      "capacity": 120,
+      "activities": [
+        "shared_dinner",
+        "kids_play",
+        "meeting"
+      ]
+    },
+    {
+      "id": "birch_common",
+      "name": "Birch Common House",
+      "cell": "birch",
+      "pos_m": [
+        120,
+        295
+      ],
+      "category": "common_house",
+      "capacity": 120,
+      "activities": [
+        "shared_dinner",
+        "kids_play",
+        "meeting"
+      ]
+    },
+    {
+      "id": "reed_common",
+      "name": "Reed Common House",
+      "cell": "reed",
+      "pos_m": [
+        455,
+        295
+      ],
+      "category": "common_house",
+      "capacity": 120,
+      "activities": [
+        "shared_dinner",
+        "kids_play",
+        "meeting"
+      ]
+    },
+    {
+      "id": "clover_common",
+      "name": "Clover Common House",
+      "cell": "clover",
+      "pos_m": [
+        120,
+        475
+      ],
+      "category": "common_house",
+      "capacity": 120,
+      "activities": [
+        "shared_dinner",
+        "kids_play",
+        "meeting"
+      ]
+    },
+    {
+      "id": "sorrel_common",
+      "name": "Sorrel Common House",
+      "cell": "sorrel",
+      "pos_m": [
+        290,
+        475
+      ],
+      "category": "common_house",
+      "capacity": 120,
+      "activities": [
+        "shared_dinner",
+        "kids_play",
+        "meeting"
+      ]
+    },
+    {
+      "id": "heron_common",
+      "name": "Heron Common House",
+      "cell": "heron",
+      "pos_m": [
+        455,
+        475
+      ],
+      "category": "common_house",
+      "capacity": 120,
+      "activities": [
+        "shared_dinner",
+        "kids_play",
+        "meeting"
+      ]
+    }
+  ],
+  "street_furniture": [
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        50
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        208.0,
+        50
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        202.0,
+        50
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        80
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        110
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        208.0,
+        110
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        140
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        202.0,
+        140
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        170
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        208.0,
+        170
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        200
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        230
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        208.0,
+        230
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        202.0,
+        230
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        260
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        290
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        208.0,
+        290
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        320
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        202.0,
+        320
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        350
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        208.0,
+        350
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        380
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        410
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        208.0,
+        410
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        202.0,
+        410
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        440
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        470
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        208.0,
+        470
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        500
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        202.0,
+        500
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        205.0,
+        530
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        208.0,
+        530
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        50
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        375.5,
+        50
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        369.5,
+        50
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        80
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        110
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        375.5,
+        110
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        140
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        369.5,
+        140
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        170
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        375.5,
+        170
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        200
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        230
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        375.5,
+        230
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        369.5,
+        230
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        260
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        290
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        375.5,
+        290
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        320
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        369.5,
+        320
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        350
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        375.5,
+        350
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        380
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        410
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        375.5,
+        410
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        369.5,
+        410
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        440
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        470
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        375.5,
+        470
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        500
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        369.5,
+        500
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        372.5,
+        530
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        375.5,
+        530
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        60,
+        205.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        60,
+        208.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        60,
+        202.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        90,
+        205.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        120,
+        205.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        120,
+        208.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        150,
+        205.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        150,
+        202.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        180,
+        205.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        180,
+        208.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        210,
+        205.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        240,
+        205.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        240,
+        208.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        240,
+        202.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        270,
+        205.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        300,
+        205.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        300,
+        208.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        330,
+        205.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        330,
+        202.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        360,
+        205.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        360,
+        208.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        390,
+        205.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        420,
+        205.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        420,
+        208.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        420,
+        202.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        450,
+        205.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        480,
+        205.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        480,
+        208.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        510,
+        205.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        510,
+        202.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        60,
+        385.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        60,
+        388.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        60,
+        382.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        90,
+        385.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        120,
+        385.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        120,
+        388.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        150,
+        385.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        150,
+        382.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        180,
+        385.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        180,
+        388.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        210,
+        385.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        240,
+        385.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        240,
+        388.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        240,
+        382.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        270,
+        385.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        300,
+        385.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        300,
+        388.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        330,
+        385.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        330,
+        382.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        360,
+        385.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        360,
+        388.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        390,
+        385.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        420,
+        385.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        420,
+        388.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        420,
+        382.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        450,
+        385.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        480,
+        385.0
+      ]
+    },
+    {
+      "type": "bench",
+      "pos_m": [
+        480,
+        388.0
+      ]
+    },
+    {
+      "type": "lantern_post",
+      "pos_m": [
+        510,
+        385.0
+      ]
+    },
+    {
+      "type": "bike_rack",
+      "pos_m": [
+        510,
+        382.0
+      ]
+    },
+    {
+      "type": "outdoor_gym_station",
+      "pos_m": [
+        205,
+        205
+      ]
+    },
+    {
+      "type": "outdoor_gym_station",
+      "pos_m": [
+        375,
+        205
+      ]
+    },
+    {
+      "type": "outdoor_gym_station",
+      "pos_m": [
+        375,
+        385
+      ]
+    },
+    {
+      "type": "outdoor_gym_station",
+      "pos_m": [
+        205,
+        385
+      ]
+    },
+    {
+      "type": "water_fountain",
+      "pos_m": [
+        290,
+        205
+      ]
+    },
+    {
+      "type": "water_fountain",
+      "pos_m": [
+        290,
+        385
+      ]
+    },
+    {
+      "type": "mural_wall",
+      "on_building": "sorrel_north"
+    },
+    {
+      "type": "mural_wall",
+      "on_building": "fern_east"
+    },
+    {
+      "type": "mural_wall",
+      "on_building": "heron_west"
+    },
+    {
+      "type": "wayfinding_totem",
+      "pos_m": [
+        205,
+        205
+      ]
+    },
+    {
+      "type": "wayfinding_totem",
+      "pos_m": [
+        375,
+        385
+      ]
+    },
+    {
+      "type": "wayfinding_totem",
+      "pos_m": [
+        30,
+        575
+      ]
+    }
+  ]
+}

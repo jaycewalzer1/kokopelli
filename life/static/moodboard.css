@@ -1,0 +1,80 @@
+/* The city moodboard's layout. Colors, type and components come from design.css. */
+.intro { max-width: 960px; }
+.moodboard .tabs { flex-wrap: wrap; }
+.tab .count { margin-left: 6px; }
+#sections { display: flex; flex-direction: column; gap: var(--space-12); }
+.zone .meta { margin-bottom: var(--space-4); }
+
+/* Pictures keep their own shape, laid out in columns like a pinboard. */
+.grid { columns: 260px; column-gap: var(--space-4); }
+.pin { break-inside: avoid; margin: 0 0 var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+.pin img { display: block; width: 100%; height: auto; max-width: 100%; background: var(--surface-100); }
+.pin .meta { margin: 0; }
+.pin label { display: flex; flex-direction: column; font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); }
+.pin select, .pin textarea { font: 400 13px/18px var(--font-sans); color: var(--ink); text-transform: none; letter-spacing: 0; }
+.pin textarea { resize: vertical; min-height: 40px; }
+.pin .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.pin .actions button { padding: 4px var(--space-2); font: 400 13px/18px var(--font-sans); }
+
+@media (max-width: 900px) {
+  .grid { columns: 2 160px; }
+}
+
+/* The plan view. A drawing in hairlines: hatching marks ground and water, ink weight marks height. */
+.views { margin-bottom: calc(-1 * var(--space-2)); }
+.views .tab { text-decoration: none; }
+.views .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--gold); }
+.plan-view { display: flex; flex-direction: column; gap: var(--space-6); }
+/* A view's own display rule would otherwise beat the hidden attribute. */
+#view-plan[hidden], #view-pictures[hidden] { display: none; }
+.plan-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--space-6); align-items: start; }
+.plan-map { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+#plan-svg { display: block; width: 100%; max-width: 100%; aspect-ratio: 612 / 642; max-height: calc(100vh - 160px); border: 1px solid var(--hairline); background: var(--surface-100); touch-action: none; cursor: grab; user-select: none; }
+.plan-tools { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.plan-tools button { padding: 4px var(--space-2); font: 400 13px/18px var(--font-sans); }
+.plan-side { min-width: 0; display: flex; flex-direction: column; gap: var(--space-6); }
+.plan-side .h2 { margin-bottom: var(--space-2); overflow-wrap: anywhere; }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px var(--space-4); margin: 0 0 var(--space-2); font: 400 13px/18px var(--font-sans); }
+.facts dt { color: var(--ink-muted); }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+.layers { display: flex; flex-direction: column; gap: 4px; font: 400 13px/18px var(--font-sans); }
+.layers label { display: flex; align-items: center; gap: var(--space-2); }
+.check-group { margin-bottom: var(--space-2); }
+.check-group summary { text-transform: capitalize; }
+.check { display: block; width: 100%; text-align: left; margin-top: 4px; padding: 4px var(--space-2); border-color: transparent; font: 400 13px/18px var(--font-sans); overflow-wrap: anywhere; }
+.check:hover, .check[aria-pressed="true"] { border-color: var(--danger); }
+
+#plan-svg * { vector-effect: non-scaling-stroke; }
+#plan-svg .site { fill: var(--surface-100); stroke: var(--ink); stroke-width: 1px; }
+#plan-svg .hatch-sage { stroke: var(--sage); stroke-width: 0.6px; }
+#plan-svg .hatch-slate { stroke: var(--slate); stroke-width: 0.6px; }
+#plan-svg .dot-sage { fill: var(--sage); }
+#plan-svg .area { stroke: var(--sage); stroke-width: 1px; }
+#plan-svg .lane { fill: var(--surface-200); stroke: none; }
+#plan-svg .cell { fill: none; stroke: var(--hairline); stroke-width: 1px; stroke-dasharray: 4 3; }
+#plan-svg .path { fill: none; stroke: var(--ink-muted); stroke-width: 1px; stroke-dasharray: 6 4; }
+#plan-svg .path-boardwalk { stroke: var(--walnut); stroke-width: 2px; stroke-dasharray: none; }
+#plan-svg .creek { fill: none; stroke: var(--slate); stroke-opacity: .45; stroke-linecap: round; stroke-linejoin: round; vector-effect: none; }
+#plan-svg .pond { fill: url(#hatch-water); stroke: var(--slate); stroke-width: 1px; }
+#plan-svg .runnel { stroke: var(--slate); stroke-width: 1px; }
+#plan-svg .tree { fill: none; stroke: var(--sage); stroke-width: 1px; }
+#plan-svg .open { fill: url(#hatch-ground); stroke: var(--sage); stroke-width: 1px; }
+/* Taller is darker: six floors reach about a third of ink. */
+#plan-svg .building { fill: var(--ink); fill-opacity: calc(0.06 + var(--floors) * 0.05); stroke: var(--ink); stroke-width: 1px; }
+#plan-svg .entrance { fill: var(--ink); }
+#plan-svg .furniture { fill: var(--walnut); }
+#plan-svg .landing { stroke: var(--gold); stroke-width: 1.5px; }
+#plan-svg .bridge { stroke: var(--gold); stroke-linecap: butt; vector-effect: none; }
+#plan-svg .place { fill: var(--dust-rose); stroke: var(--surface-100); stroke-width: 1px; }
+#plan-svg .cell-label { font: 400 7px var(--font-mono); letter-spacing: 0.12em; fill: var(--ink-muted); text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: var(--surface-100); stroke-width: 3px; vector-effect: none; }
+#plan-svg .scale line { stroke: var(--ink); stroke-width: 1px; }
+#plan-svg .scale text { font: 400 8px var(--font-mono); fill: var(--ink-muted); text-anchor: middle; }
+#plan-svg .scale .north { text-anchor: end; }
+#plan-svg [data-key]:hover { stroke: var(--clay); stroke-width: 2px; }
+#plan-svg .flagged { stroke: var(--danger) !important; stroke-width: 2px !important; stroke-dasharray: none !important; }
+#plan-svg .layer[hidden] { display: none; }
+
+@media (max-width: 1100px) {
+  .plan-layout { grid-template-columns: minmax(0, 1fr); }
+  #plan-svg { max-height: none; }
+}
