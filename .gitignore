@@ -4,3 +4,9 @@ out/
 models/
 .venv/
 .DS_Store
+
+# PACE account settings (see cloud/README.md)
+cloud/pace.json
+
+# Moodboard pictures are other people's work, gathered for reference only
+city/moodboard/

@@ -1,1 +1,2 @@
 mlx-vlm==0.7.11
+opencv-python==5.0.0.93
