@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Homeostatic training</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="/static/design.css">
+<link rel="stylesheet" href="/static/panel.css">
+<link rel="stylesheet" href="/static/training.css">
+</head>
+<body>
+<nav class="sidebar" aria-label="Views">
+  <div class="wordmark">Kokopelli</div>
+  <a href="/">Life generator</a>
+  <a href="/training" aria-current="page">Homeostatic training</a>
+  <a href="/architecture">System architecture</a>
+  <a href="/queue">GPU queue</a>
+  <a href="/worlds">World model runs</a>
+  <a href="/moodboard">City moodboard</a>
+</nav>
+<div class="view">
+<header>
+  <div class="brand">Homeostatic training</div>
+  <select id="runs" aria-label="Training run"></select>
+  <div id="status-line" role="status"><i></i><span id="status-text">Loading</span></div>
+</header>
+<div class="page">
+  <main class="training">
+    <p id="warning" hidden></p>
+    <section>
+      <div class="eyebrow ruled">Validation: mean drive on 30 lives, lower is healthier</div>
+      <div id="validation" class="chart large"></div>
+      <div id="validation-key" class="chart-key-row"></div>
+    </section>
+    <section class="small-charts">
+      <div><div class="eyebrow ruled">Regret: best action minus its choice</div><div id="regret" class="chart"></div></div>
+      <div><div class="eyebrow ruled">Score of its choice</div><div id="reward" class="chart"></div></div>
+      <div><div class="eyebrow ruled">Different actions it chose</div><div id="distinct" class="chart"></div></div>
+      <div><div class="eyebrow ruled">Replies that weren't an action</div><div id="invalid" class="chart"></div></div>
+    </section>
+    <section>
+      <div class="eyebrow ruled">What the model chose, latest validation</div>
+      <div id="actions"></div>
+    </section>
+    <section id="results-section" hidden>
+      <div class="eyebrow ruled">Held-out lives</div>
+      <div id="results"></div>
+    </section>
+  </main>
+  <aside aria-label="Latest groups">
+    <div class="eyebrow ruled groups-title">Latest states: every action tried, and what it chose</div>
+    <div id="groups"></div>
+  </aside>
+</div>
+</div>
+<script type="module" src="/static/training.js"></script>
+</body>
+</html>
