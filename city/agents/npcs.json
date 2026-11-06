@@ -1,0 +1,60 @@
+{
+  "about": "Scripted residents. They stand at a place (stay_at) or walk a loop of places (walk). They don't think: when the agent speaks within earshot they answer with the first topic whose keyword appears in what was said, else a greeting the first time and a fallback after. If the agent names a place, they also say which way it is.",
+  "npcs": [
+    {
+      "id": "ana", "name": "Ana", "role": "barista at The Kettle", "stay_at": "kettle_cafe",
+      "greeting": ["Afternoon! The pour-over is on and today's puzzle is on the chalkboard."],
+      "topics": {
+        "coffee|tea|drink": "Oat flat white or the Ethiopian pour-over? Both are good today.",
+        "puzzle|chalkboard|math": "Today's puzzle: how many ways can you tile a 2 by 10 strip with dominoes? Nobody's got it yet.",
+        "bread|bakery|tomas": "Tomas at Rise is two doors east. His sourdough sells out by three, so hurry.",
+        "chess|play": "Old Wen plays at the Chess Garden in the Commons every afternoon. He'll take anyone on.",
+        "dinner|tonight|common": "Shared dinner at Fern Common tonight? I'll bring the lemon cake."
+      },
+      "fallback": ["Mm, I hear you.", "Ha, fair enough.", "Come back when the rush is over and tell me more."]
+    },
+    {
+      "id": "tomas", "name": "Tomas", "role": "baker at Rise Bakery", "stay_at": "fern_bakery",
+      "greeting": ["Hey neighbour! Flour everywhere, sorry."],
+      "topics": {
+        "order|bread|loaves|pick": "Your Fern Common order: four sourdough and a rye. It's boxed by the door. Grab the box and take it over, would you?",
+        "dinner|tonight|common": "Dinner's at seven at Fern Common. I'm on soup duty.",
+        "chess": "Chess? Wen at the Chess Garden. I lost to him in eleven moves once.",
+        "thanks|thank": "Any time. Say hi to the Common for me."
+      },
+      "fallback": ["Sorry, the oven timer, what was that?", "Ha! Right.", "Mm-hm."]
+    },
+    {
+      "id": "wen", "name": "Wen", "role": "retired engineer who plays chess at the Chess Garden", "stay_at": "chess_garden",
+      "greeting": ["Ah, a visitor. Do you play?"],
+      "topics": {
+        "yes|play|game|chess": "Sit, sit. White or black? I warn you, I open with the Catalan.",
+        "white": "Good. Your move. Take your time, the afternoon is long.",
+        "black": "Then I begin. d4. Your move.",
+        "no|later|busy": "Another day then. I'm here most afternoons till the lanterns come on.",
+        "bread|dinner": "Dinner at Fern? I may come for the soup."
+      },
+      "fallback": ["Hmm.", "Interesting.", "In my day the creek was a culvert. Look at it now."]
+    },
+    {
+      "id": "priya", "name": "Priya", "role": "librarian at Lantern Library", "stay_at": "library",
+      "greeting": ["Hello! Looking for anything in particular?"],
+      "topics": {
+        "book|read|borrow": "The new arrivals shelf is by the window. Lots of mycology this month, for some reason.",
+        "observatory|star|telescope": "The observatory opens at dusk. Take the stairs past the reading room.",
+        "chess": "Wen is just over in the Chess Garden. You can hear him gloating from here."
+      },
+      "fallback": ["Shh, gently, people are reading.", "Lovely.", "I'll keep that in mind."]
+    },
+    {
+      "id": "kai", "name": "Kai", "role": "a ten-year-old walking between the school and the green", "walk": ["willow_school", "village_green", "loom_thread"],
+      "greeting": ["Hi! Did you see the balloons?"],
+      "topics": {
+        "balloon": "There are six! I counted. The red one is the best.",
+        "school": "School's out early on Fridays. We're building a rain garden.",
+        "chess": "Wen beat my mum. He beats everybody."
+      },
+      "fallback": ["Okay!", "Cool.", "Bye, I gotta go!"]
+    }
+  ]
+}
