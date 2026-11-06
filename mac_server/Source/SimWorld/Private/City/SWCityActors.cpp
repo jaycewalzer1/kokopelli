@@ -24,7 +24,7 @@ EMat MatFromName(const FString& N)
 		{TEXT("Timber"), EMat::Timber}, {TEXT("RammedEarth"), EMat::RammedEarth}, {TEXT("SolarGlass"), EMat::SolarGlass},
 		{TEXT("GreenRoof"), EMat::GreenRoof}, {TEXT("Moss"), EMat::Moss}, {TEXT("Foliage"), EMat::Foliage},
 		{TEXT("Bark"), EMat::Bark}, {TEXT("Water"), EMat::Water}, {TEXT("PermeableStone"), EMat::PermeableStone},
-		{TEXT("Path"), EMat::Path}, {TEXT("Metal"), EMat::Metal}, {TEXT("Fabric"), EMat::Fabric}, {TEXT("Lantern"), EMat::Lantern}};
+		{TEXT("Path"), EMat::Path}, {TEXT("Metal"), EMat::Metal}, {TEXT("Fabric"), EMat::Fabric}, {TEXT("Lantern"), EMat::Lantern}, {TEXT("Plain"), EMat::Plain}};
 	FString K = N;
 	K.RemoveFromStart(TEXT("M_"));
 	const EMat* Found = M.Find(K);
@@ -343,13 +343,14 @@ bool ASWCityGround::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 		// "step": cushion spacing as a multiple of the width (long cushions = fewer instances); "shadow": cast shadows
 		const TArray<FVector2D> Rs = Resample(Pts, Wd * J::Num(Hd, TEXT("step"), 1.1));
 		const bool bHedgeShadow = J::Bool(Hd, TEXT("shadow"), true);
+		const double HedgeCull = J::Num(Hd, TEXT("cull_cm"), 0.0);
 		for (int32 i = 0; i + 1 < Rs.Num(); ++i)
 		{
 			const FVector2D D = Rs[i + 1] - Rs[i];
 			const double Yaw = FMath::RadiansToDegrees(FMath::Atan2(D.Y, D.X));
 			const FVector2D Mid = (Rs[i] + Rs[i + 1]) * 0.5;
 			const float Kc = (Rng.I(3) - 1) * 0.1f + 1.0f; // 3 levels (each tint is a component)
-			Inst.Add(P(EPrim::Puff), M(EMat::Foliage), FLinearColor(Tc.R * Kc, Tc.G * Kc, Tc.B * Kc), Xf(FVector(Mid, Hh * 0.35), FVector(D.Size() * 0.62 / 100, Wd * 0.5 / 100, Hh * 0.75 / 100), Yaw), bHedgeShadow, 0.0);
+			Inst.Add(P(EPrim::Puff), M(EMat::Foliage), FLinearColor(Tc.R * Kc, Tc.G * Kc, Tc.B * Kc), Xf(FVector(Mid, Hh * 0.35), FVector(D.Size() * 0.62 / 100, Wd * 0.5 / 100, Hh * 0.75 / 100), Yaw), bHedgeShadow, HedgeCull);
 		}
 	}
 	for (const TSharedPtr<FJsonObject>& S : J::Objs(Obj, TEXT("scatter")))
@@ -758,8 +759,11 @@ void ASWCityTrees::AddShrub(FInstances& Out, const FVector& Base, double Radius,
 	}
 }
 
-void ASWCityTrees::AddTree(FInstances& Out, const FString& SpeciesName, const FVector& Base, double Scale, uint32 InSeed)
+void ASWCityTrees::AddTree(FInstances& Out, const FString& InName, const FVector& Base, double Scale, uint32 InSeed)
 {
+	// "<species>@far": landscape tree seen only from far away, a trunk plus one crown cushion (2 instances)
+	FString SpeciesName = InName;
+	const bool bDistant = SpeciesName.RemoveFromEnd(TEXT("@far"));
 	const FSpecies& S = FindSpecies(SpeciesName);
 	FRng Rng(InSeed);
 	const double K = Scale * Rng.R(0.85, 1.15);
@@ -783,7 +787,7 @@ void ASWCityTrees::AddTree(FInstances& Out, const FString& SpeciesName, const FV
 	if (S.Shape == TS::Bamboo)
 	{
 		// clump: culms leaning slightly outward, leaf sprays on the upper half
-		const int32 Nc = 9 + Rng.I(6);
+		const int32 Nc = 7 + Rng.I(5);
 		const double Rc = 70 * K;
 		for (int32 i = 0; i < Nc; ++i)
 		{
@@ -794,7 +798,7 @@ void ASWCityTrees::AddTree(FInstances& Out, const FString& SpeciesName, const FV
 			const FVector Dir = FVector(FMath::Cos(A) * FMath::Sin(FMath::DegreesToRadians(Tilt)), FMath::Sin(A) * FMath::Sin(FMath::DegreesToRadians(Tilt)), FMath::Cos(FMath::DegreesToRadians(Tilt)));
 			const double Rcm = Rng.R(3.0, 5.0) * FMath::Max(K, 0.6);
 			Out.Add(P(EPrim::Cylinder), M(EMat::Timber), Shade(S.BarkC, Rng.F() < 0.5f ? 0.88f : 1.05f), FTransform(FRotationMatrix::MakeFromZ(Dir).Rotator(), B0, FVector(Rcm / 50, Rcm / 50, Hc / 100)));
-			for (int32 l = 0; l < 3; ++l)
+			for (int32 l = 0; l < 2; ++l)
 			{
 				const FVector Pc = B0 + Dir * Hc * Rng.R(0.55, 1.0) + FVector(Rng.R(-50, 50), Rng.R(-50, 50), 0) * K;
 				Out.Add(P(EPrim::Puff), M(EMat::Foliage), LeafT(Rng.I(3)), Xf(Pc, FVector(Rng.R(0.5, 0.8), Rng.R(0.3, 0.45), Rng.R(0.22, 0.32)) * K, Rng.R(0, 360)), true, 0.0);
@@ -803,6 +807,14 @@ void ASWCityTrees::AddTree(FInstances& Out, const FString& SpeciesName, const FV
 		return;
 	}
 
+	if (bDistant)
+	{
+		Out.Add(P(EPrim::Trunk), M(EMat::Bark), BarkT, Xf(Base - FVector(0, 0, 10), FVector(TR / 50, TR / 50, (H + CH * 0.3) / 100), Yaw0));
+		const bool bTall = S.Shape == TS::Columnar || S.Shape == TS::Conifer;
+		const double R = bTall ? CR * 1.05 : CR * 0.95;
+		Out.Add(P(EPrim::Puff), M(EMat::Foliage), LeafT(1), Xf(Base + FVector(0, 0, H + CH * (bTall ? 0.42 : 0.4)), FVector(R / 100, R / 100, (bTall ? CH * 0.55 : CH * 0.5) / 100), Rng.R(0, 360)));
+		return;
+	}
 	// trunk
 	const double TrunkLen = S.Shape == TS::Conifer ? H + CH * 0.3 : H + CH * 0.35;
 	Out.Add(P(EPrim::Trunk), M(EMat::Bark), BarkT, Xf(Base - FVector(0, 0, 10), FVector(TR / 50, TR / 50, TrunkLen / 100), Yaw0, Lean, 0));
@@ -814,7 +826,7 @@ void ASWCityTrees::AddTree(FInstances& Out, const FString& SpeciesName, const FV
 	case TS::Small:
 	{
 		const bool bSpread = S.Shape == TS::Spreading;
-		const int32 Tiers = S.Shape == TS::Small ? 2 : (bSpread ? 2 : 3);
+		const int32 Tiers = 2; // two layered tiers: three read better close up but cost ~1.5 ms of shadow-map overdraw city-wide
 		// visible limbs fanning into the lowest tier
 		const int32 Limbs = S.Shape == TS::Small ? 0 : 3 + Rng.I(2);
 		for (int32 i = 0; i < Limbs; ++i)
@@ -825,11 +837,11 @@ void ASWCityTrees::AddTree(FInstances& Out, const FString& SpeciesName, const FV
 		for (int32 t = 0; t < Tiers; ++t)
 		{
 			const double Ft = Tiers > 1 ? double(t) / (Tiers - 1) : 0.0; // 0 bottom .. 1 top
-			const double Z = H + CH * (bSpread ? 0.15 + 0.45 * Ft : 0.12 + 0.62 * Ft);
-			const double Rt = CR * (bSpread ? 1.0 - 0.3 * Ft : 1.0 - 0.42 * Ft);
-			const int32 Ring = S.Shape == TS::Small ? 3 : (t == 0 ? 5 : 4);
+			const double Z = H + CH * (bSpread ? 0.15 + 0.45 * Ft : 0.15 + 0.55 * Ft);
+			const double Rt = CR * (bSpread ? 1.0 - 0.3 * Ft : 1.0 - 0.35 * Ft);
+			const int32 Ring = S.Shape == TS::Small ? 3 : (t == 0 ? 6 : 4);
 			const double Vz = bSpread ? 0.5 : 0.66;
-			const int32 Tier = Tiers == 3 ? t : (t == 0 ? 0 : 2);
+			const int32 Tier = t == 0 ? 0 : 2;
 			const FVector C = Base + FVector(Rng.R(-0.05, 0.05) * CR, Rng.R(-0.05, 0.05) * CR, Z);
 			Cushion(Out, C, Rt * 0.6, Vz, LeafT(FMath::Min(Tier + 1, 2)), Rng);
 			const double A0 = Rng.R(0, 2 * PI);
@@ -838,7 +850,9 @@ void ASWCityTrees::AddTree(FInstances& Out, const FString& SpeciesName, const FV
 				const double A = A0 + 2 * PI * i / Ring + Rng.R(-0.25, 0.25);
 				const double Rad = Rt * Rng.R(0.5, 0.62);
 				const bool bBloom = S.BloomFrac > 0 && Rng.F() < S.BloomFrac;
-				const FLinearColor T = bBloom ? Shade(S.Bloom, Light) : LeafT(Tier);
+				FLinearColor T = bBloom ? Shade(S.Bloom, Light) : LeafT(Tier);
+				// flowering spreaders (cherry, jacaranda): the lower tier is leaf green; blossom from below read as brown rock
+				if (bSpread && t == 0 && S.Bloom.G > S.Bloom.R) T = Shade(S.Bloom, Light * (i % 2 ? 0.85f : 1.0f));
 				Cushion(Out, C + FVector(FMath::Cos(A) * Rad, FMath::Sin(A) * Rad, Rng.R(-0.08, 0.1) * CH), Rt * Rng.R(0.36, 0.48), Vz, T, Rng);
 			}
 		}
@@ -884,7 +898,7 @@ void ASWCityTrees::AddTree(FInstances& Out, const FString& SpeciesName, const FV
 			const double R = CR * (0.95 - 0.55 * F * F);
 			const FVector Pc = Base + FVector(Rng.R(-0.12, 0.12) * CR, Rng.R(-0.12, 0.12) * CR, H + CH * (0.1 + 0.78 * F));
 			Cushion(Out, Pc, R, CH / (Nl * R) * 1.25, LeafT(i < 2 ? 0 : (i < 4 ? 1 : 2)), Rng);
-			if (i < Nl - 1)
+			if (i == 1 || i == 3)
 			{
 				const double A = Rng.R(0, 2 * PI);
 				Cushion(Out, Pc + FVector(FMath::Cos(A), FMath::Sin(A), 0) * R * 0.55, R * 0.6, CH / (Nl * R) * 1.1, LeafT(1), Rng);
@@ -908,14 +922,14 @@ void ASWCityTrees::AddTree(FInstances& Out, const FString& SpeciesName, const FV
 		for (int32 i = 0; i < 3; ++i) Limb(Base + FVector(0, 0, H * 0.85), Yaw0 + 120 * i + Rng.R(-15, 15), Rng.R(40, 55), CR * 0.5, TR * 0.5);
 		const FVector C = Base + FVector(0, 0, H + CH * 0.45);
 		Cushion(Out, C + FVector(0, 0, CH * 0.12), CR * 0.62, 0.7, LeafT(2), Rng);
-		for (int32 i = 0; i < 5; ++i)
+		for (int32 i = 0; i < 4; ++i)
 		{
-			const double A = 2 * PI * i / 5 + Rng.R(-0.3, 0.3);
+			const double A = 2 * PI * i / 4 + Rng.R(-0.3, 0.3);
 			Cushion(Out, C + FVector(FMath::Cos(A) * CR * 0.5, FMath::Sin(A) * CR * 0.5, -CH * 0.08), CR * 0.45, 0.6, LeafT(Rng.I(2)), Rng);
 		}
 		// fruit (or, for plain "fruit" trees, blossom flecks): small dots on the crown surface
 		const bool bFruit = S.BloomFrac > 0.5f;
-		const int32 Nf = bFruit ? 8 + Rng.I(5) : 6;
+		const int32 Nf = bFruit ? 6 + Rng.I(4) : 5;
 		for (int32 i = 0; i < Nf; ++i)
 		{
 			const double A = Rng.R(0, 2 * PI), El = Rng.R(-0.5, 0.6);
@@ -961,6 +975,11 @@ bool ASWCityTrees::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 	if (!J::Bool(Obj, TEXT("shadow"), true))
 	{
 		for (FInstanceBucket& Bk : Inst.Buckets) Bk.bShadow = false;
+	}
+	// "cull_cm": draw distance for the whole group (landscape trees are sub-pixel past ~1.5 km)
+	if (const double Cull = J::Num(Obj, TEXT("cull_cm"), 0.0); Cull > 0)
+	{
+		for (FInstanceBucket& Bk : Inst.Buckets) Bk.CullCm = Bk.CullCm > 0 ? FMath::Min(Bk.CullCm, Cull) : Cull;
 	}
 	AddInstances(Inst);
 	return true;

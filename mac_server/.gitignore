@@ -5,4 +5,6 @@ DerivedDataCache/
 *.xcworkspace
 Plugins/*/Binaries/
 Plugins/*/Intermediate/
-Build/
+Packaged/
+# Build/ holds Unreal's per-platform inputs (Build/Mac/Resources); only its generated parts are ignored.
+Build/**/UBTGenerated/

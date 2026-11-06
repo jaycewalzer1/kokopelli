@@ -20,7 +20,9 @@ $PY -I ../city/ue/render_views.py --port 9001 [--only street,canopy] [--perf 5]
 
 Renders go to `~/Desktop/kokopelli/out/city_renders/<timestamp>/` (PNG per view, `views.json` with poses and
 capture times, `perf.json` with `--perf`). Views: 3 aerials, one street view per cell, a courtyard, the canopy
-walk and a sky bridge, creek/pond (ground + aerial), the Commons (aerial + plaza), parkway, food forest.
+walk and a sky bridge, creek/pond (ground + aerial), the Commons (aerial + plaza), parkway, food forest, plus
+(polish pass) `canopy_raised` (raised deck over a 14 m roof), `market_street`, `landscape_north`, `willow_bank`.
+Reference sets: `out/city_renders/final/` (before the polish pass) and `out/city_renders/polish/` (after).
 
 Frame stats: `vbp CITY_manager ResetFrameStats`, wait, `vbp CITY_manager GetFrameStats` returns averaged
 `delta_ms`, `game_ms`, `render_ms`, `gpu_ms` (RHIGetGPUFrameCycles), `fps` and city totals. The manager ticks
@@ -61,7 +63,9 @@ replaces the old geometry) and `GetBuildInfo(FString& Info)`. JSON fields ending
 | `SWCityOpenSpace` | `CITY_space_<id>` | courtyards, amphitheater, chess garden, playground, village green, plots, food forest |
 | `SWStreetFurniture` | `CITY_furn_<type>_<nnn>` | the 136 items; murals on their building's street wall |
 | `SWCityPlace` | `CITY_place_<id>` | category dressing at the place's facade (cafe tables + umbrellas, market stalls, ...) |
-| `SWCityGround` | `CITY_ground` | grass, meadow skirt, plaza paving, meadow flowers |
+| `SWCityGround` | `CITY_ground` | city ground slabs, plaza paving, meadow blotches (macro variation), flowers |
+| `SWCityGround` | `CITY_landscape` | the surroundings: field patchwork, hedgerows, backdrop hills (`"gi": false`) |
+| `SWCityOpenSpace` | `CITY_space_commons_plaza` | kind `plaza`: `props` list (stalls, sails, pool, planter benches, bikes, lights, tables, kiosks, flower beds) |
 | `SWCityManager` | `CITY_manager` | frame stats |
 
 Buildings (bars of the courtyard blocks plus the library, school, bathhouse): per floor a CLT slab with a lip, a
@@ -77,6 +81,42 @@ walk deck with pergolas/benches on 17.5 m roofs (spurs out to where bridges land
 on the east bar (greenhouse, dye garden, herb terrace, hammock deck, solar lab with turbine, dance deck,
 observatory dome on the library). Civic: timber-vaulted market hall on branching columns, mobility-hub PV canopy,
 glass greenhouse.
+
+## Polish pass (Nov 2026)
+
+* **Canopy walk is continuous at 17.5 m.** `build_city.py` computes each walk bar's deck line (`deck_line_cm`,
+  mirroring the C++ setbacks) and the join points inside each block: where an E/W bar's deck meets a N/S bar,
+  where a landing tower stands, where a bridge lands (`deck_spurs_cm`, `terrace_gaps_cm`). In C++:
+  * roofs at walk level: deck down the roof as before, plus gaps in the edge and end planters where spurs/neighbour
+    decks arrive (bridges used to hit a planter wall);
+  * roofs below it (the 14 m / 10.5 m south bars, birch W/E): a **raised boardwalk on posts** at walk level
+    (glulam edge beams, knee-braced posts, slatted balustrade, hung planters with trailing plants, pergolas,
+    a stair down to the roof garden), kept to the court side so it clears the landing towers;
+  * 6-storey bars (top floor at 17.5 m): **open loggias** through both ends of the top floor, both 17.5 m terraces
+    become walk decks, and short decks bridge from the terrace to the neighbour's roof. Upper collision now leaves
+    terraces and loggias walkable. The Commons landings still connect only by their lifts (no deck between them).
+* **Foliage.** New shared primitives `Puff` (cushion with flat underside), `Fringe` (9 hanging strands), `Cone`
+  (stacked conifer skirts). Species shapes: layered broadleaf (2 tiers, darker below), spreading (cherry/jacaranda,
+  green lower tier), willow (dome + two rings of fringe curtains to ~0.6 m above ground), columnar (birch, poplar,
+  pawpaw), conifer (cypress), bamboo clumps, orchard (apple/persimmon with fruit dots, "fruit" with blossom),
+  small roof trees, `copse` for hedgerows. `"<species>@far"` = 2-instance distant tree. Balcony/terrace "drapes"
+  are fringe curtains (no more grape bunches). Tints are quantised (3 brightness levels): every distinct tint is
+  its own instanced component, and per-cushion random tints had produced 10 k components.
+* **Facade styles per block** (`STYLES` in build_city.py -> `st_*` fields): timber tone, wall core (timber / lime
+  render on the earth material / rammed earth), bay width, window ratio and tall French windows with rails,
+  balcony type (`bosco` deep staggered, `gallery` continuous planter ledges, `sparse`, `default`), vertical-garden
+  strips, fins (timber / copper / none), and the 21 m roofs' profile (`gable` sedum+PV, `sawtooth` north-light PV,
+  `pavilions`). Window/railing glass uses `Scale` 5 (material Scale override; `GetMaterial(Mat, Tint, Scale)`), so
+  the PV grid no longer reads at distance; the bridge and terrace glass rails became timber slats.
+* **Commons plaza**: a market street of 14 stalls under festoon lights between the market hall and the
+  amphitheater, three shade sails over the chess garden, a reflecting pool with jets on the east lawn, planter
+  benches, cafe tables, kiosks, bike parking, flower beds (placed greedily on free paving). Bike racks in the
+  street furniture now hold bikes; lantern posts carry hanging baskets.
+* **Ground and surroundings**: meadow blotches of different tints/scales over the parkway and creek corridor;
+  `CITY_landscape` covers the 4 km floor with a field patchwork (flat colour `Plain` material: textured
+  materials tiled visibly at field scale and cost shading), hedgerows with copses (shadows only within ~500 m,
+  culled past 1.7 km far out), poplar windbreaks, orchards, woods, and two rings of backdrop hills hiding the floor
+  edge. Far landscape trees (`CITY_trees_far`) have no shadows, no GI and a 1.7 km cull.
 
 ## Decisions
 
@@ -103,7 +143,21 @@ glass greenhouse.
 * Collision: hidden boxes for building masses (ground-floor passages left open), roof/terrace walk decks, bridge
   decks, boardwalk and dock. Foliage has none.
 
-## Measured (M4 Max, 1280x720 window, Lumen + VSM)
+## Measured after the polish pass (M4 Max, 1280x720, Lumen + VSM)
+
+* Build: 259 actors, spawn 0.2 s, Configure 1.8-2.4 s, total 2.1-2.6 s. C++ incremental compile ~10 s, relaunch ~10-20 s.
+* ~12.2 M triangles (estimate), 154.8 k instances, 3734 components (was 16.4 M / 205.6 k / 2301).
+* Captures: 0.17-0.23 s per 1280x720 lit PNG (25 views).
+* GPU frame time is **not stable across a session**: the same scene read 16.4-16.8 ms (aerial overview) right
+  after a fresh launch + full build, and 10.7-15.1 ms minutes later / after other work (the window is vsync
+  capped and the GPU clock scales). Same-protocol comparison right after launch: old code 11.6-12.3 ms aerial,
+  12.3 ms street; polish pass 16.4-16.8 ms aerial, 10.9-12.5 ms street. Attribution (destroy one group at a
+  time, fresh): landscape ~1.2-2.3 ms, landscape trees ~0.5-1.7 ms, courtyards ~1.4 ms, street trees ~0.2-1.1 ms.
+* A pitfall when measuring: destroying actors without `vset /action/clean_garbage` and then re-spawning the same
+  names gave implausibly cheap numbers (probably the re-spawned actors weren't rendering; not verified). Measure
+  after a full `build_city.py`, and compare numbers taken at the same point after a launch.
+
+## Measured before the polish pass (M4 Max, 1280x720 window, Lumen + VSM)
 
 * Build: 256 actors, spawn 0.2 s, Configure 1.7 s, total ~2 s.
 * 2301 components, ~16.4 M triangles (estimate, instances x primitive), 205 k instances, 1943 trees.
@@ -117,13 +171,13 @@ glass greenhouse.
 * **Material usage flags.** The Solarpunk materials are saved without `bUsedWithInstancedStaticMeshes`; in
   this uncooked editor-game build `SWCityMesh.cpp` sets the flag and recompiles at load (logs a warning). A
   packaged build needs the flag saved in the assets, or all foliage renders with the default material.
-* Canopy walk continuity: the 4-storey south bars' roofs sit at 14 m, so the walk steps down there (landing
-  towers connect the bridges as world.json says, but there are no stairs between roof levels).
-* No interiors, doors are glazing only; market stalls/tables are simple boxes; balconies on the street side are
-  sparse by design.
-* Foliage is blob-based (stylised, low-poly icospheres); willow curtains read as columns from a distance.
-* No lights: lanterns are emissive only (66 point lights would cost more than they show in late-afternoon light).
-* The moss/meadow textures tile visibly from the air (material scale), and there are no mesh distance fields for
-  runtime meshes, so Lumen GI on city geometry is screen-space only.
-* Instance count is high; if perf drops, the first knobs are the drape/shrub cull distances (35 000 cm) in
-  SWCityBuilding.cpp and the street-tree spacing in build_city.py.
+* Canopy walk: continuous inside every block; between the two Commons landings there is no deck (lifts only).
+  The raised decks' stairs are a single flight with no landing; loggia posts are simple timber.
+* No interiors, doors are glazing only; balconies on the street side are sparse by design.
+* Foliage cushions are big and smooth close up (the foliage material's texture reads as "cabbage" at 2 m);
+  crowns were cut from 3 tiers to 2 for frame time.
+* No lights: lanterns are emissive only; a dusk variant with real lights was not done.
+* Fields are flat colour (no crop rows); hills are smooth hemispheres that read blue-grey through the haze.
+* No mesh distance fields for runtime meshes, so Lumen GI on city geometry is screen-space only.
+* **Frame time varies with session state** (see Measured). Knobs, in order: `cull_cm`/count of `CITY_trees_far`,
+  hedgerow `step`/density in `plan_landscape`, crown tiers in `AddTree`, drape/shrub cull distances (35 000 cm).

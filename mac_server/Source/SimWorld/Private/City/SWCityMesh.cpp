@@ -16,7 +16,7 @@ namespace
 const TCHAR* const GMatNames[] = {
 	TEXT("M_Timber"), TEXT("M_RammedEarth"), TEXT("M_SolarGlass"), TEXT("M_GreenRoof"), TEXT("M_Moss"),
 	TEXT("M_Foliage"), TEXT("M_Bark"), TEXT("M_Water"), TEXT("M_PermeableStone"), TEXT("M_Path"),
-	TEXT("M_Metal"), TEXT("M_Fabric"), TEXT("M_Lantern")};
+	TEXT("M_Metal"), TEXT("M_Fabric"), TEXT("M_Lantern"), TEXT("M_Plain")};
 static_assert(UE_ARRAY_COUNT(GMatNames) == int32(SWCity::EMat::Count), "material names");
 
 struct FParent
@@ -59,7 +59,8 @@ FParent& Parent(SWCity::EMat Mat)
 		P.bTried = true;
 		const FString Name = GMatNames[int32(Mat)];
 		const FString Path = FString::Printf(TEXT("/Game/Solarpunk/Materials/%s.%s"), *Name, *Name);
-		P.Material = FSoftObjectPath(Path).TryLoad() ? Cast<UMaterialInterface>(FSoftObjectPath(Path).ResolveObject()) : nullptr;
+		// M_Plain is deliberately not an asset: it is the flat BasicShapeMaterial fallback
+		P.Material = Mat != SWCity::EMat::Plain && FSoftObjectPath(Path).TryLoad() ? Cast<UMaterialInterface>(FSoftObjectPath(Path).ResolveObject()) : nullptr;
 		P.bReal = P.Material != nullptr;
 		if (!P.Material)
 		{
@@ -501,7 +502,11 @@ UStaticMesh* FSWMeshBuilder::Build(UObject* Outer, const FString& DebugName) con
 		const FName SlotName(*FString::Printf(TEXT("S%d_%s"), SI, SWCity::MatName(S.Mat)));
 		const FPolygonGroupID G = MD.CreatePolygonGroup();
 		SlotNames[G] = SlotName;
-		Mesh->GetStaticMaterials().Add(FStaticMaterial(SWCity::GetMaterial(S.Mat, S.Tint, S.Scale), SlotName, SlotName));
+		Mesh->GetStaticMaterials().Add(FStaticMaterial(SWCity::GetMaterial(S.Mat, S.Tint, S.Scale), SlotName
+#if WITH_EDITORONLY_DATA
+			, SlotName // imported slot name only exists in editor builds
+#endif
+			));
 		Inst.Reset(S.Pos.Num());
 		for (int32 i = 0; i < S.Pos.Num(); ++i)
 		{

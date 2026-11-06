@@ -4,7 +4,7 @@
 #   scripts/run.sh [auto|editor-game|packaged] [extra engine args...]
 #
 #   editor-game  UnrealEditor <project> -game  (uncooked; needs `build.sh editor`)
-#   packaged     Build/**/SimWorld.app          (needs `build.sh package`)
+#   packaged     Packaged/SimWorld.app          (needs `build.sh package`)
 #   auto         packaged if it exists, else editor-game   [default]
 #
 # Env: CVPORT (9000)  RES (1280x720)  MAP (e.g. /Game/Maps/demo_1; default from DefaultEngine.ini)
@@ -32,8 +32,8 @@ find_engine() {
 }
 
 find_packaged() {
-	[[ -d "$ROOT/Build" ]] || return 0
-	find "$ROOT/Build" -maxdepth 3 -type d -name "SimWorld*.app" | head -n 1
+	[[ -d "$ROOT/Packaged" ]] || return 0
+	find "$ROOT/Packaged" -maxdepth 3 -type d -name "SimWorld*.app" | head -n 1
 }
 
 if [[ "$MODE" == "auto" ]]; then

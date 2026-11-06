@@ -32,6 +32,7 @@ namespace SWCity
 		Metal,
 		Fabric,
 		Lantern,
+		Plain,     // flat colour (engine BasicShapeMaterial): far landscape, where texture can't be seen but costs shading
 		Count
 	};
 

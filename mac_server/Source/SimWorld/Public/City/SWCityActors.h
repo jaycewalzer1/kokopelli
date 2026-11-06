@@ -146,7 +146,7 @@ class SIMWORLD_API ASWCityTrees : public ASWCityActor
 	GENERATED_BODY()
 public:
 	/** Adds one procedural tree (trunk, limbs, clustered canopy) at local Base. */
-	static void AddTree(FInstances& Out, const FString& Species, const FVector& Base, double Scale, uint32 Seed);
+	static void AddTree(FInstances& Out, const FString& Species, const FVector& Base, double Scale, uint32 Seed); // "<species>@far" = 2-instance distant tree
 	static void AddShrub(FInstances& Out, const FVector& Base, double Radius, const FLinearColor& Tint, uint32 Seed, double CullCm = 0.0);
 protected:
 	virtual bool Build(const TSharedPtr<FJsonObject>& J, FString& Error) override;

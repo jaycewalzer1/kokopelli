@@ -829,7 +829,8 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 					Box(WoodDark, FMath::Min(Su.X, 0.0), FMath::Max(Su.X, 0.0), Su.Y - 200, Su.Y + 200, Z + Slab + 1, Zd);
 				}
 			}
-			Bar.Clear.Add(FBox2D(FVector2D(-Lu / 2, DeckV0 - (bRaised ? 150 : 40)), FVector2D(Lu / 2, DeckV1 + (bRaised ? 150 : 40))));
+			// keep roof-garden trees far enough from the deck that their crowns don't hang over the walk
+			Bar.Clear.Add(FBox2D(FVector2D(-Lu / 2, DeckV0 - (bRaised ? 150 : 260)), FVector2D(Lu / 2, DeckV1 + (bRaised ? 150 : 260))));
 			if (bRaised)
 			{
 				{

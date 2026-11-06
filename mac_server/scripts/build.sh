@@ -5,7 +5,7 @@
 #
 #   editor   compile SimWorldEditor (fastest check; needed for run.sh editor-game)   [default]
 #   game     compile the standalone SimWorld game target (no cook)
-#   package  RunUAT BuildCookRun -> Build/Mac/SimWorld.app (cooked, pak'd)
+#   package  RunUAT BuildCookRun -> Packaged/SimWorld.app (cooked, pak'd, self-contained)
 #   xcode    generate SimWorld.xcworkspace
 #   clean    delete Binaries/ and Intermediate/ (project + plugin)
 #
@@ -67,9 +67,15 @@ case "$MODE" in
 			-project="$PROJECT" \
 			-platform=Mac \
 			-clientconfig="$CONFIG" \
-			-build -cook -stage -pak -archive \
-			-archivedirectory="$ROOT/Build" \
+			-build -cook -stage -pak \
 			-unattended -utf8output -nop4
+		# UAT's -archive on Mac copies Binaries/Mac/SimWorld.app, the bare executable without paks or
+		# staged dylibs. The self-contained bundle is the staged one, so archive that ourselves.
+		# (Not into Build/: Unreal keeps per-platform inputs such as Build/Mac/Resources/*.entitlements there.)
+		rm -rf "$ROOT/Packaged"
+		mkdir -p "$ROOT/Packaged"
+		ditto "$ROOT/Saved/StagedBuilds/Mac/SimWorld.app" "$ROOT/Packaged/SimWorld.app"
+		echo "archived: $ROOT/Packaged/SimWorld.app ($(du -sh "$ROOT/Packaged/SimWorld.app" | cut -f1))"
 		;;
 	xcode)
 		run "$UE/Engine/Build/BatchFiles/Mac/GenerateProjectFiles.sh" -project="$PROJECT" -game
