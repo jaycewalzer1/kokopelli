@@ -1,0 +1,8 @@
+{
+  "host": "pace",
+  "remote_root": "CHANGE_ME e.g. ~/scratch/kokopelli",
+  "setup": ["CHANGE_ME e.g. module load anaconda3", "CHANGE_ME e.g. source ~/scratch/kokopelli-venv/bin/activate"],
+  "sbatch": ["CHANGE_ME e.g. -A gts-yourpi", "CHANGE_ME e.g. -q inferno", "--gres=gpu:1", "--mem=48G", "-c 8"],
+  "default_hours": 4,
+  "poll_seconds": 60
+}
