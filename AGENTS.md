@@ -45,7 +45,7 @@ Add a short entry for what you own and what you're touching. Update it when your
 
 ## Wellness center night and staged jobs (working tree on `main`, uncommitted)
 
-- **Status:** Started 2026-11-05 19:33, writing to `out/scenario/2026-11-05-193212`. The spec's calibration check fails on its own payoff table; reported, not fixed.
+- **Status:** Started 2026-11-05 19:33, writing to `out/scenario/2026-11-05-193212`. At 01:40 on 11-06 it had finished 4 of 12 mornings and was waiting behind `simworld_mac_server`, after giving way twice. The spec's calibration check fails on its own payoff table; reported, not fixed.
 - **Owns:** `life/scenario.py`, `life/scenario_night.py`, `life/staged.py`, `ram_share.py`, `tests/test_life_scenario.py`, `SCENARIO_*` and `STAGED_JOBS` in `settings.py`, `out/scenario/`, `out/staged/`, `out/ram/`, and the Ready to start section of the queue page.
 - **Touched:** `Engine._limit` and `_close` take an optional window and extra closing context, and `closing_prompt` shows a fixed outcome when given one. Existing behavior is unchanged.
 - **Runs:** through the GPU queue at priority 60, about 6.4 h. It's polite: between model calls it ends its turn (exit 75) if any local ticket with a lower number is waiting, then queues itself again and resumes. The simcity Unreal work (`mac_server`, priority 1) comes first.
