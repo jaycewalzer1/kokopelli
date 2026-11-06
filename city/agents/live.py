@@ -73,7 +73,7 @@ ACTIONS = """Reply with ONE JSON object and nothing else:
 {"thought": "<one sentence: what you notice and why you choose this>", "action": <action>, "diary": "<optional short note to your future self>"}
 <action> is one of:
 {"type": "go_to", "place": "<place id from the list>"}       walk there along the streets
-{"type": "approach", "person": "<person id>"}                 walk up to someone you can see
+{"type": "approach", "target": "<person id or object id>"}    walk right up to someone or something you can see
 {"type": "say", "text": "<what you say out loud>"}            people within 10 m hear you
 {"type": "look_at", "target": "<person id or place id>"}
 {"type": "pick_up", "object": "<object id>"}                  must be within 3 m
@@ -134,7 +134,7 @@ class Cast:
     def __init__(self, nav, path):
         self.nav = nav
         self.people = {p["id"]: p for p in json.loads(Path(path).read_text())["npcs"]}
-        self.met = set()
+        self.met, self.said = set(), {}
         self.rng = random.Random(0)
 
     def specs(self):
@@ -159,8 +159,10 @@ class Cast:
         if pid not in self.met:
             self.met.add(pid)
             parts.append(self.rng.choice(p["greeting"]))
+        said = self.said.setdefault(pid, set())
         for keys, line in p["topics"].items():
-            if any(re.search(rf"\b{k}", low) for k in keys.split("|")):
+            if keys not in said and any(re.search(rf"\b{k}", low) for k in keys.split("|")):
+                said.add(keys)  # a topic is answered once; next time a later keyword can match
                 parts.append(line)
                 break
         for place_id, place in self.nav.places.items():
@@ -346,7 +348,16 @@ class Life:
         for attempt in range(2):
             p = prompt if not error else f"{prompt}\n\nYour last reply was rejected: {error}. Reply with only the JSON object."
             t = time.time()
-            raw = llm_model.ask(p, [seen], max_tokens=300, temperature=0.4)
+            try:
+                raw = llm_model.ask(p, [seen], max_tokens=300, temperature=0.4)
+            except RuntimeError as e:
+                # Seen after ~40 decisions next to Unreal: "[Event::Event] Failed to create Metal shared event".
+                # Free MLX's GPU state and reload once; a second failure ends the run.
+                self.log("llm_error", error=str(e))
+                llm_model.unload()
+                raw = llm_model.ask(p, [seen], max_tokens=300, temperature=0.4)
+            import mlx.core as mx
+            mx.clear_cache()  # don't hold GPU buffers between decisions; Unreal shares the GPU
             try:
                 thought, act, diary = parse_reply(raw)
                 self.check(act, state)
@@ -361,8 +372,10 @@ class Life:
         t = act["type"]
         if t == "go_to" and act.get("place") not in self.nav.places:
             raise ValueError(f"unknown place {act.get('place')!r}; use an id from the list")
-        if t == "approach" and act.get("person") not in self.cast.people:
-            raise ValueError(f"unknown person {act.get('person')!r}")
+        if t == "approach":
+            act.setdefault("target", act.pop("person", None) or act.pop("object", None))
+            if act["target"] not in self.cast.people and act["target"] not in {o.id for o in state.objects}:
+                raise ValueError(f"unknown person or object {act['target']!r}")
         if t == "say" and not str(act.get("text", "")).strip():
             raise ValueError("say needs text")
         if t == "pick_up" and act.get("object") not in {o.id for o in state.objects}:
@@ -383,8 +396,9 @@ class Life:
             return self.next_leg(), None
         self.route, self.approaching = [], None
         if t == "approach":
-            self.approaching = act["person"]
-            return {"type": "move_to", "target_id": act["person"], "arrival_radius_cm": CHASE_M * 100}, None
+            self.approaching = act["target"]
+            near = CHASE_M if act["target"] in self.cast.people else 1.0  # things: within arm's reach
+            return {"type": "move_to", "target_id": act["target"], "arrival_radius_cm": near * 100}, None
         if t == "say":
             return {"type": "speak", "text": act["text"][:500]}, None
         if t == "look_at":
