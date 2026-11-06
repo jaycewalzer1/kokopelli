@@ -374,8 +374,8 @@ class Plan:
         for r in ([458, 140, 482, 186], [385, 102, 432, 136], [478, 104, 525, 126]):
             slabs.append({"rect_cm": rect(r), "z0": 0, "z1": 4, "mat": "Moss", "tint": [118, 160, 72]})
         scatter = [
-            {"rect_cm": rect(self.edges["parkway"]["bounds_m"]), "kind": "flowers", "count": 2600, "z": 2.5},
-            {"rect_cm": rect(self.edges["creek_corridor"]["bounds_m"]), "kind": "flowers", "count": 2400, "z": 2.5},
+            {"rect_cm": rect(self.edges["parkway"]["bounds_m"]), "kind": "flowers", "count": 4500, "z": 2.5},
+            {"rect_cm": rect(self.edges["creek_corridor"]["bounds_m"]), "kind": "flowers", "count": 4200, "z": 2.5},
         ]
         # macro variation: soft blotches of different meadow tints/scales over the big green areas
         rnd = random.Random(77)
@@ -396,7 +396,15 @@ class Plan:
         # the surrounding landscape is its own actor, kept out of Lumen's scene (it doubled the GI cost)
         land_slabs = [slabs[0]]
         land = self.plan_landscape(land_slabs)
-        self.add("SWCityGround", "CITY_ground", {"loc_cm": [0, 0, 0], "slabs": slabs[1:], "scatter": scatter})
+        # vibe pass (city/VIBE.md 7): Isono's hot-air balloons and birds, placed where the views look.
+        # [x_m, y_m, z_m, colour]: west of the fern lane, NW of the plaza, NE over the creek, north of the canopy
+        # walk, and two over the city for the aerials.
+        balloons = [[-150, 40, 90, 0], [150, -20, 80, 1], [740, 0, 95, 2], [170, -260, 110, 0], [200, 320, 150, 1], [430, 470, 120, 2]]
+        # [x_m, y_m, z_m, count, spread_m]
+        birds = [[300, 100, 40, 14, 25], [420, 60, 30, 9, 15], [610, 250, 26, 11, 20], [110, 150, 28, 8, 14], [260, 420, 55, 16, 30]]
+        sky = {"balloons": [[x * 100, y * 100, z * 100, c] for x, y, z, c in balloons],
+               "birds": [[x * 100, y * 100, z * 100, n, s * 100] for x, y, z, n, s in birds]}
+        self.add("SWCityGround", "CITY_ground", {"loc_cm": [0, 0, 0], "slabs": slabs[1:], "scatter": scatter, **sky})
         self.add("SWCityGround", "CITY_landscape", {"loc_cm": [0, 0, 0], "slabs": land_slabs, "gi": False, **land})
         # edges as open spaces
         fs = self.edges["farm_south"]["bounds_m"]
@@ -515,7 +523,7 @@ class Plan:
                 trees.append([round(cx + math.cos(a) * rr, 1), round(cy + math.sin(a) * rr, 1), rnd.choice(["copse", "copse", "copse", "cypress", "poplar"]), round(rnd.uniform(0.9, 1.4), 2)])
         # backdrop hills: two rows round the floor edge (the floor ends at +-2 km), nearer row green, outer row higher
         hills = []
-        for row, (dist, hmin, hmax, rmin, rmax, tint) in enumerate([(1950, 50, 130, 300, 560, [112, 142, 78]), (2500, 200, 420, 700, 1100, [84, 110, 70])]):
+        for row, (dist, hmin, hmax, rmin, rmax, tint) in enumerate([(1950, 50, 130, 300, 560, [112, 150, 78]), (2500, 200, 420, 700, 1100, [118, 150, 150])]):
             n = 28 if row == 0 else 12  # outer row: few big hills (mostly fogged; each costs shading)
             for k in range(n):
                 t = 2 * math.pi * (k + rnd.uniform(-0.3, 0.3)) / n
@@ -524,7 +532,7 @@ class Plan:
                 m = max(abs(cx), abs(cy))
                 cx, cy = cx / m * dist, cy / m * dist
                 rx, ry = rnd.uniform(rmin, rmax), rnd.uniform(rmin, rmax)
-                hills.append({"c": pt((cx, cy)), "r": [c(rx), c(ry), c(rnd.uniform(hmin, hmax))], "mat": "Plain", "tint": [int(tint[0] * 0.62), int(tint[1] * 0.66), int(tint[2] * 0.5)], "scale": 200})
+                hills.append({"c": pt((cx, cy)), "r": [c(rx), c(ry), c(rnd.uniform(hmin, hmax))], "mat": "Plain", "tint": [int(tint[0] * 0.82), int(tint[1] * 0.86), int(tint[2] * 0.7)], "scale": 200})  # vibe pass: lighter (were 0.62/0.66/0.5: slate)
         self.surround_trees = trees
         self.landscape_counts = {"fields": sum(1 for s_ in slabs if s_.get("z1", 0) <= 1.2 and s_.get("scale", 0) >= 30), "hedges": len(hedges), "trees": len(trees), "hills": len(hills)}
         return {"hedges": hedges, "hills": hills}
@@ -707,7 +715,7 @@ class Plan:
 
     def plan_trees(self):
         rnd = random.Random(20261105)
-        species_by_lane = {"lane_x1": ["oak", "oak", "maple"], "lane_x2": ["jacaranda", "maple"], "lane_y1": ["flowering cherry"],
+        species_by_lane = {"lane_x1": ["oak", "flame", "maple"], "lane_x2": ["jacaranda", "maple", "flame"], "lane_y1": ["flowering cherry"],
                            "lane_y2": ["maple", "flowering cherry", "oak"], "lane_north_edge": ["poplar", "birch"],
                            "lane_east_edge": ["birch", "poplar"], "lane_south_edge": ["apple", "fruit"], "lane_west_edge": ["birch"]}
         street = []
@@ -805,7 +813,7 @@ class Plan:
             for y in (vg[1] + 5, vg[3] - 5):
                 p = (x + rnd.uniform(-2, 2), y + rnd.uniform(-1.5, 1.5))
                 if not inside(p, pg, 4):
-                    green.append([round(p[0], 2), round(p[1], 2), rnd.choice(["shade", "oak", "jacaranda"]), round(rnd.uniform(0.85, 1.1), 2)])
+                    green.append([round(p[0], 2), round(p[1], 2), rnd.choice(["shade", "oak", "jacaranda", "flame"]), round(rnd.uniform(0.85, 1.1), 2)])
             x += 17
         y = vg[1] + 18
         while y < vg[3] - 10:
@@ -825,7 +833,7 @@ class Plan:
             if any(math.hypot(p[0] - q[0], p[1] - q[1]) < 8 for q in commons):
                 continue
             if self.tree_ok(p):
-                commons.append([round(p[0], 2), round(p[1], 2), rnd.choice(["jacaranda", "flowering cherry", "oak", "maple", "bamboo", "willow"]), round(rnd.uniform(0.85, 1.1), 2)])
+                commons.append([round(p[0], 2), round(p[1], 2), rnd.choice(["jacaranda", "flowering cherry", "flame", "oak", "maple", "bamboo", "willow"]), round(rnd.uniform(0.85, 1.1), 2)])
         # low planting islands between the commons buildings
         for _ in range(900):
             p = (rnd.uniform(cmb[0] + 2, cmb[2] - 2), rnd.uniform(cmb[1] + 2, cmb[3] - 2))
