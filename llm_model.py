@@ -24,6 +24,16 @@ def ask(prompt, images=(), max_tokens=512, temperature=0.0):
     return result.text.strip()
 
 
+def chat(system, user, max_tokens=512, temperature=0.7, seed=None):
+    """Return the whole result, with its timings and token counts, for a system and user message."""
+    model, processor = load_llm()
+    if seed is not None:
+        mx.random.seed(seed)
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    formatted = apply_chat_template(processor, model.config, messages)
+    return generate(model, processor, formatted, max_tokens=max_tokens, temperature=temperature)
+
+
 def unload():
     """Free the model's memory. Do this before the world model runs; together they barely fit in 36 GB."""
     load_llm.cache_clear()

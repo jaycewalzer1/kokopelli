@@ -1,0 +1,50 @@
+/* The pipeline view's layout. Colors, type and components come from design.css. */
+header #status-line { margin-left: auto; min-width: 0; }
+.pipeline { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--space-4) var(--space-6) var(--space-12); display: flex; flex-direction: column; gap: var(--space-6); }
+.columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6) var(--space-12); align-items: start; }
+section { min-width: 0; }
+section .eyebrow.ruled { display: flex; justify-content: space-between; gap: var(--space-2); }
+section .eyebrow a { font: inherit; letter-spacing: inherit; text-transform: none; }
+
+.goal-line { font: 300 40px/44px var(--font-serif); margin-bottom: var(--space-2); }
+.blockers { max-width: 65ch; font: 400 16px/24px var(--font-sans); margin-bottom: var(--space-4); }
+.gates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-12); }
+
+.row { display: block; padding: var(--space-2) 0; border-bottom: 1px solid var(--hairline); height: auto; }
+.row-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); font: 500 14px/20px var(--font-sans); overflow-wrap: anywhere; }
+.row-head .right { margin-left: auto; font: 400 13px/20px var(--font-mono); color: var(--ink-muted); }
+.meta { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); overflow-wrap: anywhere; }
+.mono { overflow-wrap: anywhere; }
+.none { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); padding: var(--space-2) 0; }
+.bad { color: var(--danger); }
+
+/* A word and a line style, so nothing here relies on color. */
+.tag { flex: none; padding: 0 4px; border: 1px solid var(--ink-muted); font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; }
+.tag.mock { border-style: dashed; }
+.tag.fail { border-color: var(--danger); color: var(--danger); }
+.tag.unknown { border-style: dotted; }
+.tag.no { border-color: var(--ink); }
+.tag.pass { border-color: var(--hairline); color: var(--ink-muted); }
+.mock-note { font: 500 13px/18px var(--font-sans); }
+
+.mark { display: inline-block; width: 6px; height: 6px; background: var(--ink); animation: pulse 1.2s ease-in-out infinite; }
+.progress { position: relative; height: 1px; margin: var(--space-2) 0 4px; background: var(--hairline); }
+.progress i { position: absolute; left: 0; top: 0; height: 1px; background: var(--ink); }
+.history { display: inline-flex; gap: 2px; vertical-align: middle; }
+.history i { width: 6px; height: 6px; box-sizing: border-box; border: 1px solid var(--ink-muted); }
+.history i.ok { background: var(--ink-muted); }
+.history i.failed { border-color: var(--danger); }
+
+details.tail summary, details.notes summary { padding: 0; border: 0; font: 400 13px/18px var(--font-sans); color: var(--ink-muted); display: list-item; list-style: disclosure-closed; }
+details[open].tail summary, details[open].notes summary { list-style: disclosure-open; }
+details.tail pre, details.notes pre { margin: var(--space-2) 0 0; padding: var(--space-2); max-height: 280px; overflow: auto; background: var(--surface-200); border: 1px solid var(--hairline); font: 400 13px/20px var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) { .mark { animation: none } }
+@media (max-width: 1100px) {
+  .columns, .gates { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .pipeline { padding: var(--space-4); overflow: visible; }
+  header #status-line { margin-left: 0; }
+  .goal-line { font: 400 28px/34px var(--font-serif); }
+}

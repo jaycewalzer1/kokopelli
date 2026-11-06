@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World model runs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="/static/design.css">
+<link rel="stylesheet" href="/static/panel.css">
+<link rel="stylesheet" href="/static/worlds.css">
+</head>
+<body>
+<nav class="sidebar" aria-label="Views">
+  <div class="wordmark">Kokopelli</div>
+  <a href="/">Life generator</a>
+  <a href="/training">Homeostatic training</a>
+  <a href="/architecture">System architecture</a>
+  <a href="/queue">GPU queue</a>
+  <a href="/worlds" aria-current="page">World model runs</a>
+  <a href="/moodboard">City moodboard</a>
+</nav>
+<div class="view">
+<header>
+  <div class="brand">World model runs</div>
+  <div id="status-line" role="status"><i></i><span id="status-text">Loading</span></div>
+</header>
+<main class="worlds">
+  <section class="intro" aria-label="Summary">
+    <p class="headline" id="headline"></p>
+    <p class="meta" id="subline"></p>
+  </section>
+  <div class="tabs" role="tablist" aria-label="Which runs">
+    <button class="tab" role="tab" data-kind="cosmos" aria-selected="true">Cosmos</button>
+    <button class="tab" role="tab" data-kind="mock" aria-selected="false">Mock</button>
+    <button class="tab" role="tab" data-kind="input" aria-selected="false">Inputs</button>
+    <button class="tab" role="tab" data-kind="all" aria-selected="false">All</button>
+  </div>
+  <div id="groups" role="tabpanel"></div>
+</main>
+</div>
+<script type="module" src="/static/worlds.js"></script>
+</body>
+</html>
