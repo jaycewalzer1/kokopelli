@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from homeostatic import watch
-from life import architecture, city, gpu_queue, moodboard, staged, world_runs
+from life import architecture, city, city_live, gpu_queue, moodboard, staged, world_runs
 from life.engine import Budget, Engine
 from life.seed import LifeSeed
 from life.store import OrderError, Store
@@ -241,6 +241,12 @@ class Api:
         data = city.world()
         return {"world": data, "checks": city.checks(data), "ui_version": ui_version()}
 
+    def city_live_runs(self, params):
+        return {**city_live.listing(), "ui_version": ui_version()}
+
+    def city_live_run(self, params):
+        return city_live.run(params["run"])
+
     def moodboard_add(self, body):
         return moodboard.add(body["data"], body.get("title", ""), body.get("source", ""), body.get("origin"))
 
@@ -281,7 +287,8 @@ class Handler(BaseHTTPRequestHandler):
     GET = {"/api/runs": "runs", "/api/status": "status", "/api/feed": "feed", "/api/calendar": "calendar",
            "/api/node": "node", "/api/defaults": "defaults", "/api/training/runs": "training_runs", "/api/training/run": "training_run",
            "/api/architecture": "architecture", "/api/queue": "queue", "/api/queue/log": "queue_log", "/api/queue/past": "queue_past", "/api/moodboard": "moodboard",
-           "/api/worlds": "worlds", "/api/city": "city"}
+           "/api/worlds": "worlds", "/api/city": "city",
+           "/api/city-live/runs": "city_live_runs", "/api/city-live/run": "city_live_run"}
     POST = {"/api/runs": "new_run", "/api/step": "step", "/api/run": "run", "/api/stop": "stop", "/api/fork": "fork"}
     # These change real jobs, so unlike the mock buttons they work while watching, and only for this panel's own page.
     QUEUE_POST = {"/api/queue/move": "queue_move", "/api/queue/cancel": "queue_cancel", "/api/queue/where": "queue_where",
@@ -378,6 +385,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, {"error": "not found"})
         self._send(200, body, content_type)
 
+    def _city_live_frame(self, query):
+        # A run id and a frame name, each checked against the run's own frames folder, never a path.
+        try:
+            body = city_live.frame_file(query["run"][0], query["name"][0]).read_bytes()
+        except (KeyError, IndexError, OSError):
+            return self._send(404, {"error": "not found"})
+        self._send(200, body, "image/png")
+
     def do_GET(self):
         url = urlparse(self.path)
         if url.path == "/":
@@ -398,6 +413,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._static("moodboard.html")
         if url.path == "/api/moodboard/image":
             return self._moodboard_image(parse_qs(url.query))
+        if url.path == "/city-live":
+            return self._static("city-live.html")
+        if url.path == "/api/city-live/frame":
+            return self._city_live_frame(parse_qs(url.query))
         if url.path.startswith("/static/"):
             return self._static(url.path.removeprefix("/static/"))
         if url.path not in self.GET:

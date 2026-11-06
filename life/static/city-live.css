@@ -1,0 +1,71 @@
+/* The live agent view's layout. Colors, type and components come from design.css; the plan's own drawing from moodboard.css. */
+.city-live { gap: var(--space-4); }
+header #run { width: 300px; max-width: 100%; }
+#who { max-width: 65ch; }
+
+.live-layout { display: grid; gap: var(--space-6); align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 360px; grid-template-areas: "eyes map log" "now map log"; }
+.eyes { grid-area: eyes; }
+.now { grid-area: now; display: flex; flex-direction: column; gap: var(--space-4); }
+.map { grid-area: map; }
+.log { grid-area: log; min-width: 0; }
+
+.eyes-frame { margin: 0; aspect-ratio: 16 / 9; background: var(--surface-200); border: 1px solid var(--hairline); display: flex; align-items: center; justify-content: center; }
+#eyes { display: block; width: 100%; height: 100%; object-fit: contain; }
+#eyes[hidden], #eyes-none[hidden] { display: none; }
+.replay { margin-top: var(--space-2); }
+.replay[hidden] { display: none; }
+.replay-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.replay-row button { padding: 4px var(--space-2); font: 400 13px/18px var(--font-sans); }
+#scrub { display: block; width: 100%; padding: 0; border: 0; accent-color: var(--ink); }
+
+.now .facts { margin: 0; }
+.said p, .heard { font: 400 16px/24px var(--font-sans); overflow-wrap: anywhere; }
+.thought { font-style: italic; }
+.heard { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+
+/* The plan fits its column here rather than the page height. */
+.map #plan-svg { max-height: calc(100vh - 200px); }
+.plan-tools { flex-wrap: wrap; align-items: flex-start; }
+.map-buttons { display: flex; gap: var(--space-2); }
+.map-buttons button[aria-pressed="true"] { border-color: var(--ink); }
+.legend i { display: inline-block; }
+.legend .key-agent { width: 10px; height: 10px; border-radius: 50%; background: var(--clay); }
+.legend .key-npc { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--dust-rose); }
+.legend .key-object { width: 8px; height: 8px; background: var(--walnut); }
+.legend .key-route { width: 16px; height: 0; border-top: 2px solid var(--ink); }
+.legend .key-trail { width: 16px; height: 0; border-top: 1px solid var(--ink-muted); }
+
+#plan-svg .route { fill: none; stroke: var(--ink); stroke-width: 2px; stroke-linejoin: round; }
+#plan-svg .goal { fill: none; stroke: var(--ink); stroke-width: 1px; }
+#plan-svg .trail { fill: none; stroke: var(--ink-muted); stroke-width: 1px; stroke-linejoin: round; }
+#plan-svg .trail-ahead { fill: none; stroke: var(--hairline); stroke-width: 1px; stroke-dasharray: 3 3; }
+#plan-svg .npc { fill: var(--surface-100); stroke: var(--dust-rose); stroke-width: 1.5px; }
+#plan-svg .object { fill: var(--walnut); }
+#plan-svg .agent-dot { fill: var(--clay); stroke: var(--surface-100); stroke-width: 2px; }
+#plan-svg .agent-heading { stroke: var(--clay); stroke-width: 3px; stroke-linecap: round; }
+#plan-svg .mark-label { font-family: var(--font-mono); fill: var(--ink); dominant-baseline: central; paint-order: stroke;
+  stroke: var(--surface-100); stroke-width: 3px; pointer-events: none; }
+
+#decisions { margin: 0; padding: 0; list-style: none; max-height: calc(100vh - 200px); overflow-y: auto; }
+#decisions li { border-bottom: 1px solid var(--hairline); }
+.decision { display: flex; gap: var(--space-2); width: 100%; text-align: left; padding: var(--space-2) var(--space-2) var(--space-2) 0;
+  border: 0; border-left: 2px solid transparent; border-radius: var(--radius-none); font: 400 13px/18px var(--font-sans); }
+.decision:hover:not(:disabled) { border-left-color: var(--hairline); }
+.decision[aria-current="true"] { border-left-color: var(--ink); background: var(--surface-200); }
+.decision img, .no-thumb { flex: none; width: 96px; height: 54px; margin-left: var(--space-2); object-fit: cover; background: var(--surface-200); border: 1px solid var(--hairline); }
+.decision-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+.decision-thought { font-style: italic; }
+.reply { padding-left: var(--space-2); border-left: 1px solid var(--dust-rose); }
+.reply b { font-weight: 500; }
+
+@media (max-width: 1400px) {
+  .live-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "eyes map" "now map" "log log"; }
+  #decisions { max-height: 60vh; }
+}
+@media (max-width: 900px) {
+  .live-layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "eyes" "now" "map" "log"; }
+  header #run { width: 100%; }
+  .map #plan-svg { max-height: none; }
+  .decision img, .no-thumb { width: 72px; height: 40px; }
+}

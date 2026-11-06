@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watch the agent</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="/static/design.css">
+<link rel="stylesheet" href="/static/panel.css">
+<link rel="stylesheet" href="/static/pipeline.css">
+<link rel="stylesheet" href="/static/moodboard.css">
+<link rel="stylesheet" href="/static/city-live.css">
+</head>
+<body>
+<nav class="sidebar" aria-label="Views">
+  <div class="wordmark">Kokopelli</div>
+  <a href="/">Life generator</a>
+  <a href="/training">Homeostatic training</a>
+  <a href="/architecture">System architecture</a>
+  <a href="/queue">GPU queue</a>
+  <a href="/worlds">World model runs</a>
+  <a href="/moodboard">City moodboard</a>
+  <a href="/city-live" aria-current="page">Watch the agent</a>
+</nav>
+<div class="view">
+<header>
+  <div class="brand">Watch the agent</div>
+  <select id="run" aria-label="Run"></select>
+  <div id="status-line" role="status"><i></i><span id="status-text">Loading</span></div>
+</header>
+<main class="pipeline city-live">
+  <p class="meta" id="who"></p>
+  <div class="live-layout">
+    <section class="eyes" aria-label="What the agent sees">
+      <div class="eyebrow ruled"><span id="eyes-label">Its eyes</span><span id="eyes-when"></span></div>
+      <figure class="eyes-frame">
+        <img id="eyes" alt="The agent's own first-person view">
+        <figcaption class="none" id="eyes-none" hidden>No frame for this moment.</figcaption>
+      </figure>
+      <div class="replay" id="replay" hidden>
+        <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Decision">
+        <div class="replay-row">
+          <button type="button" id="prev">Previous</button>
+          <span class="mono" id="scrub-text"></span>
+          <button type="button" id="next">Next</button>
+        </div>
+      </div>
+    </section>
+    <section class="now" aria-label="What it's doing" aria-live="polite">
+      <div class="eyebrow ruled"><span id="now-label">Now</span><span id="now-clock"></span></div>
+      <dl class="facts" id="now-facts"></dl>
+      <div class="said">
+        <div class="eyebrow">Thought</div>
+        <p class="thought" id="thought"></p>
+      </div>
+      <div class="said">
+        <div class="eyebrow">What happened</div>
+        <p id="result"></p>
+      </div>
+      <div class="said">
+        <div class="eyebrow">Heard</div>
+        <ul class="heard" id="heard"></ul>
+      </div>
+    </section>
+    <section class="map" aria-label="Where it is">
+      <div class="eyebrow ruled"><span>The city from above</span><span id="map-note"></span></div>
+      <figure class="plan-map">
+        <svg id="plan-svg" role="img" aria-label="Plan of the city with the agent, the people near it and its route"></svg>
+        <figcaption class="plan-tools">
+          <span class="legend" id="legend">
+            <span><i class="key-agent"></i>Agent and heading</span>
+            <span><i class="key-npc"></i>Person</span>
+            <span><i class="key-object"></i>Thing</span>
+            <span><i class="key-route"></i>Route left</span>
+            <span><i class="key-trail"></i>Walked</span>
+          </span>
+          <span class="map-buttons">
+            <button type="button" id="follow" aria-pressed="true">Follow</button>
+            <button type="button" id="fit">Whole city</button>
+          </span>
+        </figcaption>
+      </figure>
+    </section>
+    <section class="log" aria-label="Decisions">
+      <div class="eyebrow ruled"><span>Decisions</span><span id="log-count"></span></div>
+      <ol id="decisions"></ol>
+    </section>
+  </div>
+</main>
+</div>
+<script type="module" src="/static/city-live.js"></script>
+</body>
+</html>
