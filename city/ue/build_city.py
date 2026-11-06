@@ -864,6 +864,34 @@ class Plan:
                 cfg["cull_cm"] = 170000
             self.add("SWCityTrees", name, cfg)
 
+    # ---- realism pilot (city/realism/) ---------------------------------------------------------
+    PILOT_M = (330, 80, 420, 150)  # x0, y0, x1, y1: everything seen from the Moss-Commons bridge walk
+
+    def apply_realism(self, actors):
+        """Mark the pilot area's actors "real" (realism materials, leaf-card foliage) and move the trees inside it
+        into their own CITY_trees_pilot actor. City-wide actors that only cross the area (lanes, the Commons plaza,
+        ground, paths) stay as they are, so the rest of the city renders unchanged."""
+        x0, y0, x1, y1 = self.PILOT_M
+        hit = lambda r: r[0] < x1 and r[2] > x0 and r[1] < y1 and r[3] > y0
+        ids = {b["id"] for b in self.w["buildings"] if hit(b["footprint_m"])}
+        ids |= {br["id"] for br in self.bridges if any(x0 <= q[0] <= x1 and y0 <= q[1] <= y1 for q in br["span_m"])}
+        names = {f"city_{k}_{i}" for i in ids for k in ("bldg", "landing", "bridge", "place")}
+        names |= {"city_place_observatory"} if "library" in ids else set()
+        pilot_trees, out = [], []
+        for cls, name, cfg in actors:
+            loc = cfg.get("loc_cm", [None, None])
+            if name.lower() in names or (cls == "SWStreetFurniture" and x0 * 100 <= loc[0] <= x1 * 100 and y0 * 100 <= loc[1] <= y1 * 100):
+                cfg = {**cfg, "real": True}
+            elif cls == "SWCityTrees" and cfg.get("gi", True) and "trees" in cfg:
+                inside_ = [t for t in cfg["trees"] if x0 * 100 <= t[0] <= x1 * 100 and y0 * 100 <= t[1] <= y1 * 100]
+                if inside_:
+                    pilot_trees += inside_
+                    cfg = {**cfg, "trees": [t for t in cfg["trees"] if t not in inside_]}
+            out.append((cls, name, cfg))
+        if pilot_trees:
+            out.append(("SWCityTrees", "CITY_trees_pilot", {"loc_cm": [0, 0, 0], "trees": pilot_trees, "real": True}))
+        return out
+
     def build(self):
         self.plan_ground()
         self.plan_lanes()
@@ -920,10 +948,15 @@ def main():
     ap.add_argument("--clear", action="store_true", help="only remove every CITY_* actor")
     ap.add_argument("--only", default="", help="comma list of name substrings to (re)build, e.g. bldg_fern,trees")
     ap.add_argument("--dry", action="store_true", help="print the plan, don't connect")
+    ap.add_argument("--realism", action="store_true", help="realism pilot around the bridge walk (city/realism/); off = the city as before")
     args = ap.parse_args()
 
     w = json.loads(Path(args.world).read_text())
-    actors = Plan(w).build()
+    plan = Plan(w)
+    actors = plan.build()
+    if args.realism:
+        actors = plan.apply_realism(actors)
+        print("realism pilot:", ", ".join(n for _, n, cfg in actors if cfg.get("real")))
     if args.only:
         keys = [k.strip().lower() for k in args.only.split(",") if k.strip()]
         actors = [a for a in actors if any(k in a[1].lower() for k in keys)]
