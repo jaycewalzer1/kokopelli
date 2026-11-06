@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPU queue</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="/static/design.css">
+<link rel="stylesheet" href="/static/panel.css">
+<link rel="stylesheet" href="/static/queue.css">
+</head>
+<body>
+<nav class="sidebar" aria-label="Views">
+  <div class="wordmark">Kokopelli</div>
+  <a href="/">Life generator</a>
+  <a href="/training">Homeostatic training</a>
+  <a href="/architecture">System architecture</a>
+  <a href="/queue" aria-current="page">GPU queue</a>
+  <a href="/worlds">World model runs</a>
+  <a href="/moodboard">City moodboard</a>
+</nav>
+<div class="view">
+<header>
+  <div class="brand">GPU queue</div>
+  <div id="status-line" role="status"><i></i><span id="status-text">Loading</span></div>
+</header>
+<main class="queue">
+  <section id="now" aria-label="The job on the GPU now"></section>
+  <section id="staged" aria-label="Ready to start"></section>
+  <section id="line" aria-label="Waiting for a turn"></section>
+  <section id="timeline" aria-label="The last twelve hours"></section>
+  <section id="ledger" aria-label="Every past job"></section>
+</main>
+</div>
+<script type="module" src="/static/queue.js"></script>
+</body>
+</html>
