@@ -1,0 +1,18 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "SimCV",
+	"Description": "UnrealCV-compatible TCP command server (framing, vget/vset/vrun/vbp) for the SimWorld python client.",
+	"Category": "Simulation",
+	"CreatedBy": "kokopelli",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"Modules": [
+		{
+			"Name": "SimCV",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

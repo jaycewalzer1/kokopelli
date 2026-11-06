@@ -1,0 +1,22 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "",
+	"Category": "",
+	"Description": "Native macOS rebuild of the SimWorld Unreal server (UnrealCV-compatible via the SimCV plugin).",
+	"Modules": [
+		{
+			"Name": "SimWorld",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "SimCV",
+			"Enabled": true
+		}
+	],
+	"TargetPlatforms": [
+		"Mac"
+	]
+}

@@ -1,0 +1,8 @@
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+*.xcworkspace
+Plugins/*/Binaries/
+Plugins/*/Intermediate/
+Build/
