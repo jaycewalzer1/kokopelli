@@ -7,7 +7,7 @@
 #   packaged     Packaged/SimWorld.app          (needs `build.sh package`)
 #   auto         packaged if it exists, else editor-game   [default]
 #
-# Env: CVPORT (9000)  RES (1280x720)  MAP (e.g. /Game/Maps/demo_1; default from DefaultEngine.ini)
+# Env: MINIMIZED=1 (start minimized, see below)  CVPORT (9000)  RES (1280x720)  MAP (e.g. /Game/Maps/demo_1; default from DefaultEngine.ini)
 #      UE_ROOT (engine dir)  CVBIND (e.g. 0.0.0.0 to accept remote clients; default loopback)
 set -euo pipefail
 
@@ -48,6 +48,9 @@ ARGS=(-windowed -ResX="$RES_X" -ResY="$RES_Y" -cvport="$PORT" -log -ABSLOG="$LOG
 # UE 5.8 crash workaround (see [SystemSettings] in Config/DefaultEngine.ini); repeated here so builds
 # packaged before that setting existed get it too.
 ARGS+=("-ini:Engine:[SystemSettings]:r.SceneCulling.Async.Update=0")
+# MINIMIZED=1 starts with the window minimized: nothing is presented, so UE 5.8's per-frame Metal shared-event
+# leak (see SWPlayerController.h) stops, and sync stepping runs ~6x faster. Click the Dock icon to look.
+[[ "${MINIMIZED:-0}" == 1 ]] && ARGS+=(-swminimized)
 [[ -n "${CVBIND:-}" ]] && ARGS+=(-cvbind="$CVBIND")
 
 case "$MODE" in

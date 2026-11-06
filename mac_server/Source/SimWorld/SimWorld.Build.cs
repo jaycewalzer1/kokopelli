@@ -28,6 +28,7 @@ public class SimWorld : ModuleRules
 			"RenderCore",
 			"RHI",
 			"InputCore", // EKeys for SWPlayerController's fly/walk keys
+			"Slate", "SlateCore", // SWindow::Minimize (resting the window stops the Metal present leak)
 		});
 
 		if (Target.Platform == UnrealTargetPlatform.Mac)

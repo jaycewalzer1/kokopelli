@@ -9,6 +9,8 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/App.h"
+#include "Engine/GameViewportClient.h"
+#include "Widgets/SWindow.h"
 #include "SWHumanoid.h"
 #include "SWPedestrian.h"
 
@@ -26,6 +28,21 @@ void ASWPlayerController::BeginPlay()
 	Super::BeginPlay();
 	SetInputMode(FInputModeGameOnly());
 	bShowMouseCursor = false;
+	if (FParse::Param(FCommandLine::Get(), TEXT("swminimized")))
+	{
+		Rest(); // agent-only sessions: no presenting, no leak
+	}
+}
+
+void ASWPlayerController::Rest()
+{
+	if (GEngine && GEngine->GameViewport)
+	{
+		if (TSharedPtr<SWindow> Window = GEngine->GameViewport->GetWindow())
+		{
+			Window->Minimize();
+		}
+	}
 }
 
 void ASWPlayerController::PlayerTick(float DeltaTime)
@@ -36,6 +53,20 @@ void ASWPlayerController::PlayerTick(float DeltaTime)
 		Spectator = GetPawn(); // the game mode's default pawn
 	}
 
+	// Count presented frames and rest the window when nobody is looking (see the header on the leak).
+	const TSharedPtr<SWindow> Window = GEngine && GEngine->GameViewport ? GEngine->GameViewport->GetWindow() : nullptr;
+	const bool bVisible = Window.IsValid() && Window->IsVisible() && !Window->IsWindowMinimized();
+	if (bVisible)
+	{
+		++PresentedFrames;
+	}
+	UnfocusedSeconds = FApp::HasFocus() ? 0.f : UnfocusedSeconds + FMath::Min(FApp::GetDeltaTime(), 0.1);
+	if (bVisible && UnfocusedSeconds > AutoRestSeconds)
+	{
+		UE_LOG(LogTemp, Display, TEXT("SimWorld: window unfocused for %.0f s, minimizing to stop the Metal present leak"), UnfocusedSeconds);
+		Rest();
+	}
+	if (WasInputKeyJustPressed(EKeys::M)) { Rest(); }
 	if (WasInputKeyJustPressed(EKeys::H)) { bShowHelp = !bShowHelp; }
 	if (WasInputKeyJustPressed(EKeys::V)) { CycleWatch(); }
 	if (Watched.IsValid())
@@ -229,6 +260,13 @@ void ASWHUD::DrawHUD()
 		Canvas->DrawText(Font, Text, 16.f, Y);
 		Y += 16.f;
 	};
+	const float Used = float(PC->PresentedFrames) / float(ASWPlayerController::PresentBudget);
+	if (Used > 0.75f)
+	{
+		Canvas->SetDrawColor(FColor(232, 135, 124));
+		Canvas->DrawText(Font, FString::Printf(TEXT("GPU budget %.0f%% used: press M to minimize, restart the server soon (Metal present leak)"), Used * 100.f), 16.f, Y);
+		Y += 16.f;
+	}
 	if (const AActor* W = PC->GetWatched())
 	{
 		Line(FString::Printf(TEXT("WATCHING  %s   (V next, back to you after the last)"), *W->GetName()));
@@ -246,5 +284,6 @@ void ASWHUD::DrawHUD()
 	{
 		Line(FString::Printf(TEXT("FLY   WASD move   E/Q up/down   Shift x4   wheel speed (%.0f m/s)   mouse look"), PC->GetFlySpeed() / 100.f));
 	}
-	Line(TEXT("F walk/fly   V watch the agent and people   H hide this   click the window first to capture the mouse"));
+	Line(TEXT("F walk/fly   V watch the agent and people   M minimize (saves GPU)   H hide this   click the window first"));
+	Line(FString::Printf(TEXT("GPU budget %.0f%% used (minimizes itself after 2 min in the background)"), Used * 100.f));
 }

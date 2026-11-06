@@ -15,6 +15,13 @@
  *   Walk  F       first-person body with gravity and collision; Shift run, Space jump. F again: fly.
  *   Watch V       look through someone's eyes: the agent first, then each pedestrian, then back to you.
  *   Help  H       show or hide the key list.
+ *   Rest  M       minimize the window (click the Dock icon to bring it back).
+ *
+ * Why minimizing matters: UE 5.8's Mac present path leaks one Metal shared event per presented frame
+ * (IOSurfaceSharedEventReference ports, ~60/s). They are a system-wide resource: after ~20-25 min of
+ * visible rendering, other apps' Metal (MLX/Qwen) fails with "Failed to create Metal shared event".
+ * A minimized window presents nothing, so the leak stops while the simulation keeps running. The window
+ * minimizes itself after AutoRestSeconds without focus, and the HUD shows how much of the budget is used.
  */
 UCLASS()
 class SIMWORLD_API ASWPlayerController : public APlayerController
@@ -31,6 +38,10 @@ public:
 	float GetFlySpeed() const { return FlySpeed; }
 	AActor* GetWatched() const { return Watched.Get(); }
 	bool bShowHelp = true;
+	/** Frames presented to the window since launch (each leaks one Metal shared event). */
+	int64 PresentedFrames = 0;
+	static constexpr int64 PresentBudget = 70000; // MLX failed after roughly 85k; warn well before
+	void Rest();
 
 private:
 	void Look();
@@ -46,6 +57,8 @@ private:
 	TWeakObjectPtr<AActor> Watched;
 
 	float FlySpeed = 1500.f; // cm/s
+	float UnfocusedSeconds = 0.f;
+	float AutoRestSeconds = 120.f;
 	float MouseSensitivity = 0.6f;
 };
 
