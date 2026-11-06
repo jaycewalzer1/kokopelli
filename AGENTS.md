@@ -40,7 +40,7 @@ Add a short entry for what you own and what you're touching. Update it when your
 
 ## GPU queue view (working tree on `main`, uncommitted)
 
-- **Status:** The dev panel's `/queue` page: a 12-hour timeline, GPU readings, the newest picture from each job's `--out` folder, and controls for waiting jobs (priority, Mac or PACE, cancel) plus where new jobs go. Every change goes through `gpu.py`'s own commands, and only this panel's own page can make one.
+- **Status:** The dev panel's `/queue` page is a one-screen board (redone 2026-11-06): the job on the GPU with a running clock, GPU busy and memory as moving 15-minute lines, a 12-hour timeline with a moving now line, the waiting line as cards with growing waits, and recent results. Clicking any job opens a drawer with its details, outputs, log, command and controls (priority, Mac or PACE, cancel). Every change still goes through `gpu.py`'s own commands, and only this panel's own page can make one.
 - **Owns:** `life/gpu_queue.py`, `life/static/queue.*`, `tests/test_life_gpu_queue.py`. The queue itself stays with overnight coordination.
 
 ## Wellness center night and staged jobs (working tree on `main`, uncommitted)
