@@ -161,7 +161,7 @@ class Cast:
             parts.append(self.rng.choice(p["greeting"]))
         said = self.said.setdefault(pid, set())
         for keys, line in p["topics"].items():
-            if keys not in said and any(re.search(rf"\b{k}", low) for k in keys.split("|")):
+            if keys not in said and any(re.search(rf"\b{k}(s|es)?\b", low) for k in keys.split("|")):
                 said.add(keys)  # a topic is answered once; next time a later keyword can match
                 parts.append(line)
                 break
