@@ -1,4 +1,4 @@
-"""The world model runs view: finding runs, reading video lengths, and serving only videos it found."""
+"""The model runs view: finding runs, reading video lengths, and serving only videos it found."""
 import json
 import subprocess
 import tempfile
@@ -44,8 +44,14 @@ class Folders(unittest.TestCase):
         rows = [{"file": "clips/a.mp4", "ok": True, "prompt": "A red ball", "category": "physics", "seed": 1},
                 {"file": "clips/missing.mp4", "ok": True}, {"file": "clips/failed.mp4", "ok": False}]
         (root / "out" / "world_data_1" / "manifest.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
+        clip = root / "out" / "filter_test" / "test_clip"
+        make_video(clip / "rgb.mp4", 24)
+        (clip / "capture.json").write_text(json.dumps({"frames": 300, "fps": 30, "size": [1280, 720],
+                                                       "qwen_source": {"run": "r1", "place": "fern_bakery"}}))
+        make_video(root / "out" / "filter_test" / "sd15_sim_depth" / "output.mp4", 24)
+        (root / "out" / "filter_test" / "sd15_sim_depth" / "run.json").write_text(json.dumps({"model": "sd15", "about": "SD1.5 on sim depth."}))
         for name, value in (("OUT", root / "out"), ("EDGE_FILTER", root / "out" / "edge_filter"), ("CONTINUOUS", root / "out" / "continuous_video"),
-                            ("COSMOS_OUTPUTS", root / "cosmos")):
+                            ("COSMOS_OUTPUTS", root / "cosmos"), ("FILTER_TEST", root / "out" / "filter_test")):
             patcher = mock.patch.object(world_runs, name, value)
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -71,11 +77,21 @@ class CollectTest(Folders):
         self.runs = {run["name"]: run for run in self.body["runs"]}
 
     def test_every_source_is_found(self):
-        self.assertEqual(set(self.runs), {"real_run", "mock_mind", "painted", "control", "one", "a"})
+        self.assertEqual(set(self.runs), {"real_run", "mock_mind", "painted", "control", "one", "a", "test_clip rgb", "sd15_sim_depth output"})
 
     def test_kinds_say_what_made_each_video(self):
         kinds = {name: run["kind"] for name, run in self.runs.items()}
-        self.assertEqual(kinds, {"real_run": "cosmos", "mock_mind": "mock", "painted": "cosmos", "control": "input", "one": "cosmos", "a": "cosmos"})
+        self.assertEqual(kinds, {"real_run": "cosmos", "mock_mind": "mock", "painted": "cosmos", "control": "input", "one": "cosmos", "a": "cosmos",
+                                 "test_clip rgb": "sim", "sd15_sim_depth output": "sd15"})
+
+    def test_every_kind_is_a_type_the_page_knows(self):
+        known = {kind["id"] for kind in self.body["types"]} | {"mixed"}
+        self.assertLessEqual({run["kind"] for run in self.body["runs"]}, known)
+
+    def test_the_sim_clip_says_where_its_walk_came_from(self):
+        self.assertEqual(self.runs["test_clip rgb"]["group"], "sim")
+        self.assertIn("replays Qwen's go_to fern_bakery from r1", self.runs["test_clip rgb"]["lines"])
+        self.assertEqual(self.runs["sd15_sim_depth output"]["about"], "SD1.5 on sim depth.")
 
     def test_a_run_without_a_video_is_listed_without_one(self):
         self.assertFalse(self.runs["mock_mind"]["video"])
@@ -97,6 +113,8 @@ class VideoFileTest(Folders):
     def test_a_listed_run_gives_its_video(self):
         run = next(run for run in world_runs.collect(self.paths)["runs"] if run["name"] == "painted")
         self.assertEqual(world_runs.video_file(run["id"], self.paths).name, "painted.mp4")
+        clip = next(run for run in world_runs.collect(self.paths)["runs"] if run["name"] == "test_clip rgb")
+        self.assertEqual(world_runs.video_file(clip["id"], self.paths).name, "rgb.mp4")
 
     def test_anything_not_listed_is_refused(self):
         for run_id in ("filter/etc/passwd", "filter/../../etc/passwd", "nope/x", "", "clips/" + str(self.root / "out" / "world_data_1" / "manifest.jsonl")):

@@ -1,4 +1,4 @@
-"""Every world model run on this machine, for the dev panel's world model tab. It only reads: folders, logs and the videos' own headers.
+"""Every model run on this machine, for the dev panel's model runs tab. It only reads: folders, logs and the videos' own headers.
 
 Runs live in several places, one per tool that made them. Each source below knows where its runs are and what to say about them.
 A video is served by its id, which is looked up in a fresh listing, so a request can name a run but never a path.
@@ -14,6 +14,7 @@ COSMOS_OUTPUTS = Path.home() / "cosmos3" / "outputs"
 OUT = ROOT / "out"
 EDGE_FILTER = OUT / "edge_filter"
 CONTINUOUS = OUT / "continuous_video"
+FILTER_TEST = OUT / "filter_test"
 # Edge filter files that are what the model was given, not what it made.
 FILTER_INPUTS = {"source", "control", "control_pingpong", "mock_sim_edges"}
 _durations = {}
@@ -75,7 +76,7 @@ def notes(folder):
 
 
 def entry(group, path, name, kind, lines=(), prompt=None, state=None, at=None, video=True):
-    """One run. kind is cosmos, mock, mixed or input; state is running or None."""
+    """One run. kind is one of TYPES' ids, or mixed; state is running or None."""
     facts = video_facts(path) if video else {"seconds": None, "mb": None, "at": None}
     about = notes(path.parent).get(path.stem) or notes(path.parent.parent).get(name)
     return {"id": f"{group}/{path.relative_to(path.anchor)}" if video else f"{group}/{name}", "group": group, "name": name, "kind": kind,
@@ -142,7 +143,42 @@ def clip_entries():
     return entries
 
 
+def filter_test_entries():
+    """The sim-to-real test: the SimWorld clip, then one folder per filter run on it. Each run folder's run.json says which
+    model made it ({"model": "cosmos" or "sd15", "about": ..., "lines": [...]})."""
+    entries = []
+    clip = FILTER_TEST / "test_clip"
+    capture = pipeline.read_json(clip / "capture.json") or {}
+    source = capture.get("route_source") or {**capture.get("qwen_source", {}), "chosen_by": "qwen"}
+    said = {"rgb": "What the sim rendered.", "depth": "The sim's own depth, near is bright. A preview, not what a model is given.",
+            "segmentation": "Which object each pixel belongs to."}
+    for modality, about in said.items():
+        path = clip / f"{modality}.mp4"
+        if path.is_file():
+            lines = [f"{capture.get('frames')} frames at {capture.get('fps')} fps, {'x'.join(map(str, capture.get('size', [])))}",
+                     capture.get("place_about"),
+                     f"replays Qwen's go_to {source.get('place')} from {source.get('run')}" if source.get("chosen_by") == "qwen"
+                     else "route picked by hand, not by the agent"]
+            entries.append({**entry("sim", path, f"test_clip {modality}", "sim", lines), "about": about})
+    folders = sorted(path for path in FILTER_TEST.iterdir() if path.is_dir() and path != clip) if FILTER_TEST.is_dir() else []
+    for folder in folders:
+        run = pipeline.read_json(folder / "run.json") or {}
+        for path in sorted(folder.glob("*.mp4")):
+            entries.append({**entry("sim", path, f"{folder.name} {path.stem}", run.get("model", "cosmos"), run.get("lines", [])),
+                            "about": run.get("about")})
+    return entries
+
+
+TYPES = [
+    {"id": "cosmos", "name": "Cosmos"},
+    {"id": "sd15", "name": "SD1.5"},
+    {"id": "sim", "name": "Sim"},
+    {"id": "mock", "name": "Mock"},  # mixed runs count here too
+    {"id": "input", "name": "Inputs"},
+]
+
 GROUPS = [
+    {"id": "sim", "name": "Sim-to-real test", "about": "One 10-second SimWorld clip, and each filter run on it to make it look real."},
     {"id": "loop", "name": "Agent loop", "about": "The 30-minute life: the sim, the world model painting it, and the agent acting on what it sees."},
     {"id": "filter", "name": "Edge filter", "about": "The world model painting over the sim's edges, tested on a stand-in clip."},
     {"id": "mind", "name": "Mind runs", "about": "The agent loop with feelings, run on the mock world model so far."},
@@ -156,7 +192,7 @@ def collect(paths=PIPELINE_PATHS, now=None):
     table = pipeline.process_table()
     readers = {"loop": lambda: loop_entries("loop", Path(paths["agent_loop"]) / "runs", "runtime.run", table, now),
                "mind": lambda: loop_entries("mind", paths["mind"], "mind.run", table, now),
-               "filter": lambda: filter_entries(table), "single": single_entries, "clips": clip_entries}
+               "filter": lambda: filter_entries(table), "single": single_entries, "clips": clip_entries, "sim": filter_test_entries}
     runs = []
     for group in GROUPS:
         runs += pipeline.safely(readers[group["id"]], [])
@@ -165,7 +201,7 @@ def collect(paths=PIPELINE_PATHS, now=None):
     longest = max(made, key=lambda run: run["seconds"], default=None)
     for run in runs:
         del run["path"]
-    return {"groups": GROUPS, "runs": runs, "longest": longest and {"name": longest["name"], "seconds": longest["seconds"]}}
+    return {"groups": GROUPS, "types": TYPES, "runs": runs, "longest": longest and {"name": longest["name"], "seconds": longest["seconds"]}}
 
 
 def video_file(run_id, paths=PIPELINE_PATHS):
@@ -173,7 +209,7 @@ def video_file(run_id, paths=PIPELINE_PATHS):
     table = []
     readers = {"loop": lambda: loop_entries("loop", Path(paths["agent_loop"]) / "runs", "runtime.run", table, 0),
                "mind": lambda: loop_entries("mind", paths["mind"], "mind.run", table, 0),
-               "filter": filter_entries, "single": single_entries, "clips": clip_entries}
+               "filter": filter_entries, "single": single_entries, "clips": clip_entries, "sim": filter_test_entries}
     group = run_id.split("/", 1)[0]
     if group not in readers:
         raise KeyError(run_id)

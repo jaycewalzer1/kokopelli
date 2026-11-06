@@ -1,14 +1,27 @@
-// The world model runs view: every video the world model made, from every tool, newest first in each group.
+// The model runs view: every video a model or the sim made, from every tool, grouped by where it came from or by type.
 // It polls, so a run that's still writing shows its newest chunks. A video only loads once its card scrolls into view.
 const $ = id => document.getElementById(id);
 const POLL_MS = 15000;
 const SHOWN = 8;
-const KIND_TAG = {mock: "Mock", mixed: "Mixed", input: "Input"};
-const ui = {uiVersion: null, body: null, drawn: "", kind: "cosmos", open: new Set()};
+const KIND_TAG = {sd15: "SD1.5", sim: "Sim", mock: "Mock", mixed: "Mixed", input: "Input"};
+const SORTS = {
+  newest: (a, b) => (b.at || 0) - (a.at || 0),
+  oldest: (a, b) => (a.at || 0) - (b.at || 0),
+  longest: (a, b) => (b.seconds ?? -1) - (a.seconds ?? -1),
+  largest: (a, b) => (b.mb ?? -1) - (a.mb ?? -1),
+  name: (a, b) => a.name.localeCompare(b.name, "en-US", {numeric: true}),
+};
+// Each viewer's own choices. Storage can be missing (a private window), so every use is guarded.
+const remembered = (key, fallback) => { try { return localStorage.getItem(`runs.${key}`) || fallback; } catch { return fallback; } };
+const remember = (key, value) => { try { localStorage.setItem(`runs.${key}`, value); } catch { /* not kept, that's all */ } };
+const ui = {uiVersion: null, body: null, drawn: "", kind: remembered("kind", "all"), groupBy: remembered("groupBy", "source"),
+            sort: remembered("sort", "newest"), open: new Set()};
 
 const escapeHtml = text => String(text ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const plural = (n, thing) => `${n.toLocaleString("en-US")} ${thing}${n === 1 ? "" : "s"}`;
-const matches = run => ui.kind === "all" || run.kind === ui.kind || (ui.kind === "mock" && run.kind === "mixed");
+// Mixed runs (a real piece alongside a mock one) are listed with the mocks.
+const typeOf = run => run.kind === "mixed" ? "mock" : run.kind;
+const matches = run => ui.kind === "all" || typeOf(run) === ui.kind;
 
 function length(seconds) {
   if (seconds == null) return "length unknown";
@@ -50,7 +63,7 @@ function group(info, runs) {
   const more = runs.length > SHOWN ? `<button type="button" class="more" data-group="${info.id}">${open ? "Show fewer" : `Show all ${runs.length}`}</button>` : "";
   return `<section class="group" aria-label="${escapeHtml(info.name)}">
     <div class="eyebrow ruled"><span>${escapeHtml(info.name)}</span><span>${runs.length}</span></div>
-    <p class="meta">${escapeHtml(info.about)}</p>
+    ${info.about ? `<p class="meta">${escapeHtml(info.about)}</p>` : ""}
     ${runs.length ? `<div class="cards">${shown.map(card).join("")}</div>${more}` : `<div class="none">None of these.</div>`}
   </section>`;
 }
@@ -66,17 +79,27 @@ function summary() {
   status(running.length ? `${plural(running.length, "run")} writing` : "Nothing running", running.length > 0);
 }
 
-function draw() {
+function tabs() {
+  // A type with no runs gets no tab. If the chosen one has none left, show everything.
   const runs = ui.body.runs;
-  for (const tab of document.querySelectorAll(".tab")) {
-    const kind = tab.dataset.kind;
-    const count = kind === "all" ? runs.length : runs.filter(run => run.kind === kind || (kind === "mock" && run.kind === "mixed")).length;
-    tab.setAttribute("aria-selected", String(kind === ui.kind));
-    tab.innerHTML = `${tab.textContent.replace(/\s*\d[\d,]*$/, "")}<span class="count">${count}</span>`;
-  }
-  const html = ui.body.groups.map(info => [info, runs.filter(run => run.group === info.id && matches(run))])
-    .filter(([info, inside]) => inside.length || ui.kind === "all").map(([info, inside]) => group(info, inside)).join("")
-    || `<div class="none">No runs of this kind.</div>`;
+  const types = [...ui.body.types.map(type => ({...type, count: runs.filter(run => typeOf(run) === type.id).length})).filter(type => type.count),
+                 {id: "all", name: "All", count: runs.length}];
+  if (!types.some(type => type.id === ui.kind)) ui.kind = "all";
+  const html = types.map(type => `<button class="tab" role="tab" data-kind="${type.id}" aria-selected="${type.id === ui.kind}">${escapeHtml(type.name)}<span class="count">${type.count}</span></button>`).join("");
+  if ($("types").innerHTML !== html) $("types").innerHTML = html;
+}
+
+function sections() {
+  const runs = ui.body.runs.filter(matches).sort(SORTS[ui.sort] || SORTS.newest);
+  if (ui.groupBy === "type") return ui.body.types.map(type => [{id: `type-${type.id}`, name: type.name}, runs.filter(run => typeOf(run) === type.id)]).filter(([, inside]) => inside.length);
+  return ui.body.groups.map(info => [info, runs.filter(run => run.group === info.id)]).filter(([, inside]) => inside.length || ui.kind === "all");
+}
+
+function draw() {
+  tabs();
+  $("group-by").value = ui.groupBy;
+  $("sort").value = ui.sort;
+  const html = sections().map(([info, inside]) => group(info, inside)).join("") || `<div class="none">No runs of this kind.</div>`;
   if (html === ui.drawn) return;
   ui.drawn = html;
   $("groups").innerHTML = html;
@@ -111,12 +134,21 @@ async function poll() {
   }
 }
 
-document.querySelector(".tabs").addEventListener("click", event => {
+$("types").addEventListener("click", event => {
   const tab = event.target.closest(".tab");
   if (!tab || !ui.body) return;
   ui.kind = tab.dataset.kind;
+  remember("kind", ui.kind);
   draw();
 });
+
+for (const [id, key] of [["group-by", "groupBy"], ["sort", "sort"]]) {
+  $(id).addEventListener("change", event => {
+    ui[key] = event.target.value;
+    remember(key, ui[key]);
+    if (ui.body) draw();
+  });
+}
 
 $("groups").addEventListener("click", event => {
   const id = event.target.dataset.group;
