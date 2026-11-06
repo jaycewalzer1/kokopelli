@@ -165,6 +165,7 @@ void ASWCityActor::Configure(const FString& Json)
 	Root->SetMobility(EComponentMobility::Static);
 
 	bGI = J::Bool(Obj, TEXT("gi"), true);
+	bReal = J::Bool(Obj, TEXT("real"), false);
 	bOk = Build(Obj, LastError);
 	UE_LOG(LogSimWorld, Log, TEXT("%s Configure: %s, %d tris, %d instances, %d components, %.1f ms"), *GetName(),
 		bOk ? TEXT("ok") : *LastError, Tris, InstanceCount, Built.Num(), (FPlatformTime::Seconds() - T0) * 1000.0);
@@ -178,7 +179,7 @@ void ASWCityActor::GetBuildInfo(FString& Info)
 
 UStaticMeshComponent* ASWCityActor::AddMesh(const FSWMeshBuilder& B, bool bShadow)
 {
-	UStaticMesh* Mesh = B.Build(this, GetName());
+	UStaticMesh* Mesh = B.Build(this, GetName(), bReal);
 	if (!Mesh)
 	{
 		return nullptr;
@@ -210,8 +211,10 @@ void ASWCityActor::AddInstances(const FInstances& Inst)
 		UInstancedStaticMeshComponent* C = NewObject<UInstancedStaticMeshComponent>(this);
 		C->SetMobility(EComponentMobility::Static);
 		C->SetupAttachment(Root);
-		C->SetStaticMesh(GetPrim(EPrim(Bk.Prim)));
-		C->SetMaterial(0, GetMaterial(EMat(Bk.Mat), Bk.Tint));
+		// Realism pilot: foliage cushions become leaf-card clusters (and get the leaf-card material).
+		const bool bLeaves = bReal && EMat(Bk.Mat) == EMat::Foliage && (Bk.Prim == P(EPrim::Puff) || Bk.Prim == P(EPrim::Blob)) && HasRealMaterial(EMat::Foliage, true);
+		C->SetStaticMesh(GetPrim(bLeaves ? EPrim::Leaves : EPrim(Bk.Prim)));
+		C->SetMaterial(0, GetMaterial(EMat(Bk.Mat), Bk.Tint, 0.f, bReal));
 		C->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		C->SetGenerateOverlapEvents(false);
 		C->SetCastShadow(Bk.bShadow);

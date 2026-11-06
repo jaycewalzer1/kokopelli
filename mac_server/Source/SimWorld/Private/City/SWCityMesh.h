@@ -37,10 +37,11 @@ namespace SWCity
 	};
 
 	/** Shared material instance for (material, tint[, Scale override in cm, 0 = asset default]); cached so equal
-	 *  pieces batch across actors. */
-	UMaterialInterface* GetMaterial(EMat Mat, const FLinearColor& Tint, float Scale = 0.f);
+	 *  pieces batch across actors. bReal picks the realism-pilot variant (/Game/Realism/Materials/<name>_Real,
+	 *  city/realism/) when that asset exists, else the normal material. */
+	UMaterialInterface* GetMaterial(EMat Mat, const FLinearColor& Tint, float Scale = 0.f, bool bReal = false);
 	/** True once the real /Game/Solarpunk material for Mat loaded (false = BasicShapeMaterial fallback). */
-	bool HasRealMaterial(EMat Mat);
+	bool HasRealMaterial(EMat Mat, bool bRealism = false);
 	const TCHAR* MatName(EMat Mat);
 
 	/** Shared primitives for instancing, all centred on the origin unless noted. */
@@ -56,6 +57,7 @@ namespace SWCity
 		Puff,      // cloud-like foliage cushion: icosphere radius 100 with a flattened underside (z -45..100)
 		Fringe,    // hanging curtain of 9 tapering strands, 100 wide (x -50..50), hanging from z=0 to z=-100, facing +Y
 		Cone,      // three stacked 8-sided cone skirts (conifer), radius 50, z 0..100
+		Leaves,    // realism pilot: 40 leaf cards (UV 0..1 each) filling a Puff-shaped volume, crown-sphere normals
 		Count
 	};
 	UStaticMesh* GetPrim(EPrim Prim);
@@ -115,7 +117,7 @@ public:
 	bool IsEmpty() const { return NumTris() == 0; }
 
 	/** Builds a transient UStaticMesh (fast build path, no collision). Null when empty. */
-	UStaticMesh* Build(UObject* Outer, const FString& DebugName) const;
+	UStaticMesh* Build(UObject* Outer, const FString& DebugName, bool bReal = false) const;
 
 	struct FSection
 	{
@@ -124,6 +126,7 @@ public:
 		float Scale = 0.f; // material Scale override (cm), 0 = asset default
 		TArray<FVector3f> Pos;
 		TArray<FVector3f> Nrm;
+		TArray<FVector2f> UV; // optional explicit UVs (one per Pos); empty = box projection
 		TArray<uint32> Idx;
 	};
 	TArray<FSection> Sections;

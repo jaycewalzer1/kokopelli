@@ -51,6 +51,10 @@ FLinearColor RefColor(SWCity::EMat Mat)
 	}
 }
 
+FParent GRealParents[int32(SWCity::EMat::Count)];
+
+void PrepareMaterial(UMaterialInterface* Material, const FString& Name);
+
 FParent& Parent(SWCity::EMat Mat)
 {
 	FParent& P = GParents[int32(Mat)];
@@ -66,32 +70,55 @@ FParent& Parent(SWCity::EMat Mat)
 		{
 			P.Material = LoadObject<UMaterialInterface>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
 		}
-		if (P.Material)
-		{
-			P.Material->AddToRoot();
-#if WITH_EDITOR
-			// Foliage, stones etc. are drawn as instanced static meshes. Assets saved without the
-			// "Used with Instanced Static Meshes" flag render with the default material there, so set
-			// the usage now (uncooked editor-game only; a packaged build needs the flag saved in the asset).
-			if (UMaterial* Base = P.Material->GetMaterial())
-			{
-				if (!Base->GetUsageByFlag(MATUSAGE_InstancedStaticMeshes))
-				{
-					// UMaterial::SetMaterialUsage only does this in the editor proper (not -game), so do it here.
-					{
-						FMaterialUpdateContext Ctx(FMaterialUpdateContext::EOptions::SyncWithRenderingThread);
-						Ctx.AddMaterial(Base);
-						Base->SetUsageByFlag(MATUSAGE_InstancedStaticMeshes, true);
-						Base->ForceRecompileForRendering();
-					}
-					UE_LOG(LogSimWorld, Warning, TEXT("City material %s lacked bUsedWithInstancedStaticMeshes; set and recompiled at runtime. Save the flag in the asset."), *Name);
-				}
-			}
-#endif
-		}
+		PrepareMaterial(P.Material, Name);
 		UE_LOG(LogSimWorld, Log, TEXT("City material %s: %s"), *Name, P.bReal ? TEXT("loaded") : TEXT("missing, using BasicShapeMaterial"));
 	}
 	return P;
+}
+
+/** Realism-pilot parent (/Game/Realism/Materials/<name>_Real); Material stays null when there is none. */
+FParent& RealParent(SWCity::EMat Mat)
+{
+	FParent& P = GRealParents[int32(Mat)];
+	if (!P.bTried)
+	{
+		P.bTried = true;
+		const FString Name = FString(GMatNames[int32(Mat)]) + TEXT("_Real");
+		const FString Path = FString::Printf(TEXT("/Game/Realism/Materials/%s.%s"), *Name, *Name);
+		P.Material = FSoftObjectPath(Path).TryLoad() ? Cast<UMaterialInterface>(FSoftObjectPath(Path).ResolveObject()) : nullptr;
+		P.bReal = P.Material != nullptr;
+		PrepareMaterial(P.Material, Name);
+		UE_LOG(LogSimWorld, Log, TEXT("City realism material %s: %s"), *Name, P.bReal ? TEXT("loaded") : TEXT("none, using the normal one"));
+	}
+	return P;
+}
+
+void PrepareMaterial(UMaterialInterface* Material, const FString& Name)
+{
+	if (!Material)
+	{
+		return;
+	}
+	Material->AddToRoot();
+#if WITH_EDITOR
+	// Foliage, stones etc. are drawn as instanced static meshes. Assets saved without the
+	// "Used with Instanced Static Meshes" flag render with the default material there, so set
+	// the usage now (uncooked editor-game only; a packaged build needs the flag saved in the asset).
+	if (UMaterial* Base = Material->GetMaterial())
+	{
+		if (!Base->GetUsageByFlag(MATUSAGE_InstancedStaticMeshes))
+		{
+			// UMaterial::SetMaterialUsage only does this in the editor proper (not -game), so do it here.
+			{
+				FMaterialUpdateContext Ctx(FMaterialUpdateContext::EOptions::SyncWithRenderingThread);
+				Ctx.AddMaterial(Base);
+				Base->SetUsageByFlag(MATUSAGE_InstancedStaticMeshes, true);
+				Base->ForceRecompileForRendering();
+			}
+			UE_LOG(LogSimWorld, Warning, TEXT("City material %s lacked bUsedWithInstancedStaticMeshes; set and recompiled at runtime. Save the flag in the asset."), *Name);
+		}
+	}
+#endif
 }
 
 FVector AnyPerp(const FVector& N)
@@ -106,20 +133,22 @@ const TCHAR* SWCity::MatName(EMat Mat)
 	return GMatNames[int32(Mat)];
 }
 
-bool SWCity::HasRealMaterial(EMat Mat)
+bool SWCity::HasRealMaterial(EMat Mat, bool bRealism)
 {
-	return Parent(Mat).bReal;
+	return bRealism ? RealParent(Mat).bReal : Parent(Mat).bReal;
 }
 
-UMaterialInterface* SWCity::GetMaterial(EMat Mat, const FLinearColor& Tint, float Scale)
+UMaterialInterface* SWCity::GetMaterial(EMat Mat, const FLinearColor& Tint, float Scale, bool bReal)
 {
+	bReal = bReal && RealParent(Mat).bReal;
 	const FColor Q = Tint.ToFColor(false);
-	const uint64 Key = (uint64(FMath::Clamp(int32(Scale * 4.f), 0, 0xFFFF)) << 40) | (uint64(Mat) << 32) | Q.DWColor();
+	const uint64 Key = (uint64(bReal) << 63) | (uint64(FMath::Clamp(int32(Scale * 4.f), 0, 0xFFFF)) << 40) | (uint64(Mat) << 32) | Q.DWColor();
 	if (UMaterialInterface** Found = GMids.Find(Key))
 	{
 		return *Found;
 	}
-	FParent& P = Parent(Mat);
+	// Realism materials take the same Tint semantics (relative to RefColor) as the Solarpunk ones.
+	FParent& P = bReal ? RealParent(Mat) : Parent(Mat);
 	if (!P.Material)
 	{
 		return nullptr;
@@ -468,7 +497,7 @@ void FSWMeshBuilder::Vault(int32 S, const FVector& Mn, const FVector& Mx, double
 	}
 }
 
-UStaticMesh* FSWMeshBuilder::Build(UObject* Outer, const FString& DebugName) const
+UStaticMesh* FSWMeshBuilder::Build(UObject* Outer, const FString& DebugName, bool bReal) const
 {
 	if (IsEmpty())
 	{
@@ -506,7 +535,7 @@ UStaticMesh* FSWMeshBuilder::Build(UObject* Outer, const FString& DebugName) con
 		const FName SlotName(*FString::Printf(TEXT("S%d_%s"), SI, SWCity::MatName(S.Mat)));
 		const FPolygonGroupID G = MD.CreatePolygonGroup();
 		SlotNames[G] = SlotName;
-		Mesh->GetStaticMaterials().Add(FStaticMaterial(SWCity::GetMaterial(S.Mat, S.Tint, S.Scale), SlotName
+		Mesh->GetStaticMaterials().Add(FStaticMaterial(SWCity::GetMaterial(S.Mat, S.Tint, S.Scale, bReal), SlotName
 #if WITH_EDITORONLY_DATA
 			, SlotName // imported slot name only exists in editor builds
 #endif
@@ -524,7 +553,7 @@ UStaticMesh* FSWMeshBuilder::Build(UObject* Outer, const FString& DebugName) con
 			// box projection (materials are world aligned; this is only a sane default)
 			const FVector3f A = N.GetAbs();
 			const FVector3f P = S.Pos[i] / 100.0f;
-			UVs.Set(I, 0, A.Z >= A.X && A.Z >= A.Y ? FVector2f(P.X, P.Y) : (A.X >= A.Y ? FVector2f(P.Y, P.Z) : FVector2f(P.X, P.Z)));
+			UVs.Set(I, 0, S.UV.Num() == S.Pos.Num() ? S.UV[i] : (A.Z >= A.X && A.Z >= A.Y ? FVector2f(P.X, P.Y) : (A.X >= A.Y ? FVector2f(P.Y, P.Z) : FVector2f(P.X, P.Z))));
 			Colors[I] = FVector4f(1, 1, 1, 1);
 			Inst.Add(I);
 		}
@@ -541,6 +570,22 @@ UStaticMesh* FSWMeshBuilder::Build(UObject* Outer, const FString& DebugName) con
 	Params.bCommitMeshDescription = false;
 	Params.bFastBuild = true;
 	Params.bAllowCpuAccess = false;
+#if WITH_EDITOR
+	// Realism pilot: the editor's full build also makes a mesh distance field, which Lumen needs for GI from geometry
+	// that is off screen, and for soft distance-field AO. Editor-game only (a cooked build has just the fast path), and
+	// slower to configure. Keep our own normals; no lightmap UVs (no static lighting in this project).
+	if (bReal)
+	{
+		Mesh->SetNumSourceModels(1);
+		FMeshBuildSettings& Settings = Mesh->GetSourceModel(0).BuildSettings;
+		Settings.bRecomputeNormals = false;
+		Settings.bRecomputeTangents = true;
+		Settings.bGenerateLightmapUVs = false;
+		Settings.bBuildReversedIndexBuffer = false;
+		Params.bFastBuild = false;
+		Params.bCommitMeshDescription = true;
+	}
+#endif
 	TArray<const FMeshDescription*> Descs{&MD};
 	if (!Mesh->BuildFromMeshDescriptions(Descs, Params))
 	{
@@ -675,6 +720,39 @@ UStaticMesh* SWCity::GetPrim(EPrim Prim)
 				B.Tri(S, Apex, P0, P1, N.GetSafeNormal());
 				B.Tri(S, FVector(0, 0, T[1] + 6), P0, P1, -FVector::UpVector);
 			}
+		}
+		break;
+	}
+	case EPrim::Leaves:
+	{
+		// Realism pilot (city/realism/): leaf cards in the Puff's volume (radius 100, flattened underside), each a
+		// randomly turned square with UVs 0..1 over the leaf-cluster atlas. Normals point away from the crown
+		// centre (blended with the card's own), so the crown shades as one soft mass instead of 40 flat planes.
+		FRng Rng(41);
+		FSWMeshBuilder::FSection& Sec = B.Sections[S];
+		for (int32 c = 0; c < 40; ++c)
+		{
+			FVector Dir(Rng.R(-1, 1), Rng.R(-1, 1), Rng.R(-1, 1));
+			if (Dir.SizeSquared() > 1.0 || Dir.IsNearlyZero()) { --c; continue; }
+			const double Rr = 100.0 * FMath::Lerp(0.35, 0.95, FMath::Sqrt(Rng.F()));
+			FVector C = Dir.GetSafeNormal() * Rr;
+			if (C.Z < 0) C.Z *= 0.6;
+			const double H = Rng.R(28, 40); // half size
+			const FVector Nc = FRotator(Rng.R(-80, 80), Rng.R(0, 360), 0).Vector();
+			const FVector U = AnyPerp(Nc).RotateAngleAxis(Rng.R(0, 360), Nc) * H;
+			const FVector V = FVector::CrossProduct(Nc, U);
+			const FVector Q[4] = {C - U - V, C + U - V, C + U + V, C - U + V};
+			const FVector2f T[4] = {{0, 1}, {1, 1}, {1, 0}, {0, 0}};
+			const uint32 Base = Sec.Pos.Num();
+			for (int32 k = 0; k < 4; ++k)
+			{
+				FVector Ns = Q[k];
+				if (Ns.Z < 0) Ns.Z *= 1.6; // the underside faces down more steeply, like the Puff
+				Sec.Pos.Add(FVector3f(Q[k]));
+				Sec.Nrm.Add(FVector3f((Ns.GetSafeNormal() * 0.75 + Nc * (FVector::DotProduct(Nc, C) < 0 ? -0.25 : 0.25)).GetSafeNormal()));
+				Sec.UV.Add(T[k]);
+			}
+			Sec.Idx.Append({Base, Base + 1, Base + 2, Base, Base + 2, Base + 3});
 		}
 		break;
 	}
