@@ -169,6 +169,15 @@ class PoliteTest(unittest.TestCase):
         self.assertEqual(unloaded, [1])
         self.assertTrue(guard.loaded)
 
+    def test_a_shell_that_names_a_build_isnt_heavy_but_the_build_is(self):
+        import ram_share
+        table = [{"pid": 1, "parent": 0, "rss_gb": 0.01, "command": "/bin/zsh -c cd mac_server && xcodebuild -scheme SimWorld"},
+                 {"pid": 2, "parent": 1, "rss_gb": 3.0, "command": "/usr/bin/xcodebuild -scheme SimWorld"}]
+        heavy, extra = ram_share.unclaimed_heavy(table, [])
+        self.assertEqual([row["pid"] for row in heavy], [2])
+        self.assertEqual(extra, 12)
+        self.assertEqual(ram_share.unclaimed_heavy(table[:1], []), ([], 0))
+
 
 class StagedTest(unittest.TestCase):
     def setUp(self):

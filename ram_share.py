@@ -27,6 +27,8 @@ FLOOR_GB = 2.5     # a polite job holding a model gives it back below this
 POLL_SECONDS = 30
 # Heavy work that may not have claimed anything. While one of these runs with no claim, it's assumed to need this much more.
 UNCLAIMED = (re.compile(r"UnrealBuildTool|UnrealEditor(?!Services)|ShaderCompileWorker|UnrealHeaderTool|SimWorld.*-server|xcodebuild"), 12)
+# A shell whose command line names a build isn't the build. The build it starts shows up as its own process.
+SHELLS = {"sh", "bash", "zsh", "-zsh", "-bash"}
 
 
 def total_gb():
@@ -86,7 +88,8 @@ def unclaimed_heavy(table, found):
     for claim in found:
         claimed |= {row["pid"] for row in table if row["pid"] == claim["pid"] or row["parent"] == claim["pid"]}
     pattern, gb = UNCLAIMED
-    heavy = [row for row in table if pattern.search(row["command"]) and row["pid"] not in claimed]
+    heavy = [row for row in table if pattern.search(row["command"]) and row["pid"] not in claimed
+             and Path(row["command"].split()[0]).name not in SHELLS]
     return heavy, (gb if heavy else 0)
 
 
