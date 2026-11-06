@@ -81,3 +81,36 @@ Add a short entry for what you own and what you're touching. Update it when your
 - **Status:** The test clip is the Moss-Commons sky bridge walk with a moving head (`out/filter_test/test_clip/`; the garden take is `test_clip_garden/`). Weights are downloaded and the controls made. The three runs are queued at p20-22 (`filter_sd15_simdepth`, `filter_sd15_dadepth`, `filter_cosmos_simdepth`), waiting behind the SimWorld hold. Metrics and the comparison video come after.
 - **Owns:** `filter_test/`, `out/filter_test/`. The dev panel's runs page is now "Model runs" (still `/worlds`): type tabs from `world_runs.TYPES`, group by source or type, sort, and a Sim-to-real test group. Touched `life/world_runs.py`, `life/static/worlds.*`, `tests/test_life_world_runs.py`, and the sidebar label on every page.
 - **Runs:** captures connect to the packaged SimWorld server on 9001 (one client only; ask the simcity session first), with no NPCs and `StopAgent` before closing. Model runs go through the GPU queue.
+
+## World-model text prompts (working tree on `main`, uncommitted)
+
+- **Status:** Prompts for the sky-bridge sim-to-real run are written (item 3 of the realism plan); none have been run yet. Three variants (faithful photoreal, light, phone video), with notes on what each sentence carries.
+- **Owns:** `city/wm/prompts/` (`bridge.json`, `bridge_source.py`, `build.py`, `README.md`).
+- **Reads only:** `city/world.json`, `city/VIBE.md`, `city/moodboard/`, `out/filter_test/test_clip/`, `models/*/assets`. No GPU and no model runs.
+
+## Cosmos Sim-Transfer control videos (working tree on `main`, uncommitted)
+
+- **Status:** Done for the bridge shot (first 150 frames of `out/filter_test/test_clip/`). No model runs; another agent is porting the model.
+- **Owns:** `city/wm/controls.py`, `out/city_wm/bridge/controls/`.
+- **Reads only:** `out/filter_test/test_clip/`, `filter_test/scripts/controls.py` (its depth logic is reused, not imported), `models/Cosmos3-Nano-Sim-Transfer/`.
+- **Runs:** `.venv/bin/python -I city/wm/controls.py [--frames N --clip DIR --out DIR]`, CPU only, about a minute. Never connects to 9001.
+
+## Sim-Transfer on the Mac (working tree on `main`, uncommitted)
+
+- **Status:** `world_transfer.py` runs NVIDIA's Cosmos3-Nano-Sim-Transfer (causal, 4-step, one control) in MLX from `models/Cosmos3-Nano-Sim-Transfer`. Deviations from NVIDIA's reference are in `docs/SIM_TRANSFER_MLX.md`. It doesn't touch `world_filter.py` or `world_model.py`.
+- **Owns:** `world_transfer.py`, `docs/SIM_TRANSFER_MLX.md`, `out/sim_transfer/`.
+- **Runs:** in the `~/cosmos3/cosmos3-mlx` venv under `ram_share.py hold --name sim_transfer*`. Call it with `world_transfer.transfer_video(prompt, {"depth": path}, output, size=..., frames=...)`. Every output has an `<output>.json` sidecar that names the model.
+
+## Multi-control Cosmos transfer (working tree on `main`, uncommitted)
+
+- **Status:** Building two variants (2026-11-06): A, weighted controls on Sim-Transfer (`world_transfer_multi.py`, untrained combination), and B, NVIDIA's base Cosmos3-Nano multi-control (`world_multicontrol_base.py`, 50 steps, CFG 3 / control CFG 1.5). Short test runs go through the GPU queue at p25 once the code passes its tests.
+- **Owns:** `wm_multicontrol/`, `world_transfer_multi.py`, `world_multicontrol_base.py`, `tests/test_wm_multicontrol*.py`, `out/wm_multicontrol/`.
+- **Reads only:** `world_transfer.py` and `world_filter.py` (imported, never edited; proposed hooks go in `wm_multicontrol/HANDOFF.md`), `out/city_wm/bridge/controls/`, `city/wm/prompts/bridge.json`, `models/Cosmos3-Nano*`.
+- **Runs:** everything is prefixed `wmmc_`, queued via `gpu.py` with a `ram_share.py hold`. Outputs go to `out/wm_multicontrol/<run>/` with a JSON sidecar.
+
+## Unreal realism pilot around the bridge shot (working tree on `main`, uncommitted)
+
+- **Status:** Step 0 (2026-11-06): own editor-game instance on port 9003 (minimized, `ram_share` claim `realism_9003`, 10 GB), city built, "before" replay of the bridge walk recording. Brief: `city/realism/BRIEF.md`. Tuning for the world model's blur control at 832x480 (lighting, colour values, silhouettes before fine texture).
+- **Owns:** `city/realism/`, `out/city_realism/`, and (once agreed) a pilot-only material/foliage path gated to the bridge area in `mac_server/` (`/Game/Realism/`, flagged actors only; the rest of the city must render unchanged).
+- **Reads only:** `out/filter_test/test_clip/` (poses), `city/world.json`, `city/wm/prompts/` (prompt changes go to the world-model session, `jaycewalzer-00`, not edited here).
+- **Runs:** only on port 9003, never 9001 or `mac_server/Packaged/`, no `build.sh package`. `city/realism/replay_bridge.py --port 9003 --label X` re-renders the walk from the recorded poses (rgb + depth + seg).
