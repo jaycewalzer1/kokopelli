@@ -110,10 +110,10 @@ bool SWCity::HasRealMaterial(EMat Mat)
 	return Parent(Mat).bReal;
 }
 
-UMaterialInterface* SWCity::GetMaterial(EMat Mat, const FLinearColor& Tint)
+UMaterialInterface* SWCity::GetMaterial(EMat Mat, const FLinearColor& Tint, float Scale)
 {
 	const FColor Q = Tint.ToFColor(false);
-	const uint64 Key = (uint64(Mat) << 32) | Q.DWColor();
+	const uint64 Key = (uint64(FMath::Clamp(int32(Scale * 4.f), 0, 0xFFFF)) << 40) | (uint64(Mat) << 32) | Q.DWColor();
 	if (UMaterialInterface** Found = GMids.Find(Key))
 	{
 		return *Found;
@@ -139,6 +139,10 @@ UMaterialInterface* SWCity::GetMaterial(EMat Mat, const FLinearColor& Tint)
 			T = FLinearColor::White;
 		}
 		Mid->SetVectorParameterValue(TEXT("Tint"), T);
+		if (Scale > 0.f)
+		{
+			Mid->SetScalarParameterValue(TEXT("Scale"), Scale);
+		}
 	}
 	else
 	{
@@ -174,12 +178,12 @@ FLinearColor SWCity::ColorFromJson(const TArray<TSharedPtr<FJsonValue>>* Arr, co
 // ---------------------------------------------------------------------------------------------
 // FSWMeshBuilder
 
-int32 FSWMeshBuilder::Slot(SWCity::EMat Mat, const FLinearColor& Tint)
+int32 FSWMeshBuilder::Slot(SWCity::EMat Mat, const FLinearColor& Tint, float Scale)
 {
 	const FColor Q = Tint.ToFColor(false);
 	for (int32 i = 0; i < Sections.Num(); ++i)
 	{
-		if (Sections[i].Mat == Mat && Sections[i].Tint.ToFColor(false) == Q)
+		if (Sections[i].Mat == Mat && Sections[i].Scale == Scale && Sections[i].Tint.ToFColor(false) == Q)
 		{
 			return i;
 		}
@@ -187,6 +191,7 @@ int32 FSWMeshBuilder::Slot(SWCity::EMat Mat, const FLinearColor& Tint)
 	FSection& S = Sections.AddDefaulted_GetRef();
 	S.Mat = Mat;
 	S.Tint = Tint;
+	S.Scale = Scale;
 	return Sections.Num() - 1;
 }
 
@@ -496,7 +501,7 @@ UStaticMesh* FSWMeshBuilder::Build(UObject* Outer, const FString& DebugName) con
 		const FName SlotName(*FString::Printf(TEXT("S%d_%s"), SI, SWCity::MatName(S.Mat)));
 		const FPolygonGroupID G = MD.CreatePolygonGroup();
 		SlotNames[G] = SlotName;
-		Mesh->GetStaticMaterials().Add(FStaticMaterial(SWCity::GetMaterial(S.Mat, S.Tint), SlotName, SlotName));
+		Mesh->GetStaticMaterials().Add(FStaticMaterial(SWCity::GetMaterial(S.Mat, S.Tint, S.Scale), SlotName, SlotName));
 		Inst.Reset(S.Pos.Num());
 		for (int32 i = 0; i < S.Pos.Num(); ++i)
 		{
@@ -552,6 +557,7 @@ UStaticMesh* SWCity::GetPrim(EPrim Prim)
 	{
 	case EPrim::Blob:
 	case EPrim::Stone:
+	case EPrim::Puff:
 	{
 		// Icosahedron subdivided once, vertices jittered: soft, slightly lumpy blob.
 		const double t = (1.0 + FMath::Sqrt(5.0)) / 2.0;
@@ -574,10 +580,15 @@ UStaticMesh* SWCity::GetPrim(EPrim Prim)
 			const int32 a = MidPt(Fa.X, Fa.Y), b = MidPt(Fa.Y, Fa.Z), c = MidPt(Fa.Z, Fa.X);
 			F2.Append({{Fa.X, a, c}, {Fa.Y, b, a}, {Fa.Z, c, b}, {a, b, c}});
 		}
-		FRng Rng(Prim == EPrim::Blob ? 7 : 11);
+		FRng Rng(Prim == EPrim::Blob ? 7 : (Prim == EPrim::Puff ? 23 : 11));
 		const FVector Scale = Prim == EPrim::Stone ? FVector(100, 80, 45) : FVector(100, 100, 100);
-		const double Jit = Prim == EPrim::Stone ? 0.22 : 0.13;
-		for (FVector& P : V) P = P * Scale * (1.0 + Rng.R(-Jit, Jit));
+		const double Jit = Prim == EPrim::Stone ? 0.22 : (Prim == EPrim::Puff ? 0.16 : 0.13);
+		for (FVector& P : V)
+		{
+			P = P * Scale * (1.0 + Rng.R(-Jit, Jit));
+			// Puff: cumulus cushion, round top and a flattened, slightly concave underside (reads as a layer)
+			if (Prim == EPrim::Puff && P.Z < 0) P.Z *= 0.6;
+		}
 		FSWMeshBuilder::FSection& Sec = B.Sections[S];
 		// smooth normals: average of adjacent faces
 		TArray<FVector> Acc;
@@ -618,6 +629,46 @@ UStaticMesh* SWCity::GetPrim(EPrim Prim)
 	case EPrim::Disc:
 		B.Cylinder(S, FVector::ZeroVector, 50, 50, 4, 10, true);
 		break;
+	case EPrim::Fringe:
+	{
+		// 9 overlapping strands hanging from a common top line, ragged hem, slight outward bow (+Y).
+		// The foliage material is two-sided, so one face per strand is enough.
+		FRng Rng(31);
+		const int32 Ns = 9;
+		const double Pitch = 100.0 / Ns;
+		for (int32 i = 0; i < Ns; ++i)
+		{
+			const double X = -50 + Pitch * (i + 0.5) + Rng.R(-2, 2);
+			const double Len = 100.0 * (i % 2 ? Rng.R(0.62, 0.85) : Rng.R(0.85, 1.0));
+			const double W0 = Pitch * 0.8, W1 = Pitch * 0.42, W2 = Pitch * 0.1;
+			const double Y0 = (i % 2) ? 2.5 : -2.5;
+			const FVector A0(X - W0, Y0, 0), A1(X + W0, Y0, 0);
+			const FVector M0(X - W1, Y0 + 7, -Len * 0.5), M1(X + W1, Y0 + 7, -Len * 0.5);
+			const FVector T0(X - W2, Y0 + 4, -Len), T1(X + W2, Y0 + 4, -Len);
+			B.Quad(S, A0, A1, M1, M0, FVector(0, 1, -0.1));
+			B.Quad(S, M0, M1, T1, T0, FVector(0, 1, 0.1));
+		}
+		break;
+	}
+	case EPrim::Cone:
+	{
+		const double Tiers[3][3] = {{50, 0, 55}, {40, 28, 80}, {28, 56, 100}}; // radius, base z, apex z
+		for (const auto& T : Tiers)
+		{
+			const int32 Segs = 8;
+			const FVector Apex(0, 0, T[2]);
+			for (int32 i = 0; i < Segs; ++i)
+			{
+				const double A0 = 2 * PI * i / Segs, A1 = 2 * PI * (i + 1) / Segs;
+				const FVector P0(FMath::Cos(A0) * T[0], FMath::Sin(A0) * T[0], T[1]), P1(FMath::Cos(A1) * T[0], FMath::Sin(A1) * T[0], T[1]);
+				const FVector Mid = (P0 + P1) * 0.5;
+				const FVector N = FVector(Mid.X, Mid.Y, 0).GetSafeNormal() * (T[2] - T[1]) + FVector(0, 0, T[0]);
+				B.Tri(S, Apex, P0, P1, N.GetSafeNormal());
+				B.Tri(S, FVector(0, 0, T[1] + 6), P0, P1, -FVector::UpVector);
+			}
+		}
+		break;
+	}
 	default:
 		break;
 	}

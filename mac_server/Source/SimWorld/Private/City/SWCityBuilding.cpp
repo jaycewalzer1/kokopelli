@@ -67,26 +67,22 @@ struct FBar
 	{
 		ASWCityTrees::AddShrub(Inst, Pt, R, Rng.F() < FlowerChance ? Col::Flower(Rng.I(6)) : Col::Leaf(Rng.I(4)), Rng.Next(), 35000);
 	}
-	/** Hanging greenery from Top (a planter lip): trailing chains of shrinking blobs falling outward/down. */
+	/** Hanging greenery from Top (a planter lip): fringe curtains of trailing plants (ivy, jasmine, the odd
+	 *  bougainvillea) falling down the face, flaring slightly outward. Along/Out are unit vectors. */
 	void Drapes(const FVector& Top, const FVector& Along, const FVector& Out, double Width, int32 Count, double MaxLen)
 	{
-		const double Yaw = FMath::RadiansToDegrees(FMath::Atan2(Along.Y, Along.X));
+		double Yaw = FMath::RadiansToDegrees(FMath::Atan2(Along.Y, Along.X));
+		// the fringe bows toward its local +Y; make that the outward side
+		const FVector LocalY = FRotator(0, Yaw, 0).RotateVector(FVector(0, 1, 0));
+		if (FVector::DotProduct(LocalY, Out) < 0) Yaw += 180;
 		for (int32 i = 0; i < Count; ++i)
 		{
-			const double Len = Rng.R(0.4, 1.0) * MaxLen;
-			const bool bBloom = Rng.F() < 0.1;
-			const FLinearColor T = bBloom ? Col::Flower(Rng.F() < 0.6 ? 0 : Rng.I(6)) : Col::Leaf(Rng.I(4));
-			FVector C = Top + Along * Rng.R(-0.5, 0.5) * Width + Out * 8;
-			double R = Rng.R(34, 48);
-			double Fallen = 0;
-			// a leafy curtain: wide flat blobs that overlap, narrowing as they fall
-			while (Fallen < Len && R > 10)
-			{
-				Inst.Add(P(EPrim::Blob), M(EMat::Foliage), T, Xf(C - FVector(0, 0, R * 0.7), FVector(R * 1.6 / 100, R * 0.45 / 100, R * 1.0 / 100), Yaw), false, 35000);
-				C += Out * R * 0.08 - FVector(0, 0, R * 0.95);
-				Fallen += R * 0.95;
-				R *= Rng.R(0.82, 0.92);
-			}
+			const double Len = Rng.R(0.45, 1.0) * MaxLen;
+			const double W = FMath::Clamp(Width / FMath::Max(1, Count) * Rng.R(0.9, 1.4), 45.0, 220.0);
+			const float Pick = Rng.F();
+			const FLinearColor T = Pick < 0.08 ? Col::Flower(0) : (Pick < 0.14 ? Col::Flower(3) : Col::Leaf(Rng.I(4)));
+			const FVector C = Top + Along * Rng.R(-0.5, 0.5) * Width + Out * 6;
+			Inst.Add(P(EPrim::Fringe), M(EMat::Foliage), T, FTransform(FRotator(0, Yaw, -4), C, FVector(W / 100, 1.0, Len / 100)), false, 35000);
 		}
 	}
 
@@ -124,19 +120,25 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 	const FVector2D Sz = Mx - Mn;
 	const FVector2D Ctr = (Mn + Mx) * 0.5;
 
-	const int32 Wood = B.Slot(EMat::Timber, Col::Timber());
-	const int32 WoodDark = B.Slot(EMat::Timber, Col::TimberDark());
-	const int32 WoodWash = B.Slot(EMat::Timber, FMath::Lerp(Col::Timber(), Pal[1], 0.22f));
-	const int32 Glass = B.Slot(EMat::SolarGlass, Col::Glass());
-	const int32 GlassLight = B.Slot(EMat::SolarGlass, Col::GlassWarm());
+	// Per-block style (build_city.py "st_*" fields): timber tone, wall core, bay rhythm, balconies, green walls, roof.
+	const FLinearColor TimberC = J::Color(Obj, TEXT("st_timber"), Col::Timber());
+	const FLinearColor TimberDarkC = J::Color(Obj, TEXT("st_timber_dark"), Col::TimberDark());
+	const float GlassScale = float(J::Num(Obj, TEXT("st_glass_scale"), 0.0));
+	const int32 Wood = B.Slot(EMat::Timber, TimberC);
+	const int32 WoodDark = B.Slot(EMat::Timber, TimberDarkC);
+	const int32 WoodWash = B.Slot(EMat::Timber, FMath::Lerp(TimberC, Pal[1], 0.22f));
+	const int32 Glass = B.Slot(EMat::SolarGlass, Col::Glass(), GlassScale);
+	const int32 PvGlass = B.Slot(EMat::SolarGlass, Col::Glass());
+	const int32 GlassLight = B.Slot(EMat::SolarGlass, Col::GlassWarm(), GlassScale);
 	const int32 Green = B.Slot(EMat::GreenRoof, Col::GreenRoof());
 	const int32 Trim = B.Slot(EMat::Metal, Pal[2]);
 	const int32 Accent = B.Slot(EMat::Fabric, Pal[0]);
 	const int32 Accent2 = B.Slot(EMat::Fabric, FLinearColor::LerpUsingHSV(Pal[1], FLinearColor::White, 0.3f));
 	const int32 StoneS = B.Slot(EMat::PermeableStone, Col::StoneDark());
-	const FLinearColor EarthC = FMath::Lerp(Rng.F() < 0.5 ? Col::Ochre() : Col::Rose(), Pal[0], 0.05f);
+	const FLinearColor EarthC = J::Color(Obj, TEXT("st_earth"), FMath::Lerp(Rng.F() < 0.5 ? Col::Ochre() : Col::Rose(), Pal[0], 0.05f));
 	const int32 Earth = B.Slot(EMat::RammedEarth, EarthC);
 	const int32 Earth2 = B.Slot(EMat::RammedEarth, EarthC * 0.86f);
+	const int32 Render = B.Slot(EMat::RammedEarth, J::Color(Obj, TEXT("st_render"), Col::Ochre()));
 	const int32 LeafWall = B.Slot(EMat::Foliage, Col::Leaf(1));
 
 	// ---------------- special civic kinds -------------------------------------------------
@@ -339,6 +341,49 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 	const bool bLouvers = Has(Mats, TEXT("louver"));
 	const bool bCivic = Kind != TEXT("bar");
 
+	// style knobs
+	const FString CoreStyle = J::Str(Obj, TEXT("st_core"), TEXT("timber"));
+	const double BayCm = FMath::Clamp(J::Num(Obj, TEXT("st_bay_cm"), 330.0), 220.0, 600.0);
+	const double WinRatio = FMath::Clamp(J::Num(Obj, TEXT("st_win"), 0.62), 0.3, 0.85);
+	const bool bTallWin = J::Bool(Obj, TEXT("st_tall"));
+	const FString BalconyStyle = J::Str(Obj, TEXT("st_balcony"), TEXT("default"));
+	const double GreenFrac = J::Num(Obj, TEXT("st_green"), 0.0);
+	const FString RoofStyle = J::Str(Obj, TEXT("st_roof"), TEXT("flat"));
+	const FString FinStyle = J::Str(Obj, TEXT("st_fins"), TEXT("timber"));
+	const bool bShutters = J::Bool(Obj, TEXT("st_shutters"), true);
+
+	// canopy walk: roof deck (roof at walk level), raised deck on posts (roof below it) or open-ended
+	// loggia through the top floor (6-storey bars whose top floor sits at walk level)
+	const bool bWalkRoof = FMath::Abs(Height - Walk) < 60 && !bCivic;
+	const bool bRaised = !bCivic && Walk > Height + 60 && Walk < Height + 1000;
+	const bool bLoggia = !bCivic && N >= 6 && FMath::Abs((N - 1) * FH - Walk) < 60;
+	const double LoggiaLen = 1000;
+	auto UL = [&](int32 k) { return (bLoggia && k == N - 1) ? -Lu / 2 + LoggiaLen : -Lu / 2; };
+	auto UR = [&](int32 k) { return (bLoggia && k == N - 1) ? Lu / 2 - LoggiaLen : Lu / 2; };
+	// gaps in edge planters / rails where decks from neighbours and bridges arrive: (u0, u1) per v side
+	TArray<FVector2D> GapsM, GapsP, Spurs;
+	for (const FVector2D& Sp : J::Points(Obj, TEXT("deck_spurs_cm"))) Spurs.Add(Bar.F.Unmap(L2(Sp) - Ctr));
+	TArray<FVector2D> TerraceGaps;
+	for (const FVector2D& Sp : J::Points(Obj, TEXT("terrace_gaps_cm"))) TerraceGaps.Add(Bar.F.Unmap(L2(Sp) - Ctr));
+	auto BoxGaps = [&](int32 S, double U0, double U1, TArray<FVector2D> Gaps, double V0, double V1, double Z0, double Z1)
+	{
+		Gaps.Sort([](const FVector2D& A, const FVector2D& Bq) { return A.X < Bq.X; });
+		double U = U0;
+		for (const FVector2D& G : Gaps)
+		{
+			if (G.X > U) Box(S, U, FMath::Min(G.X, U1), V0, V1, Z0, Z1);
+			U = FMath::Max(U, G.Y);
+		}
+		if (U < U1) Box(S, U, U1, V0, V1, Z0, Z1);
+	};
+	auto InGap = [](const TArray<FVector2D>& Gaps, double U)
+	{
+		for (const FVector2D& G : Gaps)
+			if (U > G.X - 40 && U < G.Y + 40) return true;
+		return false;
+	};
+	auto Hash = [&](int32 A, int32 Bq) { return float(((Seed ^ uint32(A * 73856093) ^ uint32(Bq * 19349663)) * 2654435761u) >> 8) / float(1 << 24); };
+
 	// per-floor cuts on the v- and v+ sides
 	TArray<double> CutM, CutP;
 	for (int32 k = 0; k < N; ++k)
@@ -380,12 +425,13 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 	{
 		const double Z0 = k * FH, Z1 = (k + 1) * FH;
 		const double Vm = VM(k), Vp = VP(k);
+		const double U0k = UL(k), U1k = UR(k);
 		// slab: ceiling of the floor below, so it spans that floor (terraces sit on it)
 		const double Sm = k > 0 ? VM(k - 1) : Vm, Sp = k > 0 ? VP(k - 1) : Vp;
 		Box(k == 0 ? StoneS : WoodDark, -Lu / 2 - Lip, Lu / 2 + Lip, Sm - Lip, Sp + Lip, Z0, Z0 + Slab);
 		// wall core
-		const bool bEarth = bEarthBase && k <= 1;
-		const int32 Core = bEarth ? Earth : (bGlassy && k > 0 ? Glass : Wood);
+		const bool bEarth = (bEarthBase && k <= 1) || (CoreStyle == TEXT("earth") && k <= 2);
+		const int32 Core = bEarth ? Earth : (bGlassy && k > 0 ? Glass : (CoreStyle == TEXT("render") && k > 0 ? Render : Wood));
 		TArray<TPair<double, double>> Segs;
 		if (k == 0 && Passages.Num())
 		{
@@ -401,7 +447,7 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 		}
 		else
 		{
-			Segs.Add({-Lu / 2, Lu / 2});
+			Segs.Add({U0k, U1k});
 		}
 		for (const auto& Sg : Segs)
 		{
@@ -421,20 +467,49 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 				for (const auto& Sg : Segs) Box(Earth2, Sg.Key - 1, Sg.Value + 1, Vm + Recess - 1.5, Vp - Recess + 1.5, Z, FMath::Min(Z + 18, Z1));
 			}
 		}
+		if (bLoggia && k == N - 1)
+		{
+			// open loggias at both ends of the top floor: walk deck straight through, posts carry the roof, rail at the end
+			for (int32 End = 0; End < 2; ++End)
+			{
+				const double A0 = End ? U1k : -Lu / 2, A1 = End ? Lu / 2 : U0k;
+				Box(WoodDark, A0, A1, Vm, Vp, Z0 + Slab, Z0 + WalkDeckLift);
+				CollMin.Add(Bar.F.Map(A0, Vm, Z0) + Off);
+				CollMax.Add(Bar.F.Map(A1, Vp, Z0 + WalkDeckLift) + Off);
+				const double Ue = End ? Lu / 2 : -Lu / 2, Oe = End ? -1 : 1;
+				for (int32 s = 0; s < 2; ++s)
+				{
+					const double V = s ? Vp - 20 : Vm + 20;
+					Box(Wood, Ue + Oe * 5, Ue + Oe * 45, V - 20, V + 20, Z0 + WalkDeckLift, Z1);
+					Box(Wood, (A0 + A1) * 0.5 - 20, (A0 + A1) * 0.5 + 20, V - 20, V + 20, Z0 + WalkDeckLift, Z1);
+				}
+				// end rail with a planter + trailing plants
+				Box(Trim, Ue + Oe * 2, Ue + Oe * 8, Vm, Vp, Z0 + WalkDeckLift + 100, Z0 + WalkDeckLift + 108);
+				Box(Wood, Ue + Oe * 2, Ue + Oe * 62, Vm + 60, Vp - 60, Z0 + WalkDeckLift, Z0 + WalkDeckLift + 70);
+				for (double V = Vm + 120; V < Vp - 100; V += 160)
+				{
+					Bar.Shrub(Bar.F.Map(Ue + Oe * 32, V, Z0 + WalkDeckLift + 70) + Off, Rng.R(30, 45), 0.35);
+					Bar.Drapes(Bar.F.Map(Ue, V, Z0 + WalkDeckLift + 70) + Off, Bar.F.MapN(0, 1, 0), Bar.F.MapN(-Oe, 0, 0), 120, 1, FH * 1.2);
+				}
+				// lanterns under the loggia ceiling
+				for (double V = Vm + 150; V < Vp - 100; V += 300)
+					Box(B.Slot(EMat::Lantern, Col::Lantern()), (A0 + A1) * 0.5 - 10, (A0 + A1) * 0.5 + 10, V - 10, V + 10, Z1 - 50, Z1 - 30);
+			}
+		}
 
 		// ---- facades: two long faces and two ends ----
 		for (int32 Face = 0; Face < 4; ++Face)
 		{
 			const bool bV = Face < 2;
 			const double Out = (Face % 2 == 0) ? -1.0 : 1.0;
-			const double Plane = bV ? (Face == 0 ? Vm + Recess : Vp - Recess) : (Face == 2 ? -Lu / 2 : Lu / 2);
-			const double T0 = bV ? -Lu / 2 : Vm + Recess, T1 = bV ? Lu / 2 : Vp - Recess;
+			const double Plane = bV ? (Face == 0 ? Vm + Recess : Vp - Recess) : (Face == 2 ? U0k : U1k);
+			const double T0 = bV ? U0k : Vm + Recess, T1 = bV ? U1k : Vp - Recess;
 			const double Len = T1 - T0;
 			if (Len < 200) continue;
 			const bool bStreetFace = IsStreet(Face);
 			const bool bSouth = bSouthIsVPlus ? Face == 1 : Face == 3;
 			const bool bCourt = bV && Face == CourtSide && !bCivic;
-			const int32 Nb = FMath::Max(1, int32(FMath::RoundToDouble(Len / 330.0)));
+			const int32 Nb = FMath::Max(1, int32(FMath::RoundToDouble(Len / BayCm)));
 			const double Bw = Len / Nb;
 			// ground-floor shopfronts on the street face
 			if (k == 0 && bStreetFace && bV && !bEarth)
@@ -445,29 +520,64 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 			{
 				Bar.FaceBox(WoodWash, bV, Plane, Out, T0, T1, 0, 18, FH - 70, FH - 20); // sign band
 			}
-			// spandrel bands on glassy floors: solar glass above, timber below
+			// spandrel bands on glassy floors: solar glass above, timber below, plus a sunshade blade
 			if (bGlassy && k > 0)
 			{
 				Bar.FaceBox(Wood, bV, Plane, Out, T0, T1, 0, 4, Z0 + Slab, Z0 + Slab + 85);
+				Bar.FaceBox(WoodDark, bV, Plane, Out, T0, T1, 0, 55, Z1 - 60, Z1 - 48);
+			}
+			// continuous planter gallery (Kampung Admiralty / Parkroyal): ledge + planter + cascading plants every floor
+			const bool bGallery = BalconyStyle == TEXT("gallery") && k > 0 && bV && (bCourt || bStreetFace) && !(bLoggia && k == N - 1) && !(N >= 6 && k >= N - 2 && bCourt);
+			if (bGallery)
+			{
+				const double Dp = bCourt ? 150 : 110;
+				Bar.FaceBox(WoodDark, bV, Plane, Out, T0, T1, 0, Dp, Z0 + 5, Z0 + Slab);
+				Bar.FaceBox(Wood, bV, Plane, Out, T0, T1, Dp - 45, Dp, Z0 + Slab, Z0 + Slab + 60);
+				Bar.FaceBox(Trim, bV, Plane, Out, T0, T1, Dp - 50, Dp - 46, Z0 + Slab + 60, Z0 + Slab + 105);
+				const FVector Along = Bar.FacePt(bV, Plane, Out, 1, 0, 0) - Bar.FacePt(bV, Plane, Out, 0, 0, 0);
+				const FVector OutV = Bar.FacePt(bV, Plane, Out, 0, 1, 0) - Bar.FacePt(bV, Plane, Out, 0, 0, 0);
+				for (double T = T0 + 80; T < T1 - 60; T += Rng.R(170, 260))
+				{
+					Bar.Shrub(Bar.FacePt(bV, Plane, Out, T, Dp - 22, Z0 + Slab + 58) + Off, Rng.R(28, 42), 0.3);
+					if (Rng.F() < 0.7) Bar.Drapes(Bar.FacePt(bV, Plane, Out, T, Dp, Z0 + Slab + 58) + Off, Along, OutV, 140, 1, FH * Rng.R(0.6, 1.05));
+				}
 			}
 			for (int32 i = 0; i <= Nb; ++i)
 			{
 				const double T = T0 + i * Bw;
 				// vertical fins at bay lines
-				Bar.FaceBox(k == 0 ? WoodDark : Wood, bV, Plane, Out, T - 7, T + 7, 0, bGlassy ? 45 : 30, Z0 + Slab, Z1);
+				if (FinStyle == TEXT("copper"))
+					Bar.FaceBox(k == 0 ? WoodDark : Trim, bV, Plane, Out, T - 5, T + 5, 0, 60, Z0 + Slab, Z1);
+				else if (FinStyle != TEXT("none") || i == 0 || i == Nb)
+					Bar.FaceBox(k == 0 ? WoodDark : Wood, bV, Plane, Out, T - 7, T + 7, 0, bGlassy ? 45 : 30, Z0 + Slab, Z1);
 				if (i == Nb) break;
 				const double Tc = T + Bw * 0.5;
 				const bool bShopBay = k == 0 && bStreetFace && bV;
+				// vertical garden strips: whole bays planted floor after floor (same bays on every floor)
+				const bool bGreenBay = GreenFrac > 0 && k > 0 && Hash(i, Face) < GreenFrac;
+				if (bGreenBay)
+				{
+					Bar.FaceBox(LeafWall, bV, Plane, Out, Tc - Bw * 0.46, Tc + Bw * 0.46, 0, 26, Z0 + Slab, Z1);
+					for (int32 b = 0; b < 2; ++b)
+					{
+						const FVector Pc = Bar.FacePt(bV, Plane, Out, Tc + Rng.R(-0.35, 0.35) * Bw, 28, Rng.R(Z0 + 60, Z1 - 40)) + Off;
+						Inst.Add(P(EPrim::Puff), M(EMat::Foliage), Rng.F() < 0.2 ? Col::Flower(Rng.I(6)) : Col::Leaf(Rng.I(4)), Xf(Pc, FVector(Rng.R(0.45, 0.7), Rng.R(0.45, 0.7), Rng.R(0.35, 0.5))), true, 50000);
+					}
+					continue;
+				}
 				if (!bGlassy || k == 0)
 				{
 					if (!bShopBay || bEarth)
 					{
-						// punched window: dark solar glass, timber frame + sill
-						const double Ww = Bw * (bEarth ? 0.45 : 0.62);
-						const double S0 = Z0 + Slab + (bShopBay ? 20 : 85), S1 = Z1 - 45;
+						// punched window: dark solar glass, timber frame + sill (tall French windows with a rail per style)
+						const double Ww = Bw * (bEarth ? FMath::Min(0.45, WinRatio) : WinRatio);
+						const double S0 = Z0 + Slab + (bShopBay ? 20 : (bTallWin && !bEarth ? 12 : 85)), S1 = Z1 - 45;
 						Bar.FaceBox(Glass, bV, Plane, Out, Tc - Ww / 2, Tc + Ww / 2, 0, 3, S0, S1);
 						Bar.FaceBox(WoodDark, bV, Plane, Out, Tc - Ww / 2 - 8, Tc + Ww / 2 + 8, 0, 12, S0 - 8, S0);
-						if (k > 0 && !bEarth && (i + k) % 3 == 1)
+						Bar.FaceBox(WoodDark, bV, Plane, Out, Tc - Ww / 2 - 8, Tc + Ww / 2 + 8, 0, 6, S1, S1 + 10);
+						if (Ww > 140) Bar.FaceBox(WoodDark, bV, Plane, Out, Tc - 3, Tc + 3, 0, 5, S0, S1); // mullion
+						if (bTallWin && !bEarth && k > 0) Bar.FaceBox(Trim, bV, Plane, Out, Tc - Ww / 2, Tc + Ww / 2, 14, 18, S0 + 95, S0 + 100);
+						if (bShutters && k > 0 && !bEarth && (i + k) % 3 == 1)
 						{
 							// operable shutter panel in the palette accent
 							Bar.FaceBox(Accent, bV, Plane, Out, Tc + Ww / 2 + 8, Tc + Ww / 2 + 8 + Ww * 0.45, 0, 5, S0, S1);
@@ -481,7 +591,7 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 					for (int32 b = 0; b < 3; ++b)
 					{
 						const FVector Pc = Bar.FacePt(bV, Plane, Out, Tc + Rng.R(-0.35, 0.35) * Bw, 24, Rng.R(Z0 + 60, Z1 - 40)) + Off;
-						Inst.Add(P(EPrim::Blob), M(EMat::Foliage), Rng.F() < 0.2 ? Col::Flower(Rng.I(6)) : Col::Leaf(Rng.I(4)), Xf(Pc, FVector(Rng.R(0.4, 0.7), Rng.R(0.4, 0.7), Rng.R(0.4, 0.7))), true, 50000);
+						Inst.Add(P(EPrim::Puff), M(EMat::Foliage), Rng.F() < 0.2 ? Col::Flower(Rng.I(6)) : Col::Leaf(Rng.I(4)), Xf(Pc, FVector(Rng.R(0.4, 0.7), Rng.R(0.4, 0.7), Rng.R(0.3, 0.5))), true, 50000);
 					}
 				}
 				// climbing jasmine up south walls: green ropes on fins with white flowers
@@ -529,11 +639,26 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 					}
 				}
 				// Bosco-style staggered balconies with planters and cascading greenery
-				const bool bBalcony = k > 0 && bV && ((bCourt && (i + 2 * k) % 3 == 0) || (bStreetFace && k >= 2 && (i + 3 * k) % 5 == 0) || (!bCourt && !bStreetFace && (i + k) % 3 == 0));
-				if (bBalcony && !(N >= 5 && k >= N - 2 && bCourt))
+				bool bBalcony;
+				double Dp;
+				if (BalconyStyle == TEXT("bosco"))
+				{
+					bBalcony = k > 0 && bV && (i + k) % 2 == 0;
+					Dp = (i + k) % 4 == 0 ? 260 : 200;
+				}
+				else if (BalconyStyle == TEXT("sparse") || BalconyStyle == TEXT("gallery"))
+				{
+					bBalcony = k > 0 && bV && !bGallery && bCourt && (i + 2 * k) % 4 == 0;
+					Dp = 150;
+				}
+				else
+				{
+					bBalcony = k > 0 && bV && ((bCourt && (i + 2 * k) % 3 == 0) || (bStreetFace && k >= 2 && (i + 3 * k) % 5 == 0) || (!bCourt && !bStreetFace && (i + k) % 3 == 0));
+					Dp = bCourt ? 190 : 150;
+				}
+				if (bBalcony && !(N >= 5 && k >= N - 2 && bCourt) && !(bLoggia && k == N - 1))
 				{
 					const double Wb = Bw * ((Seed + i * 7 + k) % 4 == 0 ? 1.6 : 0.92);
-					const double Dp = bCourt ? 190 : 150;
 					const double A0 = Tc - Wb / 2, A1 = Tc + Wb / 2;
 					Bar.FaceBox(WoodDark, bV, Plane, Out, A0, A1, 0, Dp, Z0 + 5, Z0 + Slab);
 					Bar.FaceBox(Trim, bV, Plane, Out, A0, A0 + 4, Dp - 60, Dp, Z0 + Slab, Z0 + Slab + 100);
@@ -543,9 +668,9 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 					const FVector Along = Bar.FacePt(bV, Plane, Out, Tc + 1, Dp, 0) - Bar.FacePt(bV, Plane, Out, Tc, Dp, 0);
 					const FVector OutV = Bar.FacePt(bV, Plane, Out, Tc, Dp + 1, 0) - Bar.FacePt(bV, Plane, Out, Tc, Dp, 0);
 					for (int32 s = 0; s < 3; ++s) Bar.Shrub(Bar.FacePt(bV, Plane, Out, Tc + Rng.R(-0.4, 0.4) * Wb, Dp - 28, Z0 + Slab + 66) + Off, Rng.R(32, 50), 0.3);
-					Bar.Drapes(Lipp, Along, OutV, Wb * 0.9, 2 + Rng.I(3), FMath::Min(FH * 0.9, 300.0));
-					if (Rng.F() < 0.3)
-						ASWCityTrees::AddTree(Inst, TEXT("roof"), Bar.FacePt(bV, Plane, Out, Tc + Wb * 0.3, Dp - 28, Z0 + Slab + 60) + Off, Rng.R(0.55, 0.8), Rng.Next());
+					Bar.Drapes(Lipp, Along, OutV, Wb * 0.9, 2 + Rng.I(2), FMath::Min(FH * 0.9, 300.0));
+					if (Rng.F() < (BalconyStyle == TEXT("bosco") ? 0.55 : 0.3))
+						ASWCityTrees::AddTree(Inst, TEXT("roof"), Bar.FacePt(bV, Plane, Out, Tc + Wb * 0.3, Dp - 28, Z0 + Slab + 60) + Off, Rng.R(0.55, 0.85), Rng.Next());
 				}
 			}
 		}
@@ -561,14 +686,30 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 				if (Depth < 100) continue;
 				const double Out = Side == 0 ? -1 : 1;
 				const double Edge = Prev; // outer edge of the terrace
-				const bool bWalkHere = FMath::Abs(Z0 - Walk) < 60 && Side == StreetSide;
+				const bool bWalkHere = FMath::Abs(Z0 - Walk) < 60 && (Side == StreetSide || bLoggia);
+				TArray<FVector2D> Gaps;
+				for (const FVector2D& G : TerraceGaps)
+				{
+					const bool bThisSide = (G.Y < 0) == (Side == 0);
+					if (bThisSide && bWalkHere) Gaps.Add(FVector2D(G.X - 230, G.X + 230));
+				}
+				const double Zt = Z0 + Slab + 75 + (bWalkHere ? WalkDeckLift - Slab : 0);
 				if (bWalkHere)
 				{
 					Box(WoodDark, -Lu / 2, Lu / 2, FMath::Min(Edge, Cur) + 20, FMath::Max(Edge, Cur) - 20, Z0 + Slab, Z0 + WalkDeckLift);
 					CollMin.Add(Bar.F.Map(-Lu / 2, FMath::Min(Edge, Cur), Z0) + Off);
 					CollMax.Add(Bar.F.Map(Lu / 2, FMath::Max(Edge, Cur), Z0 + WalkDeckLift) + Off);
-					Box(Trim, -Lu / 2, Lu / 2, Edge - Out * 6, Edge, Z0 + WalkDeckLift, Z0 + WalkDeckLift + 110);
-					Box(GlassLight, -Lu / 2, Lu / 2, Edge - Out * 4, Edge - Out * 2, Z0 + WalkDeckLift, Z0 + WalkDeckLift + 100);
+					// deck carried out over the planter (and over the terrace below) to where bridges / neighbours' decks arrive
+					for (const FVector2D& G : TerraceGaps)
+					{
+						if ((G.Y < 0) != (Side == 0)) continue;
+						const double Far = Out > 0 ? FMath::Max(Edge + 25, G.Y) : FMath::Min(Edge - 25, G.Y);
+						Box(WoodDark, G.X - 200, G.X + 200, FMath::Min(Edge - Out * 80, Far), FMath::Max(Edge - Out * 80, Far), Z0 + Slab, Z0 + WalkDeckLift);
+						CollMin.Add(Bar.F.Map(G.X - 200, FMath::Min(Edge - Out * 80, Far), Z0) + Off);
+						CollMax.Add(Bar.F.Map(G.X + 200, FMath::Max(Edge - Out * 80, Far), Z0 + WalkDeckLift) + Off);
+					}
+					// brass handrail on the edge planter (the old glass rail read as a PV grid)
+					BoxGaps(Trim, -Lu / 2, Lu / 2, Gaps, FMath::Min(Edge - Out * 6, Edge), FMath::Max(Edge - Out * 6, Edge), Z0 + WalkDeckLift + 100, Z0 + WalkDeckLift + 108);
 				}
 				else
 				{
@@ -577,12 +718,12 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 				}
 				// planter along the outer edge
 				const double In0 = Edge - Out * 70, In1 = Edge;
-				Box(Wood, -Lu / 2, Lu / 2, FMath::Min(In0, In1), FMath::Max(In0, In1), Z0 + Slab, Z0 + Slab + 75 + (bWalkHere ? WalkDeckLift - Slab : 0));
+				BoxGaps(Wood, -Lu / 2, Lu / 2, Gaps, FMath::Min(In0, In1), FMath::Max(In0, In1), Z0 + Slab, Zt);
 				for (double U = -Lu / 2 + 100; U < Lu / 2 - 100; U += Rng.R(150, 280))
 				{
-					const double Zt = Z0 + Slab + 75 + (bWalkHere ? WalkDeckLift - Slab : 0);
+					if (InGap(Gaps, U)) continue;
 					Bar.Shrub(Bar.F.Map(U, Edge - Out * 35, Zt) + Off, Rng.R(35, 60), 0.3);
-					if (Rng.F() < 0.55) Bar.Drapes(Bar.F.Map(U, Edge, Zt) + Off, Bar.F.MapN(1, 0, 0), Bar.F.MapN(0, Out, 0), 120, 2, FH * 1.1);
+					if (Rng.F() < 0.55) Bar.Drapes(Bar.F.Map(U, Edge, Zt) + Off, Bar.F.MapN(1, 0, 0), Bar.F.MapN(0, Out, 0), 140, 2, FH * 1.1);
 					if (!bWalkHere && Rng.F() < 0.12) ASWCityTrees::AddTree(Inst, TEXT("roof"), Bar.F.Map(U, (Edge + Cur) * 0.5, Z0 + Slab + 12) + Off, Rng.R(0.7, 1.0), Rng.Next());
 				}
 			}
@@ -596,7 +737,6 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 		const double Vm = VM(k), Vp = VP(k);
 		Box(WoodDark, -Lu / 2 - Lip, Lu / 2 + Lip, Vm - Lip, Vp + Lip, Z, Z + Slab);
 		Box(Green, -Lu / 2 + 30, Lu / 2 - 30, Vm + 30, Vp - 30, Z + Slab, Z + Slab + 14);
-		const bool bWalkRoof = FMath::Abs(Z - Walk) < 60 && !bCivic;
 		const double Zr = Z + Slab + 14;
 		// keep-clear rects (landing towers on this roof) in (u,v)
 		for (const TSharedPtr<FJsonObject>& Kc : J::Objs(Obj, TEXT("keep_clear")))
@@ -608,79 +748,255 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 				Bar.Clear.Add(FBox2D(Ua.ComponentMin(Ub) - FVector2D(150), Ua.ComponentMax(Ub) + FVector2D(150)));
 			}
 		}
+		// deck line (v) for roof / raised decks: from the builder, else the roof centre
+		double Vc = (Vm + Vp) * 0.5;
+		{
+			const TArray<double> Dl = J::Nums(Obj, TEXT("deck_line_cm"));
+			if (Dl.Num() >= 2) Vc = FMath::Clamp(Bar.F.Unmap(L2(FVector2D(Dl[0], Dl[1])) - Ctr).Y, Vm + 180, Vp - 180);
+		}
+		const bool bDeck = bWalkRoof || bRaised;
+		const double DeckV0 = bDeck ? Vc - 160 : -150, DeckV1 = bDeck ? Vc + 160 : 150;
+		const double Zd = bRaised ? Walk + WalkDeckLift : Z + WalkDeckLift; // deck top
+		// spurs: which ones reach a long roof edge (gap the edge planter there)
+		for (const FVector2D& Su : Spurs)
+		{
+			if (FMath::Abs(Su.X) >= Lu / 2 - 50) continue;
+			if (Su.Y < Vm + 200) GapsM.Add(FVector2D(Su.X - 230, Su.X + 230));
+			if (Su.Y > Vp - 200) GapsP.Add(FVector2D(Su.X - 230, Su.X + 230));
+		}
 		// edge planters with cascading plants (every roof), metal cap
 		for (int32 Side = 0; Side < 2; ++Side)
 		{
 			const double Edge = Side == 0 ? Vm : Vp, Out = Side == 0 ? -1 : 1;
-			Box(Wood, -Lu / 2, Lu / 2, FMath::Min(Edge, Edge - Out * 60), FMath::Max(Edge, Edge - Out * 60), Z + Slab, Z + Slab + 70);
-			Box(Trim, -Lu / 2, Lu / 2, FMath::Min(Edge, Edge - Out * 4), FMath::Max(Edge, Edge - Out * 4), Z + Slab + 70, Z + Slab + 115);
+			const TArray<FVector2D>& Gaps = Side == 0 ? GapsM : GapsP;
+			BoxGaps(Wood, -Lu / 2, Lu / 2, Gaps, FMath::Min(Edge, Edge - Out * 60), FMath::Max(Edge, Edge - Out * 60), Z + Slab, Z + Slab + 70);
+			BoxGaps(Trim, -Lu / 2, Lu / 2, Gaps, FMath::Min(Edge, Edge - Out * 4), FMath::Max(Edge, Edge - Out * 4), Z + Slab + 70, Z + Slab + 115);
 			for (double U = -Lu / 2 + 80; U < Lu / 2 - 80; U += Rng.R(160, 300))
 			{
-				if (Bar.Cleared(U, Edge)) continue;
+				if (Bar.Cleared(U, Edge) || InGap(Gaps, U)) continue;
 				Bar.Shrub(Bar.F.Map(U, Edge - Out * 30, Z + Slab + 70) + Off, Rng.R(30, 55), 0.3);
-				if (Rng.F() < 0.5) Bar.Drapes(Bar.F.Map(U, Edge + Out * 5, Z + Slab + 70) + Off, Bar.F.MapN(1, 0, 0), Bar.F.MapN(0, Out, 0), 120, 2, FH * 1.2);
+				if (Rng.F() < 0.5) Bar.Drapes(Bar.F.Map(U, Edge + Out * 5, Z + Slab + 70) + Off, Bar.F.MapN(1, 0, 0), Bar.F.MapN(0, Out, 0), 140, 2, FH * 1.2);
 			}
 		}
 		for (int32 End = 0; End < 2; ++End)
 		{
 			const double U = End ? Lu / 2 : -Lu / 2;
-			Box(Wood, FMath::Min(U, U - (End ? 1 : -1) * 60), FMath::Max(U, U - (End ? 1 : -1) * 60), Vm, Vp, Z + Slab, Z + Slab + 70);
-		}
-		// canopy walk deck down the middle, with pergolas, benches and trees in planters
-		double DeckV0 = -150, DeckV1 = 150;
-		if (bWalkRoof)
-		{
-			const double Vc = (Vm + Vp) * 0.5;
-			DeckV0 = Vc - 160;
-			DeckV1 = Vc + 160;
-			Box(WoodDark, -Lu / 2 + 10, Lu / 2 - 10, DeckV0, DeckV1, Z + Slab, Z + WalkDeckLift);
-			CollMin.Add(Bar.F.Map(-Lu / 2, DeckV0, Z) + Off);
-			CollMax.Add(Bar.F.Map(Lu / 2, DeckV1, Z + WalkDeckLift) + Off);
-			// spurs out to the bridges
-			for (const FVector2D& Sp : J::Points(Obj, TEXT("deck_spurs_cm")))
+			const double Ua = FMath::Min(U, U - (End ? 1 : -1) * 60), Ub = FMath::Max(U, U - (End ? 1 : -1) * 60);
+			if (bWalkRoof)
 			{
-				const FVector2D Su = Bar.F.Unmap(L2(Sp) - Ctr);
-				if (FMath::Abs(Su.Y) > FMath::Abs(Su.X) * 0 && FMath::Abs(Su.X) < Lu / 2 - 50)
+				// the roof deck runs out to the bar end (it meets the neighbour's deck there): gap the end planter
+				if (DeckV0 - 30 > Vm) Box(Wood, Ua, Ub, Vm, DeckV0 - 30, Z + Slab, Z + Slab + 70);
+				if (DeckV1 + 30 < Vp) Box(Wood, Ua, Ub, DeckV1 + 30, Vp, Z + Slab, Z + Slab + 70);
+			}
+			else
+			{
+				Box(Wood, Ua, Ub, Vm, Vp, Z + Slab, Z + Slab + 70);
+			}
+		}
+		// canopy walk deck down the roof, with pergolas, benches and trees in planters
+		if (bDeck)
+		{
+			const double Zb = Zd - 30; // deck underside
+			Box(WoodDark, -Lu / 2 + 10, Lu / 2 - 10, DeckV0, DeckV1, bRaised ? Zb : Z + Slab, Zd);
+			CollMin.Add(Bar.F.Map(-Lu / 2, DeckV0, bRaised ? Zb : Z) + Off);
+			CollMax.Add(Bar.F.Map(Lu / 2, DeckV1, Zd) + Off);
+			// spurs out to bridges, landings and the neighbours' decks
+			TArray<FVector2D> RailGapsM, RailGapsP;
+			for (const FVector2D& Su : Spurs)
+			{
+				if (FMath::Abs(Su.X) < Lu / 2 - 50)
 				{
-					// spur across v to a long side
-					Box(WoodDark, Su.X - 200, Su.X + 200, FMath::Min(Su.Y, Vc), FMath::Max(Su.Y, Vc), Z + Slab + 1, Z + WalkDeckLift);
-					Bar.Clear.Add(FBox2D(FVector2D(Su.X - 260, FMath::Min(Su.Y, Vc) - 100), FVector2D(Su.X + 260, FMath::Max(Su.Y, Vc) + 100)));
+					const double S0 = FMath::Min(Su.Y, Vc), S1 = FMath::Max(Su.Y, Vc);
+					Box(WoodDark, Su.X - 200, Su.X + 200, S0, S1, bRaised ? Zb : Z + Slab + 1, Zd);
+					CollMin.Add(Bar.F.Map(Su.X - 200, S0, bRaised ? Zb : Z) + Off);
+					CollMax.Add(Bar.F.Map(Su.X + 200, S1, Zd) + Off);
+					Bar.Clear.Add(FBox2D(FVector2D(Su.X - 260, S0 - 100), FVector2D(Su.X + 260, S1 + 100)));
+					(Su.Y < Vc ? RailGapsM : RailGapsP).Add(FVector2D(Su.X - 200, Su.X + 200));
+					if (bRaised)
+					{
+						for (int32 s = -1; s <= 1; s += 2)
+						{
+							const double Vpost = FMath::Clamp(Su.Y, Vm + 40, Vp - 40);
+							Box(Wood, Su.X + s * 180 - 12, Su.X + s * 180 + 12, Vpost - 12, Vpost + 12, Zr, Zb);
+							// spur side rails
+							Box(Trim, Su.X + s * 198 - 3, Su.X + s * 198 + 3, S0, S1, Zd + 100, Zd + 108);
+							for (double V = S0 + 20; V < S1; V += 18) Box(Wood, Su.X + s * 198 - 2.5, Su.X + s * 198 + 2.5, V - 2.5, V + 2.5, Zd, Zd + 100);
+						}
+					}
 				}
 				else
 				{
-					Box(WoodDark, FMath::Min(Su.X, 0.0), FMath::Max(Su.X, 0.0), Su.Y - 200, Su.Y + 200, Z + Slab + 1, Z + WalkDeckLift);
+					Box(WoodDark, FMath::Min(Su.X, 0.0), FMath::Max(Su.X, 0.0), Su.Y - 200, Su.Y + 200, Z + Slab + 1, Zd);
 				}
 			}
-			Bar.Clear.Add(FBox2D(FVector2D(-Lu / 2, DeckV0 - 40), FVector2D(Lu / 2, DeckV1 + 40)));
+			Bar.Clear.Add(FBox2D(FVector2D(-Lu / 2, DeckV0 - (bRaised ? 150 : 40)), FVector2D(Lu / 2, DeckV1 + (bRaised ? 150 : 40))));
+			if (bRaised)
+			{
+				{
+					const double StRise = Zd - Zr, StRun = StRise * 1.7, StU0 = -Lu / 4 - StRun * 0.5;
+					if (DeckV1 + 155 < Vp - 70) RailGapsP.Add(FVector2D(StU0 + StRun - 10, StU0 + StRun + 140));
+				}
+				// raised boardwalk on posts (Gardens by the Bay skyway): glulam edge beams, posts with knee braces,
+				// slatted timber balustrade, hung planters with trailing plants outside the rail
+				for (int32 s = 0; s < 2; ++s)
+				{
+					const double V = s ? DeckV1 : DeckV0, O = s ? 1 : -1;
+					const TArray<FVector2D>& RG = s ? RailGapsP : RailGapsM;
+					Box(Wood, -Lu / 2 + 10, Lu / 2 - 10, V - O * 10, V + O * 12, Zb - 45, Zb + 5);
+					for (double U = -Lu / 2 + 120; U < Lu / 2 - 60; U += 450)
+					{
+						Box(Wood, U - 13, U + 13, V - O * 14 - 13, V - O * 14 + 13, Zr - 14, Zb - 40);
+						B.Beam(Wood, Bar.F.Map(U, V - O * 14, Zb - 150) + Off, Bar.F.Map(U + 110, V - O * 14, Zb - 45) + Off, 10, 10);
+						B.Beam(Wood, Bar.F.Map(U, V - O * 14, Zb - 150) + Off, Bar.F.Map(U - 110, V - O * 14, Zb - 45) + Off, 10, 10);
+					}
+					BoxGaps(Trim, -Lu / 2 + 10, Lu / 2 - 10, RG, V - O * 4 - 3, V - O * 4 + 3, Zd + 100, Zd + 108);
+					for (double U = -Lu / 2 + 20; U < Lu / 2 - 10; U += 18)
+						if (!InGap(RG, U)) Box(Wood, U - 2.5, U + 2.5, V - O * 4 - 2.5, V - O * 4 + 2.5, Zd, Zd + 100);
+					for (double U = -Lu / 2 + 160; U < Lu / 2 - 120; U += 360)
+					{
+						if (InGap(RG, U)) continue;
+						Box(Wood, U - 75, U + 75, FMath::Min(V + O * 8, V + O * 48), FMath::Max(V + O * 8, V + O * 48), Zd - 20, Zd + 40);
+						ASWCityTrees::AddShrub(Inst, Bar.F.Map(U, V + O * 28, Zd + 40) + Off, Rng.R(30, 42), Rng.F() < 0.35 ? Col::Flower(Rng.I(6)) : Col::Leaf(Rng.I(4)), Rng.Next(), 40000);
+						Bar.Drapes(Bar.F.Map(U, V + O * 48, Zd + 30) + Off, Bar.F.MapN(1, 0, 0), Bar.F.MapN(0, O, 0), 140, 2, 260);
+					}
+				}
+				// end rails
+				for (int32 End = 0; End < 2; ++End)
+				{
+					const double U = End ? Lu / 2 - 14 : -Lu / 2 + 14;
+					bool bOpen = false;
+					for (const FVector2D& Su : Spurs) bOpen |= FMath::Abs(Su.X) >= Lu / 2 - 50 && (Su.X > 0) == (End == 1);
+					if (!bOpen) Box(Trim, U - 3, U + 3, DeckV0, DeckV1, Zd + 100, Zd + 108);
+				}
+				// a stair from the roof garden up to the deck
+				{
+					const double Rise = Zd - Zr, Run = Rise * 1.7;
+					const double U0 = -Lu / 4 - Run * 0.5, Vs = DeckV1 + 85;
+					if (Vs + 70 < Vp - 70)
+					{
+						const FVector A = Bar.F.Map(U0, Vs, Zr) + Off, Bq = Bar.F.Map(U0 + Run, Vs, Zd) + Off;
+						B.Beam(Wood, A, Bq, 120, 14);
+						for (int32 t = 0; t < int32(Rise / 18); ++t)
+						{
+							const double F = (t + 0.5) / FMath::Max(1.0, Rise / 18);
+							Box(WoodDark, U0 + Run * F - 14, U0 + Run * F + 14, Vs - 60, Vs + 60, Zr + Rise * F - 4, Zr + Rise * F + 6);
+						}
+						B.Beam(Trim, Bar.F.Map(U0, Vs + 64, Zr + 100) + Off, Bar.F.Map(U0 + Run, Vs + 64, Zd + 100) + Off, 5, 5);
+						Box(WoodDark, U0 + Run - 10, U0 + Run + 140, DeckV1, Vs + 60, Zd - 30, Zd); // landing onto the deck
+						Bar.Clear.Add(FBox2D(FVector2D(U0 - 100, Vs - 120), FVector2D(U0 + Run + 100, Vs + 120)));
+					}
+				}
+			}
 			for (double U = -Lu / 2 + 600; U < Lu / 2 - 400; U += 1200)
 			{
-				if (Bar.Cleared(U, Vm + 1) && Bar.Cleared(U, Vp - 1)) continue;
+				if (Bar.Cleared(U, Vm + 1) && Bar.Cleared(U, Vp - 1) && !bRaised) continue;
 				// pergola frame over the deck with vines
 				for (int32 s = 0; s < 2; ++s)
 				{
-					const double V = s ? DeckV1 + 15 : DeckV0 - 15;
-					Box(Wood, U - 10, U + 10, V - 10, V + 10, Z + WalkDeckLift, Z + WalkDeckLift + 290);
-					Box(Wood, U + 290, U + 310, V - 10, V + 10, Z + WalkDeckLift, Z + WalkDeckLift + 290);
+					const double V = s ? DeckV1 + (bRaised ? -15 : 15) : DeckV0 + (bRaised ? 15 : -15);
+					Box(Wood, U - 10, U + 10, V - 10, V + 10, Zd, Zd + 290);
+					Box(Wood, U + 290, U + 310, V - 10, V + 10, Zd, Zd + 290);
 				}
-				Box(WoodDark, U - 20, U + 320, DeckV0 - 30, DeckV0, Z + WalkDeckLift + 290, Z + WalkDeckLift + 310);
-				Box(WoodDark, U - 20, U + 320, DeckV1, DeckV1 + 30, Z + WalkDeckLift + 290, Z + WalkDeckLift + 310);
-				for (double Uu = U; Uu <= U + 300; Uu += 60) Box(Wood, Uu - 4, Uu + 4, DeckV0 - 30, DeckV1 + 30, Z + WalkDeckLift + 310, Z + WalkDeckLift + 322);
+				Box(WoodDark, U - 20, U + 320, DeckV0 - 30, DeckV0, Zd + 290, Zd + 310);
+				Box(WoodDark, U - 20, U + 320, DeckV1, DeckV1 + 30, Zd + 290, Zd + 310);
+				for (double Uu = U; Uu <= U + 300; Uu += 60) Box(Wood, Uu - 4, Uu + 4, DeckV0 - 30, DeckV1 + 30, Zd + 310, Zd + 322);
+				for (int32 v = 0; v < 3; ++v)
+					Inst.Add(P(EPrim::Puff), M(EMat::Foliage), v == 2 ? Col::Flower(Rng.F() < 0.5 ? 4 : 0) : Col::Leaf(v), Xf(Bar.F.Map(U + Rng.R(0, 300), Rng.R(DeckV0, DeckV1), Zd + 322) + Off, FVector(Rng.R(0.6, 1.0), Rng.R(0.6, 1.0), 0.3)), true, 60000);
 				for (int32 v = 0; v < 4; ++v)
-					Inst.Add(P(EPrim::Blob), M(EMat::Foliage), v == 2 ? Col::Flower(Rng.F() < 0.5 ? 4 : 0) : Col::Leaf(v), Xf(Bar.F.Map(U + Rng.R(0, 300), Rng.R(DeckV0, DeckV1), Z + WalkDeckLift + 330) + Off, FVector(Rng.R(0.6, 1.0), Rng.R(0.6, 1.0), 0.3)), true, 60000);
-				// bench + planter with a small tree beside the deck
-				const double Vb = (U / 1200.0 - FMath::FloorToDouble(U / 1200.0)) < 0.5 ? DeckV1 + 70 : DeckV0 - 70;
-				Box(Wood, U + 600, U + 780, Vb - 20, Vb + 20, Z + Slab + 14, Z + Slab + 60);
-				Box(Wood, U + 860, U + 980, Vb - 60, Vb + 60, Z + Slab + 14, Z + Slab + 75);
-				ASWCityTrees::AddTree(Inst, TEXT("roof"), Bar.F.Map(U + 920, Vb, Z + Slab + 75) + Off, Rng.R(0.8, 1.1), Rng.Next());
+				{
+					const double Uv = U + Rng.R(0, 300), Vv = v % 2 ? DeckV1 + 15 : DeckV0 - 15;
+					Bar.Drapes(Bar.F.Map(Uv, Vv, Zd + 300) + Off, Bar.F.MapN(1, 0, 0), Bar.F.MapN(0, v % 2 ? 1 : -1, 0), 60, 1, 180);
+				}
+				if (!bRaised)
+				{
+					// bench + planter with a small tree beside the deck
+					// planter tree well clear of the deck so its crown doesn't hang into the walk
+					const double Vb = (U / 1200.0 - FMath::FloorToDouble(U / 1200.0)) < 0.5 ? FMath::Min(DeckV1 + 230, Vp - 120) : FMath::Max(DeckV0 - 230, Vm + 120);
+					Box(Wood, U + 600, U + 780, Vb - 20, Vb + 20, Z + Slab + 14, Z + Slab + 60);
+					Box(Wood, U + 860, U + 980, Vb - 60, Vb + 60, Z + Slab + 14, Z + Slab + 75);
+					ASWCityTrees::AddTree(Inst, TEXT("roof"), Bar.F.Map(U + 920, Vb, Z + Slab + 75) + Off, Rng.R(0.6, 0.75), Rng.Next());
+				}
+				else
+				{
+					// benches built into the raised deck rail
+					Box(Wood, U + 600, U + 780, DeckV1 - 45, DeckV1 - 10, Zd, Zd + 45);
+				}
+			}
+		}
+		// roof profile for roofs that don't carry the walk (6-storey bars): PV rows, sawtooth, pitched or pavilions
+		const int32 MetalS = B.Slot(EMat::Metal, Col::Metal());
+		const bool bPvAtStart = (Seed % 2) == 0;
+		bool bPvRows = true;
+		bool bRoofGarden = true;
+		if (!bDeck && !bCivic && RoofStyle == TEXT("sawtooth") && bSouthIsVPlus)
+		{
+			// north-light sawtooth: south-facing PV slopes + vertical clerestory glazing, over 70 % of the roof
+			const double Ua = -Lu * 0.35, Ub = Lu * 0.35;
+			for (double V = Vm + 90; V + 300 < Vp - 70; V += 330)
+			{
+				const double Zh = Zr + 170;
+				const FVector A = Bar.F.Map(Ua, V, Zh) + Off, Bq = Bar.F.Map(Ub, V, Zh) + Off, C = Bar.F.Map(Ub, V + 300, Zr + 10) + Off, Dq = Bar.F.Map(Ua, V + 300, Zr + 10) + Off;
+				const FVector Nrm = Bar.F.MapN(0, 160, 300).GetSafeNormal();
+				B.Quad(PvGlass, A, Bq, C, Dq, Nrm);
+				Box(GlassLight, Ua, Ub, V - 3, V + 3, Zr, Zh);
+				Box(WoodDark, Ua, Ub, V - 8, V + 8, Zh - 6, Zh + 6);
+				for (int32 e = 0; e < 2; ++e)
+				{
+					const double U = e ? Ub : Ua;
+					B.Tri(Wood, Bar.F.Map(U, V, Zr) + Off, Bar.F.Map(U, V, Zh) + Off, Bar.F.Map(U, V + 300, Zr) + Off, Bar.F.MapN(e ? 1 : -1, 0, 0));
+				}
+			}
+			Bar.Clear.Add(FBox2D(FVector2D(Ua - 80, Vm), FVector2D(Ub + 80, Vp)));
+			bPvRows = false;
+		}
+		else if (!bDeck && !bCivic && RoofStyle == TEXT("gable"))
+		{
+			// pitched roof: green (sedum) north slope, PV south slope, timber gable ends with a round window
+			const double Ua = -Lu / 2 + 70, Ub = Lu / 2 - 70, Rise = (Vp - Vm) * 0.32, Vmid = (Vm + Vp) * 0.5;
+			const double Ez = Zr - 10;
+			const FVector R0 = Bar.F.Map(Ua, Vmid, Ez + Rise) + Off, R1 = Bar.F.Map(Ub, Vmid, Ez + Rise) + Off;
+			for (int32 s = 0; s < 2; ++s)
+			{
+				const double Ve = s ? Vp + 40 : Vm - 40;
+				const FVector E0 = Bar.F.Map(Ua, Ve, Ez - 12) + Off, E1 = Bar.F.Map(Ub, Ve, Ez - 12) + Off;
+				const FVector Nrm = Bar.F.MapN(0, (s ? 1 : -1) * Rise, (Vp - Vm) * 0.5).GetSafeNormal();
+				B.Quad(bSouthIsVPlus && s == 1 ? PvGlass : Green, E0, E1, R1, R0, Nrm);
+				B.Quad(WoodDark, E0 - FVector(0, 0, 14), E1 - FVector(0, 0, 14), R1 - FVector(0, 0, 14), R0 - FVector(0, 0, 14), -Nrm);
+			}
+			for (int32 e = 0; e < 2; ++e)
+			{
+				const double U = e ? Ub : Ua;
+				B.Tri(Wood, Bar.F.Map(U, Vm, Ez) + Off, Bar.F.Map(U, Vmid, Ez + Rise) + Off, Bar.F.Map(U, Vp, Ez) + Off, Bar.F.MapN(e ? 1 : -1, 0, 0));
+			}
+			Box(WoodDark, Ua, Ub, Vmid - 15, Vmid + 15, Ez + Rise - 5, Ez + Rise + 12); // ridge
+			// dormer-like roof gardens are gone; a few small trees on the eave planters keep it green
+			bPvRows = false;
+			bRoofGarden = false;
+		}
+		else if (!bDeck && !bCivic && RoofStyle == TEXT("pavilions"))
+		{
+			// two or three rooftop pavilions: timber frame, glazed room, planted gable roof
+			const int32 Np = Lu > 9000 ? 3 : 2;
+			for (int32 p = 0; p < Np; ++p)
+			{
+				const double U = -Lu / 2 + Lu * (p + 0.5) / Np + (p == 1 ? 600 : 0);
+				const double Hw = 420, Vw = FMath::Min(320.0, (Vp - Vm) * 0.5 - 120);
+				const double Vcp = (Vm + Vp) * 0.5;
+				Box(GlassLight, U - Hw + 40, U + Hw - 40, Vcp - Vw + 40, Vcp + Vw - 40, Zr, Zr + 280);
+				for (int32 c = 0; c < 4; ++c)
+					Box(Wood, U + ((c & 1) ? Hw - 30 : -Hw), U + ((c & 1) ? Hw : -Hw + 30), Vcp + ((c & 2) ? Vw - 30 : -Vw), Vcp + ((c & 2) ? Vw : -Vw + 30), Zr, Zr + 300);
+				const FVector G0 = Bar.F.Map(U - Hw - 60, Vcp - Vw - 60, Zr + 300) + Off, G1 = Bar.F.Map(U + Hw + 60, Vcp + Vw + 60, Zr + 300) + Off;
+				Box(WoodDark, U - Hw - 60, U + Hw + 60, Vcp - Vw - 60, Vcp + Vw + 60, Zr + 290, Zr + 305);
+				B.Gable(Green, G0.ComponentMin(G1), G0.ComponentMax(G1), 170, Bar.F.bX);
+				for (int32 s = 0; s < 4; ++s) Bar.Shrub(Bar.F.Map(U + Rng.R(-Hw, Hw), Vcp + (s % 2 ? Vw + 70 : -Vw - 70), Zr) + Off, Rng.R(35, 55), 0.4);
+				Bar.Clear.Add(FBox2D(FVector2D(U - Hw - 150, Vcp - Vw - 150), FVector2D(U + Hw + 150, Vcp + Vw + 150)));
 			}
 		}
 		// solar glass PV rows on one end of the roof (35-45 % of its length), tilted to the south
-		const int32 Pv = Glass;
-		const int32 MetalS = B.Slot(EMat::Metal, Col::Metal());
-		const bool bPvAtStart = (Seed % 2) == 0;
+		const int32 Pv = PvGlass;
 		const double PvLen = Lu * (bCivic ? 0.5 : 0.38);
 		const double PvU0 = bPvAtStart ? -Lu / 2 + 120 : Lu / 2 - 120 - PvLen, PvU1 = PvU0 + PvLen;
-		if (Lu > 1500 && Vp - Vm > 600)
+		if (bPvRows && Lu > 1500 && Vp - Vm > 600)
 		{
 			const double Tilt = 25.0;
 			if (bSouthIsVPlus)
@@ -688,7 +1004,7 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 				// rows run along u, panels face +v (south)
 				for (double V = Vm + 120; V + 180 < Vp - 100; V += 300)
 				{
-					if (V + 180 > DeckV0 && V < DeckV1 && bWalkRoof) continue;
+					if (V + 180 > DeckV0 - (bRaised ? 120 : 0) && V < DeckV1 + (bRaised ? 120 : 0) && bDeck) continue;
 					for (double U = PvU0; U + 300 <= PvU1; U += 320)
 					{
 						if (Bar.Cleared(U, V) || Bar.Cleared(U + 300, V + 180)) continue;
@@ -710,7 +1026,7 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 					if (Bar.Cleared(U, 0)) continue;
 					for (double V = Vm + 80; V + 300 <= Vp - 80; V += 320)
 					{
-						if (bWalkRoof && V + 300 > DeckV0 && V < DeckV1) continue;
+						if (bDeck && V + 300 > DeckV0 - (bRaised ? 120 : 0) && V < DeckV1 + (bRaised ? 120 : 0)) continue;
 						const double Zl = Zr + 25, Zh = Zr + 25 + 180 * FMath::Sin(FMath::DegreesToRadians(Tilt));
 						const double Ul = U + 180 * FMath::Cos(FMath::DegreesToRadians(Tilt));
 						const FVector A = Bar.F.Map(U, V, Zh) + Off, Bb = Bar.F.Map(U, V + 300, Zh) + Off, C = Bar.F.Map(Ul, V + 300, Zl) + Off, Dv = Bar.F.Map(Ul, V, Zl) + Off;
@@ -723,24 +1039,26 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 			}
 			Bar.Clear.Add(FBox2D(FVector2D(PvU0, Vm), FVector2D(PvU1, Vp)));
 		}
-		// rooftop feature from the cell (greenhouse, dye garden, ...)
+		// rooftop feature from the cell (greenhouse, dye garden, ...), on the wider side of the deck
 		double FeatU = bPvAtStart ? Lu / 2 - 900 : -Lu / 2 + 900;
 		if (!Feature.IsEmpty() && Lu > 2000)
 		{
-			const double Vc = bWalkRoof ? (DeckV1 + Vp) * 0.5 : (Vm + Vp) * 0.5;
-			const double Vw = bWalkRoof ? FMath::Max(150.0, (Vp - DeckV1) * 0.5 - 60) : (Vp - Vm) * 0.5 - 120;
+			const bool bPlusSide = (Vp - DeckV1) >= (DeckV0 - Vm);
+			const double FcV = bDeck ? (bPlusSide ? (DeckV1 + (bRaised ? 120 : 0) + Vp) * 0.5 : (Vm + DeckV0 - (bRaised ? 120 : 0)) * 0.5) : (Vm + Vp) * 0.5;
+			const double FcW = bDeck ? FMath::Max(150.0, (bPlusSide ? Vp - DeckV1 : DeckV0 - Vm) * 0.5 - 60 - (bRaised ? 60 : 0)) : (Vp - Vm) * 0.5 - 120;
+			const double Vcf = FcV, Vw = FcW;
 			const double U0 = FeatU - 600, U1 = FeatU + 600;
 			if (Feature == TEXT("greenhouse") || Feature == TEXT("solar_lab"))
 			{
-				Box(GlassLight, U0, U1, Vc - Vw, Vc + Vw, Zr, Zr + 260);
-				const FVector G0 = Bar.F.Map(U0, Vc - Vw, Zr + 260) + Off, G1 = Bar.F.Map(U1, Vc + Vw, Zr + 260) + Off;
+				Box(GlassLight, U0, U1, Vcf - Vw, Vcf + Vw, Zr, Zr + 260);
+				const FVector G0 = Bar.F.Map(U0, Vcf - Vw, Zr + 260) + Off, G1 = Bar.F.Map(U1, Vcf + Vw, Zr + 260) + Off;
 				B.Gable(GlassLight, G0.ComponentMin(G1), G0.ComponentMax(G1), 160, Bar.F.bX);
-				for (double U = U0; U <= U1 + 1; U += 200) Box(WoodDark, U - 5, U + 5, Vc - Vw - 3, Vc + Vw + 3, Zr, Zr + 262);
-				for (int32 s = 0; s < 10; ++s) Bar.Shrub(Bar.F.Map(Rng.R(U0 + 80, U1 - 80), Rng.R(Vc - Vw + 60, Vc + Vw - 60), Zr) + Off, Rng.R(30, 60), 0.35);
+				for (double U = U0; U <= U1 + 1; U += 200) Box(WoodDark, U - 5, U + 5, Vcf - Vw - 3, Vcf + Vw + 3, Zr, Zr + 262);
+				for (int32 s = 0; s < 10; ++s) Bar.Shrub(Bar.F.Map(Rng.R(U0 + 80, U1 - 80), Rng.R(Vcf - Vw + 60, Vcf + Vw - 60), Zr) + Off, Rng.R(30, 60), 0.35);
 				if (Feature == TEXT("solar_lab"))
 				{
 					// small wind turbine + extra PV
-					const FVector T = Bar.F.Map(U1 + 250, Vc, Zr) + Off;
+					const FVector T = Bar.F.Map(U1 + 250, Vcf, Zr) + Off;
 					B.Cylinder(MetalS, T, 10, 7, 650, 6);
 					for (int32 Bl = 0; Bl < 3; ++Bl)
 						B.OBox(B.Slot(EMat::Metal, FLinearColor(0.85f, 0.85f, 0.82f)), T + FVector(20, 0, 650) + FRotator(0, 0, Bl * 120).RotateVector(FVector(0, 0, 130)), FVector(3, 12, 130), FRotator(0, 0, Bl * 120));
@@ -750,18 +1068,18 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 			{
 				for (double U = U0; U < U1; U += 150)
 				{
-					Box(Wood, U, U + 110, Vc - Vw, Vc + Vw, Zr, Zr + (Feature == TEXT("herb_terrace") ? 40 + (U - U0) * 0.06 : 45));
+					Box(Wood, U, U + 110, Vcf - Vw, Vcf + Vw, Zr, Zr + (Feature == TEXT("herb_terrace") ? 40 + (U - U0) * 0.06 : 45));
 					const int32 Ci = int32((U - U0) / 150);
 					for (int32 s = 0; s < 6; ++s)
 					{
-						const FVector Pt = Bar.F.Map(U + 55 + Rng.R(-30, 30), Rng.R(Vc - Vw + 40, Vc + Vw - 40), Zr + 45 + (Feature == TEXT("herb_terrace") ? (U - U0) * 0.06 : 0)) + Off;
-						Inst.Add(P(EPrim::Blob), M(EMat::Foliage), Feature == TEXT("dye_garden") ? Col::Flower(Ci) : Col::Leaf(Ci + s), Xf(Pt, FVector(Rng.R(0.25, 0.4))), false, 40000);
+						const FVector Pt = Bar.F.Map(U + 55 + Rng.R(-30, 30), Rng.R(Vcf - Vw + 40, Vcf + Vw - 40), Zr + 45 + (Feature == TEXT("herb_terrace") ? (U - U0) * 0.06 : 0)) + Off;
+						Inst.Add(P(EPrim::Puff), M(EMat::Foliage), Feature == TEXT("dye_garden") ? Col::Flower(Ci) : Col::Leaf(Ci + s), Xf(Pt, FVector(Rng.R(0.25, 0.4))), false, 40000);
 					}
 				}
 			}
 			else if (Feature == TEXT("hammock_deck") || Feature == TEXT("dance_deck"))
 			{
-				const FVector Ctr3 = Bar.F.Map(FeatU, Vc, Zr) + Off;
+				const FVector Ctr3 = Bar.F.Map(FeatU, Vcf, Zr) + Off;
 				B.Cylinder(Wood, Ctr3, FMath::Min(Vw, 500.0), FMath::Min(Vw, 500.0), 25, 16);
 				for (int32 p = 0; p < 6; ++p)
 				{
@@ -778,7 +1096,7 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 				}
 				B.OBox(B.Slot(EMat::Fabric, FLinearColor(0.9f, 0.86f, 0.78f)), Ctr3 + FVector(0, 0, 360), FVector(FMath::Min(Vw, 500.0) * 0.8, FMath::Min(Vw, 500.0) * 0.8, 2), FRotator(4, 20, -5));
 			}
-			Bar.Clear.Add(FBox2D(FVector2D(U0 - 100, Vm), FVector2D(U1 + 100, Vp)));
+			Bar.Clear.Add(FBox2D(FVector2D(U0 - 100, FcV - FcW - 50), FVector2D(U1 + 100, FcV + FcW + 50)));
 		}
 		if (Kind == TEXT("library") || Feature == TEXT("observatory"))
 		{
@@ -791,18 +1109,22 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 		}
 		// roof garden: trees, shrubs, meadow tufts on what's left
 		const double Area = Lu * (Vp - Vm);
-		const int32 NT = int32(Area / 900000.0);
-		for (int32 t = 0; t < NT; ++t)
+		if (bRoofGarden)
 		{
-			const double U = Rng.R(-Lu / 2 + 150, Lu / 2 - 150), V = Rng.R(Vm + 120, Vp - 120);
-			if (Bar.Cleared(U, V)) continue;
-			ASWCityTrees::AddTree(Inst, TEXT("roof"), Bar.F.Map(U, V, Zr) + Off, Rng.R(0.7, 1.15), Rng.Next());
-		}
-		for (int32 t = 0; t < int32(Area / 150000.0); ++t)
-		{
-			const double U = Rng.R(-Lu / 2 + 100, Lu / 2 - 100), V = Rng.R(Vm + 80, Vp - 80);
-			if (Bar.Cleared(U, V)) continue;
-			Bar.Shrub(Bar.F.Map(U, V, Zr) + Off, Rng.R(30, 70), 0.35);
+			const int32 NT = int32(Area / 900000.0);
+			for (int32 t = 0; t < NT; ++t)
+			{
+				const double U = Rng.R(-Lu / 2 + 150, Lu / 2 - 150), V = Rng.R(Vm + 120, Vp - 120);
+				if (Bar.Cleared(U, V)) continue;
+				const bool bBamboo = Rng.F() < 0.15;
+				ASWCityTrees::AddTree(Inst, bBamboo ? TEXT("bamboo") : TEXT("roof"), Bar.F.Map(U, V, Zr) + Off, Rng.R(0.7, 1.15) * (bBamboo ? 0.5 : 1.0), Rng.Next());
+			}
+			for (int32 t = 0; t < int32(Area / 150000.0); ++t)
+			{
+				const double U = Rng.R(-Lu / 2 + 100, Lu / 2 - 100), V = Rng.R(Vm + 80, Vp - 80);
+				if (Bar.Cleared(U, V)) continue;
+				Bar.Shrub(Bar.F.Map(U, V, Zr) + Off, Rng.R(30, 70), 0.35);
+			}
 		}
 		// chimney / vent stacks on bathhouse-type single storeys
 		if (Kind == TEXT("bathhouse"))
@@ -820,7 +1142,7 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 			for (double U = -Lu / 2 + 50; U < Lu / 2; U += 450)
 				Box(Wood, U - 12, U + 12, Vs + O * 320 - 12, Vs + O * 320 + 12, 0, FH - 10);
 			for (double U = -Lu / 2 + 100; U < Lu / 2 - 100; U += Rng.R(150, 280))
-				Bar.Drapes(Bar.F.Map(U, Vs + O * 350, FH + 30) + Off, Bar.F.MapN(1, 0, 0), Bar.F.MapN(0, O, 0), 120, 1, 180);
+				Bar.Drapes(Bar.F.Map(U, Vs + O * 350, FH + 30) + Off, Bar.F.MapN(1, 0, 0), Bar.F.MapN(0, O, 0), 140, 1, 180);
 		}
 	}
 
@@ -829,8 +1151,19 @@ bool ASWCityBuilding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 	{
 		AddCollisionBox(CollMin[i].ComponentMin(CollMax[i]), CollMin[i].ComponentMax(CollMax[i]));
 	}
-	AddCollisionBox(FVector(Bar.F.Map(-Lu / 2, -Dd / 2, FH) + Off).ComponentMin(Bar.F.Map(Lu / 2, Dd / 2, Height) + Off),
-		FVector(Bar.F.Map(-Lu / 2, -Dd / 2, FH) + Off).ComponentMax(Bar.F.Map(Lu / 2, Dd / 2, Height) + Off));
+	if (Walk > FH + 60 && Walk < Height - 60)
+	{
+		// mass up to the walk level over the whole footprint, then only the top floor's core (terraces and loggias stay walkable)
+		AddCollisionBox(FVector(Bar.F.Map(-Lu / 2, -Dd / 2, FH) + Off).ComponentMin(Bar.F.Map(Lu / 2, Dd / 2, Walk) + Off),
+			FVector(Bar.F.Map(-Lu / 2, -Dd / 2, FH) + Off).ComponentMax(Bar.F.Map(Lu / 2, Dd / 2, Walk) + Off));
+		const FVector A = Bar.F.Map(UL(N - 1), VM(N - 1), Walk + WalkDeckLift) + Off, Bq = Bar.F.Map(UR(N - 1), VP(N - 1), Height) + Off;
+		AddCollisionBox(A.ComponentMin(Bq), A.ComponentMax(Bq));
+	}
+	else
+	{
+		AddCollisionBox(FVector(Bar.F.Map(-Lu / 2, -Dd / 2, FH) + Off).ComponentMin(Bar.F.Map(Lu / 2, Dd / 2, Height) + Off),
+			FVector(Bar.F.Map(-Lu / 2, -Dd / 2, FH) + Off).ComponentMax(Bar.F.Map(Lu / 2, Dd / 2, Height) + Off));
+	}
 
 	AddMesh(B);
 	AddInstances(Inst);
@@ -850,7 +1183,7 @@ bool ASWSkyBridge::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 	FRng Rng(Seed);
 	const int32 Wood = B.Slot(EMat::Timber, Col::Timber());
 	const int32 Dark = B.Slot(EMat::Timber, Col::TimberDark());
-	const int32 GlassL = B.Slot(EMat::SolarGlass, Col::GlassWarm());
+	const int32 GlassL = B.Slot(EMat::SolarGlass, Col::GlassWarm(), 5.f);
 	const int32 Brass = B.Slot(EMat::Metal, Col::Brass());
 	const double Top = E + WalkDeckLift;
 	const double L2v = Ls * 0.5 + 60;
@@ -877,7 +1210,7 @@ bool ASWSkyBridge::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 	for (int32 Side = -1; Side <= 1; Side += 2)
 	{
 		const double Y = Side * (W / 2 - 2);
-		B.Box(GlassL, FVector(-Ls / 2, Y - 2, Top), FVector(Ls / 2, Y + 2, Top + 100));
+		for (double X = -Ls / 2 + 9; X < Ls / 2; X += 18) B.Box(Wood, FVector(X - 2.5, Y - 2.5, Top), FVector(X + 2.5, Y + 2.5, Top + 100));
 		B.Box(Brass, FVector(-Ls / 2, Y - 5, Top + 100), FVector(Ls / 2, Y + 5, Top + 110));
 		for (double X = -Ls / 2; X <= Ls / 2 + 1; X += 200)
 			B.Box(Dark, FVector(X - 5, Y - 5, Top), FVector(X + 5, Y + 5, Top + 110));
@@ -903,7 +1236,7 @@ bool ASWSkyBridge::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 		for (int32 v = 0; v < 5; ++v)
 		{
 			const double T = Rng.R(0.15, 0.85) * PI;
-			Inst.Add(P(EPrim::Blob), M(EMat::Foliage), v == 0 ? Col::Flower(4) : Col::Leaf(v), Xf(FVector(X + Rng.R(-30, 30), -FMath::Cos(T) * W / 2, Top + FMath::Sin(T) * 320), FVector(Rng.R(0.4, 0.6))), true, 60000);
+			Inst.Add(P(EPrim::Puff), M(EMat::Foliage), v == 0 ? Col::Flower(4) : Col::Leaf(v), Xf(FVector(X + Rng.R(-30, 30), -FMath::Cos(T) * W / 2, Top + FMath::Sin(T) * 320), FVector(Rng.R(0.4, 0.6), Rng.R(0.4, 0.6), Rng.R(0.25, 0.4)), Rng.R(0, 360)), true, 60000);
 		}
 		B.Box(B.Slot(EMat::Lantern, Col::Lantern()), FVector(X - 8, -8, Top + 280), FVector(X + 8, 8, Top + 300));
 	}
@@ -998,7 +1331,7 @@ bool ASWCanopyLanding::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 	{
 		const FVector2D Pc(i ? Mx.X - 20 : Mn.X + 20, i ? Mx.Y - 20 : Mn.Y + 20);
 		for (double Z = Base + 80; Z < Deck; Z += Rng.R(120, 200))
-			Inst.Add(P(EPrim::Blob), M(EMat::Foliage), Col::Leaf(Rng.I(4)), Xf(FVector(Pc, Z), FVector(Rng.R(0.35, 0.5), Rng.R(0.35, 0.5), Rng.R(0.6, 0.9))), true, 60000);
+			Inst.Add(P(EPrim::Puff), M(EMat::Foliage), Col::Leaf(Rng.I(4)), Xf(FVector(Pc, Z), FVector(Rng.R(0.35, 0.5), Rng.R(0.35, 0.5), Rng.R(0.5, 0.7)), Rng.R(0, 360)), true, 60000);
 	}
 	AddMesh(B);
 	AddInstances(Inst);

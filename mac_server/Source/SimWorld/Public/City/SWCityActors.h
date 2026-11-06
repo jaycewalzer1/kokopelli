@@ -77,6 +77,8 @@ protected:
 	bool bOk = false;
 	FString LastError;
 	uint32 Seed = 1;
+	/** JSON "gi": false keeps this actor's geometry out of Lumen's scene (far landscape: GI cost without visible benefit). */
+	bool bGI = true;
 };
 
 /** Frame timing for perf checks: `vbp CITY_manager GetFrameStats`. Ticks even when paused. */

@@ -159,6 +159,7 @@ void ASWCityActor::Configure(const FString& Json)
 	SetActorLocationAndRotation(Origin, FRotator(0, Yaw, 0));
 	Root->SetMobility(EComponentMobility::Static);
 
+	bGI = J::Bool(Obj, TEXT("gi"), true);
 	bOk = Build(Obj, LastError);
 	UE_LOG(LogSimWorld, Log, TEXT("%s Configure: %s, %d tris, %d instances, %d components, %.1f ms"), *GetName(),
 		bOk ? TEXT("ok") : *LastError, Tris, InstanceCount, Built.Num(), (FPlatformTime::Seconds() - T0) * 1000.0);
@@ -184,6 +185,11 @@ UStaticMeshComponent* ASWCityActor::AddMesh(const FSWMeshBuilder& B, bool bShado
 	C->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	C->SetGenerateOverlapEvents(false);
 	C->SetCastShadow(bShadow);
+	if (!bGI)
+	{
+		C->bAffectDynamicIndirectLighting = false;
+		C->bAffectDistanceFieldLighting = false;
+	}
 	C->RegisterComponent();
 	AddInstanceComponent(C);
 	Built.Add(C);
@@ -204,6 +210,11 @@ void ASWCityActor::AddInstances(const FInstances& Inst)
 		C->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		C->SetGenerateOverlapEvents(false);
 		C->SetCastShadow(Bk.bShadow);
+		if (!bGI)
+		{
+			C->bAffectDynamicIndirectLighting = false;
+			C->bAffectDistanceFieldLighting = false;
+		}
 		if (Bk.CullCm > 0)
 		{
 			C->SetCullDistances(int32(Bk.CullCm * 0.8), int32(Bk.CullCm));
@@ -213,7 +224,8 @@ void ASWCityActor::AddInstances(const FInstances& Inst)
 		AddInstanceComponent(C);
 		Built.Add(C);
 		InstanceCount += Bk.Xf.Num();
-		Tris += Bk.Xf.Num() * (Bk.Prim == P(EPrim::Blob) || Bk.Prim == P(EPrim::Stone) ? 80 : 24);
+		const uint8 Pr = Bk.Prim;
+		Tris += Bk.Xf.Num() * (Pr == P(EPrim::Blob) || Pr == P(EPrim::Stone) || Pr == P(EPrim::Puff) ? 80 : (Pr == P(EPrim::Cone) ? 48 : (Pr == P(EPrim::Fringe) ? 36 : 24)));
 	}
 }
 
@@ -293,7 +305,7 @@ bool ASWCityGround::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 	FSWMeshBuilder B;
 	for (const TSharedPtr<FJsonObject>& S : J::Objs(Obj, TEXT("slabs")))
 	{
-		const int32 Slot = B.Slot(MatFromName(J::Str(S, TEXT("mat"), TEXT("Moss"))), J::Color(S, TEXT("tint"), Col::Grass()));
+		const int32 Slot = B.Slot(MatFromName(J::Str(S, TEXT("mat"), TEXT("Moss"))), J::Color(S, TEXT("tint"), Col::Grass()), float(J::Num(S, TEXT("scale"), 0.0)));
 		const double Z0 = J::Num(S, TEXT("z0"), 0), Z1 = J::Num(S, TEXT("z1"), 2);
 		FVector2D Mn, Mx;
 		if (J::Rect(S, TEXT("rect_cm"), Mn, Mx))
@@ -307,11 +319,39 @@ bool ASWCityGround::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 			B.Prism(Slot, Poly, Z0, Z1);
 		}
 	}
+	// Backdrop hills: low hemispheres far out (they hide the edge of the 4 km floor and the grey horizon band).
+	for (const TSharedPtr<FJsonObject>& Hl : J::Objs(Obj, TEXT("hills")))
+	{
+		const TArray<double> Hc = J::Nums(Hl, TEXT("c")), Hr = J::Nums(Hl, TEXT("r"));
+		if (Hc.Num() < 2 || Hr.Num() < 3) continue;
+		const int32 Slot = B.Slot(MatFromName(J::Str(Hl, TEXT("mat"), TEXT("Moss"))), J::Color(Hl, TEXT("tint"), Col::Grass()), float(J::Num(Hl, TEXT("scale"), 0.0)));
+		B.Ellipsoid(Slot, L(Hc[0], Hc[1], -Hr[2] * 0.08), FVector(Hr[0], Hr[1], Hr[2]), 28, 7, true);
+	}
 	AddMesh(B, false);
 
 	// Scattered meadow flowers / clover / shrubs over rects.
 	FInstances Inst;
 	FRng Rng(Seed);
+	// Hedgerows: chains of overlapping cushions along polylines (field boundaries)
+	for (const TSharedPtr<FJsonObject>& Hd : J::Objs(Obj, TEXT("hedges")))
+	{
+		TArray<FVector2D> Pts = J::Points(Hd, TEXT("pts"));
+		if (Pts.Num() < 2) continue;
+		for (FVector2D& Pt : Pts) Pt = L2(Pt);
+		const double Hh = J::Num(Hd, TEXT("h"), 220), Wd = J::Num(Hd, TEXT("w"), 260);
+		const FLinearColor Tc = J::Color(Hd, TEXT("tint"), Col::Leaf(1));
+		// "step": cushion spacing as a multiple of the width (long cushions = fewer instances); "shadow": cast shadows
+		const TArray<FVector2D> Rs = Resample(Pts, Wd * J::Num(Hd, TEXT("step"), 1.1));
+		const bool bHedgeShadow = J::Bool(Hd, TEXT("shadow"), true);
+		for (int32 i = 0; i + 1 < Rs.Num(); ++i)
+		{
+			const FVector2D D = Rs[i + 1] - Rs[i];
+			const double Yaw = FMath::RadiansToDegrees(FMath::Atan2(D.Y, D.X));
+			const FVector2D Mid = (Rs[i] + Rs[i + 1]) * 0.5;
+			const float Kc = (Rng.I(3) - 1) * 0.1f + 1.0f; // 3 levels (each tint is a component)
+			Inst.Add(P(EPrim::Puff), M(EMat::Foliage), FLinearColor(Tc.R * Kc, Tc.G * Kc, Tc.B * Kc), Xf(FVector(Mid, Hh * 0.35), FVector(D.Size() * 0.62 / 100, Wd * 0.5 / 100, Hh * 0.75 / 100), Yaw), bHedgeShadow, 0.0);
+		}
+	}
 	for (const TSharedPtr<FJsonObject>& S : J::Objs(Obj, TEXT("scatter")))
 	{
 		FVector2D Mn, Mx;
@@ -630,32 +670,51 @@ bool ASWCityWater::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 
 namespace
 {
+/** Tree silhouettes. Every crown is built from Puff cushions (flat undersides), so canopies read as layered
+ *  Ghibli-style clouds of foliage rather than single blobs. */
+enum class ETreeShape : uint8
+{
+	Layered,   // broadleaf: 3 tiers of cushions, darker below, lighter on top (oak, maple, chestnut, shade)
+	Spreading, // wide umbrella of 2 flat tiers (cherry, jacaranda, fig)
+	Willow,    // dome + rings of hanging fringe curtains reaching near the ground
+	Columnar,  // narrow stacked cushions (birch, poplar, pawpaw)
+	Conifer,   // stacked cone skirts (cypress)
+	Bamboo,    // clump of culms with leaf sprays
+	Orchard,   // small round crown on a short trunk, fruit / blossom dots
+	Small,     // roof / planter tree: 4-6 cushions
+};
+
 struct FSpecies
 {
 	const TCHAR* Name;
-	double TrunkH, TrunkR, CrownR, CrownH; // cm (CrownH = vertical radius)
-	int32 Blobs;
-	int32 Shape; // 0 round, 1 spreading, 2 willow, 3 columnar
-	FColor Leaf[3];
-	FColor Bloom;
-	float BloomFrac;
+	double TrunkH, TrunkR, CrownR, CrownH; // cm (CrownH = crown height)
+	ETreeShape Shape;
+	FColor Leaf[3];  // dark, mid, light
+	FColor Bloom;    // blossom / fruit colour
+	float BloomFrac; // fraction of cushions in bloom (Spreading/Layered) or fruit density (Orchard)
 	FColor BarkC;
 };
 
+using TS = ETreeShape;
 const FSpecies GSpecies[] = {
-	{TEXT("oak"), 520, 32, 520, 380, 9, 0, {FColor(70, 112, 50), FColor(84, 124, 56), FColor(60, 100, 46)}, FColor(0, 0, 0), 0.f, FColor(92, 74, 58)},
-	{TEXT("maple"), 470, 26, 430, 400, 8, 0, {FColor(96, 140, 60), FColor(112, 150, 62), FColor(128, 158, 66)}, FColor(190, 90, 50), 0.0f, FColor(104, 86, 70)},
-	{TEXT("flowering cherry"), 300, 22, 430, 240, 8, 1, {FColor(240, 170, 192), FColor(246, 196, 210), FColor(226, 150, 178)}, FColor(120, 150, 70), 0.15f, FColor(90, 60, 52)},
-	{TEXT("willow"), 300, 38, 520, 300, 7, 2, {FColor(150, 170, 78), FColor(132, 160, 70), FColor(168, 180, 92)}, FColor(0, 0, 0), 0.f, FColor(96, 82, 64)},
-	{TEXT("fig"), 160, 24, 360, 220, 7, 1, {FColor(70, 118, 56), FColor(86, 130, 60), FColor(64, 110, 52)}, FColor(0, 0, 0), 0.f, FColor(150, 140, 126)},
-	{TEXT("persimmon"), 260, 22, 300, 280, 6, 0, {FColor(92, 132, 56), FColor(104, 140, 60), FColor(84, 124, 52)}, FColor(236, 130, 40), 0.18f, FColor(80, 64, 52)},
-	{TEXT("pawpaw"), 180, 16, 220, 260, 5, 3, {FColor(70, 120, 52), FColor(80, 132, 58), FColor(66, 112, 50)}, FColor(0, 0, 0), 0.f, FColor(110, 96, 84)},
-	{TEXT("chestnut"), 400, 34, 560, 400, 9, 0, {FColor(66, 106, 46), FColor(76, 118, 52), FColor(90, 128, 58)}, FColor(236, 226, 190), 0.12f, FColor(84, 66, 52)},
-	{TEXT("fruit"), 170, 18, 260, 200, 6, 1, {FColor(96, 140, 64), FColor(108, 150, 66), FColor(88, 132, 60)}, FColor(250, 236, 238), 0.25f, FColor(96, 80, 66)},
-	{TEXT("birch"), 520, 18, 260, 520, 7, 3, {FColor(130, 164, 70), FColor(116, 156, 66), FColor(146, 172, 80)}, FColor(0, 0, 0), 0.f, FColor(226, 222, 210)},
-	{TEXT("shade"), 560, 42, 740, 440, 11, 1, {FColor(72, 114, 52), FColor(86, 126, 58), FColor(66, 104, 48)}, FColor(0, 0, 0), 0.f, FColor(96, 80, 64)},
-	{TEXT("roof"), 140, 12, 170, 170, 5, 0, {FColor(84, 130, 58), FColor(100, 144, 64), FColor(72, 118, 54)}, FColor(214, 80, 150), 0.15f, FColor(98, 80, 62)},
-	{TEXT("jacaranda"), 300, 24, 460, 260, 8, 1, {FColor(150, 120, 200), FColor(168, 138, 214), FColor(96, 136, 64)}, FColor(0, 0, 0), 0.f, FColor(96, 80, 66)},
+	{TEXT("oak"), 380, 34, 560, 560, TS::Layered, {FColor(50, 88, 40), FColor(70, 112, 50), FColor(104, 140, 62)}, FColor(0, 0, 0), 0.f, FColor(92, 74, 58)},
+	{TEXT("maple"), 360, 26, 470, 560, TS::Layered, {FColor(70, 108, 46), FColor(98, 140, 60), FColor(140, 166, 70)}, FColor(196, 96, 52), 0.0f, FColor(104, 86, 70)},
+	{TEXT("flowering cherry"), 240, 22, 480, 300, TS::Spreading, {FColor(214, 140, 166), FColor(240, 174, 196), FColor(250, 206, 218)}, FColor(110, 146, 70), 0.18f, FColor(90, 60, 52)},
+	{TEXT("willow"), 280, 40, 560, 400, TS::Willow, {FColor(88, 120, 52), FColor(112, 142, 60), FColor(140, 162, 72)}, FColor(0, 0, 0), 0.f, FColor(96, 82, 64)},
+	{TEXT("fig"), 160, 24, 380, 260, TS::Spreading, {FColor(52, 96, 46), FColor(70, 118, 56), FColor(94, 136, 62)}, FColor(120, 70, 110), 0.f, FColor(150, 140, 126)},
+	{TEXT("persimmon"), 200, 20, 300, 320, TS::Orchard, {FColor(76, 116, 48), FColor(96, 136, 58), FColor(124, 156, 66)}, FColor(238, 128, 36), 1.f, FColor(80, 64, 52)},
+	{TEXT("pawpaw"), 180, 16, 200, 420, TS::Columnar, {FColor(56, 104, 46), FColor(74, 124, 54), FColor(100, 142, 60)}, FColor(0, 0, 0), 0.f, FColor(110, 96, 84)},
+	{TEXT("chestnut"), 380, 36, 600, 560, TS::Layered, {FColor(48, 86, 40), FColor(66, 106, 46), FColor(92, 128, 58)}, FColor(240, 230, 200), 0.10f, FColor(84, 66, 52)},
+	{TEXT("fruit"), 160, 18, 280, 260, TS::Orchard, {FColor(84, 128, 56), FColor(104, 146, 64), FColor(132, 164, 72)}, FColor(250, 236, 238), 0.f, FColor(96, 80, 66)},
+	{TEXT("apple"), 160, 18, 290, 260, TS::Orchard, {FColor(78, 122, 52), FColor(98, 140, 60), FColor(128, 160, 70)}, FColor(204, 46, 40), 1.f, FColor(96, 80, 66)},
+	{TEXT("birch"), 480, 16, 230, 620, TS::Columnar, {FColor(98, 140, 58), FColor(126, 162, 68), FColor(160, 184, 84)}, FColor(0, 0, 0), 0.f, FColor(228, 224, 214)},
+	{TEXT("poplar"), 300, 22, 210, 1050, TS::Columnar, {FColor(60, 100, 44), FColor(84, 124, 52), FColor(116, 148, 62)}, FColor(0, 0, 0), 0.f, FColor(130, 120, 104)},
+	{TEXT("cypress"), 60, 18, 170, 1000, TS::Conifer, {FColor(34, 66, 40), FColor(44, 80, 46), FColor(58, 96, 52)}, FColor(0, 0, 0), 0.f, FColor(90, 72, 58)},
+	{TEXT("shade"), 440, 44, 780, 600, TS::Layered, {FColor(54, 92, 42), FColor(76, 116, 52), FColor(106, 142, 62)}, FColor(0, 0, 0), 0.f, FColor(96, 80, 64)},
+	{TEXT("roof"), 130, 12, 180, 200, TS::Small, {FColor(70, 116, 52), FColor(92, 138, 62), FColor(124, 160, 70)}, FColor(214, 80, 150), 0.12f, FColor(98, 80, 62)},
+	{TEXT("jacaranda"), 260, 24, 500, 300, TS::Spreading, {FColor(124, 98, 182), FColor(150, 122, 204), FColor(176, 150, 222)}, FColor(96, 136, 64), 0.2f, FColor(96, 80, 66)},
+	{TEXT("copse"), 300, 36, 560, 520, TS::Small, {FColor(48, 84, 40), FColor(66, 104, 46), FColor(92, 126, 56)}, FColor(0, 0, 0), 0.f, FColor(88, 72, 58)},
+	{TEXT("bamboo"), 750, 4, 110, 0, TS::Bamboo, {FColor(92, 138, 52), FColor(116, 156, 60), FColor(146, 174, 72)}, FColor(150, 164, 76), 0.f, FColor(150, 162, 80)},
 };
 
 const FSpecies& FindSpecies(const FString& Name)
@@ -667,17 +726,35 @@ const FSpecies& FindSpecies(const FString& Name)
 	if (Name.Contains(TEXT("cherry"))) return GSpecies[2];
 	return GSpecies[0];
 }
+
+FLinearColor Shade(const FColor& C, float K)
+{
+	return FLinearColor(FColor(uint8(FMath::Clamp(C.R * K, 0.f, 255.f)), uint8(FMath::Clamp(C.G * K, 0.f, 255.f)), uint8(FMath::Clamp(C.B * K, 0.f, 255.f))));
+}
+
+/** One cushion of foliage (Puff) of radius R, flattened by Vz. */
+void Cushion(ASWCityActor::FInstances& Out, const FVector& C, double R, double Vz, const FLinearColor& T, FRng& Rng, bool bShadow = true, double Cull = 0.0)
+{
+	Out.Add(P(EPrim::Puff), M(EMat::Foliage), T, Xf(C, FVector(R * Rng.R(0.9, 1.1) / 100, R * Rng.R(0.9, 1.1) / 100, R * Vz / 100), Rng.R(0, 360)), bShadow, Cull);
+}
 } // namespace
 
 void ASWCityTrees::AddShrub(FInstances& Out, const FVector& Base, double Radius, const FLinearColor& Tint, uint32 InSeed, double CullCm)
 {
 	FRng Rng(InSeed);
+	// A flowering tint becomes a green cushion carrying a cap of blossom; leafy shrubs are 2-3 cushions.
+	const bool bFlower = Tint.G < Tint.R * 0.9f || (Tint.R > 0.5f && Tint.G > 0.5f && Tint.B > 0.35f);
 	const int32 N = 2 + Rng.I(2);
 	for (int32 i = 0; i < N; ++i)
 	{
 		const double R = Radius * Rng.R(0.6, 1.0);
-		const FVector Off(Rng.R(-0.5, 0.5) * Radius, Rng.R(-0.5, 0.5) * Radius, R * 0.55);
-		Out.Add(P(EPrim::Blob), M(EMat::Foliage), Tint, Xf(Base + Off, FVector(R / 100, R / 100, R * 0.8 / 100), Rng.R(0, 360)), Radius > 60, CullCm);
+		const FVector Off(Rng.R(-0.5, 0.5) * Radius, Rng.R(-0.5, 0.5) * Radius, R * 0.3);
+		const FLinearColor T = bFlower ? Col::Leaf(Rng.I(4)) : Tint;
+		Out.Add(P(EPrim::Puff), M(EMat::Foliage), T, Xf(Base + Off, FVector(R / 100, R / 100, R * 0.85 / 100), Rng.R(0, 360)), Radius > 60, CullCm);
+		if (bFlower)
+		{
+			Out.Add(P(EPrim::Puff), M(EMat::Foliage), Tint, Xf(Base + Off + FVector(Rng.R(-0.2, 0.2) * R, Rng.R(-0.2, 0.2) * R, R * 0.6), FVector(R * 0.7 / 100, R * 0.7 / 100, R * 0.35 / 100), Rng.R(0, 360)), false, CullCm);
+		}
 	}
 }
 
@@ -690,55 +767,166 @@ void ASWCityTrees::AddTree(FInstances& Out, const FString& SpeciesName, const FV
 	const FLinearColor BarkT(S.BarkC);
 	const double Lean = Rng.R(-4, 4);
 	const double Yaw0 = Rng.R(0, 360);
-	Out.Add(P(EPrim::Trunk), M(EMat::Bark), BarkT, Xf(Base - FVector(0, 0, 10), FVector(TR / 50, TR / 50, (H + CH * 0.4) / 100), Yaw0, Lean, 0));
-	// limbs reaching into the crown
-	const int32 Limbs = S.Shape == 3 ? 2 : 3 + Rng.I(2);
-	for (int32 i = 0; i < Limbs; ++i)
+	// per-tree brightness so rows don't look cloned; quantised to 3 levels because every distinct tint is its own
+	// instanced component (draw call)
+	static const float Lights[3] = {0.92f, 1.0f, 1.08f};
+	const float Light = Lights[Rng.I(3)];
+	auto LeafT = [&](int32 Tier) { return Shade(S.Leaf[FMath::Clamp(Tier, 0, 2)], Light); };
+	auto Limb = [&](const FVector& From, double Yaw, double TiltDeg, double Len, double R)
 	{
-		const double Yaw = Yaw0 + 360.0 * i / Limbs + Rng.R(-20, 20);
-		const double Pitch = S.Shape == 1 ? Rng.R(-55, -40) : Rng.R(-40, -25); // tilt from vertical
-		const double Len = (S.Shape == 1 ? CR * 0.75 : CR * 0.55) * Rng.R(0.8, 1.1);
-		const double Tilt = FMath::DegreesToRadians(-Pitch);
-		const double Yr = FMath::DegreesToRadians(Yaw);
+		const double Tilt = FMath::DegreesToRadians(TiltDeg), Yr = FMath::DegreesToRadians(Yaw);
 		const FVector Dir(FMath::Sin(Tilt) * FMath::Cos(Yr), FMath::Sin(Tilt) * FMath::Sin(Yr), FMath::Cos(Tilt));
-		const FTransform T(FRotationMatrix::MakeFromZ(Dir).Rotator(), Base + FVector(0, 0, H * Rng.R(0.75, 0.95)), FVector(TR * 0.5 / 50, TR * 0.5 / 50, Len / 100));
-		Out.Add(P(EPrim::Trunk), M(EMat::Bark), BarkT, T);
-	}
-	// crown blobs
-	const FVector C = Base + FVector(0, 0, H + CH * (S.Shape == 1 ? 0.35 : 0.6));
-	for (int32 i = 0; i < S.Blobs; ++i)
+		Out.Add(P(EPrim::Trunk), M(EMat::Bark), BarkT, FTransform(FRotationMatrix::MakeFromZ(Dir).Rotator(), From, FVector(R / 50, R / 50, Len / 100)));
+		return From + Dir * Len;
+	};
+
+	if (S.Shape == TS::Bamboo)
 	{
-		FVector Off;
-		double R;
-		if (i == 0)
+		// clump: culms leaning slightly outward, leaf sprays on the upper half
+		const int32 Nc = 9 + Rng.I(6);
+		const double Rc = 70 * K;
+		for (int32 i = 0; i < Nc; ++i)
 		{
-			Off = FVector::ZeroVector;
-			R = (S.Shape == 3 ? CR * 0.8 : CR * 0.62);
+			const double A = Rng.R(0, 2 * PI), Rr = Rc * FMath::Sqrt(Rng.F());
+			const FVector B0 = Base + FVector(FMath::Cos(A) * Rr, FMath::Sin(A) * Rr, -5);
+			const double Hc = H * Rng.R(0.7, 1.15);
+			const double Tilt = 3 + 7 * Rr / FMath::Max(Rc, 1.0);
+			const FVector Dir = FVector(FMath::Cos(A) * FMath::Sin(FMath::DegreesToRadians(Tilt)), FMath::Sin(A) * FMath::Sin(FMath::DegreesToRadians(Tilt)), FMath::Cos(FMath::DegreesToRadians(Tilt)));
+			const double Rcm = Rng.R(3.0, 5.0) * FMath::Max(K, 0.6);
+			Out.Add(P(EPrim::Cylinder), M(EMat::Timber), Shade(S.BarkC, Rng.F() < 0.5f ? 0.88f : 1.05f), FTransform(FRotationMatrix::MakeFromZ(Dir).Rotator(), B0, FVector(Rcm / 50, Rcm / 50, Hc / 100)));
+			for (int32 l = 0; l < 3; ++l)
+			{
+				const FVector Pc = B0 + Dir * Hc * Rng.R(0.55, 1.0) + FVector(Rng.R(-50, 50), Rng.R(-50, 50), 0) * K;
+				Out.Add(P(EPrim::Puff), M(EMat::Foliage), LeafT(Rng.I(3)), Xf(Pc, FVector(Rng.R(0.5, 0.8), Rng.R(0.3, 0.45), Rng.R(0.22, 0.32)) * K, Rng.R(0, 360)), true, 0.0);
+			}
 		}
-		else
-		{
-			const double A = 2 * PI * i / (S.Blobs - 1) + Rng.R(-0.3, 0.3);
-			const double Rad = (S.Shape == 1 ? 0.62 : 0.5) * CR * Rng.R(0.8, 1.1);
-			Off = FVector(FMath::Cos(A) * Rad, FMath::Sin(A) * Rad, Rng.R(-0.35, 0.45) * CH);
-			R = CR * Rng.R(0.38, 0.55);
-		}
-		const double Vz = S.Shape == 3 ? 1.5 : (S.Shape == 1 ? 0.62 : 0.8);
-		const bool bBloom = S.BloomFrac > 0 && Rng.F() < S.BloomFrac;
-		const FLinearColor Tint = bBloom ? FLinearColor(S.Bloom) : FLinearColor(S.Leaf[Rng.I(3)]);
-		Out.Add(P(EPrim::Blob), M(EMat::Foliage), Tint, Xf(C + Off, FVector(R / 100, R / 100, R * Vz / 100), Rng.R(0, 360)));
+		return;
 	}
-	if (S.Shape == 2)
+
+	// trunk
+	const double TrunkLen = S.Shape == TS::Conifer ? H + CH * 0.3 : H + CH * 0.35;
+	Out.Add(P(EPrim::Trunk), M(EMat::Bark), BarkT, Xf(Base - FVector(0, 0, 10), FVector(TR / 50, TR / 50, TrunkLen / 100), Yaw0, Lean, 0));
+
+	switch (S.Shape)
 	{
-		// willow curtain: long hanging drapes round the rim
-		const int32 N = 14;
-		for (int32 i = 0; i < N; ++i)
+	case TS::Layered:
+	case TS::Spreading:
+	case TS::Small:
+	{
+		const bool bSpread = S.Shape == TS::Spreading;
+		const int32 Tiers = S.Shape == TS::Small ? 2 : (bSpread ? 2 : 3);
+		// visible limbs fanning into the lowest tier
+		const int32 Limbs = S.Shape == TS::Small ? 0 : 3 + Rng.I(2);
+		for (int32 i = 0; i < Limbs; ++i)
 		{
-			const double A = 2 * PI * i / N + Rng.R(-0.15, 0.15);
-			const double Rad = CR * Rng.R(0.75, 0.95);
-			const double Len = Rng.R(0.55, 0.8) * (H + CH * 0.3);
-			const FVector Pc = C + FVector(FMath::Cos(A) * Rad, FMath::Sin(A) * Rad, -Len * 0.5);
-			Out.Add(P(EPrim::Blob), M(EMat::Foliage), FLinearColor(S.Leaf[Rng.I(3)]), Xf(Pc, FVector(Rng.R(0.9, 1.4) * CR / 520, 0.45 * CR / 520, Len / 100), FMath::RadiansToDegrees(A) + 90));
+			const double Yaw = Yaw0 + 360.0 * i / Limbs + Rng.R(-20, 20);
+			Limb(Base + FVector(0, 0, H * Rng.R(0.75, 0.95)), Yaw, bSpread ? Rng.R(48, 62) : Rng.R(28, 42), CR * (bSpread ? 0.62 : 0.48) * Rng.R(0.85, 1.1), TR * 0.45);
 		}
+		for (int32 t = 0; t < Tiers; ++t)
+		{
+			const double Ft = Tiers > 1 ? double(t) / (Tiers - 1) : 0.0; // 0 bottom .. 1 top
+			const double Z = H + CH * (bSpread ? 0.15 + 0.45 * Ft : 0.12 + 0.62 * Ft);
+			const double Rt = CR * (bSpread ? 1.0 - 0.3 * Ft : 1.0 - 0.42 * Ft);
+			const int32 Ring = S.Shape == TS::Small ? 3 : (t == 0 ? 5 : 4);
+			const double Vz = bSpread ? 0.5 : 0.66;
+			const int32 Tier = Tiers == 3 ? t : (t == 0 ? 0 : 2);
+			const FVector C = Base + FVector(Rng.R(-0.05, 0.05) * CR, Rng.R(-0.05, 0.05) * CR, Z);
+			Cushion(Out, C, Rt * 0.6, Vz, LeafT(FMath::Min(Tier + 1, 2)), Rng);
+			const double A0 = Rng.R(0, 2 * PI);
+			for (int32 i = 0; i < Ring; ++i)
+			{
+				const double A = A0 + 2 * PI * i / Ring + Rng.R(-0.25, 0.25);
+				const double Rad = Rt * Rng.R(0.5, 0.62);
+				const bool bBloom = S.BloomFrac > 0 && Rng.F() < S.BloomFrac;
+				const FLinearColor T = bBloom ? Shade(S.Bloom, Light) : LeafT(Tier);
+				Cushion(Out, C + FVector(FMath::Cos(A) * Rad, FMath::Sin(A) * Rad, Rng.R(-0.08, 0.1) * CH), Rt * Rng.R(0.36, 0.48), Vz, T, Rng);
+			}
+		}
+		break;
+	}
+	case TS::Willow:
+	{
+		// short leaning trunk, arching limbs, dome of cushions, then curtains of hanging fringes
+		const FVector Top = Base + FVector(0, 0, H);
+		for (int32 i = 0; i < 4; ++i) Limb(Top - FVector(0, 0, H * 0.15), Yaw0 + 90 * i + Rng.R(-20, 20), Rng.R(40, 58), CR * 0.55, TR * 0.45);
+		const FVector C = Top + FVector(0, 0, CH * 0.45);
+		Cushion(Out, C + FVector(0, 0, CH * 0.15), CR * 0.55, 0.55, LeafT(2), Rng);
+		for (int32 i = 0; i < 6; ++i)
+		{
+			const double A = 2 * PI * i / 6 + Rng.R(-0.2, 0.2);
+			Cushion(Out, C + FVector(FMath::Cos(A) * CR * 0.5, FMath::Sin(A) * CR * 0.5, -CH * 0.05), CR * 0.42, 0.5, LeafT(1), Rng);
+		}
+		// outer curtain: tangential fringe sheets round the rim, flaring out a little, hem ~0.6 m above ground
+		const double Drop = (C.Z - Base.Z) - 60;
+		for (int32 Ringi = 0; Ringi < 2; ++Ringi)
+		{
+			const int32 N = Ringi == 0 ? 16 : 9;
+			const double Rr = CR * (Ringi == 0 ? 0.88 : 0.55);
+			const double Wd = 2 * PI * Rr / N * 1.35;
+			for (int32 i = 0; i < N; ++i)
+			{
+				const double A = 2 * PI * (i + (Ringi ? 0.5 : 0.0)) / N + Rng.R(-0.08, 0.08);
+				const double Len = Drop * (Ringi == 0 ? Rng.R(0.8, 1.0) : Rng.R(0.6, 0.8));
+				const FVector Pc = C + FVector(FMath::Cos(A) * Rr, FMath::Sin(A) * Rr, CH * (Ringi == 0 ? -0.05 : 0.1));
+				// yaw: local +Y (the fringe's bow) points radially outward; roll flares the hem outward
+				Out.Add(P(EPrim::Fringe), M(EMat::Foliage), LeafT(Ringi == 0 ? Rng.I(3) : 0),
+					FTransform(FRotator(0, FMath::RadiansToDegrees(A) - 90, Ringi == 0 ? -7 : -3), Pc, FVector(Wd / 100, 1.0, Len / 100)));
+			}
+		}
+		break;
+	}
+	case TS::Columnar:
+	{
+		const int32 Nl = 5;
+		for (int32 i = 0; i < Nl; ++i)
+		{
+			const double F = double(i) / (Nl - 1);
+			const double R = CR * (0.95 - 0.55 * F * F);
+			const FVector Pc = Base + FVector(Rng.R(-0.12, 0.12) * CR, Rng.R(-0.12, 0.12) * CR, H + CH * (0.1 + 0.78 * F));
+			Cushion(Out, Pc, R, CH / (Nl * R) * 1.25, LeafT(i < 2 ? 0 : (i < 4 ? 1 : 2)), Rng);
+			if (i < Nl - 1)
+			{
+				const double A = Rng.R(0, 2 * PI);
+				Cushion(Out, Pc + FVector(FMath::Cos(A), FMath::Sin(A), 0) * R * 0.55, R * 0.6, CH / (Nl * R) * 1.1, LeafT(1), Rng);
+			}
+		}
+		break;
+	}
+	case TS::Conifer:
+	{
+		const int32 Nc = 3;
+		for (int32 i = 0; i < Nc; ++i)
+		{
+			const double F = double(i) / Nc;
+			const double R = CR * (1.0 - 0.3 * F);
+			Out.Add(P(EPrim::Cone), M(EMat::Foliage), LeafT(i), Xf(Base + FVector(0, 0, H + CH * F * 0.85), FVector(R / 50, R / 50, CH * 0.42 / 100), Rng.R(0, 360)));
+		}
+		break;
+	}
+	case TS::Orchard:
+	{
+		for (int32 i = 0; i < 3; ++i) Limb(Base + FVector(0, 0, H * 0.85), Yaw0 + 120 * i + Rng.R(-15, 15), Rng.R(40, 55), CR * 0.5, TR * 0.5);
+		const FVector C = Base + FVector(0, 0, H + CH * 0.45);
+		Cushion(Out, C + FVector(0, 0, CH * 0.12), CR * 0.62, 0.7, LeafT(2), Rng);
+		for (int32 i = 0; i < 5; ++i)
+		{
+			const double A = 2 * PI * i / 5 + Rng.R(-0.3, 0.3);
+			Cushion(Out, C + FVector(FMath::Cos(A) * CR * 0.5, FMath::Sin(A) * CR * 0.5, -CH * 0.08), CR * 0.45, 0.6, LeafT(Rng.I(2)), Rng);
+		}
+		// fruit (or, for plain "fruit" trees, blossom flecks): small dots on the crown surface
+		const bool bFruit = S.BloomFrac > 0.5f;
+		const int32 Nf = bFruit ? 8 + Rng.I(5) : 6;
+		for (int32 i = 0; i < Nf; ++i)
+		{
+			const double A = Rng.R(0, 2 * PI), El = Rng.R(-0.5, 0.6);
+			const FVector D(FMath::Cos(A) * FMath::Cos(El), FMath::Sin(A) * FMath::Cos(El), FMath::Sin(El) * 0.6);
+			const double Sz = bFruit ? 0.075 : 0.22;
+			Out.Add(P(EPrim::Blob), M(EMat::Foliage), FLinearColor(S.Bloom), Xf(C + D * CR * 0.92, FVector(Sz * K, Sz * K, Sz * K * (bFruit ? 1.0 : 0.6))), false, 22000);
+		}
+		break;
+	}
+	default:
+		break;
 	}
 }
 
@@ -769,6 +957,11 @@ bool ASWCityTrees::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 			AddTree(Inst, Sp, Base, Sc, Rng.Next());
 		}
 	}
+	// far landscape groups skip shadows: virtual shadow maps would otherwise draw kilometres of casters
+	if (!J::Bool(Obj, TEXT("shadow"), true))
+	{
+		for (FInstanceBucket& Bk : Inst.Buckets) Bk.bShadow = false;
+	}
 	AddInstances(Inst);
 	return true;
 }
@@ -798,7 +991,12 @@ bool ASWStreetFurniture::Build(const TSharedPtr<FJsonObject>& Obj, FString& Erro
 		// knee-height path light too (low glare)
 		B.Box(Glow, FVector(-8, -8, 45), FVector(8, 8, 60));
 		B.Cylinder(BrassS, FVector(0, 0, 60), 12, 2, 8, 6);
-		Inst.Add(P(EPrim::Blob), M(EMat::Foliage), Col::Leaf(Rng.I(4)), Xf(FVector(0, 0, 14), FVector(0.45, 0.45, 0.22)), false, 25000);
+		Inst.Add(P(EPrim::Puff), M(EMat::Foliage), Col::Leaf(Rng.I(4)), Xf(FVector(0, 0, 14), FVector(0.45, 0.45, 0.3)), false, 25000);
+		// hanging flower basket on a second arm
+		B.Beam(BrassS, FVector(0, 0, 230), FVector(-40, 0, 230), 3, 3);
+		B.Cylinder(B.Slot(EMat::Timber, Col::TimberDark()), FVector(-45, 0, 175), 14, 22, 22, 8);
+		Inst.Add(P(EPrim::Puff), M(EMat::Foliage), Col::Flower(Rng.I(6)), Xf(FVector(-45, 0, 198), FVector(0.3, 0.3, 0.2)), false, 25000);
+		Inst.Add(P(EPrim::Fringe), M(EMat::Foliage), Col::Leaf(Rng.I(4)), FTransform(FRotator(0, Rng.R(0, 360), 0), FVector(-45, 0, 195), FVector(0.5, 1.0, 0.7)), false, 25000);
 	}
 	else if (Type == TEXT("bench"))
 	{
@@ -819,6 +1017,20 @@ bool ASWStreetFurniture::Build(const TSharedPtr<FJsonObject>& Obj, FString& Erro
 			B.Pole(MetalS, FVector(-30, Y, 0), FVector(-30, Y, 75), 3, 6);
 			B.Pole(MetalS, FVector(30, Y, 0), FVector(30, Y, 75), 3, 6);
 			B.Pole(MetalS, FVector(-32, Y, 75), FVector(32, Y, 75), 3, 6);
+			if (Rng.F() < 0.6)
+			{
+				// a parked bike: wheels on edge, coloured frame, saddle, bars
+				const int32 Fr = B.Slot(EMat::Metal, Col::Flower(Rng.I(6)));
+				const FVector Wf(70, Y + 14, 33), Wb(-70, Y + 14, 33);
+				B.Pole(MetalS, Wf - FVector(0, 2.5, 0), Wf + FVector(0, 2.5, 0), 33, 10); // tyre ring
+				B.Pole(MetalS, Wb - FVector(0, 2.5, 0), Wb + FVector(0, 2.5, 0), 33, 10);
+				B.Pole(Fr, Wb, FVector(0, Y + 14, 70), 2.5, 4);
+				B.Pole(Fr, FVector(0, Y + 14, 70), Wf, 2.5, 4);
+				B.Pole(Fr, FVector(-20, Y + 14, 33), FVector(-25, Y + 14, 90), 2.5, 4);
+				B.Pole(Fr, FVector(55, Y + 14, 95), Wf, 2.5, 4);
+				B.Box(Dark, FVector(-35, Y + 7, 90), FVector(-15, Y + 21, 96));
+				B.Pole(MetalS, FVector(55, Y - 10, 98), FVector(55, Y + 38, 98), 2, 4);
+			}
 		}
 	}
 	else if (Type == TEXT("outdoor_gym_station"))
@@ -1305,9 +1517,191 @@ bool ASWCityOpenSpace::Build(const TSharedPtr<FJsonObject>& Obj, FString& Error)
 			ASWCityTrees::AddShrub(Inst, Pc, Rng.R(50, 130), T, Rng.Next(), 40000);
 		}
 	}
+	else if (Kind == TEXT("plaza"))
+	{
+		// paving comes from the ground actor; this only carries the props below
+	}
 	else
 	{
 		B.Box(LawnS, FVector(Mn, 0), FVector(Mx, 4));
+	}
+
+	// ---- props (any open space): market stalls, shade sails, planter benches, pools, bikes, string lights ----
+	const int32 BrassS = B.Slot(EMat::Metal, Col::Brass());
+	for (const TSharedPtr<FJsonObject>& Pr : J::Objs(Obj, TEXT("props")))
+	{
+		const FString T = J::Str(Pr, TEXT("t"));
+		const TArray<double> Pp = J::Nums(Pr, TEXT("p"));
+		if (Pp.Num() < 2) continue;
+		const FVector Pc = L(Pp[0], Pp[1], 0);
+		const double Yaw = J::Num(Pr, TEXT("yaw"), 0);
+		const FQuat Q = FRotator(0, Yaw, 0).Quaternion();
+		auto W = [&](double X, double Y, double Z) { return Pc + Q.RotateVector(FVector(X, Y, Z)); };
+		auto RBox = [&](int32 S, double X0, double Y0, double Z0, double X1, double Y1, double Z1)
+		{ B.OBox(S, W((X0 + X1) * 0.5, (Y0 + Y1) * 0.5, (Z0 + Z1) * 0.5), FVector(FMath::Abs(X1 - X0) * 0.5, FMath::Abs(Y1 - Y0) * 0.5, FMath::Abs(Z1 - Z0) * 0.5), FRotator(0, Yaw, 0)); };
+		const FLinearColor Cc = J::Color(Pr, TEXT("c"), Col::Flower(Rng.I(6)));
+		if (T == TEXT("stall"))
+		{
+			// produce stall: counter, crates of produce, four posts, striped canopy, a hanging lantern
+			const int32 Can = B.Slot(EMat::Fabric, Cc);
+			RBox(Wood, -100, -140, 0, 100, 140, 88);
+			RBox(Dark, -105, -145, 88, 105, 145, 95);
+			for (int32 c = 0; c < 4; ++c) RBox(Dark, (c & 1) ? 95 : -105, (c & 2) ? 135 : -145, 0, (c & 1) ? 105 : -95, (c & 2) ? 145 : -135, 250);
+			const FVector G0 = W(-140, -175, 250), G1 = W(140, 175, 250);
+			if (FMath::Abs(FMath::Fmod(Yaw, 180.0)) < 45 || FMath::Abs(FMath::Fmod(Yaw, 180.0)) > 135)
+				B.Gable(Can, G0.ComponentMin(G1), G0.ComponentMax(G1), 65, false);
+			else
+				B.Gable(Can, G0.ComponentMin(G1), G0.ComponentMax(G1), 65, true);
+			for (int32 k = 0; k < 6; ++k)
+			{
+				const double X = -60 + (k % 2) * 70, Y = -100 + (k / 2) * 95;
+				RBox(Wood, X - 30, Y - 38, 95, X + 30, Y + 38, 112);
+				const FLinearColor Prod = k % 3 == 0 ? Srgb(220, 60, 40) : (k % 3 == 1 ? Srgb(240, 170, 40) : Srgb(110, 160, 60));
+				for (int32 d = 0; d < 4; ++d)
+					Inst.Add(P(EPrim::Blob), M(EMat::Foliage), Prod, Xf(W(X + Rng.R(-18, 18), Y + Rng.R(-25, 25), 116), FVector(0.1)), false, 15000);
+			}
+			B.Box(Glow, W(0, 0, 215) - FVector(9), W(0, 0, 215) + FVector(9));
+		}
+		else if (T == TEXT("sail"))
+		{
+			// tensile shade sail: a hypar quad between two high and two low mast tops
+			const double Hs = J::Num(Pr, TEXT("size"), 900) * 0.5;
+			const int32 Sail = B.Slot(EMat::Fabric, Cc);
+			FVector Tops[4];
+			for (int32 c = 0; c < 4; ++c)
+			{
+				const double A = PI * 0.5 * c + PI * 0.25;
+				const FVector Foot = W(FMath::Cos(A) * Hs * 1.15, FMath::Sin(A) * Hs * 1.15, 0);
+				Tops[c] = W(FMath::Cos(A) * Hs, FMath::Sin(A) * Hs, c % 2 ? 330 : 470);
+				B.Pole(MetalS, Foot, Tops[c] + FVector(0, 0, 25), 6, 6);
+				B.Cylinder(StoneS, Foot, 22, 18, 20, 6);
+			}
+			B.Tri(Sail, Tops[0], Tops[1], Tops[2], FVector::UpVector);
+			B.Tri(Sail, Tops[0], Tops[2], Tops[3], FVector::UpVector);
+		}
+		else if (T == TEXT("planter_bench"))
+		{
+			const double R = J::Num(Pr, TEXT("size"), 300) * 0.5;
+			RBox(Wood, -R, -R, 0, R, R, 65);
+			B.Box(B.Slot(EMat::Path, Col::Soil()), W(0, 0, 65) - FVector(R - 12, R - 12, 0), W(0, 0, 67) + FVector(R - 12, R - 12, 0));
+			for (int32 s = 0; s < 4; ++s)
+			{
+				const FQuat Qs = FRotator(0, Yaw + 90 * s, 0).Quaternion();
+				const FVector A = Pc + Qs.RotateVector(FVector(R + 25, 0, 44));
+				B.OBox(Wood, A, FVector(22, R * 0.85, 3), FRotator(0, Yaw + 90 * s, 0));
+				B.OBox(Dark, Pc + Qs.RotateVector(FVector(R + 25, -R * 0.6, 21)), FVector(16, 5, 21), FRotator(0, Yaw + 90 * s, 0));
+				B.OBox(Dark, Pc + Qs.RotateVector(FVector(R + 25, R * 0.6, 21)), FVector(16, 5, 21), FRotator(0, Yaw + 90 * s, 0));
+			}
+			ASWCityTrees::AddTree(Inst, J::Str(Pr, TEXT("tree"), TEXT("maple")), W(0, 0, 66), J::Num(Pr, TEXT("scale"), 0.75), Rng.Next());
+			for (int32 k = 0; k < 4; ++k)
+				ASWCityTrees::AddShrub(Inst, W(Rng.R(-R * 0.7, R * 0.7), Rng.R(-R * 0.7, R * 0.7), 66), Rng.R(30, 45), Rng.F() < 0.5 ? Col::Flower(Rng.I(6)) : Col::Leaf(Rng.I(4)), Rng.Next(), 30000);
+		}
+		else if (T == TEXT("pool"))
+		{
+			// shallow reflecting pool with a stone rim, splash jets, stepping stones and lilies
+			const double Rx = J::Num(Pr, TEXT("rx"), 600), Ry = J::Num(Pr, TEXT("ry"), 300);
+			TArray<FVector2D> Rim = Ellipse(FVector2D(Pc), Rx + 40, Ry + 40, 28), In = Ellipse(FVector2D(Pc), Rx, Ry, 28);
+			B.Prism(StoneS, Rim, 0, 30);
+			B.Prism(WaterS, In, 0, 32);
+			for (int32 k = 0; k < 7; ++k)
+			{
+				const FVector Jp = Pc + FVector((k - 3) * Rx / 4.0, 0, 32);
+				B.Cylinder(B.Slot(EMat::Water, Srgb(200, 225, 230)), Jp, 6, 1, 40 + 25 * (k % 3), 5, false);
+			}
+			for (int32 k = 0; k < 6; ++k)
+				Inst.Add(P(EPrim::Disc), M(EMat::Foliage), Col::Leaf(1), Xf(Pc + FVector(Rng.R(-Rx, Rx) * 0.7, Rng.R(-Ry, Ry) * 0.6, 33), FVector(Rng.R(0.5, 0.9), Rng.R(0.5, 0.9), 0.3)), false, 20000);
+			for (int32 k = 0; k < 5; ++k)
+				Inst.Add(P(EPrim::Disc), M(EMat::PermeableStone), Col::Stone(), Xf(Pc + FVector(-Rx * 0.6 + k * Rx * 0.3, Ry * 0.55, 30), FVector(1.1, 0.9, 1.0)), false, 20000);
+			for (int32 k = 0; k < 14; ++k)
+			{
+				const double A = Rng.R(0, 2 * PI);
+				Inst.Add(P(EPrim::Reed), M(EMat::Foliage), Col::Meadow(), Xf(Pc + FVector(FMath::Cos(A) * Rx * 0.95, FMath::Sin(A) * Ry * 0.95, 30), FVector(1.0, 1.0, Rng.R(0.8, 1.4))), false, 20000);
+			}
+		}
+		else if (T == TEXT("bikes"))
+		{
+			const int32 Nbk = int32(J::Num(Pr, TEXT("n"), 6));
+			for (int32 i = 0; i < Nbk; ++i)
+			{
+				const double Y = (i - (Nbk - 1) * 0.5) * 80;
+				B.Pole(MetalS, W(-30, Y, 0), W(-30, Y, 75), 3, 6);
+				B.Pole(MetalS, W(30, Y, 0), W(30, Y, 75), 3, 6);
+				B.Pole(MetalS, W(-30, Y, 75), W(30, Y, 75), 3, 6);
+				if (Rng.F() < 0.75)
+				{
+					// bike: two wheels (thin discs on edge), frame, saddle, handlebar
+					const int32 Fr = B.Slot(EMat::Metal, Col::Flower(Rng.I(6)));
+					const FVector Wf = W(70, Y + 15, 33), Wb = W(-70, Y + 15, 33);
+					const FVector Ax = Q.RotateVector(FVector(0, 2.5, 0));
+					B.Pole(MetalS, Wf - Ax, Wf + Ax, 33, 10);
+					B.Pole(MetalS, Wb - Ax, Wb + Ax, 33, 10);
+					B.Pole(Fr, Wb, W(0, Y + 15, 70), 2.5, 4);
+					B.Pole(Fr, W(0, Y + 15, 70), Wf, 2.5, 4);
+					B.Pole(Fr, W(-20, Y + 15, 33), W(-25, Y + 15, 90), 2.5, 4);
+					B.Pole(Fr, W(55, Y + 15, 95), Wf, 2.5, 4);
+					RBox(Dark, -35, Y + 8, 90, -15, Y + 22, 96);
+					B.Pole(MetalS, W(55, Y - 10, 98), W(55, Y + 40, 98), 2, 4);
+				}
+			}
+		}
+		else if (T == TEXT("lights"))
+		{
+			// festoon string between two masts: sagging cable with warm bulbs
+			const TArray<double> Qp = J::Nums(Pr, TEXT("q"));
+			if (Qp.Num() < 2) continue;
+			const FVector A = L(Pp[0], Pp[1], 0), Bq = L(Qp[0], Qp[1], 0);
+			B.Pole(Dark, A, A + FVector(0, 0, 480), 7, 6);
+			B.Pole(Dark, Bq, Bq + FVector(0, 0, 480), 7, 6);
+			const int32 Nseg = 12;
+			FVector Prev = A + FVector(0, 0, 460);
+			for (int32 i = 1; i <= Nseg; ++i)
+			{
+				const double F = double(i) / Nseg;
+				const FVector Cur = FMath::Lerp(A, Bq, F) + FVector(0, 0, 460 - 120 * 4 * F * (1 - F));
+				B.Pole(MetalS, Prev, Cur, 1, 3);
+				if (i < Nseg) B.Box(Glow, Cur - FVector(6, 6, 14), Cur + FVector(6, 6, -2));
+				Prev = Cur;
+			}
+		}
+		else if (T == TEXT("tables"))
+		{
+			for (int32 i = 0; i < 3; ++i)
+			{
+				const FVector Tp = W(0, (i - 1) * 260, 0);
+				B.Cylinder(MetalS, Tp, 4, 4, 72, 6);
+				B.Cylinder(Wood, Tp + FVector(0, 0, 72), 50, 50, 4, 10);
+				for (int32 c = 0; c < 4; ++c)
+				{
+					const double A = PI * 0.5 * c;
+					B.Box(Dark, Tp + FVector(FMath::Cos(A) * 80 - 18, FMath::Sin(A) * 80 - 18, 0), Tp + FVector(FMath::Cos(A) * 80 + 18, FMath::Sin(A) * 80 + 18, 45));
+				}
+				B.Cylinder(Wood, Tp + FVector(0, 0, 76), 3, 3, 170, 5, false);
+				B.Cylinder(B.Slot(EMat::Fabric, i % 2 ? Cc : Srgb(240, 232, 214)), Tp + FVector(0, 0, 215), 150, 4, 45, 8);
+			}
+		}
+		else if (T == TEXT("flowerbed"))
+		{
+			const double Lx = J::Num(Pr, TEXT("lx"), 600) * 0.5, Ly = J::Num(Pr, TEXT("ly"), 200) * 0.5;
+			RBox(Wood, -Lx, -Ly, 0, Lx, Ly, 35);
+			RBox(SoilS, -Lx + 8, -Ly + 8, 35, Lx - 8, Ly - 8, 37);
+			const int32 Nb = FMath::Clamp(int32(Lx * Ly / 1500), 6, 80);
+			for (int32 k = 0; k < Nb; ++k)
+			{
+				const double X = Rng.R(-Lx + 20, Lx - 20), Y = Rng.R(-Ly + 20, Ly - 20);
+				const int32 Band = int32((X + Lx) / FMath::Max(1.0, Lx * 2 / 4));
+				const FLinearColor Fc = k % 4 == 0 ? Col::Leaf(Rng.I(4)) : Col::Flower(Band + int32(Pp[0]) % 6);
+				Inst.Add(P(EPrim::Puff), M(EMat::Foliage), Fc, Xf(W(X, Y, 37), FVector(Rng.R(0.18, 0.3), Rng.R(0.18, 0.3), Rng.R(0.15, 0.3)), Rng.R(0, 360)), false, 25000);
+			}
+		}
+		else if (T == TEXT("kiosk"))
+		{
+			RBox(Wood, -150, -120, 0, 150, 120, 240);
+			RBox(B.Slot(EMat::SolarGlass, Col::GlassWarm(), 5.f), 148, -100, 80, 153, 100, 210);
+			RBox(Dark, 150, -120, 95, 200, 120, 102);
+			const FVector G0 = W(-190, -160, 240), G1 = W(190, 160, 240);
+			B.Gable(B.Slot(EMat::GreenRoof, Col::GreenRoof()), G0.ComponentMin(G1), G0.ComponentMax(G1), 90, FMath::Abs(FMath::Fmod(Yaw, 180.0)) > 45 && FMath::Abs(FMath::Fmod(Yaw, 180.0)) < 135);
+			B.Box(BrassS, W(210, 0, 250) - FVector(4), W(210, 0, 250) + FVector(4, 4, 30));
+		}
 	}
 	AddMesh(B);
 	AddInstances(Inst);

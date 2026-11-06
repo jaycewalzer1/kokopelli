@@ -35,8 +35,9 @@ namespace SWCity
 		Count
 	};
 
-	/** Shared material instance for (material, tint); cached so equal pieces batch across actors. */
-	UMaterialInterface* GetMaterial(EMat Mat, const FLinearColor& Tint);
+	/** Shared material instance for (material, tint[, Scale override in cm, 0 = asset default]); cached so equal
+	 *  pieces batch across actors. */
+	UMaterialInterface* GetMaterial(EMat Mat, const FLinearColor& Tint, float Scale = 0.f);
 	/** True once the real /Game/Solarpunk material for Mat loaded (false = BasicShapeMaterial fallback). */
 	bool HasRealMaterial(EMat Mat);
 	const TCHAR* MatName(EMat Mat);
@@ -51,6 +52,9 @@ namespace SWCity
 		Reed,      // thin 4-sided spike, base radius 4, height 100
 		Stone,     // flattened low-poly rock, radius 100
 		Disc,      // 10-sided flat disc radius 50, 4 cm thick (lily pads, stepping stones)
+		Puff,      // cloud-like foliage cushion: icosphere radius 100 with a flattened underside (z -45..100)
+		Fringe,    // hanging curtain of 9 tapering strands, 100 wide (x -50..50), hanging from z=0 to z=-100, facing +Y
+		Cone,      // three stacked 8-sided cone skirts (conifer), radius 50, z 0..100
 		Count
 	};
 	UStaticMesh* GetPrim(EPrim Prim);
@@ -78,7 +82,7 @@ namespace SWCity
 class FSWMeshBuilder
 {
 public:
-	int32 Slot(SWCity::EMat Mat, const FLinearColor& Tint);
+	int32 Slot(SWCity::EMat Mat, const FLinearColor& Tint, float Scale = 0.f);
 
 	/** One triangle whose front faces along Normal (winding is fixed up from the normal). */
 	void Tri(int32 S, const FVector& A, const FVector& B, const FVector& C, const FVector& Normal);
@@ -116,6 +120,7 @@ public:
 	{
 		SWCity::EMat Mat = SWCity::EMat::Timber;
 		FLinearColor Tint = FLinearColor::White;
+		float Scale = 0.f; // material Scale override (cm), 0 = asset default
 		TArray<FVector3f> Pos;
 		TArray<FVector3f> Nrm;
 		TArray<uint32> Idx;
