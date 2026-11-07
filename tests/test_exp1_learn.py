@@ -126,6 +126,24 @@ class RunTest(unittest.TestCase):
             for x, y in zip(a, b):
                 self.assertEqual(x["pi"], y["pi"])
 
+    def test_a_polite_run_gives_memory_back_and_resumes_to_the_same_life(self):
+        import sys
+        from unittest import mock
+        from exp1 import run as runner
+        sys.path.insert(0, str(runner.ROOT))
+        import ram_share
+        # Plenty of room except right after the third night, when it runs short once.
+        rooms = iter([50, 50, 50, -10] + [50] * 1000)
+        with tempfile.TemporaryDirectory() as whole, tempfile.TemporaryDirectory() as politely, \
+                mock.patch.object(ram_share, "room_gb", lambda *a: (next(rooms), [], [])), mock.patch.object(ram_share.time, "sleep", lambda s: None):
+            quiet_run(whole)
+            make = lambda: Run(politely, "lived", 0, 6, "table", {"lr": 0.01})
+            run = runner.polite(make, Path(politely))
+            self.assertTrue(run.life.finished)
+            a = [json.loads(line)["choice"] for line in Path(whole, "trajectory.jsonl").read_text().splitlines()]
+            b = [json.loads(line)["choice"] for line in Path(politely, "trajectory.jsonl").read_text().splitlines()]
+            self.assertEqual(a, b)
+
     def test_probes_are_leak_free_and_cover_both_gate_states(self):
         rows = probes(0)
         self.assertEqual([r["probe"] for r in rows], ["D1", "D2 gate open", "D2 gate closed", "D3"])

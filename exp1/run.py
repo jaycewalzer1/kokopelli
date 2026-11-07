@@ -22,6 +22,7 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -223,7 +224,8 @@ class Run:
         return base | stats | {"replay_days": self.settings["replay_days"], "today": today_after,
                                "probes_before": probes_before, "probes_after": probes_after}
 
-    def live(self):
+    def live(self, pause=None):
+        """Lives to the end and returns True, or returns False after a night's checkpoint if pause() says to stop."""
         nights = len(self.files["sleep.jsonl"].read_text().splitlines())
         self.status("living")
         while not self.life.finished:
@@ -240,7 +242,10 @@ class Run:
             print(f"morning {index} ({morning[0]['phase']} day {morning[0]['day']}): "
                   + ", ".join(f"{r['decision']} {r['choice']} r={r['reward']:+.3f}" for r in morning)
                   + (f" | sleep kl={night.get('kl', 0):.4f} grad={night.get('grad_norm', 0):.3f}" if night.get("steps") else ""), flush=True)
+            if pause and not self.life.finished and pause():
+                return False
         self.status("finished")
+        return True
 
     def finish(self, guardrail_checks=(), lives=200):
         if guardrail_checks:
@@ -265,6 +270,41 @@ class Run:
         self.status("done")
 
 
+POLITE_GB = 20   # Qwen bf16 plus a sleep step peaks at about 18.5 GB
+
+
+def polite(make, folder):
+    """Live the whole life as a polite job (ram_share.py). Waits for room before loading the model. After each night's
+    checkpoint, if the room left falls below ram_share's floor, unloads and waits, then resumes from that checkpoint.
+    Returns the Run, model loaded, with its life finished."""
+    import gc
+    sys.path.insert(0, str(ROOT))
+    import ram_share
+
+    def log(message):
+        print(message, flush=True)
+        status = folder / "status.json"
+        if status.exists():   # keep the panel from calling a waiting run stopped
+            value = json.loads(status.read_text())
+            _write_json(status, value | {"phase": "waiting for memory", "updated": time.strftime("%Y-%m-%dT%H:%M:%S"), "waiting": message})
+
+    def short():
+        room, _, _ = ram_share.room_gb()
+        return room + ram_share.MARGIN_GB < ram_share.FLOOR_GB
+
+    guard = ram_share.Guard(folder.name, POLITE_GB, log=log)
+    while True:
+        guard.before()
+        run = make()
+        if run.live(pause=short):
+            return run
+        log(f"ram_share: {folder.name} gives back its model after {len(run.trajectory)} decisions and will resume from that checkpoint")
+        del run
+        gc.collect()
+        mx.clear_cache()
+        guard.loaded = False
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("folder")
@@ -281,11 +321,15 @@ def main():
                         help="divide option scores by this before the softmax; 1.0 is the spec, above 1 flattens pi")
     parser.add_argument("--guardrails", nargs="*", default=[], choices=("mmlu", "ifeval"))
     parser.add_argument("--reference-lives", type=int, default=200)
+    parser.add_argument("--polite", action="store_true",
+                        help="share memory through ram_share.py: wait for room before loading Qwen, and give it back after a night if room runs out")
     options = parser.parse_args()
     settings = {"lr": options.lr, "beta": options.beta, "steps": options.steps, "replay_days": options.replay_days}
-    run = Run(options.folder, options.arm, options.seed, options.days, options.policy, settings, options.weights,
-              temperature=options.choice_temperature)
-    run.live()
+    make = lambda: Run(options.folder, options.arm, options.seed, options.days, options.policy, settings, options.weights,
+                       temperature=options.choice_temperature)
+    run = polite(make, Path(options.folder)) if options.polite else make()
+    if not options.polite:
+        run.live()
     run.finish(options.guardrails, options.reference_lives)
     print(json.dumps(json.loads((run.folder / "report.json").read_text())["direction"], indent=1))
 
