@@ -7,6 +7,8 @@ choice-independent and is excluded so the agent isn't paid for waiting.
 from __future__ import annotations
 import numpy as np
 
+from life import scenario
+
 NEEDS = ("comfort", "calm", "connection")
 SETPOINT = np.array([0.7, 0.7, 0.7])
 WEIGHTS = np.array([1.0, 1.0, 1.0])
@@ -16,24 +18,13 @@ DEPLETE = 0.15        # each need drops this much between decisions (needs decay
 DEFICIT_ONLY = True   # overshoot costs nothing (no built-in satiation)
 EXPONENT = 1.0        # 1 = linear deficit (EV-preserving below setpoint); 2 = quadratic (state-dependent risk aversion)
 
-# option -> list of (prob, delta[comfort, calm, connection], label)
-# "rare_scale" multiplies the rare branch; tuned by balance() so every option
-# has equal expected reward. The unscaled splits are design choices; edit freely.
-# Splits sum to (points x 0.05) from the scenario spec, so EV = 3 points = 0.15 units
-# for every option. Rare-good is spread across needs so it stays under the cap.
-D1 = {
-    "middle_lawn": [(1.0, [0.05, 0.05, 0.05], "normal")],                                    # +3
-    "under_oak":   [(0.9, [0.15, 0.05, 0.00], "common"), (0.1, [-0.20, -0.10, 0.00], "rare")],  # +4 / -6
-    "front_row":   [(0.9, [-0.05, 0.05, 0.10], "common"), (0.1, [0.15, 0.20, 0.25], "rare")],  # +2 / +12
-    "by_path":     [(0.5, [0.05, 0.20, 0.00], "quiet"), (0.5, [0.00, -0.05, 0.10], "busy")],    # +5 / +1
-}
-D2 = {
-    "paved_path":   [(1.0, [0.05, 0.10, 0.00], "normal")],                                   # +3
-    "lawn":         [(0.9, [0.05, 0.15, 0.00], "common"), (0.1, [-0.25, -0.05, 0.00], "rare")],  # +4 / -6
-    "garden_trail": [(0.9, [0.05, -0.05, 0.10], "common"), (0.1, [0.15, 0.15, 0.30], "rare")],  # +2 / +12
-    "side_gate":    [(0.5, [0.05, 0.20, 0.00], "empty"), (0.5, [0.00, 0.05, 0.00], "jammed")],  # +5 / +1
-}
-SAFE = {"D1": "middle_lawn", "D2": "paved_path"}
+# decision -> option -> list of (prob, delta[comfort, calm, connection], key), built from life/scenario.py, which owns the
+# world: options, outcome odds, need deltas (points x 0.05) and the front-gap gate. This file owns only the reward math.
+# The 2-decision draft's own D1/D2 tables were replaced by these.
+assert scenario.NEEDS == NEEDS and scenario.SETPOINT == 0.7, "scenario.py's needs or setpoint changed; recheck this file"
+TABLES = {decision: {option.id: [(outcome.p, list(outcome.delta), outcome.key) for outcome in option.outcomes] for option in options}
+          for decision, options in scenario.DECISIONS.items()}
+SAFE = {decision: next(option.id for option in options if option.role == "safe") for decision, options in scenario.DECISIONS.items()}
 
 
 def start_state(rng) -> np.ndarray:
@@ -87,18 +78,28 @@ def felt_text(h: np.ndarray) -> str:
 
 
 # ---------- balance check / solver ----------
-MAJORITY = ("common", "quiet", "empty")   # branch the solver scales
+MAJORITY = ("common", "quiet", "early")   # branch the solver scales: the 90% branch, or the +5 side of a variance control
 
 
 def scaled(delta, label, scale):
     return np.asarray(delta) * (scale if label in MAJORITY else 1.0)
 
 
+def drives(states: np.ndarray) -> np.ndarray:
+    """drive() for many states at once (one per row)."""
+    gap = SETPOINT - states
+    if DEFICIT_ONLY:
+        gap = np.maximum(gap, 0.0)
+    return np.sum(WEIGHTS * gap ** EXPONENT, axis=-1)
+
+
 def expected_reward(table, option, states, scale=1.0) -> float:
+    """Same as averaging apply(h, d)[1] over states, done for all states at once."""
+    states = np.asarray(states, dtype=float)
     tot = 0.0
     for p, d, label in table[option]:
         d = scaled(d, label, scale)
-        tot += p * np.mean([apply(h, d)[1] for h in states])
+        tot += p * float(np.mean(drives(states) - drives(np.clip(states + d, 0, 1))))
     return tot
 
 
@@ -124,15 +125,26 @@ def balance(table, safe, states, lo=0.0, hi=5.0, iters=60) -> dict:
     return scales
 
 
-def d2_states(rng, n, d1_scales):
-    """State distribution at D2 under a uniform-random D1 policy."""
+def entry_states(decision, rng, n, scales=None, gate=None):
+    """States a decision sees under a uniform-random policy upstream: a fresh morning, then each earlier outcome and the
+    depletion after it. gate=True keeps only mornings where the front gap is open at D2, gate=False only those where it's
+    closed, None keeps all. scales are balance() results per option, applied to upstream outcomes as they would be in a run."""
+    scales = scales or {}
+    order = list(scenario.DECISIONS)
     out = []
-    opts = list(D1)
-    for _ in range(n):
+    while len(out) < n:
         h = start_state(rng)
-        o = opts[rng.integers(len(opts))]
-        p, d, label = draw(D1, o, rng)
-        d = scaled(d, label, d1_scales.get(o) or 1.0)
-        h, _ = apply(h, d)
-        out.append(relax(h))
+        arrival, on_time = None, False
+        for upstream in order[:order.index(decision)]:
+            shown = scenario.shown_options(upstream, arrival, on_time)
+            option = shown[rng.integers(len(shown))]
+            p, d, label = draw(TABLES[upstream], option, rng)
+            h, _ = apply(h, scaled(d, label, scales.get(option) or 1.0))
+            if upstream == "D1":
+                outcome = scenario.outcome_of(option, label)
+                arrival, on_time = outcome.arrival, outcome.on_time
+            h = relax(h)
+        if gate is not None and (scenario.FRONT_GAP in scenario.shown_options("D2", arrival, on_time)) != gate:
+            continue
+        out.append(h)
     return out
