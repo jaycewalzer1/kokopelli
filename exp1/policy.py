@@ -58,10 +58,10 @@ class TablePolicy:
 class QwenPolicy:
     """Qwen3-VL with LoRA on the language model's q and v projections."""
 
-    def __init__(self, weights, rank=16, alpha=32, adapter=None):
+    def __init__(self, weights, rank=16, alpha=32, adapter=None, temperature=1.0):
         from mlx_vlm import load
         from mlx_vlm.trainer.peft.utils import apply_lora_layers, get_peft_model
-        self.weights = str(weights)
+        self.weights, self.temperature = str(weights), float(temperature)
         mx.set_cache_limit(CACHE_LIMIT_BYTES)   # freed buffers go back to the system instead of piling up across a sleep
         self.model, self.processor = load(self.weights)
         self.tokenizer = getattr(self.processor, "tokenizer", self.processor)
@@ -118,14 +118,16 @@ class QwenPolicy:
         token_logp = mx.take_along_axis(logp, targets[:, start:, None], axis=-1)[..., 0]
         return (token_logp * weight[:, start:]).sum(axis=1)
 
+    # temperature divides the scores before the softmax. 1.0 is the spec: pi is exactly the model's own probability of
+    # each answer, renormalized. Above 1 it flattens pi, for every use of it (sampling, the update, the KL and the base).
     def scores(self, row):
-        return self._option_scores(row)
+        return self._option_scores(row) / self.temperature
 
     def score_one(self, row, k):
-        return self._option_scores(row, only=k)[0]
+        return self._option_scores(row, only=k)[0] / self.temperature
 
     def log_probs(self, row):
-        scores = self._option_scores(row)
+        scores = self.scores(row)
         return scores - mx.logsumexp(scores)
 
     @contextmanager

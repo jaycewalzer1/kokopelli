@@ -99,7 +99,7 @@ def _pi(policy, row, logp=None):
     return dict(zip(row["shown"], np.exp(logp).round(6).tolist()))
 
 
-def make_policy(kind, weights, rank, alpha, adapter=None):
+def make_policy(kind, weights, rank, alpha, adapter=None, temperature=1.0):
     if kind == "table":
         from exp1.policy import TablePolicy
         policy = TablePolicy()
@@ -107,11 +107,11 @@ def make_policy(kind, weights, rank, alpha, adapter=None):
             policy.model.load_weights(str(adapter))
         return policy
     from exp1.policy import QwenPolicy
-    return QwenPolicy(weights, rank, alpha, adapter)
+    return QwenPolicy(weights, rank, alpha, adapter, temperature)
 
 
 class Run:
-    def __init__(self, folder, arm, seed, days, policy_kind, settings, weights=QWEN_WEIGHTS, rank=16, alpha=32):
+    def __init__(self, folder, arm, seed, days, policy_kind, settings, weights=QWEN_WEIGHTS, rank=16, alpha=32, temperature=1.0):
         self.folder = Path(folder)
         self.folder.mkdir(parents=True, exist_ok=True)
         self.files = {name: self.folder / name for name in ("trajectory.jsonl", "sleep.jsonl", "status.json", "config.json")}
@@ -120,18 +120,21 @@ class Run:
         self.settings = DEFAULTS | settings
         config = {"arm": arm, "seed": seed, "days": days, "policy": policy_kind, "learn": self.settings,
                   "model_weights": str(weights) if policy_kind == "qwen" else None, "lora": {"rank": rank, "alpha": alpha, "targets": ["q_proj", "v_proj"]},
-                  "choice_temperature": 1.0, "reward": "homeostatic drive reduction, outcome step only (exp1/homeostasis.py)",
+                  "choice_temperature": temperature, "reward": "homeostatic drive reduction, outcome step only (exp1/homeostasis.py)",
                   "commit": _git_commit(), "system_prompt": observe.SYSTEM}
         resuming = (self.checkpoint / "state.json").exists()
         if resuming:
             saved = json.loads(self.files["config.json"].read_text())
-            if {k: saved[k] for k in ("arm", "seed", "days", "policy")} != {k: config[k] for k in ("arm", "seed", "days", "policy")}:
+            same = ("arm", "seed", "days", "policy", "choice_temperature")
+            if {k: saved.get(k, 1.0 if k == "choice_temperature" else None) for k in same} != {k: config[k] for k in same}:
                 raise ValueError("this folder holds a different run; use a new folder")
         else:
             config["started"] = time.strftime("%Y-%m-%dT%H:%M:%S")
             _write_json(self.files["config.json"], config)
         adapter = self.checkpoint / "adapters.safetensors" if resuming else None
-        self.policy = make_policy(policy_kind, weights, rank, alpha, adapter)
+        if policy_kind == "table" and temperature != 1.0:
+            raise ValueError("--choice-temperature is for the qwen policy")
+        self.policy = make_policy(policy_kind, weights, rank, alpha, adapter, temperature)
         self.sleeper = Sleeper(self.policy, self.settings)
         self.life = Life(seed, arm, days)
         _write_json(self.folder / "outcome_schedule.json", self.life.schedule)
@@ -229,7 +232,7 @@ class Run:
             while not self.life.finished and self.life.index == index:
                 morning.append(self.decide())
                 self.status("living")
-            self.status("sleeping")
+            self.status("sleeping", night_after=morning[0]["day"] if morning[0]["phase"] == "free" else "exploration")
             night = self.night(morning)
             _append(self.files["sleep.jsonl"], night)
             nights += 1
@@ -274,11 +277,14 @@ def main():
     parser.add_argument("--beta", type=float, default=DEFAULTS["beta"])
     parser.add_argument("--steps", type=int, default=DEFAULTS["steps"], choices=(1, 2, 3, 4))
     parser.add_argument("--replay-days", type=int, default=DEFAULTS["replay_days"])
+    parser.add_argument("--choice-temperature", type=float, default=1.0,
+                        help="divide option scores by this before the softmax; 1.0 is the spec, above 1 flattens pi")
     parser.add_argument("--guardrails", nargs="*", default=[], choices=("mmlu", "ifeval"))
     parser.add_argument("--reference-lives", type=int, default=200)
     options = parser.parse_args()
     settings = {"lr": options.lr, "beta": options.beta, "steps": options.steps, "replay_days": options.replay_days}
-    run = Run(options.folder, options.arm, options.seed, options.days, options.policy, settings, options.weights)
+    run = Run(options.folder, options.arm, options.seed, options.days, options.policy, settings, options.weights,
+              temperature=options.choice_temperature)
     run.live()
     run.finish(options.guardrails, options.reference_lives)
     print(json.dumps(json.loads((run.folder / "report.json").read_text())["direction"], indent=1))

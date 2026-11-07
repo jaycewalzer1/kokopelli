@@ -125,7 +125,9 @@ function traceMarkup(run, row) {
   const advantage = `The ${row.decision} ${term("baseline")} was ${signed(row.baseline)}, so the ${term("advantage")} was ${signed(row.advantage)}`;
   const after = row.pi_after_night?.[row.choice];
   const update = row.forced ? "It wasn't trained on." : after == null ? "Tonight's update hasn't run yet." :
-    `That night π(${escapeHtml(row.choice)}) here went ${percent(row.pi[row.choice])} → ${percent(after)}${Math.sign(after - row.pi[row.choice]) === Math.sign(row.advantage) || Math.abs(after - row.pi[row.choice]) < 0.005 ? "" : ", against its own advantage, because the other choices replayed that night pushed harder"}.`;
+    percent(after) === percent(row.pi[row.choice])
+      ? `That night π(${escapeHtml(row.choice)}) here stayed at ${percent(after)}${row.pi[row.choice] > 0.95 || row.pi[row.choice] < 0.05 ? ": near 0 or 1 the gradient of log π is close to zero, so one choice barely moves it" : ""}.`
+      : `That night π(${escapeHtml(row.choice)}) here went ${percent(row.pi[row.choice])} → ${percent(after)}${Math.sign(after - row.pi[row.choice]) === Math.sign(row.advantage) ? "" : ", the opposite way to its own advantage: the other choices replayed that night and the KL pull outweighed it"}.`;
   const gate = gateLine(run, row);
   return `<p>${when}, ${escapeHtml(date)}, ${row.decision}. ${term("felt text", "It felt")}: “${escapeHtml(row.felt_text.replace(/^You feel /, "").replace(/\.$/, ""))}”. ${picked[0].toUpperCase()}${picked.slice(1)}. It got ${outcome}. ${reward}. ${advantage}. ${update}</p>`
     + (gate ? `<p class="gate">${gate}</p>` : "") + (row.reason ? `<p class="reason">Its reason, written after choosing: “${escapeHtml(row.reason)}”</p>` : "");
@@ -236,7 +238,9 @@ function drawArms(data) {
 function statusText(run) {
   const s = run.status;
   if (!s) return "Starting";
-  const where = s.free_day ? `free day ${Math.min(s.free_day, s.days)} of ${s.days}` : `exploration morning ${s.explore_days}`;
+  const where = s.phase === "sleeping" && s.night_after != null
+    ? (s.night_after === "exploration" ? `after exploration morning ${s.explore_days}` : `after free day ${s.night_after} of ${s.days}`)
+    : s.free_day ? `free day ${Math.min(s.free_day, s.days)} of ${s.days}` : `exploration morning ${s.explore_days}`;
   const age = duration((Date.now() - new Date(s.updated).getTime()) / 1000);
   if (run.state === "finished") return `Finished: ${s.decisions} decisions, ${s.lora_step} LoRA steps`;
   if (run.state === "stopped") return `Stopped at ${where}, last write ${age} ago`;
