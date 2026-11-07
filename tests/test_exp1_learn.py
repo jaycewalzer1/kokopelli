@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 import mlx.core as mx
+import mlx.nn as nn
 import numpy as np
 
 from exp1 import baselines, observe
@@ -66,6 +67,15 @@ class SleepTest(unittest.TestCase):
         policy.model.logits = mx.array([2.0] + [0.0] * (policy.model.logits.size - 1))
         Sleeper(policy, {"lr": 0.05, "steps": 4, "beta": 1.0}).sleep([self.row("walk_main", 0.0)])
         self.assertLess(float(policy.model.logits[0]), 2.0)
+
+    def test_option_by_option_gradient_equals_the_whole_gradient(self):
+        policy = TablePolicy()
+        policy.model.logits = mx.array(np.random.default_rng(0).normal(size=policy.model.logits.size).astype(np.float32))
+        sleeper = Sleeper(policy, {"beta": 0.3})
+        row = self.row("run_main", 0.2, pi={"walk_main": 0.1, "run_main": 0.3, "check_desk": 0.4, "side_path": 0.2})
+        split, *_ = sleeper._sample_grad(row, 0.5)
+        whole = nn.value_and_grad(policy.model, lambda model: sleeper._loss_of_scores(policy.scores(row), row, 0.5)[0])(policy.model)[1]
+        np.testing.assert_allclose(np.array(split["logits"]), np.array(whole["logits"]), atol=1e-6)
 
     def test_replay_takes_free_days_in_the_window_only(self):
         rows = [{"forced": True, "day": None}] + [{"forced": False, "day": d} for d in range(1, 11)]

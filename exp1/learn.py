@@ -13,7 +13,9 @@ probabilities saved at decision time (the base model never changes, so they stay
 
 A policy here is anything with:
     model                          an mlx nn.Module whose trainable parameters are the ones to update
-    log_probs(row) -> mx.array     log pi over row["shown"], differentiable, for a trajectory row
+    scores(row) -> mx.array        a score per option in row["shown"]; log pi = scores - logsumexp(scores)
+    score_one(row, k) -> mx.array  option k's score alone, differentiable (one sequence's forward pass for Qwen)
+    log_probs(row) -> mx.array     log pi over row["shown"]
 """
 import mlx.core as mx
 import mlx.nn as nn
@@ -22,7 +24,7 @@ import numpy as np
 from mlx.utils import tree_flatten, tree_map, tree_unflatten
 
 BASELINE_WEIGHT = 0.2
-DEFAULTS = {"lr": 5e-5, "beta": 0.05, "steps": 2, "replay_days": 5, "clip": (0.8, 1.2), "max_grad_norm": 1.0}
+DEFAULTS = {"lr": 2e-5, "beta": 0.05, "steps": 2, "replay_days": 5, "clip": (0.8, 1.2), "max_grad_norm": 1.0}
 
 
 class Baseline:
@@ -43,6 +45,14 @@ def replay_rows(trajectory, day, replay_days):
     return [row for row in trajectory if not row["forced"] and row["day"] is not None and day - replay_days <= row["day"] <= day]
 
 
+def _logp_then(row):
+    """log pi(choice) when it was made. pi in the logs is rounded and can read 0 for an option the model all but ruled
+    out, so the exact log-probs are kept beside it."""
+    if "logp" in row:
+        return float(row["logp"][row["shown"].index(row["choice"])])
+    return float(np.log(max(row["pi"][row["choice"]], 1e-12)))
+
+
 def _kl(logp_now, logp_base):
     return (mx.exp(logp_now) * (logp_now - logp_base)).sum()
 
@@ -57,32 +67,54 @@ class Sleeper:
         self.optimizer.init(policy.model.trainable_parameters())
         self.steps_taken = 0
 
-    def _sample_loss(self, model, row, scale):
-        logp = self.policy.log_probs(row)
+    def _loss_of_scores(self, scores, row, scale):
+        """The night's loss for one sample, as a function of its option scores (log pi up to a constant)."""
+        logp = scores - mx.logsumexp(scores)
         chosen = logp[row["shown"].index(row["choice"])]
         low, high = self.settings["clip"]
-        weight = mx.stop_gradient(mx.clip(mx.exp(chosen - float(np.log(row["pi"][row["choice"]]))), low, high))
+        weight = mx.stop_gradient(mx.clip(mx.exp(chosen - _logp_then(row)), low, high))
         pg = -weight * row["advantage"] * chosen
         kl = _kl(logp, mx.array(row["base_logp"], dtype=mx.float32))
         return (pg + self.settings["beta"] * kl) * scale, (pg * scale, kl * scale, weight)
+
+    def _sample_grad(self, row, scale):
+        """Gradient of one sample's loss, one option sequence at a time.
+
+        The loss depends on the model only through the option scores, so grad = sum_k dloss/dscore_k * grad score_k.
+        dloss/dscore comes cheaply from scores computed without a graph; then each option's sequence is backpropagated on
+        its own. Same gradient as backpropagating all options together, with a quarter of the activations held at once."""
+        scores = mx.stop_gradient(self.policy.scores(row))
+        (_, (pg, kl, weight)), dscores = mx.value_and_grad(lambda s: self._loss_of_scores(s, row, scale), argnums=0)(scores)
+        mx.eval(dscores, pg, kl, weight)
+        grads = None
+        for k in range(len(row["shown"])):
+            coefficient = float(dscores[k])
+            if coefficient == 0.0:
+                continue
+            _, grad = nn.value_and_grad(self.policy.model, lambda model: self.policy.score_one(row, k) * coefficient)(self.policy.model)
+            grads = grad if grads is None else tree_map(lambda a, b: a + b, grads, grad)
+            mx.eval(grads)   # release this sequence's graph before the next
+        return grads, float(pg), float(kl), float(weight)
 
     def sleep(self, rows):
         """Gradient steps on these rows. Returns what the panel's training view shows for the night."""
         if not rows:
             return {"steps": 0, "samples": 0}
         model, settings = self.policy.model, self.settings
-        grad_fn = nn.value_and_grad(model, self._sample_loss)
         scale = 1.0 / len(rows)
         per_step = []
         for _ in range(settings["steps"]):
             total_pg, total_kl, grads, weights = 0.0, 0.0, None, []
             for row in rows:
-                (_, (pg, kl, weight)), grad = grad_fn(model, row, scale)
-                grads = grad if grads is None else tree_map(lambda a, b: a + b, grads, grad)
-                mx.eval(grads, pg, kl, weight)   # release this sample's graph before the next
-                total_pg += float(pg)
-                total_kl += float(kl)
-                weights.append(float(weight))
+                grad, pg, kl, weight = self._sample_grad(row, scale)
+                if grad is not None:
+                    grads = grad if grads is None else tree_map(lambda a, b: a + b, grads, grad)
+                    mx.eval(grads)
+                total_pg += pg
+                total_kl += kl
+                weights.append(weight)
+            if grads is None:
+                grads = tree_map(mx.zeros_like, model.trainable_parameters())
             grads, norm = optim.clip_grad_norm(grads, settings["max_grad_norm"])
             self.optimizer.update(model, grads)
             mx.eval(model.trainable_parameters(), self.optimizer.state)

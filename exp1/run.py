@@ -1,6 +1,6 @@
 """One life lived by a policy that learns while it sleeps. Experiment 1's model run.
 
-    python -m exp1.run out/exp1/runs/exp1_lived_s0 --arm lived --seed 0 --policy qwen --lr 5e-5
+    python -m exp1.run out/exp1/runs/exp1_lived_s0 --arm lived --seed 0 --policy qwen --lr 2e-5 --guardrails mmlu ifeval
     python -m exp1.run out/exp1/runs/exp1_table_s0 --policy table --lr 2.0          # the same loop with no model, for checks
 
 Through the GPU queue for qwen (it loads about 18 GB). A killed run picks up from its last night with the same command:
@@ -88,10 +88,15 @@ def _clock(text):
     return clock(hour, minute)
 
 
-def _pi(policy, row):
+def _logp(policy, row):
     logp = policy.log_probs(row)
     mx.eval(logp)
-    return dict(zip(row["shown"], np.exp(np.array(logp, dtype=np.float64)).round(6).tolist()))
+    return np.array(logp, dtype=np.float64)
+
+
+def _pi(policy, row, logp=None):
+    logp = _logp(policy, row) if logp is None else logp
+    return dict(zip(row["shown"], np.exp(logp).round(6).tolist()))
 
 
 def make_policy(kind, weights, rank, alpha, adapter=None):
@@ -179,18 +184,19 @@ class Run:
     def decide(self):
         pending = self.life.pending()
         row = {"system": observe.SYSTEM, "observation": observe.observation(pending, self.life.records, self.seed), "shown": pending.shown}
-        pi = _pi(self.policy, row)
+        logp = _logp(self.policy, row)
+        pi = _pi(self.policy, row, logp)
         base_logp = self.policy.base_log_probs(row)
         n = len(self.trajectory)
         if pending.forced:
             choice = pending.forced
         else:
-            p = np.array([pi[o] for o in pending.shown])
+            p = np.exp(logp - logp.max())
             choice = pending.shown[np.random.default_rng([self.seed, 11, n]).choice(len(p), p=p / p.sum())]
         reason = None if pending.forced else self.policy.reason(row, choice, seed=self.seed * 100003 + n) if self.kind == "qwen" else ""
         record = self.life.choose(choice)
         baseline, advantage = self.baseline.advantage(pending.decision, record["reward"])
-        out = {"n": n, **record, **row, "pi": pi, "base_pi": dict(zip(pending.shown, np.exp(base_logp).round(6).tolist())),
+        out = {"n": n, **record, **row, "pi": pi, "logp": logp.tolist(), "base_pi": dict(zip(pending.shown, np.exp(base_logp).round(6).tolist())),
                "base_logp": base_logp.tolist(), "reason": reason, "baseline": round(baseline, 6), "advantage": round(advantage, 6),
                "trained": not pending.forced, "lora_step": self.sleeper.steps_taken}
         del out["system"]   # in config.json; the same for every row

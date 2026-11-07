@@ -110,6 +110,7 @@ def describe(name):
             match = next((t for t in night["today"] if t["decision"] == row["decision"]), None)
             row["pi_after_night"] = match["pi_after"] if match else None
         row.pop("base_logp", None)
+        row.pop("logp", None)
     status = _json(folder / "status.json")
     summary = baselines.summarize_rows(rows, config["days"]) if rows else None
     return {"name": folder.name, "config": config, "status": status, "state": _state(folder, status), "rows": rows, "nights": nights,

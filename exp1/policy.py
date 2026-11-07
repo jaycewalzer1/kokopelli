@@ -38,8 +38,14 @@ class TablePolicy:
         self.index = {option.id: k for k, option in enumerate(scenario.OPTIONS)}
         self.model = _Logits(len(self.index))
 
+    def scores(self, row):
+        return self.model.logits[mx.array([self.index[o] for o in row["shown"]])]
+
+    def score_one(self, row, k):
+        return self.model.logits[self.index[row["shown"][k]]]
+
     def log_probs(self, row):
-        z = self.model.logits[mx.array([self.index[o] for o in row["shown"]])]
+        z = self.scores(row)
         return z - mx.logsumexp(z)
 
     def base_log_probs(self, row):
@@ -99,8 +105,10 @@ class QwenPolicy:
             self._cache = {key: (mx.array(ids), mx.array(mask), mx.array(targets), mx.array(weight), len(prompt))}
         return self._cache[key]
 
-    def _option_scores(self, row):
+    def _option_scores(self, row, only=None):
         ids, mask, targets, weight, prompt_length = self._batch(row)
+        if only is not None:
+            ids, mask, targets, weight = (a[only:only + 1] for a in (ids, mask, targets, weight))
         output = self.model(ids, None, mask)
         # Only the positions that predict a continuation token matter. Slicing before the float32 log-softmax keeps the
         # vocabulary-wide tensors to a few positions instead of the whole prompt, which is most of the memory in a sleep step.
@@ -109,6 +117,12 @@ class QwenPolicy:
         logp = nn.log_softmax(logits, axis=-1)
         token_logp = mx.take_along_axis(logp, targets[:, start:, None], axis=-1)[..., 0]
         return (token_logp * weight[:, start:]).sum(axis=1)
+
+    def scores(self, row):
+        return self._option_scores(row)
+
+    def score_one(self, row, k):
+        return self._option_scores(row, only=k)[0]
 
     def log_probs(self, row):
         scores = self._option_scores(row)
