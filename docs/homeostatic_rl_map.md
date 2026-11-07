@@ -1,6 +1,8 @@
-# Homeostatic RL: what exists today (Phase 0 map)
+# Homeostatic RL: map of the code
 
-Written 2026-11-06 from reading the code, before any change. Line numbers are as of that date.
+Sections 1 to 5 are the Phase 0 audit, written 2026-11-06 before any change; their line numbers are as of that date.
+**Section 6 is Experiment 1 as built**, updated to the final code on branch `feat/exp1-homeostatic-rl`. Where they disagree,
+section 6 is current.
 
 **The one-sentence version:** the dev panel's "Homeostatic training" page trains Qwen on a *different, made-up world*
 (`homeostatic/world.py`: four numbered variables called security, belonging, ambition, energy), not on the wellness center
@@ -165,3 +167,58 @@ The architecture page repeats some of these (`architecture.py:258 trainer_signal
 | 13 | "Existing lived SFT arm" | Keep unchanged | **No SFT arm exists** anywhere (architecture page lists "Sleep SFT" as *planned*, no code). The lived night run (`out/scenario/2026-11-05-193212`) only generates data and is still in its life phase | **Yes** (confirm) |
 | 14 | Flipped world | Needed for flipped+RL | Not in `life/scenario.py`; presumably homeostasis.py's balance solver gives the deltas | Depends on #1 |
 | 15 | Ownership | — | `homeostatic/`, `life/static/training.*` belong to the "Homeostatic post-training" session; `life/scenario.py` to the wellness night session, whose run is still resuming from it. The checkout is shared and commits there are done with a private index (AGENTS.md, sync notes) | **Yes**: where new code and per-phase commits go |
+
+## 6. Experiment 1 as built
+
+All of it is in `exp1/`, with `life/scenario.py` imported and never edited. The old `/training` page and `homeostatic/` are
+unchanged. The panel page is `/exp1`.
+
+### Files
+
+| File | What it owns |
+|---|---|
+| `exp1/homeostasis.py` | Reward math only: deficit-only linear drive, `apply` (outcome step, the only rewarded step), `relax` (depletion, never rewarded), `felt_text`, `balance`. Option tables are built from `scenario.py` |
+| `exp1/world.py` | `Life`: one life, decision by decision. Morning reset, forced exploration, the pre-drawn schedule, the three arms, the front-gap gate |
+| `exp1/observe.py` | The observation text and the leak checker. Every observation is checked before it's returned |
+| `exp1/balance.py`, `exp1/tabular_check.py` | Phase 1 checks: expected reward per option, and the tabular REINFORCE reference |
+| `exp1/policy.py` | `QwenPolicy`: LoRA r=16 on q,v; π by scoring `{"choice": "<id>"`; the reason after the choice. `TablePolicy`: the same interface with one logit per option, for tests |
+| `exp1/learn.py` | `Baseline` (running mean, weight 0.2, per decision) and `Sleeper` (the night update, Adam, checkpointable) |
+| `exp1/run.py` | The loop: decide, log, sleep each night, checkpoint, resume; then guardrails, baselines and the report |
+| `exp1/baselines.py` | Random, always-safe and tabular references, shares, and the predicted-direction reading |
+| `exp1/guardrails.py` | MMLU and IFEval subsets, untrained vs trained, in process |
+| `exp1/smoke.py` | Pre-run check on Qwen: scoring vs greedy replies, one full-size sleep step's time and memory |
+| `exp1/panel.py`, `life/static/exp1.*` | The `/exp1` page and its reader |
+
+### Data flow (the pipeline strip on `/exp1`, in this order)
+
+| Step | What happens | Code |
+|---|---|---|
+| Observation | Recent mornings in words, the scene, `felt_text(h)`, the options. No numbers, odds or counts (leak-checked) | `exp1/observe.py:63` |
+| Policy | π(o) ∝ exp(sum of log-probs of the tokens `{"choice": "o"`), over the offered options only | `exp1/policy.py:108` |
+| Choice | Sampled from π at T=1; forced on exploration mornings. Reason generated afterwards, logs only | `exp1/run.py:179` |
+| Outcome | The next entry in the chosen option's pre-drawn schedule (flipped: partner's odds; shuffled: a random offered option's) | `exp1/world.py:148` |
+| Needs | h ← clip(h + delta); between decisions h ← h − 0.15 (`exp1/homeostasis.py:47`) | `exp1/homeostasis.py:41` |
+| Reward | drive(h_pre) − drive(h_post); drive = Σ max(0, 0.7 − h) | `exp1/homeostasis.py:34` |
+| Advantage | r − baseline[decision]; then baseline += 0.2·(r − baseline). Forced choices update the baseline only | `exp1/learn.py:34` |
+| Sleep update | After each free morning: loss = mean[−w·A·log π(a)] + β·mean[KL(π‖π_base)], over today plus 5 replay days, w = clip(π_now/π_then, 0.8, 1.2) held constant. 1–4 Adam steps, grad clip 1.0 | `exp1/learn.py:69` |
+| Policy shift | Today's states and four fixed probe states are scored again after the update | `exp1/run.py:201` |
+
+The front-gap gate is state: D1's outcome sets the arrival time, and `Life.pending` (`exp1/world.py:126`) offers `front_gap`
+at D2 only if it was 9:08 or earlier. The page states the link on every D1 and D2.
+
+### Run folder (`out/exp1/runs/<name>/`)
+
+`config.json` (settings, model weights, commit), `outcome_schedule.json`, `trajectory.jsonl` (per decision: h_pre,
+h_post, delta, drive_pre, drive_post, reward, baseline, advantage, pi, base_pi, choice, schedule_index, outcome_label,
+felt_text, lora_step, the observation, the reason), `sleep.jsonl` (per night: loss_pg, loss_kl, kl, grad_norm, lr, steps,
+per-step weights, today's and the probes' π before and after), `status.json`, `checkpoint/`, `guardrails.json`,
+`reference.json`, `report.json`.
+
+### Decisions taken along the way
+
+- The world is kept as written (option c for D1's capped calm gain): D1 is a weak decision under this reward. See `docs/exp1_phase1.md`.
+- Adam, not plain SGD, for the LoRA. Adam makes early steps about lr in size whatever the advantage's size, so lr is the knob that matters; the table policy collapses at lr 0.5 and reproduces the tabular pattern at 0.01.
+- KL against the untrained model uses π_base saved at decision time (the base never changes), with the adapter switched off by setting LoRA scale to 0.
+- Exploration nights log a row with `steps: 0` so every night is accounted for.
+- There is no do-nothing option in this scenario; "always safe" stands in, labeled as such.
+- Guardrails run in process because lm-eval isn't installed; the IFEval verifiers are ours, for before/after comparison only.

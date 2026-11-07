@@ -11,6 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from exp1 import panel as exp1_panel
 from homeostatic import watch
 from life import architecture, city, city_live, gpu_queue, moodboard, staged, world_runs
 from life.engine import Budget, Engine
@@ -203,6 +204,15 @@ class Api:
     def training_run(self, params):
         return {**watch.describe_run(params["name"]), "baselines": watch.baselines(), "results": watch.held_out_results()}
 
+    def exp1_runs(self, params):
+        return {"runs": exp1_panel.listing(), "ui_version": ui_version()}
+
+    def exp1_run(self, params):
+        return exp1_panel.describe(params["name"])
+
+    def exp1_arms(self, params):
+        return exp1_panel.arms()
+
     def architecture(self, params):
         panel = architecture.panel_signal(self.store, len(self.runners.active))
         return {**architecture.catalog_and_snapshot(panel), "ui_version": ui_version()}
@@ -286,6 +296,7 @@ class Api:
 class Handler(BaseHTTPRequestHandler):
     GET = {"/api/runs": "runs", "/api/status": "status", "/api/feed": "feed", "/api/calendar": "calendar",
            "/api/node": "node", "/api/defaults": "defaults", "/api/training/runs": "training_runs", "/api/training/run": "training_run",
+           "/api/exp1/runs": "exp1_runs", "/api/exp1/run": "exp1_run", "/api/exp1/arms": "exp1_arms",
            "/api/architecture": "architecture", "/api/queue": "queue", "/api/queue/log": "queue_log", "/api/queue/past": "queue_past", "/api/moodboard": "moodboard",
            "/api/worlds": "worlds", "/api/city": "city",
            "/api/city-live/runs": "city_live_runs", "/api/city-live/run": "city_live_run"}
@@ -399,6 +410,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._static("index.html")
         if url.path == "/training":
             return self._static("training.html")
+        if url.path == "/exp1":
+            return self._static("exp1.html")
         if url.path == "/architecture":
             return self._static("architecture.html")
         if url.path == "/queue":
