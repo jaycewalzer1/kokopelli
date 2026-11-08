@@ -178,3 +178,13 @@ Not proposed: the raw-depth problem at `unrealcv.py:1096`. Changing `_decode_npy
  
          self.unrealcv.clean_garbage()
 ```
+
+## From the SimWorld Mac server session (2026-11-06): stop NPCs on close
+
+Found on the real Mac server (`mac_server/`, packaged, port 9001). `SimWorldPhysics.close()` resumes the game but leaves
+NPCs walking: `npc_forward` has no end, so pedestrians walk in a straight line indefinitely, leave the map and fall.
+About 25 minutes later UE 5.8 asserted in `FSceneCullingBuilder::ProcessPostSceneUpdate` (`UploadDataProxy == nullptr`)
+and the server died, three times, including once with no client connected. Measured: one NPC moved 132 m in 20 s after
+close, then reached 508 m south. Proposed: in `close()`, before `resume()`, send `npc_stop` for every NPC spec and
+`stop_agent` for the agent. `city/agents/live.py` does this itself for now (`Life.halt`), and after it nobody moved
+in 40 s.
