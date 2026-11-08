@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experiment 1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="/static/design.css">
+<link rel="stylesheet" href="/static/panel.css">
+<link rel="stylesheet" href="/static/exp1.css">
+</head>
+<body>
+<nav class="sidebar" aria-label="Views">
+  <div class="wordmark">Kokopelli</div>
+  <a href="/">Life generator</a>
+  <a href="/training">Homeostatic training</a>
+  <a href="/exp1" aria-current="page">Experiment 1</a>
+  <a href="/architecture">System architecture</a>
+  <a href="/queue">GPU queue</a>
+  <a href="/worlds">Model runs</a>
+  <a href="/moodboard">City moodboard</a>
+  <a href="/city-live">Watch the agent</a>
+</nav>
+<div class="view">
+<header>
+  <div class="brand">Experiment 1</div>
+  <select id="runs" aria-label="Run"></select>
+  <div id="status-line" role="status"><i></i><span id="status-text">Loading</span></div>
+</header>
+<div class="page">
+  <main class="exp1">
+    <p id="notice" hidden></p>
+
+    <section>
+      <div class="eyebrow ruled">One decision, step by step</div>
+      <div class="picker">
+        <button id="prev" aria-label="Previous decision">‹</button>
+        <input id="pick" type="range" min="0" max="0" value="0" aria-label="Decision">
+        <button id="next" aria-label="Next decision">›</button>
+        <span id="pick-text" class="mono"></span>
+      </div>
+      <ol id="strip" class="strip" aria-label="Pipeline for the selected decision"></ol>
+    </section>
+
+    <section>
+      <div class="eyebrow ruled">Needs, before and after each outcome</div>
+      <div id="needs" class="chart large"></div>
+      <div id="needs-key" class="chart-key-row"></div>
+    </section>
+
+    <section>
+      <div class="eyebrow ruled">Option probabilities on fixed probe states, night by night</div>
+      <p class="note">Each line is the policy's probability for one option on the same first-morning observation, scored after every night. × marks a day this option got a rare outcome.</p>
+      <div id="probs" class="small-charts"></div>
+    </section>
+
+    <section>
+      <div class="eyebrow ruled">Choice shares, second half of the free days</div>
+      <p class="note" id="shares-note"></p>
+      <div id="shares" class="shares"></div>
+    </section>
+
+    <section>
+      <div class="eyebrow ruled">Training, night by night</div>
+      <div class="small-charts">
+        <div><div class="eyebrow">Mean reward that day</div><div id="reward" class="chart"></div></div>
+        <div><div class="eyebrow">Policy-gradient loss</div><div id="loss" class="chart"></div></div>
+        <div><div class="eyebrow">KL from the untrained model</div><div id="kl" class="chart"></div></div>
+        <div><div class="eyebrow">Gradient norm, before clipping</div><div id="grad" class="chart"></div></div>
+      </div>
+      <div id="reward-key" class="chart-key-row"></div>
+      <div id="guardrails"></div>
+    </section>
+
+    <section>
+      <div class="eyebrow ruled">Arms: predicted direction, and whether it showed</div>
+      <div id="arms"></div>
+    </section>
+  </main>
+  <aside aria-label="The selected decision explained">
+    <div class="eyebrow ruled">Causal trace</div>
+    <div id="trace" class="trace"></div>
+    <div class="eyebrow ruled">What changed overnight</div>
+    <div id="overnight"></div>
+  </aside>
+</div>
+</div>
+<div id="tip" class="card" role="tooltip" hidden></div>
+<script type="module" src="/static/exp1.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+/* The Experiment 1 view's layout. Colors, type and components come from design.css. */
+header #status-line { margin-left: auto; }
+.exp1 { min-width: 0; min-height: 0; overflow-y: auto; padding: var(--space-4) var(--space-6) var(--space-12); display: flex; flex-direction: column; gap: var(--space-12); }
+#notice { max-width: 65ch; font: 400 13px/18px var(--font-sans); color: var(--danger); }
+#notice[hidden] { display: none; }
+.note { max-width: 65ch; margin-bottom: var(--space-2); font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+
+.picker { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); }
+.picker button { width: 36px; height: 36px; padding: 0; }
+#pick { flex: 1 1 auto; min-width: 0; border: 0; padding: 0; accent-color: var(--ink); }
+#pick-text { flex: none; color: var(--ink-muted); }
+
+/* The pipeline strip: one box per step, in order, each with its value, a sentence and where the code is. */
+.strip { list-style: none; margin: 0; padding: 0 0 var(--space-2); display: grid; grid-auto-flow: column; grid-auto-columns: 208px; gap: var(--space-4); overflow-x: auto; }
+.step { position: relative; display: flex; flex-direction: column; gap: var(--space-2); }
+.step + .step::before { content: "→"; position: absolute; left: -14px; top: var(--space-4); font: 400 13px/20px var(--font-mono); color: var(--ink-muted); }
+.step .value { font: 400 13px/20px var(--font-mono); color: var(--ink); overflow-wrap: anywhere; }
+.step .says { font: 400 13px/18px var(--font-sans); color: var(--ink); }
+.step .code { font: 400 11px/16px var(--font-mono); color: var(--ink-muted); overflow-wrap: anywhere; }
+.step.quiet .value, .step.quiet .says { color: var(--ink-muted); }
+.step details summary { padding: 0; border: 0; font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+.step pre { margin: var(--space-2) 0 0; max-height: 240px; overflow: auto; white-space: pre-wrap; font: 400 11px/16px var(--font-mono); }
+
+.chart { position: relative; height: 140px; }
+.chart.large { height: 240px; }
+.chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.chart text { font: 400 11px/16px var(--font-mono); fill: var(--ink-muted); }
+.chart .empty { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+.chart .quiet-line { fill: none; stroke: var(--ink-muted); stroke-width: 1px; stroke-dasharray: 2 4; }
+.chart .cursor { stroke: var(--ink-muted); stroke-width: 1px; }
+.chart .mark { font: 400 11px/16px var(--font-mono); fill: var(--ink); stroke: none; }
+.chart .mark.s0 { fill: var(--sage); } .chart .mark.s1 { fill: var(--slate); } .chart .mark.s2 { fill: var(--dust-rose); } .chart .mark.s3 { fill: var(--walnut); }
+.chart .point { fill: var(--surface-100); stroke: var(--clay); stroke-width: 1px; }
+/* Categorical series, in DESIGN.md order with clay and gold skipped: they're the page's action line and reference line. */
+.s0 { stroke: var(--sage); fill: var(--sage); } .s1 { stroke: var(--slate); fill: var(--slate); }
+.s2 { stroke: var(--dust-rose); fill: var(--dust-rose); } .s3 { stroke: var(--walnut); fill: var(--walnut); }
+path.s0, path.s1, path.s2, path.s3 { fill: none; stroke-width: 1px; }
+.chart-key-row { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); margin-top: var(--space-2); font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+.chart-key-row span { display: flex; align-items: center; gap: var(--space-2); }
+.chart-key-row svg { width: 16px; height: 8px; }
+.small-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
+
+/* Shares against the bands. */
+.shares { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
+.share-row { display: grid; grid-template-columns: 144px minmax(0, 1fr) 48px; align-items: center; gap: var(--space-2); font: 400 13px/20px var(--font-mono); }
+.share-row svg { width: 100%; height: 20px; display: block; }
+.share-row .axis { stroke: var(--hairline); stroke-width: 1px; }
+.share-row .band { stroke: var(--ink-muted); stroke-width: 1px; }
+.share-row .chance { stroke: var(--ink-muted); stroke-width: 1px; stroke-dasharray: 1 2; }
+.share-row .dot { fill: var(--ink); }
+.share-row .base { fill: none; stroke: var(--ink-muted); stroke-width: 1px; }
+.share-row b { font-weight: 400; text-align: right; }
+
+table { border-collapse: collapse; font: 400 13px/20px var(--font-mono); }
+th, td { padding: 0 var(--space-4) 0 0; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+th { font-weight: 400; color: var(--ink-muted); }
+th:first-child, td:first-child { text-align: left; }
+td.wrap { white-space: normal; text-align: left; }
+.table-scroll { overflow-x: auto; margin-top: var(--space-4); }
+.pass { color: var(--ink); } .fail { color: var(--danger); } .na { color: var(--ink-muted); }
+
+aside { overflow-y: auto; padding: var(--space-4) var(--space-6); box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-4); }
+.trace { font: 400 16px/24px var(--font-sans); max-width: 65ch; display: flex; flex-direction: column; gap: var(--space-2); }
+.trace .gate { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+.trace .reason { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); font-style: italic; }
+.shift { display: grid; grid-template-columns: minmax(0, 1fr) 48px 16px 48px; gap: 0 var(--space-2); font: 400 13px/20px var(--font-mono); }
+.shift .chosen { text-decoration: underline 1px var(--ink); text-underline-offset: 4px; }
+.shift span:nth-child(4n+2), .shift span:nth-child(4n+4) { text-align: right; }
+.overnight-block { display: flex; flex-direction: column; gap: var(--space-2); padding-bottom: var(--space-4); border-bottom: 1px solid var(--hairline); }
+.meta { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+
+/* Glossary terms: dotted underline, definition on hover or focus. */
+.term { text-decoration: underline 1px dotted var(--ink-muted); text-underline-offset: 3px; cursor: help; }
+#tip { position: fixed; z-index: 10; max-width: 300px; font: 400 13px/18px var(--font-sans); color: var(--ink); pointer-events: none; }
+#tip[hidden] { display: none; }
+
+@media (max-width: 900px) {
+  .exp1 { padding: var(--space-4); overflow: visible; }
+  .picker { flex-wrap: wrap; }
+  #pick-text { width: 100%; }
+  .strip { grid-auto-flow: row; grid-auto-columns: auto; overflow: visible; }
+  .step + .step::before { content: "↓"; left: var(--space-4); top: -20px; }
+  .small-charts, .shares { grid-template-columns: minmax(0, 1fr); }
+  header #status-line { margin-left: 0; }
+  aside { padding: var(--space-4); }
+}
