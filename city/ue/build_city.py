@@ -265,6 +265,9 @@ class Plan:
                 base["kind"] = bid if bid in ("amphitheater", "chess_garden", "playground", "village_green") else "lawn"
                 self.add("SWCityOpenSpace", f"CITY_space_{bid}", base)
                 continue
+            if b.get("arch"):
+                self.add_kit(b, base)
+                continue
             kind = bid if bid in ("market_hall", "library", "bathhouse", "willow_school", "mobility_hub", "greenhouse") else "bar"
             base["kind"] = kind
             base["height_cm"] = c(b["height_m"])
@@ -309,6 +312,19 @@ class Plan:
             if keep:
                 base["keep_clear"] = keep
             self.add("SWCityBuilding", f"CITY_bldg_{bid}", base)
+
+    def add_kit(self, b, base):
+        """A varied-city building: "arch" names a kind in city/ue/kinds/, drawn in Python and sent to SWCityKit."""
+        if str(HERE.parents[1]) not in sys.path:
+            sys.path.insert(0, str(HERE.parents[1]))
+        from city.ue.kinds import Plot, build as build_kind
+        from city.ue.kinds.kit import plot_size
+        front = b.get("front", "N")
+        w, d = plot_size(b["footprint_m"], front)
+        plot = Plot(w=w, d=d, h_max=b.get("height_m", 24.0), floors=b.get("floors", 0), palette=base["palette_rgb"],
+                    seed=b.get("seed", sum(map(ord, b["id"]))), use=b.get("use", b.get("upper_floors", "")), cell=b.get("cell", ""))
+        kit = build_kind(b["arch"], plot)
+        self.add("SWCityKit", f"CITY_bldg_{b['id']}", kit.config(b["footprint_m"], front))
 
     # ---- bridges -----------------------------------------------------------------------------
     def plan_bridges(self):

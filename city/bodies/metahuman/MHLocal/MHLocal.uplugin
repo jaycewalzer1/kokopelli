@@ -1,0 +1,12 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1",
+	"FriendlyName": "MHLocal",
+	"Description": "Scratch-only helpers so MetaHuman characters can be rigged and assembled offline (no cloud): face state -> DNA, mark synthesized textures as final.",
+	"Category": "Kokopelli",
+	"CreatedBy": "kokopelli bodies wave 1",
+	"CanContainContent": false,
+	"Modules": [ { "Name": "MHLocal", "Type": "Editor", "LoadingPhase": "Default" } ],
+	"Plugins": [ { "Name": "MetaHumanCharacter", "Enabled": true } ]
+}

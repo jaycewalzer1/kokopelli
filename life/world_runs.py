@@ -169,6 +169,75 @@ def filter_test_entries():
     return entries
 
 
+MULTICONTROL_ABOUT = {"A": "Sim-Transfer with several controls mixed inside attention (world_transfer_multi.py). Untrained mix.",
+                      "B": "Base Cosmos3-Nano, NVIDIA's own multi-control path (world_multicontrol_base.py): 50 steps with guidance."}
+
+
+def multicontrol_entries():
+    """Multi-control transfer runs on the bridge clip, one folder per run. Each video's <video>.mp4.json sidecar names the
+    model, the controls and their weights; a video without one is a side-by-side, described in the folder's notes.json."""
+    entries, folder = [], OUT / "wm_multicontrol"
+    for path in sorted(folder.rglob("*.mp4")) if folder.is_dir() else []:
+        name = path.relative_to(folder).with_suffix("").as_posix()
+        side = pipeline.read_json(f"{path}.json")
+        if not side:
+            entries.append(entry("multicontrol", path, name, "cosmos", ["side by side"]))
+            continue
+        weights = side.get("weights") or {hint: 1.0 for hint in side.get("controls", {})}
+        lines = [f"{side.get('model')}, {side.get('steps')} steps",
+                 " + ".join(f"{hint} {weight:.2f}" for hint, weight in weights.items()),
+                 f"{side.get('size')}, {side.get('frames')} frames, seed {side.get('seed')}",
+                 f"took {side['seconds'] / 60:.1f} min, peak {side.get('peak_gb')} GB" if side.get("seconds") else None]
+        about = MULTICONTROL_ABOUT.get(side.get("variant"), "Baseline: Sim-Transfer with one control (world_transfer.py).")
+        entries.append({**entry("multicontrol", path, name, "cosmos", lines), "about": about})
+    return entries
+
+
+BODIES_DEMO_FILMS = {"side_by_side": "Both world-model films side by side: what Mara and Iris each saw.",
+                     "mara": "Mara's own film: the only picture of the world she was given.",
+                     "iris": "Iris's own film: the only picture of the world she was given.",
+                     "sim_mara": "The sim's render of Mara's eyes, for comparison only (never shown to her).",
+                     "sim_iris": "The sim's render of Iris's eyes, for comparison only (never shown to her)."}
+
+
+def bodies_demo_entries():
+    """The overnight bodies demo (city/bodies/demo_lunch.py + demo_cut.py): the cut films in out/bodies/demo/<stamp>/ (each
+    with a <film>.mp4.json sidecar) and each run's own films in out/bodies/demo/runs/<run>/film/ (run.json says whether the
+    world model was real or faked)."""
+    entries, folder = [], OUT / "bodies" / "demo"
+    if not folder.is_dir():
+        return entries
+    for path in sorted(folder.glob("*/*.mp4")):
+        if path.parent.name == "runs":
+            continue
+        side = pipeline.read_json(f"{path}.json") or {}
+        settings = side.get("world_model_settings") or {}
+        lines = [f"minds: {side.get('agent_model')}" if side.get("agent_model") else None,
+                 f"world model: {side['world_model']}, {settings.get('size')} @ {settings.get('fps')} fps" if side.get("world_model")
+                 else "world model faked (sim renders shown)",
+                 f"from {Path(side['run_dir']).name}" if side.get("run_dir") else None]
+        about = ("The demo cut: director camera on the two MetaHuman bodies with the dialogue burned in, their own views beside it, "
+                 "then what each saw.")
+        entries.append({**entry("bodies_demo", path, f"{path.parent.name} {path.stem}", "cosmos" if side.get("world_model") else "sim",
+                                lines), "about": about})
+    for run_dir in sorted((folder / "runs").glob("*")) if (folder / "runs").is_dir() else []:
+        run = pipeline.read_json(run_dir / "run.json") or {}
+        fake = run.get("fake_world_model", True)
+        for name, about in BODIES_DEMO_FILMS.items():
+            path = run_dir / "film" / f"{name}.mp4"
+            if not path.is_file():
+                continue
+            painted = not name.startswith("sim_")
+            kind = "sim" if not painted or fake else "cosmos"
+            lines = [f"{run.get('steps_done')} of {run.get('sim_steps')} steps" if run.get("sim_steps") else None,
+                     f"{run.get('world_model')}, {run.get('size')} @ {run.get('fps')} fps" if painted and not fake
+                     else ("world model faked: a blend of the controls" if painted else "sim render"),
+                     f"minds: {run.get('agent_model')}" if run.get("agent_model") else None]
+            entries.append({**entry("bodies_demo", path, f"{run_dir.name} {name}", kind, lines,
+                                    state=None if run.get("finished", True) else "running"), "about": about})
+    return entries
+
+
 TYPES = [
     {"id": "cosmos", "name": "Cosmos"},
     {"id": "sd15", "name": "SD1.5"},
@@ -178,7 +247,9 @@ TYPES = [
 ]
 
 GROUPS = [
+    {"id": "bodies_demo", "name": "Bodies demo", "about": "Mara and Iris meet for lunch with MetaHuman bodies (clay for now): the 2-minute demo cuts, and each run's world-model and sim films."},
     {"id": "sim", "name": "Sim-to-real test", "about": "One 10-second SimWorld clip, and each filter run on it to make it look real."},
+    {"id": "multicontrol", "name": "Multi-control transfer", "about": "The bridge clip painted from several sim controls at once (blur, seg, depth, edge), on Sim-Transfer and on the base model."},
     {"id": "loop", "name": "Agent loop", "about": "The 30-minute life: the sim, the world model painting it, and the agent acting on what it sees."},
     {"id": "filter", "name": "Edge filter", "about": "The world model painting over the sim's edges, tested on a stand-in clip."},
     {"id": "mind", "name": "Mind runs", "about": "The agent loop with feelings, run on the mock world model so far."},
@@ -192,7 +263,8 @@ def collect(paths=PIPELINE_PATHS, now=None):
     table = pipeline.process_table()
     readers = {"loop": lambda: loop_entries("loop", Path(paths["agent_loop"]) / "runs", "runtime.run", table, now),
                "mind": lambda: loop_entries("mind", paths["mind"], "mind.run", table, now),
-               "filter": lambda: filter_entries(table), "single": single_entries, "clips": clip_entries, "sim": filter_test_entries}
+               "filter": lambda: filter_entries(table), "single": single_entries, "clips": clip_entries, "sim": filter_test_entries,
+               "multicontrol": multicontrol_entries, "bodies_demo": bodies_demo_entries}
     runs = []
     for group in GROUPS:
         runs += pipeline.safely(readers[group["id"]], [])
@@ -209,7 +281,8 @@ def video_file(run_id, paths=PIPELINE_PATHS):
     table = []
     readers = {"loop": lambda: loop_entries("loop", Path(paths["agent_loop"]) / "runs", "runtime.run", table, 0),
                "mind": lambda: loop_entries("mind", paths["mind"], "mind.run", table, 0),
-               "filter": filter_entries, "single": single_entries, "clips": clip_entries, "sim": filter_test_entries}
+               "filter": filter_entries, "single": single_entries, "clips": clip_entries, "sim": filter_test_entries,
+               "multicontrol": multicontrol_entries, "bodies_demo": bodies_demo_entries}
     group = run_id.split("/", 1)[0]
     if group not in readers:
         raise KeyError(run_id)

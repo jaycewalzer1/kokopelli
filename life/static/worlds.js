@@ -1,4 +1,5 @@
-// The model runs view: every video a model or the sim made, from every tool, grouped by where it came from or by type.
+// The model runs view: every video a model or the sim made, from every tool. It opens on one list of everything, newest
+// first; it can also be grouped by where a run came from or by type.
 // It polls, so a run that's still writing shows its newest chunks. A video only loads once its card scrolls into view.
 const $ = id => document.getElementById(id);
 const POLL_MS = 15000;
@@ -14,7 +15,8 @@ const SORTS = {
 // Each viewer's own choices. Storage can be missing (a private window), so every use is guarded.
 const remembered = (key, fallback) => { try { return localStorage.getItem(`runs.${key}`) || fallback; } catch { return fallback; } };
 const remember = (key, value) => { try { localStorage.setItem(`runs.${key}`, value); } catch { /* not kept, that's all */ } };
-const ui = {uiVersion: null, body: null, drawn: "", kind: remembered("kind", "all"), groupBy: remembered("groupBy", "source"),
+// New keys, so a choice saved under the old grouped default doesn't override the new one.
+const ui = {uiVersion: null, body: null, drawn: "", kind: remembered("tab", "all"), groupBy: remembered("group", "none"),
             sort: remembered("sort", "newest"), open: new Set()};
 
 const escapeHtml = text => String(text ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
@@ -59,8 +61,8 @@ function card(run) {
 
 function group(info, runs) {
   const open = ui.open.has(info.id);
-  const shown = open ? runs : runs.slice(0, SHOWN);
-  const more = runs.length > SHOWN ? `<button type="button" class="more" data-group="${info.id}">${open ? "Show fewer" : `Show all ${runs.length}`}</button>` : "";
+  const shown = open || info.id === "everything" ? runs : runs.slice(0, SHOWN);
+  const more = runs.length > SHOWN && info.id !== "everything" ? `<button type="button" class="more" data-group="${info.id}">${open ? "Show fewer" : `Show all ${runs.length}`}</button>` : "";
   return `<section class="group" aria-label="${escapeHtml(info.name)}">
     <div class="eyebrow ruled"><span>${escapeHtml(info.name)}</span><span>${runs.length}</span></div>
     ${info.about ? `<p class="meta">${escapeHtml(info.about)}</p>` : ""}
@@ -82,8 +84,8 @@ function summary() {
 function tabs() {
   // A type with no runs gets no tab. If the chosen one has none left, show everything.
   const runs = ui.body.runs;
-  const types = [...ui.body.types.map(type => ({...type, count: runs.filter(run => typeOf(run) === type.id).length})).filter(type => type.count),
-                 {id: "all", name: "All", count: runs.length}];
+  const types = [{id: "all", name: "All", count: runs.length},
+                 ...ui.body.types.map(type => ({...type, count: runs.filter(run => typeOf(run) === type.id).length})).filter(type => type.count)];
   if (!types.some(type => type.id === ui.kind)) ui.kind = "all";
   const html = types.map(type => `<button class="tab" role="tab" data-kind="${type.id}" aria-selected="${type.id === ui.kind}">${escapeHtml(type.name)}<span class="count">${type.count}</span></button>`).join("");
   if ($("types").innerHTML !== html) $("types").innerHTML = html;
@@ -91,6 +93,7 @@ function tabs() {
 
 function sections() {
   const runs = ui.body.runs.filter(matches).sort(SORTS[ui.sort] || SORTS.newest);
+  if (ui.groupBy === "none") return [[{id: "everything", name: "Every run"}, runs]];
   if (ui.groupBy === "type") return ui.body.types.map(type => [{id: `type-${type.id}`, name: type.name}, runs.filter(run => typeOf(run) === type.id)]).filter(([, inside]) => inside.length);
   return ui.body.groups.map(info => [info, runs.filter(run => run.group === info.id)]).filter(([, inside]) => inside.length || ui.kind === "all");
 }
@@ -138,14 +141,14 @@ $("types").addEventListener("click", event => {
   const tab = event.target.closest(".tab");
   if (!tab || !ui.body) return;
   ui.kind = tab.dataset.kind;
-  remember("kind", ui.kind);
+  remember("tab", ui.kind);
   draw();
 });
 
-for (const [id, key] of [["group-by", "groupBy"], ["sort", "sort"]]) {
+for (const [id, key, saved] of [["group-by", "groupBy", "group"], ["sort", "sort", "sort"]]) {
   $(id).addEventListener("change", event => {
     ui[key] = event.target.value;
-    remember(key, ui[key]);
+    remember(saved, ui[key]);
     if (ui.body) draw();
   });
 }

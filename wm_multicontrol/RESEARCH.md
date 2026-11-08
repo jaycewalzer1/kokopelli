@@ -129,3 +129,23 @@ Option B: NVIDIA-supported weighted multi-control on base `Cosmos3-Nano`. ~250-4
 The planned blur control (stronger than medium) is the main structure driver, with seg as backup. Option A with 2 controls
 (blur 0.7 + seg 0.3) is the cheapest real experiment: ~2x the current runtime, and no new checkpoint. Run base-model
 multi-control only if Option A's output is visibly broken, since each clip costs hours.
+
+## Measured on this Mac (2026-11-06, replaces the estimates above for these sizes)
+
+17 frames, seed 2025, bridge "b_light" prompt, via the GPU queue. Peak = `mx.get_peak_memory`.
+
+| Run | Model / controls | Size | Total | Denoise | Peak |
+|---|---|---|---|---|---|
+| A1 | Sim-Transfer, blur (`world_transfer.py`) | 832x480 | 72 s | 34 s | 13.9 GB |
+| A1 | same through `world_transfer_multi.py`, weight 1 (bit-identical latents) | 832x480 | 104 s* | 48 s* | 13.9 GB |
+| A2 | Sim-Transfer, blur .5 + seg .5 | 832x480 | 100 s* | 57 s* | 14.2 GB |
+| A3 | Sim-Transfer, blur .4 + seg .3 + depth .3 | 832x480 | 97 s | 57 s | 14.4 GB |
+| A4 | Sim-Transfer, blur/seg/depth/edge .25 each | 832x480 | 111 s | 70 s | 14.7 GB |
+| A4 full | Sim-Transfer, 4 controls, 150 frames (39 latents), window 51 | 832x480 | 3518 s (swapped from latent 33; ~25 min without) | 3224 s | 24.2 GB |
+| B1 | base Cosmos3-Nano, blur .5 + seg .5, 50 steps, CFG 3 / ctrl CFG 1.5 | 448x256 | 609 s | 586 s (11.4 s/step) | 14.8 GB |
+| B4 832 | base Cosmos3-Nano, 4 controls .25 each, same settings | 832x480 | 4180 s | 4135 s (~80 s/step) | 15.0 GB |
+| B4 | base Cosmos3-Nano, 4 controls .25 each, same settings | 448x256 | 1005 s | 980 s (19.6 s/step) | 14.8 GB |
+
+\* An Unreal editor window was open on the Mac during part of these runs; treat their times as upper bounds.
+Memory is flat: ~14 GB of generation weights plus ~0.25 GB per extra control at this length. B1 at 448x256 is ~4x fewer
+tokens per frame than 832x480 and still ~10x slower than A3, so at full size the base model is the hours-per-clip path.

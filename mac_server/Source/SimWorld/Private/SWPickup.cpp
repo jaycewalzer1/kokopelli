@@ -29,6 +29,22 @@ void ASWPickup::AttachToCarrier(AActor* NewCarrier, const FVector& Offset)
 	Carrier = NewCarrier;
 }
 
+void ASWPickup::Reserve(AActor* NewCarrier)
+{
+	SW::EnsureMovable(this);
+	SetActorEnableCollision(false);
+	Carrier = NewCarrier;
+}
+
+void ASWPickup::AttachToHand(USceneComponent* Mesh, FName Socket)
+{
+	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	SW::EnsureMovable(this);
+	SetActorEnableCollision(false);
+	AttachToComponent(Mesh, FAttachmentTransformRules::KeepWorldTransform, Socket);
+	Carrier = Mesh->GetOwner();
+}
+
 void ASWPickup::DetachAt(const FVector& Location)
 {
 	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);

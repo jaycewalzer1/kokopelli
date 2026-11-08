@@ -1,0 +1,424 @@
+{
+ "_doc": "city/bodies/PLAN.md (Interface + Near/far bodies, revised). Override with -bodies=<path>. near = High MetaHuman (<id>), far = Low MetaHuman of the same person (<id>_low), manny = fallback only. MetaHumans are two meshes: mesh = body (neck down), face_mesh = head, leader-posed to the body; both must load or the fallback chain is used. Assets are migrated from agent A's scratch project by city/bodies/migrate_bodies.sh. Eye = head bone + [8,0,6] cm (METAHUMAN.md). kai is a 138 cm small-adult MetaHuman (user hasn't decided kai yet); falls back to manny_child. standin_near/standin_far: Manny-skeleton test pair. test_missing*: only for mac_server/tests/test_bodies.py (fallback chain and placeholder). grooms/outfit (wave 2b): optional parts per body (Bodies.json grooms [hair, eyebrows, beard...] and outfit), leader-posed / groom-bound, faded and seg-coloured with the body, loaded and released with its tier; a missing part is skipped with a warning; Low bodies never show strands. test_parts*: stand-in parts for the m6 part tests (/Game/Characters/TestParts, made by city/bodies/standins/).",
+ "default_agent": "mara",
+ "default_resident": "ana",
+ "near_px": 28,
+ "far_px": 22,
+ "max_near": 3,
+ "fade_s": 0.4,
+ "release_s": 30,
+ "capture_size": [
+  832,
+  480
+ ],
+ "actors": {
+  "GEN_BP_Humanoid_0": "mara",
+  "GEN_BP_Humanoid_1": "iris"
+ },
+ "bodies": {
+  "mara": {
+   "mesh": "/Game/Characters/Bodies/mara/High/mara_high/Body/SKM_MHC_mara_BodyMesh.SKM_MHC_mara_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/mara/High/mara_high/Face/SKM_MHC_mara_FaceMesh.SKM_MHC_mara_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 168,
+   "fallback": "manny",
+   "far": "mara_low"
+  },
+  "mara_low": {
+   "mesh": "/Game/Characters/Bodies/mara/Low/mara_low/Body/SKM_MHC_mara_BodyMesh.SKM_MHC_mara_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/mara/Low/mara_low/Face/SKM_MHC_mara_FaceMesh.SKM_MHC_mara_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 168,
+   "fallback": "manny"
+  },
+  "iris": {
+   "mesh": "/Game/Characters/Bodies/iris/High/iris_high/Body/SKM_MHC_iris_BodyMesh.SKM_MHC_iris_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/iris/High/iris_high/Face/SKM_MHC_iris_FaceMesh.SKM_MHC_iris_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 174,
+   "fallback": "manny",
+   "far": "iris_low"
+  },
+  "iris_low": {
+   "mesh": "/Game/Characters/Bodies/iris/Low/iris_low/Body/SKM_MHC_iris_BodyMesh.SKM_MHC_iris_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/iris/Low/iris_low/Face/SKM_MHC_iris_FaceMesh.SKM_MHC_iris_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 174,
+   "fallback": "manny"
+  },
+  "ana": {
+   "mesh": "/Game/Characters/Bodies/ana/High/ana_high/Body/SKM_MHC_ana_BodyMesh.SKM_MHC_ana_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/ana/High/ana_high/Face/SKM_MHC_ana_FaceMesh.SKM_MHC_ana_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 162,
+   "fallback": "manny",
+   "far": "ana_low"
+  },
+  "ana_low": {
+   "mesh": "/Game/Characters/Bodies/ana/Low/ana_low/Body/SKM_MHC_ana_BodyMesh.SKM_MHC_ana_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/ana/Low/ana_low/Face/SKM_MHC_ana_FaceMesh.SKM_MHC_ana_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 162,
+   "fallback": "manny"
+  },
+  "tomas": {
+   "mesh": "/Game/Characters/Bodies/tomas/High/tomas_high/Body/SKM_MHC_tomas_BodyMesh.SKM_MHC_tomas_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/tomas/High/tomas_high/Face/SKM_MHC_tomas_FaceMesh.SKM_MHC_tomas_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 178,
+   "fallback": "manny",
+   "far": "tomas_low"
+  },
+  "tomas_low": {
+   "mesh": "/Game/Characters/Bodies/tomas/Low/tomas_low/Body/SKM_MHC_tomas_BodyMesh.SKM_MHC_tomas_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/tomas/Low/tomas_low/Face/SKM_MHC_tomas_FaceMesh.SKM_MHC_tomas_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 178,
+   "fallback": "manny"
+  },
+  "wen": {
+   "mesh": "/Game/Characters/Bodies/wen/High/wen_high/Body/SKM_MHC_wen_BodyMesh.SKM_MHC_wen_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/wen/High/wen_high/Face/SKM_MHC_wen_FaceMesh.SKM_MHC_wen_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 166,
+   "fallback": "manny",
+   "far": "wen_low"
+  },
+  "wen_low": {
+   "mesh": "/Game/Characters/Bodies/wen/Low/wen_low/Body/SKM_MHC_wen_BodyMesh.SKM_MHC_wen_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/wen/Low/wen_low/Face/SKM_MHC_wen_FaceMesh.SKM_MHC_wen_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 166,
+   "fallback": "manny"
+  },
+  "priya": {
+   "mesh": "/Game/Characters/Bodies/priya/High/priya_high/Body/SKM_MHC_priya_BodyMesh.SKM_MHC_priya_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/priya/High/priya_high/Face/SKM_MHC_priya_FaceMesh.SKM_MHC_priya_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 160,
+   "fallback": "manny",
+   "far": "priya_low"
+  },
+  "priya_low": {
+   "mesh": "/Game/Characters/Bodies/priya/Low/priya_low/Body/SKM_MHC_priya_BodyMesh.SKM_MHC_priya_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/priya/Low/priya_low/Face/SKM_MHC_priya_FaceMesh.SKM_MHC_priya_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 160,
+   "fallback": "manny"
+  },
+  "kai": {
+   "mesh": "/Game/Characters/Bodies/kai/High/kai_high/Body/SKM_MHC_kai_BodyMesh.SKM_MHC_kai_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/kai/High/kai_high/Face/SKM_MHC_kai_FaceMesh.SKM_MHC_kai_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 138,
+   "fallback": "manny_child",
+   "far": "kai_low"
+  },
+  "kai_low": {
+   "mesh": "/Game/Characters/Bodies/kai/Low/kai_low/Body/SKM_MHC_kai_BodyMesh.SKM_MHC_kai_BodyMesh",
+   "face_mesh": "/Game/Characters/Bodies/kai/Low/kai_low/Face/SKM_MHC_kai_FaceMesh.SKM_MHC_kai_FaceMesh",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    8,
+    0,
+    6
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 138,
+   "fallback": "manny_child"
+  },
+  "standin_near": {
+   "mesh": "/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    9,
+    0,
+    7
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 170,
+   "fallback": "manny",
+   "far": "standin_far",
+   "material": "/Game/Characters/Anim/M_BodyStandIn.M_BodyStandIn",
+   "tint": [
+    0.32,
+    0.45,
+    0.3
+   ]
+  },
+  "standin_far": {
+   "mesh": "/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    9,
+    0,
+    7
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 170,
+   "fallback": "manny",
+   "material": "/Game/Characters/Anim/M_BodyStandIn.M_BodyStandIn",
+   "tint": [
+    0.62,
+    0.3,
+    0.18
+   ]
+  },
+  "manny": {
+   "mesh": "/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    9,
+    0,
+    7
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 178,
+   "material": "/Game/Characters/Anim/M_BodyStandIn.M_BodyStandIn",
+   "tint": "auto"
+  },
+  "manny_child": {
+   "mesh": "/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    9,
+    0,
+    7
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 140,
+   "material": "/Game/Characters/Anim/M_BodyStandIn.M_BodyStandIn",
+   "tint": "auto",
+   "fallback": "manny"
+  },
+  "test_missing": {
+   "mesh": "/Game/Characters/Bodies/_Test/SKM_Missing.SKM_Missing",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "hand_socket": "hand_r",
+   "height_cm": 170,
+   "fallback": "manny"
+  },
+  "test_missing_all": {
+   "mesh": "/Game/Characters/Bodies/_Test/SKM_Missing.SKM_Missing",
+   "hand_socket": "hand_r",
+   "height_cm": 170,
+   "fallback": "test_missing_none"
+  },
+  "test_missing_none": {
+   "mesh": "/Game/Characters/Bodies/_Test/SKM_AlsoMissing.SKM_AlsoMissing",
+   "hand_socket": "hand_r",
+   "height_cm": 170
+  },
+  "test_parts": {
+   "mesh": "/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    9,
+    0,
+    7
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 170,
+   "fallback": "manny",
+   "material": "/Game/Characters/Anim/M_BodyStandIn.M_BodyStandIn",
+   "far": "test_parts_low",
+   "tint": [
+    0.32,
+    0.45,
+    0.3
+   ],
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/TestParts/GA_StandinHair.GA_StandinHair",
+     "geometry": "strands",
+     "attach": "body",
+     "socket": "head"
+    },
+    {
+     "slot": "eyebrows",
+     "groom": "/Game/Characters/TestParts/GA_Missing.GA_Missing"
+    },
+    {
+     "slot": "beard",
+     "groom": "/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple"
+    }
+   ],
+   "outfit": {
+    "slot": "outfit",
+    "mesh": "/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple",
+    "material": "/Game/Characters/Anim/M_BodyStandIn.M_BodyStandIn"
+   }
+  },
+  "test_parts_low": {
+   "mesh": "/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    9,
+    0,
+    7
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 170,
+   "fallback": "manny",
+   "material": "/Game/Characters/Anim/M_BodyStandIn.M_BodyStandIn",
+   "tint": [
+    0.62,
+    0.3,
+    0.18
+   ],
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/TestParts/GA_StandinHair.GA_StandinHair",
+     "attach": "body",
+     "socket": "head"
+    },
+    {
+     "slot": "hair_helmet",
+     "groom": "/Game/Characters/TestParts/GA_StandinHairHelmet.GA_StandinHairHelmet",
+     "geometry": "helmet",
+     "attach": "body",
+     "socket": "head"
+    },
+    {
+     "slot": "eyebrows",
+     "groom": "/Game/Characters/TestParts/GA_StandinHairHelmet.GA_StandinHairHelmet",
+     "geometry": "strands"
+    }
+   ],
+   "outfit": [
+    {
+     "slot": "outfit",
+     "mesh": "/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple",
+     "material": "/Game/Characters/Anim/M_BodyStandIn.M_BodyStandIn"
+    }
+   ]
+  },
+  "test_parts_missing": {
+   "mesh": "/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple",
+   "anim_class": "/Game/Characters/Anim/ABP_Body.ABP_Body_C",
+   "eye_socket": "head",
+   "eye_offset_cm": [
+    9,
+    0,
+    7
+   ],
+   "hand_socket": "hand_r",
+   "height_cm": 170,
+   "fallback": "manny",
+   "material": "/Game/Characters/Anim/M_BodyStandIn.M_BodyStandIn",
+   "tint": [
+    0.4,
+    0.4,
+    0.6
+   ],
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/TestParts/GA_Missing.GA_Missing"
+    }
+   ],
+   "outfit": "/Game/Characters/TestParts/SKM_MissingOutfit.SKM_MissingOutfit"
+  }
+ }
+}

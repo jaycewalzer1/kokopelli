@@ -97,14 +97,16 @@ Add a short entry for what you own and what you're touching. Update it when your
 
 ## Sim-Transfer on the Mac (working tree on `main`, uncommitted)
 
-- **Status:** `world_transfer.py` runs NVIDIA's Cosmos3-Nano-Sim-Transfer (causal, 4-step, one control) in MLX from `models/Cosmos3-Nano-Sim-Transfer`. Deviations from NVIDIA's reference are in `docs/SIM_TRANSFER_MLX.md`. It doesn't touch `world_filter.py` or `world_model.py`.
-- **Owns:** `world_transfer.py`, `docs/SIM_TRANSFER_MLX.md`, `out/sim_transfer/`.
+- **Status:** Finished 2026-11-06. It reproduces NVIDIA's example1, and it produced the 5 s bridge run (`out/city_wm/bridge/final/`). The single-control benchmark was cancelled because the user wants 4-control runs only; it's scripted in `out/sim_transfer/bench.py`. `world_transfer.py` runs NVIDIA's Cosmos3-Nano-Sim-Transfer (causal, 4-step, one control) in MLX from `models/Cosmos3-Nano-Sim-Transfer`. Deviations from NVIDIA's reference are in `docs/SIM_TRANSFER_MLX.md`. It doesn't touch `world_filter.py` or `world_model.py`.
+- **Owns:** `world_transfer.py`, `docs/SIM_TRANSFER_MLX.md`, `out/sim_transfer/`, `world_stream.py` (one continuous Sim-Transfer rollout fed step by step), `city/agents/live_wm.py` + `run_wm_life.sh` (a life lived inside the world model: the agent sees only painted frames), `out/world_stream/`.
+- **Queued 2026-11-07:** `wmstream_smoke` (p30), `wmlife_5min` (p31), and the two-agent `wmlunch_5min` (p32, code from the lunch helper: `city/agents/lunch_wm.py`, `world_stream_multi.py`).
 - **Runs:** in the `~/cosmos3/cosmos3-mlx` venv under `ram_share.py hold --name sim_transfer*`. Call it with `world_transfer.transfer_video(prompt, {"depth": path}, output, size=..., frames=...)`. Every output has an `<output>.json` sidecar that names the model.
 
 ## Multi-control Cosmos transfer (working tree on `main`, uncommitted)
 
-- **Status:** Building two variants (2026-11-06): A, weighted controls on Sim-Transfer (`world_transfer_multi.py`, untrained combination), and B, NVIDIA's base Cosmos3-Nano multi-control (`world_multicontrol_base.py`, 50 steps, CFG 3 / control CFG 1.5). Short test runs go through the GPU queue at p25 once the code passes its tests.
+- **Status:** The user chose Variant A, `world_transfer_multi.py` (Sim-Transfer with weighted controls), for the bridge clip on 2026-11-07; Variant B (`world_multicontrol_base.py`) stays as a reference and isn't run. The full 150-frame A run with all four controls is in `out/wm_multicontrol/a4_full/`. Results: `wm_multicontrol/REPORT.md`.
 - **Owns:** `wm_multicontrol/`, `world_transfer_multi.py`, `world_multicontrol_base.py`, `tests/test_wm_multicontrol*.py`, `out/wm_multicontrol/`.
+- **Touched:** `life/world_runs.py`: a "Multi-control transfer" group on the Model runs page (`multicontrol_entries`, read from each video's sidecar and `out/wm_multicontrol/notes.json`). Tested in `tests/test_wm_multicontrol_runs.py`; the existing page tests still pass.
 - **Reads only:** `world_transfer.py` and `world_filter.py` (imported, never edited; proposed hooks go in `wm_multicontrol/HANDOFF.md`), `out/city_wm/bridge/controls/`, `city/wm/prompts/bridge.json`, `models/Cosmos3-Nano*`.
 - **Runs:** everything is prefixed `wmmc_`, queued via `gpu.py` with a `ram_share.py hold`. Outputs go to `out/wm_multicontrol/<run>/` with a JSON sidecar.
 
@@ -114,3 +116,33 @@ Add a short entry for what you own and what you're touching. Update it when your
 - **Owns:** `city/realism/`, `out/city_realism/`, and (once agreed) a pilot-only material/foliage path gated to the bridge area in `mac_server/` (`/Game/Realism/`, flagged actors only; the rest of the city must render unchanged).
 - **Reads only:** `out/filter_test/test_clip/` (poses), `city/world.json`, `city/wm/prompts/` (prompt changes go to the world-model session, `jaycewalzer-00`, not edited here).
 - **Runs:** only on port 9003, never 9001 or `mac_server/Packaged/`, no `build.sh package`. `city/realism/replay_bridge.py --port 9003 --label X` re-renders the walk from the recorded poses (rgb + depth + seg).
+
+## Varied city: building kinds + re-plan (working tree on `main`, uncommitted, started 2026-11-07)
+
+- **Status:** overnight multi-agent run (user's request): replace the seven cloned courtyard blocks with a mix of moodboard and mid-century modern buildings. Commons civic buildings stay as the quality bar. The realism pilot is paused meanwhile (its material code is in, flag off).
+- **Owns:** `city/ue/kinds/` (README.md is the guide, CATALOG.md the shared kind list; one module per author), `city/world_varied.json` + `city/ue/plan_varied/` (planner), `out/city_kinds/`, and `SWCityKit` (`mac_server/.../City/SWCityKit.cpp`: generic Python-authored geometry, so kinds need no C++).
+- **Reads only:** `city/world.json` (NOT edited; swapping the varied plan into the life sim is the user's call), `city/moodboard/`, `city/VIBE.md`.
+- **Runs:** editor on port 9003 only (`ram_share` claim `city_kinds_9003`); every use goes through the lock `out/city_kinds/.editor.lock` (`python -m city.ue.kinds.preview` / `.locked`); `city.ue.kinds.watchdog` restarts it on the Metal leak. Never 9001 or `mac_server/Packaged/`.
+- **Now (2026-11-07 22:10):** idle. The 9003 editor was force-quit by the user and is NOT running; the watchdog is stopped and no claim is held. Final layout r7 is in `city/world_varied.json` (renders `out/city_kinds/planner/r7/`); a 1 s world-model aerial of it is in `out/city_wm/varied_aerial/` (Variant A, done). Relaunching 9003 is only for when the user wants to view or change the city again.
+
+## Experiment 1 homeostatic RL (`feat/exp1-homeostatic-rl`)
+
+- **Status:** Phase 1 (reward wiring, balance, leak and tabular tests) committed on the branch. Phase 2 (Qwen + LoRA sleep loop) and 3 (panel page) not started. Waiting on the owner's call on run_main's need change, which the deficit-only cap makes unbalanceable.
+- **Worktree:** `.claude/worktrees/exp1`, branched from `origin/main` (the hourly snapshot, identical to this checkout's `life/` at the time).
+- **Owns:** `exp1/`, `tests/test_exp1.py`, `docs/homeostatic_rl_map.md`, and (later) a new panel page. `/training` and `homeostatic/` stay untouched.
+- **Reads only:** `life/scenario.py` (imported, never edited; the wellness night still resumes from it), `life/seed.py`.
+- **Runs:** CPU only so far. Qwen runs will go through the GPU queue, prefixed `exp1_`.
+
+## Two agents at lunch inside the world model (working tree on `main`, uncommitted, started 2026-11-07)
+
+- **Status:** Built and dry-tested (no GPU, no server, no models); not run or queued yet. Mara and her neighbour Iris (both Qwen3-VL-8B 4-bit, loaded once) meet at The Kettle for lunch and talk, each seeing only its own Cosmos3-Nano-Sim-Transfer film.
+- **Owns:** `city/agents/lunch_wm.py`, `city/agents/run_wm_lunch.sh`, `world_stream_multi.py`, `tests/test_city_lunch.py`, `out/city_agents/*_lunch/`.
+- **Reads only:** `city/agents/live.py`, `live_wm.py`, `world_stream.py`, `world_transfer*.py`, `city/wm/controls.py`, `npcs.json` (the barista's lunch line is added in memory, not in the file), the wm-agent-loop adapter (subclassed as `TwoBodySim`, never edited), `mac_server/docs`.
+- **Runs:** through the GPU queue as `wmlunch_*`, under `ram_share.py hold --name wmlunch_agents --gb 24`, on the packaged server at 9001 (one client). Dry test: `.venv/bin/python -m unittest tests/test_city_lunch.py`.
+
+## Realistic bodies for the city agents (working tree on `main`, uncommitted, started 2026-11-07)
+
+- **Status:** Overnight demo done (2026-11-08 06:3x). Watch `out/bodies/demo/20261108/demo.mp4` (real Cosmos run `wmbodies_demo`; world-model panels to 0:52, then sim renders, because the painted films break into a mosaic after ~52 s; jaycewalzer-00 is diagnosing) and `demo_sim_only.mp4` (fake world model). README `out/bodies/demo/README.md`; "Bodies demo" group on the Model runs page. `mac_server/Packaged` IS NOW the bodies build (old one in `Packaged_prebodies/`). Wrapper `city/bodies/demo_lunch.py` (lunch_wm.py unchanged), cut `city/bodies/demo_cut.py`. Touched outside our area (told the owner): one line in `world_stream.py` (first-push trim) + a test in `tests/test_world_stream.py`; `life/world_runs.py` (additive group) + `tests/test_bodies_demo_runs.py`. Bodies still clay (no MetaHuman Core Data). Log: `city/bodies/LOG.md`.
+- **Owns:** `city/bodies/`, `out/bodies/`, `mac_server/Config/Bodies.json`, `mac_server/Content/Characters/`, body code in `SWCharacterBase`/`SWHumanoid`/`SWPedestrian`/`SWSettings`, `mac_server/tests/test_bodies*.py`, `tests/test_city_bodies.py`, `mac_server/Packaged_bodies/`.
+- **Touches (additive only):** `city/agents/npcs.json` (`body` fields), `city/agents/live.py` (`--body`, `SetBody` after spawn), the mock server's command list, SimCV's `OnAnnotationCapture` hook and object-mask material choice (`mac_server/Plugins/SimCV`), `mac_server/Content/Characters/TestParts`.
+- **Runs:** editor on port 9004 only (`ram_share` claim `bodies_9004`); never 9001, 9003 or `mac_server/Packaged/`. Model runs via the GPU queue as `bodies_*`.

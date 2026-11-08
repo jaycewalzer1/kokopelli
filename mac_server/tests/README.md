@@ -7,6 +7,7 @@ wire-protocol checks they use raw sockets instead.
 
 | File | Purpose |
 |---|---|
+| `test_bodies.py` | Realistic bodies (`m6`): SetBody/GetBody, fallback chain, capsule/speed unchanged, eye camera height, hand-socket carry, one seg id, near/far tier switch + hysteresis + cap, crossfade, pose continuity. See `city/bodies/ANIMATION.md`. |
 | `test_conformance.py` | Tests grouped by milestone with markers `m0`..`m5`. Tests marked `should` are recommended behavior, not strictly required. |
 | `conftest.py` | Fixtures: one shared client, a raw socket helper, and per-test cleanup of `GEN_*`/`CT_*` objects. |
 | `mock_server.py` | A pure-stdlib Python fake of the server. It covers M0/M1 and exists to check that the tests themselves are correct. |
@@ -48,7 +49,9 @@ If no server is listening, the session exits right away with a message. Without 
 check, simworld's `UnrealCV()` would retry the connection forever.
 
 Test counts per marker: m0 20, m1 183 (178 of them are the parametrized
-"every prefab spawns" test), m2 11, m3 6, m4 5, m5 9.
+"every prefab spawns" test), m2 11, m3 6, m4 5, m5 9, m6 14 (6 run on the mock, 8 need UE).
+
+2026-11-07, editor-game on 9004 with bodies: `248 passed` (234 + 14 m6).
 
 ## Results against `mock_server.py` (2026-11-05)
 

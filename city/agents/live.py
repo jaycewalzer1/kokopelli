@@ -13,7 +13,8 @@ Pieces:
 - routes:  navmap.py, from world.json
 - people:  npcs.json, scripted; they answer when spoken to within HEAR_M
 - mind:    llm_model.ask (Qwen3-VL on MLX), 4-bit by default
-Everything is written to out/city_agents/<run>/: events.jsonl, transcript.md, and the frames.
+- bodies:  city/bodies/client.py; after spawning, each person is asked into a body (--body, npcs.json "body")
+Everything is written to out/city_agents/<run>/: events.jsonl, transcript.md, run.json (models, bodies) and the frames.
 """
 import argparse
 import json
@@ -51,8 +52,9 @@ except ImportError:
     _borrow_unrealcv()
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from city.bodies import client as bodies  # noqa: E402
 from navmap import NavMap  # noqa: E402
-from runtime.adapters.simworld import BOX_ASSET, NpcSpec, SimWorldConfig, SimWorldPhysics, SpawnSpec  # noqa: E402
+from runtime.adapters.simworld import AGENT_ACTOR, BOX_ASSET, NpcSpec, SimWorldConfig, SimWorldPhysics, SpawnSpec  # noqa: E402
 
 STEP_S = 15.0
 HEAR_M = 10.0
@@ -229,6 +231,9 @@ class Life:
         self.new_leg = False
         self.approaching = None
         self.running, self.last_thought, self.last_action = True, "", None
+        self.bodies = {}  # who -> what the server said to SetBody (city/bodies/client.py BodyResult.as_dict())
+        self.watch_tiers = False  # ask GetBody each step for near/far, while the server knows the command
+        self.tiers = {}  # who -> last tier seen, so a fall back to the mannequin is warned about once, not every step
         self.vision = CosmosVision(self.out) if args.vision == "cosmos" else UnrealVision()
         bakery = self.nav.doors["fern_bakery"]
         self.objects = [SpawnSpec(id="bread_box", kind="object", asset=BOX_ASSET,
@@ -244,6 +249,58 @@ class Life:
     def log(self, kind, **data):
         self.events.write(json.dumps({"t": round(self.sim_t, 1), "kind": kind, **data}) + "\n")
         self.events.flush()
+
+    def write_run(self, finished=False):
+        """out/city_agents/<run>/run.json: which models and bodies this run used, rewritten as they become known."""
+        weights = Path(self.args.weights)
+        meta = {"run": self.out.name, "agent_model": weights.name, "agent_model_path": str(weights),
+                "vision": self.vision.name,
+                "world_model": "runtime.adapters.cosmos.CosmosWorldModel 448x256" if self.vision.name == "cosmos" else None,
+                "port": self.args.port, "steps": self.args.steps, "clock": self.args.clock,
+                "body_asked": {"agent": self.agent_body,
+                               **{pid: p.get("body") for pid, p in self.cast.people.items()}},
+                "bodies": self.bodies, "finished": finished}
+        tmp = self.out / "run.json.tmp"
+        tmp.write_text(json.dumps(meta, indent=1))
+        tmp.replace(self.out / "run.json")
+
+    @property
+    def agent_body(self):
+        return getattr(self.args, "body", None) or None  # subclasses with their own args (live_wm.py) may not have it
+
+    def dress(self, sim):
+        """Ask the server to put each person in their body: the agent in --body, residents in npcs.json's "body".
+        A body is a nicety: an old server without SetBody, or a missing asset, is a warning in events.jsonl and the
+        run goes on with whatever the server gave the actor (its Bodies.json mapping, or the placeholder)."""
+        who = {AGENT_ACTOR: "agent", **{spec.actor_name: spec.id for spec in self.cfg.npcs}}
+        wants = {AGENT_ACTOR: self.agent_body,
+                 **{spec.actor_name: self.cast.people[spec.id].get("body") for spec in self.cfg.npcs}}
+        for actor, result in bodies.dress(sim.wire, wants).items():
+            self.bodies[who[actor]] = result.as_dict()
+            if result.ok:
+                self.log("body", who=who[actor], **result.as_dict())
+            else:
+                self.log("body_warning", who=who[actor], **result.as_dict())
+                print(f"(no body {result.requested!r} for {who[actor]}: {result.error}; keeping the server's choice)")
+        self.watch_tiers = any(r["supported"] for r in self.bodies.values())
+        self.write_run()
+
+    def log_tiers(self, sim, step):
+        """Each person's near/far body this step (PLAN.md "Near/far bodies"): a swap in view is a visible pop for
+        the world model, so it has to be findable afterwards. Stops asking once the server never reports a tier."""
+        if not self.watch_tiers:
+            return
+        who = {AGENT_ACTOR: "agent", **{spec.actor_name: spec.id for spec in self.cfg.npcs}}
+        now = {who[actor]: tier for actor, tier in bodies.tiers(sim.wire, who).items()}
+        if not any(now.values()):
+            self.watch_tiers = False  # a server from before the near/far plan
+            return
+        self.log("tiers", step=step, tiers=now)  # step k = after k sim steps
+        for who_, tier in now.items():
+            if tier == "fallback" and self.tiers.get(who_) != "fallback":
+                self.log("body_warning", who=who_, step=step, tier=tier,
+                         error="showing the mannequin: the body failed to load (or memory pressure)")
+        self.tiers = now
 
     def say(self, md):
         print(md, flush=True)
@@ -421,6 +478,7 @@ class Life:
 
     def run(self):
         self.sim_t = 0.0
+        self.write_run()
         self.say(f"# A life in the city — {datetime.now():%Y-%m-%d %H:%M}\n\n**Who:** {self.args.who}\n\n"
                  f"**Situation:** {self.args.situation}\n\n**Vision:** {self.vision.name}\n")
         with SimWorldPhysics(self.cfg) as sim:
@@ -430,6 +488,7 @@ class Life:
             finally:
                 self.halt(sim)
         self.running = False
+        self.write_run(finished=True)
         self.snapshot(None, None, None)
         self.say(f"\n---\nRun folder: {self.out}")
 
@@ -448,6 +507,8 @@ class Life:
 
     def _live(self, sim):
         cap = sim.reset(seed=0)
+        self.dress(sim)  # after spawning, so every actor exists; the first frame may still show the old bodies
+        self.log_tiers(sim, 0)
         state, frame = cap.state, cap.renders["rgb"].path
         self.follow(state)
         self.snapshot(state, frame, 0)
@@ -473,6 +534,7 @@ class Life:
                 sim_action = self.next_leg() if self.new_leg else {"type": "continue"}
             self.log("act", action=act, sim_action=sim_action)
             result = sim.step(sim_action)
+            self.log_tiers(sim, step + 1)
             state, frame = result.final_state, result.captures[-1].renders["rgb"].path
             self.follow(state)
             self.new_leg = False
@@ -552,6 +614,8 @@ def main():
     ap.add_argument("--speed", type=float, default=1.6, help="walking speed, m/s")
     ap.add_argument("--follow", action="store_true", help="steer the game window's camera behind the agent each step")
     ap.add_argument("--vision", choices=["unreal", "cosmos"], default="unreal")
+    ap.add_argument("--body", default="mara",
+                    help="the agent's body id (mac_server/Config/Bodies.json); '' sends nothing and keeps the server's")
     ap.add_argument("--weights", default=str(ROOT / "models" / "Qwen3-VL-8B-Instruct-4bit"),
                     help="Qwen weights folder; the full model needs ~18 GB")
     life = Life(ap.parse_args())

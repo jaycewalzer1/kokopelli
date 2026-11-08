@@ -59,4 +59,11 @@ public:
 
 	UPROPERTY(config, EditAnywhere, Category = "Camera")
 	FName AnnotationColorParameter = TEXT("Color");
+
+	/**
+	 * Same as AnnotationMaterial but flagged "used with skeletal meshes" (BasicShapeMaterial isn't, so skinned
+	 * bodies would render with the engine's default material). Empty or unloadable = use AnnotationMaterial.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "Camera", meta = (AllowedClasses = "/Script/Engine.MaterialInterface"))
+	FSoftObjectPath SkeletalAnnotationMaterial;
 };

@@ -22,6 +22,11 @@ public:
 	/** Detaches and stands the item at Location (its bottom centre). */
 	void DetachAt(const FVector& Location);
 	bool IsHeld() const { return Carrier.IsValid(); }
+	/** Claimed by Carrier but not moved yet (the body is still reaching for it). */
+	void Reserve(AActor* NewCarrier);
+	/** Attaches to a skeletal mesh socket (the carrier's hand); the carrier then places it in the palm each frame. */
+	void AttachToHand(USceneComponent* Mesh, FName Socket);
+	FVector GetSize() const { return Size; }
 
 	/** Heavy items are carried in front of the body instead of in the hand. */
 	bool IsHeavy() const { return bHeavy; }

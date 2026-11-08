@@ -22,6 +22,8 @@ public class SimWorld : ModuleRules
 			// Cameras (USimCVCameraComponent), settings, and exact-key vbp routes registered on its router.
 			"SimCV",
 			"Json",
+			"AnimationCore", // two-bone IK for the body animation
+			"HairStrandsCore", // Bodies.json grooms (UGroomComponent); the HairStrands plugin is enabled in the .uproject
 			// City (docs/CITY.md): runtime static meshes + frame timing
 			"MeshDescription",
 			"StaticMeshDescription",
@@ -30,6 +32,9 @@ public class SimWorld : ModuleRules
 			"InputCore", // EKeys for SWPlayerController's fly/walk keys
 			"Slate", "SlateCore", // SWindow::Minimize (resting the window stops the Metal present leak)
 		});
+
+		// Bodies (city/bodies): Config/Bodies.json is read with a plain file load, so stage it loose (editable next to the app).
+		RuntimeDependencies.Add("$(ProjectDir)/Config/Bodies.json", StagedFileType.NonUFS);
 
 		if (Target.Platform == UnrealTargetPlatform.Mac)
 		{

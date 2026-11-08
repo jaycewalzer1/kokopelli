@@ -99,6 +99,13 @@ public:
 	void StopAction();
 
 	USimCVCameraComponent* GetCamera() const { return Camera; }
+	virtual bool IsAgent() const override { return true; }
+	ASWPickup* GetHeld() const { return Held.Get(); }
+	/** True once a picked-up item rides the hand socket (after the reach). */
+	bool IsHeldOnHand() const { return Held.IsValid() && !bPendingAttach && HasBodyMesh(); }
+	bool IsCameraFollowingEyes() const { return HasBodyMesh() && !bCameraOverridden; }
+
+	virtual void Tick(float DeltaSeconds) override;
 
 	static constexpr float SeatReach = 150.f;
 	static constexpr float PickUpReach = 200.f;
@@ -111,6 +118,7 @@ protected:
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved,
 		FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 	virtual bool CanMove() const override;
+	virtual void OnBodyChanged() override;
 
 	UPROPERTY(VisibleAnywhere, Category = "SimWorld")
 	TObjectPtr<USimCVCameraComponent> Camera;
@@ -131,4 +139,10 @@ private:
 	bool bSitting = false;
 	TWeakObjectPtr<ASWPickup> Held;
 	TWeakObjectPtr<ASWVehicle> CurrentVehicle;
+
+	bool bPendingAttach = false;
+	int32 PendingCarry = 0;
+	FVector LastAutoCameraRel = FVector::ZeroVector;
+	bool bCameraOverridden = false;
+	void PlaceHeldInHands();
 };

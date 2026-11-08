@@ -11,7 +11,11 @@ and implements enough state for the M0 and M1 conformance tests:
 * `vrun`, `/action/*` acknowledgements
 
 It does NOT simulate anything: every `vbp` call returns an error string so
-that M2+ tests fail fast instead of hanging. The point of this file is to
+that M2+ tests fail fast instead of hanging. Exception: the body commands
+(`vbp <actor> SetBody <id>`, `GetBody`, `vget /bodies`; city/bodies/PLAN.md), which
+follow Config/Bodies.json with the same reply shapes as the UE server. A mesh counts
+as loadable when its .uasset exists under Content/; the tier is "far" for a body
+with a Low twin (the mock has no cameras), "fallback" after a fallback step. The point of this file is to
 validate the conformance tests themselves, not to replace the UE server.
 
 Usage:
@@ -65,6 +69,7 @@ TEMPLATES = [
     'vget /unrealcv/commands',
     'vget /unrealcv/status',
     'vget /objects',
+    'vget /bodies',
     'vset /objects/spawn [str] [str]',
     'vset /objects/spawn_bp_asset [str] [str]',
     'vget /object/[str]/location',
@@ -158,6 +163,46 @@ def encode_npy_f32(w, h, value_fn):
 # --------------------------------------------------------------------------
 # World state
 # --------------------------------------------------------------------------
+HUMAN_PREFABS = ('Base_User_Agent_C', 'BP_Default_Character_C', 'Base_Pedestrian_C')
+CONTENT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'Content'))
+
+
+class Bodies:
+    """Config/Bodies.json, resolved the way SWCharacterBase does (fallback chain, then placeholder)."""
+
+    def __init__(self, path):
+        self.path = path
+        self.data = {}
+        if path and os.path.exists(path):
+            with open(path) as f:
+                self.data = json.load(f)
+        self.bodies = self.data.get('bodies', {})
+        self.actors = {k.lower(): v for k, v in self.data.get('actors', {}).items()}
+
+    @staticmethod
+    def loadable(mesh):
+        if not mesh or not mesh.startswith('/Game/'):
+            return False
+        pkg = mesh.split('.', 1)[0][len('/Game/'):]
+        return os.path.exists(os.path.join(CONTENT_DIR, pkg + '.uasset'))
+
+    def choose(self, name, agent):
+        return self.actors.get(name.lower()) or self.data.get('default_agent' if agent else 'default_resident') or ''
+
+    def resolve(self, body_id):
+        """-> (shown id, tier, warning) for SetBody; tiered bodies start far, as on the server."""
+        b = self.bodies[body_id]
+        start, tier = (b['far'], 'far') if b.get('far') in self.bodies else (body_id, 'near')
+        seen, cur, warn = set(), start, ''
+        while cur in self.bodies and cur not in seen:
+            seen.add(cur)
+            if self.loadable(self.bodies[cur].get('mesh')):
+                return cur, (tier if cur == start else 'fallback'), warn
+            warn += "body '%s': mesh '%s' did not load; " % (cur, self.bodies[cur].get('mesh', ''))
+            cur = self.bodies[cur].get('fallback', '')
+        return 'placeholder', 'placeholder', warn + 'using the placeholder'
+
+
 class Obj:
     def __init__(self, name, cls, has_camera=False):
         self.name = name
@@ -171,6 +216,7 @@ class Obj:
         self.movable = True
         self.hidden = False
         self.has_camera = has_camera
+        self.body = None  # (shown, tier, requested) for human prefabs
 
 
 class Camera:
@@ -183,7 +229,7 @@ class Camera:
 
 
 class World:
-    def __init__(self, prefabs):
+    def __init__(self, prefabs, bodies=None):
         self.lock = threading.Lock()
         self.prefabs = set(prefabs)
         self.objects = {}  # lower-name -> Obj (insertion order == spawn order)
@@ -194,6 +240,7 @@ class World:
         self.paused = False
         self.tick_interval = 0.05
         self.ticks = 0
+        self.bodies = bodies or Bodies(None)
 
     def find(self, name):
         return self.objects.get(name.lower())
@@ -260,14 +307,33 @@ class Handler:
                 if verb == 'vbp':
                     if len(toks) < 3:
                         return 'error vbp needs <object> <function> [args...]'
-                    if self.w.find(toks[1]) is None:
+                    obj = self.w.find(toks[1])
+                    if obj is None:
                         return 'error Can not find object %s' % toks[1]
+                    if toks[2] in ('SetBody', 'GetBody') and len(toks) == (4 if toks[2] == 'SetBody' else 3):
+                        return self._body(obj, toks[2], toks[3:])
                     return 'error mock server does not implement blueprint function %s' % toks[2]
                 if verb not in ('vget', 'vset') or len(toks) < 2:
                     return 'error Can not find a handler for URI %s' % cmd
                 return self._uri(verb, toks[1], toks[2:])
         except ValueError as e:
             return 'error invalid arguments: %s' % e
+
+    def _body(self, obj, fn, args):
+        if obj.body is None:
+            return "error '%s' has no human body" % obj.name
+        if fn == 'GetBody':
+            shown, tier, requested = obj.body
+            return json.dumps({'body': shown, 'tier': tier, 'requested': requested}, separators=(',', ':'))
+        body_id = args[0]
+        if body_id not in self.w.bodies.bodies:
+            return "error unknown body '%s' (not in %s)" % (body_id, self.w.bodies.path)
+        shown, tier, warn = self.w.bodies.resolve(body_id)
+        obj.body = (shown, tier, body_id)
+        reply = {'ok': True, 'body': shown, 'tier': tier, 'requested': body_id}
+        if warn:
+            reply['warning'] = warn if shown == 'placeholder' else warn + "showing '%s'" % shown
+        return json.dumps(reply, separators=(',', ':'))
 
     def _uri(self, verb, uri, args):
         w = self.w
@@ -276,6 +342,9 @@ class Handler:
             return '\n'.join(TEMPLATES)
         if verb == 'vget' and uri == '/unrealcv/status':
             return 'Is Listening\nClient Connected\n9000\nConfig\n'
+        if verb == 'vget' and uri == '/bodies':
+            return json.dumps({o.name: {'body': o.body[0], 'tier': o.body[1], 'requested': o.body[2], 'px': 0, 'fading': False}
+                               for o in w.objects.values() if o.body is not None}, separators=(',', ':'))
         if verb == 'vget' and uri == '/objects':
             return ' '.join(o.name for o in w.objects.values())
         if verb == 'vset' and parts[0] == 'objects' and len(parts) == 2 and parts[1] in ('spawn', 'spawn_bp_asset'):
@@ -288,6 +357,9 @@ class Handler:
                 return 'error Object %s already exists' % name
             short = path.rsplit('.', 1)[-1]
             o = Obj(name, path, has_camera=short in CAMERA_PREFABS)
+            if short in HUMAN_PREFABS:
+                chosen = w.bodies.choose(name, agent=short != 'Base_Pedestrian_C')
+                o.body = w.bodies.resolve(chosen)[:2] + (chosen,) if chosen in w.bodies.bodies else ('placeholder', 'placeholder', chosen)
             w.objects[name.lower()] = o
             return name
         if parts[0] == 'object' and len(parts) >= 3:
@@ -526,10 +598,12 @@ def main(argv=None):
     ap.add_argument('--host', default=os.environ.get('SIMCV_HOST', '127.0.0.1'))
     ap.add_argument('--port', type=int, default=int(os.environ.get('SIMCV_PORT', '9000')))
     ap.add_argument('--assets', default=default_assets, help='ue_assets.json for the prefab catalog')
+    ap.add_argument('--bodies', default=os.path.normpath(os.path.join(here, '..', 'Config', 'Bodies.json')),
+                    help='Bodies.json for SetBody/GetBody')
     ap.add_argument('-v', '--verbose', action='store_true')
     a = ap.parse_args(argv)
 
-    world = World(load_prefabs(a.assets))
+    world = World(load_prefabs(a.assets), Bodies(a.bodies))
     handler = Handler(world, a.verbose)
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

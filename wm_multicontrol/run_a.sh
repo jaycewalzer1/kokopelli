@@ -31,5 +31,12 @@ case "$1" in
       --control blur="$C/blur.mp4" --control seg="$C/seg.mp4" --control depth="$C/depth.mp4" \
       --weight blur=0.4 --weight seg=0.3 --weight depth=0.3 $COMMON --output "$O/a3.mp4"
     ;;
-  *) echo "usage: run_a.sh a1|a2|a3" >&2; exit 2 ;;
+  a4_full)
+    # Whole bridge clip. Five K/V histories x 38 latents ~ 11 GB on top of ~14 GB of weights, hence the larger hold.
+    python3 "$K/ram_share.py" hold --name wmmc_a4_full --gb 28 -- "$PY" "$K/world_transfer_multi.py" "$P" \
+      --control blur="$C/blur.mp4" --control seg="$C/seg.mp4" --control depth="$C/depth.mp4" --control edge="$C/edge.mp4" \
+      --weight blur=0.25 --weight seg=0.25 --weight depth=0.25 --weight edge=0.25 \
+      --size 832x480 --frames 150 --seed 2025 --output "$O/a4_full.mp4"
+    ;;
+  *) echo "usage: run_a.sh a1|a2|a3|a4_full" >&2; exit 2 ;;
 esac

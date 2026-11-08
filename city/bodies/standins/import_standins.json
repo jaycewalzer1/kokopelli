@@ -1,0 +1,22 @@
+{
+ "imported": [
+  "/Game/Characters/TestParts/standin_hair/Grooms/GR_StandinHair.GR_StandinHair"
+ ],
+ "assets": {
+  "/Game/Characters/TestParts/standin_hair/Grooms/GR_StandinHair.GR_StandinHair": "GroomAsset"
+ },
+ "renamed": "/Game/Characters/TestParts/GA_StandinHair",
+ "final": {
+  "/Game/Characters/TestParts/GA_StandinHair.GA_StandinHair": "GroomAsset"
+ },
+ "helmet": {
+  "groups": 1,
+  "lods_before": [
+   "<GroomGeometryType.STRANDS: 0>"
+  ],
+  "lods_after": [
+   "<GroomGeometryType.MESHES: 2>"
+  ],
+  "meshes": 1
+ }
+}

@@ -209,6 +209,20 @@ protected:
 	virtual bool Build(const TSharedPtr<FJsonObject>& J, FString& Error) override;
 };
 
+/**
+ * Kit building: geometry authored in Python (city/ue/kinds/) as a list of builder ops, so new building types
+ * need no C++. JSON: "slots": [{"mat": "Timber", "tint": [r,g,b] sRGB 0-255, "scale": cm}], "ops": [["box", slot,
+ * x0,y0,z0, x1,y1,z1], ...] (actor-local cm, see SWCityKit.cpp for every op), "inst": [[prim, mat, r,g,b, x,y,z,
+ * yaw, sx,sy,sz, shadow, cull_cm, pitch, roll]], "collide": [[x0,y0,z0, x1,y1,z1]].
+ */
+UCLASS()
+class SIMWORLD_API ASWCityKit : public ASWCityActor
+{
+	GENERATED_BODY()
+protected:
+	virtual bool Build(const TSharedPtr<FJsonObject>& J, FString& Error) override;
+};
+
 /** Canopy landing: timber stair/elevator tower with woven bamboo screen, top deck and planted roof. */
 UCLASS()
 class SIMWORLD_API ASWCanopyLanding : public ASWCityActor

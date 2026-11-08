@@ -43,11 +43,34 @@ distilled blocks for the SDE step.
 | - | --------- | --- | --------------- |
 | 1 | Random numbers come from MLX's RNG. The seeding formula is the same (`seed + f` for the initial noise, `seed + f·1000003 + (step+1)·9176` for the SDE noise), but the streams differ from torch's | There's no torch on the Mac path | Same distribution, different sample. A given seed won't reproduce NVIDIA's video pixel for pixel |
 | 2 | The control is resized with ffmpeg (`bilinear`, or `neighbor` for seg) from the 8-bit mp4. The reference uses torchvision bilinear with antialiasing and keeps depth as float32 until encoding | Simpler input path | Sub-pixel resampling differences, and depth is quantized to 8 bits before the VAE. Small |
-| 3 | The VAE decode runs in chunks of 6 latents, with 3 earlier latents as causal warm-up whose frames are dropped. The reference decodes causally with a full feature cache | The port's decoder decodes a whole clip at once, which doesn't fit at 480p × 150 frames | Measured below. Near-identical |
+| 3 | The VAE decode runs in chunks of 6 latents, with 3 earlier latents as causal warm-up whose frames are dropped. The reference decodes causally with a full feature cache | The port's decoder decodes a whole clip at once, which doesn't fit at 480p × 150 frames | Not measured yet: the check in out/sim_transfer/bench.py was cancelled. Watching the outputs shows no seams at chunk boundaries |
 | 4 | bf16 everywhere. RoPE is applied in fp32 and cast back. The sampler state is fp32, as in the reference | n/a | Matches the reference's BF16 runtime within normal kernel differences |
 | 5 | Text K/V come from the understanding half, run once one layer at a time; then only the generation half (~14 GB) stays in memory | 16B parameters at bf16 (32 GB) don't fit in 36 GB | None: the text half is never used again after frame 0 |
 | 6 | Attention is dense MLX SDPA over [text, selected history, current]. The reference uses varlen/flex kernels and a ring buffer | Kernels | Numerically equivalent attention pattern |
+| 8 | **Known bug (fixed in streaming, open in batch):** the port's VAE decoder turns the first latent into 4 frames instead of 1 (measured by the `world_stream.py` smoke test, 2026-11-08). Batch runs keep the first N frames, so their output is about 0.1 s (3 frames) behind the control, the first 3 frames are near-duplicates, and the last 3 are lost. The streaming worker (`world_stream.py`) is fixed as of 2026-11-08: it drops the first 3 frames of its first decode, checked by `tests/test_world_stream.py` | Port decoder (`decode_vae.py`) has no first-chunk trim for multi-latent input | Still open for `world_transfer.decode_chunked` (batch runs, including the bridge video): drop the first 3 frames of the first chunk |
 | 7 | Only one control per call | Same as the reference ("Causal transfer AR inference requires exactly one control hint") | None |
+
+## Validation
+
+- NVIDIA's example1 (depth control, their upsampled JSON prompt, seed 42, 640x640, 121 frames, window 30, sink 3):
+  `out/sim_transfer/example1_depth_640x640_121f.mp4`. Next to their published GB200 output
+  (`out/sim_transfer/nvidia_quickstart_reference.mp4`, comparison sheet `example1_compare_depth_mlx_nvidia.png`), it shows the
+  same scene, materials and arm/unicorn motion. Pixels differ because the RNG differs (deviation 1).
+
+## Measured on the M4 Max (36 GB), bf16, one control
+
+| Size | Frames (latents) | Wall time | Denoise / decode | Peak GB (MLX) | Notes |
+| ---- | ---------------- | --------- | ---------------- | ------------- | ----- |
+| 320x320 | 9 (3) | 18 s | n/a | 13.8 | smoke test |
+| 832x480 | 29 (8) | 103–114 s | 48 s / 43 s | 14.9 | blur previews |
+| 832x480 | 17 (5) | 72 s | 34 s / 28 s | 13.9 | multicontrol a1 baseline |
+| 640x640 | 121 (31) | 439 s | 273 s / 134 s | 19.9 | example1; the decode sets the peak |
+| 832x480 | 150 (39) | 6229 s, **distorted by swapping** (two Unreal servers held ~16 GB) | 5984 s / 183 s | 19.87 | final bridge run |
+
+Without swapping, expect about 9–12 s per latent at 832x480 late in the clip, so a 150-frame clip at 832x480 should take roughly
+10–14 min with a ~20 GB peak. That fits only when the Unreal servers leave about 24 GB free. `--quantize 8` keeps the
+generation weights in 8-bit, cutting about 7 GB, but its quality hasn't been measured. The full table (448x256, 640x368, 832x480, 8-bit) is
+scripted in `out/sim_transfer/bench.py` but was not run.
 
 ## Using it
 

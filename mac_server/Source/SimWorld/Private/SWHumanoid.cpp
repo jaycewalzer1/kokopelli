@@ -25,6 +25,7 @@ ASWHumanoid::ASWHumanoid()
 	Camera = CreateDefaultSubobject<USimCVCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(GetCapsuleComponent());
 	Camera->SetRelativeLocation(EyeOffset);
+	LastAutoCameraRel = EyeOffset;
 	WalkSpeed = 200.f; // config user.speed
 }
 
@@ -54,6 +55,75 @@ FVector ASWHumanoid::GetFeetLocation() const
 bool ASWHumanoid::CanMove() const
 {
 	return Gesture == EGesture::None && !bSitting && !CurrentVehicle.IsValid();
+}
+
+void ASWHumanoid::OnBodyChanged()
+{
+	// First-person captures never see the inside of their own head; the held item stays visible.
+	Camera->HideComponent(GetMesh());
+	Camera->HideComponent(FadeMesh);
+	Camera->HideComponent(FaceMesh);
+	Camera->HideComponent(FadeFaceMesh);
+	for (const TArray<TObjectPtr<UMeshComponent>>* List : {&Parts, &FadeParts})
+	{
+		for (UMeshComponent* Part : *List)
+		{
+			Camera->HideComponent(Part); // hair and collar would fill the eye camera
+		}
+	}
+}
+
+void ASWHumanoid::Tick(float DeltaSeconds)
+{
+	BodyAnim.bSitting = bSitting;
+	Super::Tick(DeltaSeconds);
+
+	// The eye camera rides the eye socket (real eye height, and it follows the head when sitting or bending),
+	// looking along the actor's yaw. A client `vset /camera/N/location` takes over until the body changes.
+	if (HasBodyMesh() && !bCameraOverridden)
+	{
+		if (!Camera->GetRelativeLocation().Equals(LastAutoCameraRel, 0.5))
+		{
+			bCameraOverridden = true;
+		}
+		else
+		{
+			LastAutoCameraRel = GetActorTransform().InverseTransformPosition(GetEyeWorldLocation());
+			Camera->SetRelativeLocation(LastAutoCameraRel);
+		}
+	}
+
+	ASWPickup* Item = Held.Get();
+	if (Item && bPendingAttach && (BodyAnim.ReachTime < 0.f || BodyAnim.ReachTime >= 0.45f))
+	{
+		// The hand has reached the item: it now belongs to the hand socket.
+		Item->AttachToHand(GetMesh(), GetHandSocket());
+		BodyAnim.Carry = PendingCarry;
+		bPendingAttach = false;
+	}
+	if (Item && !bPendingAttach && HasBodyMesh())
+	{
+		PlaceHeldInHands();
+	}
+}
+
+void ASWHumanoid::PlaceHeldInHands()
+{
+	ASWPickup* Item = Held.Get();
+	const FVector HandR = GetHandWorldLocation(false);
+	FVector Grip;
+	if (Item->IsHeavy())
+	{
+		Grip = (HandR + GetHandWorldLocation(true)) * 0.5; // between both hands
+	}
+	else
+	{
+		// Palm: part-way from the wrist to the middle finger's first joint, when the skeleton has one.
+		static const FName Middle(TEXT("middle_01_r"));
+		const FVector Finger = GetMesh()->DoesSocketExist(Middle) ? GetMesh()->GetSocketLocation(Middle) : HandR;
+		Grip = FMath::Lerp(HandR, Finger, 0.6f);
+	}
+	Item->SetActorLocationAndRotation(Grip - FVector(0.0, 0.0, Item->GetSize().Z * 0.5), FRotator(0.0, GetActorRotation().Yaw, 0.0));
 }
 
 // --- Walking -----------------------------------------------------------------------------------
@@ -196,9 +266,20 @@ void ASWHumanoid::PickUp(const FString& Object, bool& Success)
 	{
 		return;
 	}
-	Item->AttachToCarrier(this, Item->IsHeavy() ? CarryOffset : HandOffset);
 	Held = Item;
 	Success = true;
+	if (!HasBodyMesh())
+	{
+		Item->AttachToCarrier(this, Item->IsHeavy() ? CarryOffset : HandOffset);
+		return;
+	}
+	// Reach down to it first; Tick moves it onto the hand socket at the bottom of the reach.
+	Item->Reserve(this);
+	BodyAnim.ReachTime = 0.f;
+	BodyAnim.ReachTarget = GetActorTransform().InverseTransformPosition(Item->GetActorLocation() + FVector(0.0, 0.0, Item->GetSize().Z * 0.5));
+	BodyAnim.Carry = 0;
+	PendingCarry = Item->IsHeavy() ? 2 : 1;
+	bPendingAttach = true;
 }
 
 void ASWHumanoid::DropOff(bool& Success)
@@ -207,9 +288,13 @@ void ASWHumanoid::DropOff(bool& Success)
 	Success = Item != nullptr;
 	if (Item)
 	{
-		Item->DetachAt(GetFeetLocation() + GetActorForwardVector() * 50.0);
+		// Not yet in hand: it never left the ground. Otherwise it goes down in front of the feet.
+		Item->DetachAt(bPendingAttach ? Item->GetActorLocation() : GetFeetLocation() + GetActorForwardVector() * 50.0);
 		Held.Reset();
 	}
+	bPendingAttach = false;
+	BodyAnim.Carry = 0;
+	BodyAnim.ReachTime = -1.f;
 }
 
 void ASWHumanoid::EnterVehicle(const FString& Vehicle, bool& Success)
@@ -288,6 +373,7 @@ void ASWHumanoid::StartGesture(EGesture NewGesture)
 	}
 	StopMotion();
 	Gesture = NewGesture;
+	bGestureTalking = NewGesture == EGesture::Discussion || NewGesture == EGesture::Arguing || NewGesture == EGesture::Directing;
 }
 
 void ASWHumanoid::Discussion(int32 Type)
@@ -318,4 +404,5 @@ void ASWHumanoid::Directing()
 void ASWHumanoid::StopAction()
 {
 	Gesture = EGesture::None;
+	bGestureTalking = false;
 }

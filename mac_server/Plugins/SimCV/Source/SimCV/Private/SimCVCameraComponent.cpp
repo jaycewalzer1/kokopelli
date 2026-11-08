@@ -8,6 +8,48 @@
 #include "SimCVWorld.h"
 #include "TextureResource.h"
 
+FSimCVAnnotationCapture USimCVCameraComponent::OnAnnotationCapture;
+
+namespace SimCV
+{
+/** Brackets an annotation capture with OnAnnotationCapture (begin/end): what the game hides goes on the camera's
+ *  hidden list for this capture only, and other component changes are pushed to the renderer first. */
+FAnnotationCaptureScope::FAnnotationCaptureScope(USimCVCameraComponent* InCamera)
+	: Camera(InCamera), World(InCamera ? InCamera->GetWorld() : nullptr)
+{
+	if (!World || !USimCVCameraComponent::OnAnnotationCapture.IsBound())
+	{
+		return;
+	}
+	bActive = true;
+	USimCVCameraComponent::OnAnnotationCapture.Broadcast(World, true, Hidden);
+	for (UPrimitiveComponent* Component : Hidden)
+	{
+		if (Component && !Camera->HiddenComponents.Contains(Component))
+		{
+			Camera->HiddenComponents.Add(Component);
+			Added.Add(Component);
+		}
+	}
+	World->SendAllEndOfFrameUpdates();
+}
+
+FAnnotationCaptureScope::~FAnnotationCaptureScope()
+{
+	if (!bActive)
+	{
+		return;
+	}
+	for (UPrimitiveComponent* Component : Added)
+	{
+		Camera->HiddenComponents.Remove(Component);
+	}
+	TArray<UPrimitiveComponent*> Unused;
+	USimCVCameraComponent::OnAnnotationCapture.Broadcast(World, false, Unused);
+	World->SendAllEndOfFrameUpdates();
+}
+}
+
 USimCVCameraComponent::USimCVCameraComponent()
 {
 	bCaptureEveryFrame = false;
@@ -124,6 +166,7 @@ bool USimCVCameraComponent::CaptureLit(TArray<FColor>& OutPixels)
 
 bool USimCVCameraComponent::CaptureDepth(TArray<float>& OutDepth)
 {
+	const SimCV::FAnnotationCaptureScope Clean(this);
 	Capture(ESceneCaptureSource::SCS_SceneDepth, true);
 	TArray<FFloat16Color> Raw;
 	if (!ReadFloat(Raw))
@@ -140,6 +183,7 @@ bool USimCVCameraComponent::CaptureDepth(TArray<float>& OutDepth)
 
 bool USimCVCameraComponent::CaptureNormal(TArray<FColor>& OutPixels)
 {
+	const SimCV::FAnnotationCaptureScope Clean(this);
 	Capture(ESceneCaptureSource::SCS_Normal, true);
 	TArray<FFloat16Color> Raw;
 	if (!ReadFloat(Raw))

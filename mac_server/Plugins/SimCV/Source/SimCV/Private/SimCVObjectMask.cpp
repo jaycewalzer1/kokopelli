@@ -1,6 +1,8 @@
 #include "SimCVCameraComponent.h"
 
 #include "Components/MeshComponent.h"
+#include "Components/SkinnedMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -16,15 +18,33 @@
  * is faster per frame but much more code.
  */
 
-UMaterialInstanceDynamic* USimCVCameraComponent::GetAnnotationMaterial(const FColor& Color)
+UMaterialInstanceDynamic* USimCVCameraComponent::GetAnnotationMaterial(const FColor& Color, bool bSkinned)
 {
-	const uint32 Key = Color.ToPackedARGB();
+	const USimCVSettings* Settings = GetDefault<USimCVSettings>();
+	UMaterialInterface* Skinned = nullptr;
+	if (bSkinned && !Settings->SkeletalAnnotationMaterial.IsNull())
+	{
+		static TWeakObjectPtr<UMaterialInterface> Cached;
+		static bool bTried = false;
+		if (!bTried)
+		{
+			bTried = true;
+			Cached = Cast<UMaterialInterface>(Settings->SkeletalAnnotationMaterial.TryLoad());
+			if (!Cached.IsValid())
+			{
+				UE_LOG(LogSimCV, Warning, TEXT("SkeletalAnnotationMaterial '%s' could not be loaded; skinned meshes use AnnotationMaterial"),
+					*Settings->SkeletalAnnotationMaterial.ToString());
+			}
+		}
+		Skinned = Cached.Get();
+	}
+	// Separate cache entries for the skinned material (top bit of the alpha byte is free: colours are opaque).
+	const uint32 Key = Color.ToPackedARGB() ^ (Skinned ? 0x01000000u : 0u);
 	if (const TObjectPtr<UMaterialInstanceDynamic>* Existing = AnnotationMaterials.Find(Key))
 	{
 		return *Existing;
 	}
-	const USimCVSettings* Settings = GetDefault<USimCVSettings>();
-	UMaterialInterface* Base = Cast<UMaterialInterface>(Settings->AnnotationMaterial.TryLoad());
+	UMaterialInterface* Base = Skinned ? Skinned : Cast<UMaterialInterface>(Settings->AnnotationMaterial.TryLoad());
 	if (!Base)
 	{
 		UE_LOG(LogSimCV, Error, TEXT("AnnotationMaterial '%s' could not be loaded"), *Settings->AnnotationMaterial.ToString());
@@ -44,6 +64,9 @@ bool USimCVCameraComponent::CaptureObjectMask(TArray<FColor>& OutPixels)
 	{
 		return false;
 	}
+
+	// Fading bodies show exactly one whole body in the mask (never the dithered pair).
+	const SimCV::FAnnotationCaptureScope Clean(this);
 
 	struct FSavedMesh
 	{
@@ -68,16 +91,20 @@ bool USimCVCameraComponent::CaptureObjectMask(TArray<FColor>& OutPixels)
 		TInlineComponentArray<UMeshComponent*> Meshes(Actor);
 		for (UMeshComponent* Mesh : Meshes)
 		{
-			if (!Mesh->IsRegistered() || !Mesh->IsVisible())
+			if (!Mesh->IsRegistered() || !Mesh->IsVisible() || Clean.Hides(Mesh))
 			{
 				continue;
 			}
+			// Anything that isn't a static mesh (skinned bodies and their clothes, grooms) takes the skinned
+			// annotation material, which carries the skeletal and hair-strands usage flags.
+			UMaterialInstanceDynamic* MeshMaterial = !Mesh->IsA<UStaticMeshComponent>()
+				? GetAnnotationMaterial(SimCV::GetAnnotationColor(Actor), true) : Material;
 			FSavedMesh& Entry = Saved.AddDefaulted_GetRef();
 			Entry.Mesh = Mesh;
 			for (int32 Slot = 0; Slot < Mesh->GetNumMaterials(); ++Slot)
 			{
 				Entry.Materials.Add(Mesh->GetMaterial(Slot));
-				Mesh->SetMaterial(Slot, Material);
+				Mesh->SetMaterial(Slot, MeshMaterial);
 			}
 			ShowOnly.Add(Mesh);
 		}

@@ -93,8 +93,7 @@ Commands only set state and return immediately (SPEC 7.1); `Tick` does the motio
   (`"Rayleigh Scattering Scale"`), and in non-editor builds FName keeps the first-registered
   casing, so `rotation` could come out as `Rotation`. The UFUNCTIONs still exist for Blueprint
   and for other spellings of the function name.
-- **Mannequin.** UE5's mannequin is template content
-  (`Templates/TemplateResources/High/Characters/Content/Mannequins`). Copy it into
-  `Content/Characters/Mannequins` and set `CharacterMesh` / `CharacterAnimClass` under
-  `[/Script/SimWorld.SWSettings]` in `DefaultGame.ini` to use it. Otherwise characters are a
-  cylinder body, sphere head and a small "nose" box showing which way they face.
+- **Bodies.** Agents and residents get a skeletal body from `Config/Bodies.json` (`SetBody`/`GetBody`, near/far
+  tiers, crossfade, one shared native animation); the cylinder body is only the last-resort placeholder. See
+  `city/bodies/ANIMATION.md`. Without Bodies.json the older `CharacterMesh` / `CharacterAnimClass` settings in
+  `[/Script/SimWorld.SWSettings]` still apply.

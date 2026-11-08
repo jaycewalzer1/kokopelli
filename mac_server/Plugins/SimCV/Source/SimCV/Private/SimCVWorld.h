@@ -5,6 +5,7 @@
 class AActor;
 class APlayerController;
 class UWorld;
+class UPrimitiveComponent;
 class USimCVCameraComponent;
 
 /** Shared game-thread helpers for command handlers. */
@@ -47,4 +48,18 @@ namespace SimCV
 	void UnregisterCamera(USimCVCameraComponent* Camera);
 	/** Cameras of World in id order. In game worlds a player-view camera is created on demand as id 0. */
 	TArray<USimCVCameraComponent*> GetCameras(UWorld* World);
+
+	/** RAII: USimCVCameraComponent::OnAnnotationCapture begin/end around one annotation capture. */
+	struct FAnnotationCaptureScope
+	{
+		explicit FAnnotationCaptureScope(USimCVCameraComponent* InCamera);
+		~FAnnotationCaptureScope();
+		/** True if Component is left out of this capture. */
+		bool Hides(const UPrimitiveComponent* Component) const { return Hidden.Contains(Component); }
+		USimCVCameraComponent* Camera = nullptr;
+		UWorld* World = nullptr;
+		bool bActive = false;
+		TArray<UPrimitiveComponent*> Hidden; // what the game asked to leave out
+		TArray<UPrimitiveComponent*> Added;  // the part of it this scope added to the camera's hidden list
+	};
 }
