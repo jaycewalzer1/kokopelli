@@ -194,14 +194,14 @@ unchanged. The panel page is `/exp1`.
 | Step | What happens | Code |
 |---|---|---|
 | Observation | Recent mornings in words, the scene, `felt_text(h)`, the options. No numbers, odds or counts (leak-checked) | `exp1/observe.py:63` |
-| Policy | π(o) ∝ exp(sum of log-probs of the tokens `{"choice": "o"`), over the offered options only | `exp1/policy.py:108` |
-| Choice | Sampled from π at T=1; forced on exploration mornings. Reason generated afterwards, logs only | `exp1/run.py:179` |
+| Policy | π(o) ∝ exp(sum of log-probs of the tokens `{"choice": "o"`), over the offered options only | `exp1/policy.py:129` |
+| Choice | Sampled from π at T=1; forced on exploration mornings. Reason generated afterwards, logs only | `exp1/run.py:188` |
 | Outcome | The next entry in the chosen option's pre-drawn schedule (flipped: partner's odds; shuffled: a random offered option's) | `exp1/world.py:148` |
 | Needs | h ← clip(h + delta); between decisions h ← h − 0.15 (`exp1/homeostasis.py:47`) | `exp1/homeostasis.py:41` |
 | Reward | drive(h_pre) − drive(h_post); drive = Σ max(0, 0.7 − h) | `exp1/homeostasis.py:34` |
-| Advantage | r − baseline[decision]; then baseline += 0.2·(r − baseline). Forced choices update the baseline only | `exp1/learn.py:34` |
-| Sleep update | After each free morning: loss = mean[−w·A·log π(a)] + β·mean[KL(π‖π_base)], over today plus 5 replay days, w = clip(π_now/π_then, 0.8, 1.2) held constant. 1–4 Adam steps, grad clip 1.0 | `exp1/learn.py:69` |
-| Policy shift | Today's states and four fixed probe states are scored again after the update | `exp1/run.py:201` |
+| Advantage | r − baseline[decision]; then baseline += 0.2·(r − baseline). Forced choices update the baseline only | `exp1/learn.py:36` |
+| Sleep update | After each free morning: loss = mean[−w·A·log π(a)] + β·mean[KL(π‖π_base)], over today plus 5 replay days, w = clip(π_now/π_then, 0.8, 1.2) held constant. 1–4 Adam steps, grad clip 1.0 | `exp1/learn.py:99` |
+| Policy shift | Today's states and four fixed probe states are scored again after the update | `exp1/run.py:211` |
 
 The front-gap gate is state: D1's outcome sets the arrival time, and `Life.pending` (`exp1/world.py:126`) offers `front_gap`
 at D2 only if it was 9:08 or earlier. The page states the link on every D1 and D2.

@@ -13,8 +13,10 @@ per night, 5 replay days, choice temperature 1.0 (the spec). Folder: `out/exp1/r
 - Phase 3: the `/exp1` panel page. It has the pipeline strip with file:line references, the causal trace, the timelines,
   shares against the tabular band and the untrained model, the training charts beside the random and always-safe
   baselines, what changed overnight, the arm comparison and the glossary.
-- 40 tests: phase 1 (16), the learner, run loop, resume and panel data (13), and the existing scenario tests. Two phase 1
-  tests are expected failures (D1 under the cap).
+- Tests: `tests.test_exp1` (phase 1, 16, two expected failures for D1 under the cap) and `tests.test_exp1_learn`
+  (the learner, run loop, resume, polite pause, probes, panel data and baselines, 14) pass, as do the scenario, world,
+  watch and benchmark suites. `test_homeostatic_grpo` and `test_homeostatic_export` error in this worktree only because
+  they load `models/Qwen3-VL-8B-Instruct` from the worktree, which has no models folder; they don't touch exp1.
 - The table policy run through the same loop reproduces the hot-stove pattern in all three arms (150 lives, lr 0.01). This
   checks the update rule itself.
 
