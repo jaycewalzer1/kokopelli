@@ -106,10 +106,23 @@ can't tell harm from noise. Before the arm runs, IFEval should use every prompt 
 Production-ready for longer tests: yes for the machinery (resume, polite memory sharing, logs, panel, guardrails). For the
 science, one run says the spec's settings mostly measure the prior. These decisions shape the next runs:
 
-1. **Choice temperature.** Keep 1.0 (the spec; this run), or flatten π with `--choice-temperature`. τ doesn't change the
-   model, only how far the sampled choice strays from its favourite and how big the gradient is.
+1. **Choice temperature.** Decided 2026-11-08: T = 8, for every arm. See "Deviation from the spec" below.
 2. **The lr sweep.** Planned for 3 values.
 3. **Flipped and shuffled runs.** They're what separates learning from prior.
 4. **IFEval size.** 30 prompts is too few for a 1-point flag.
 5. **D2 gate.** With side_path the favourite, the gate never opens, so the front_gap pair is never tested. Either accept
    that as the model's own behaviour or make the gate easier to open.
+
+## Deviation from the spec
+
+**Choice temperature is 8, not 1.0 (approved 2026-11-08).** The rule was the lowest T in {1, 2, 3, 5} where at least 70% of
+8-sample groups have 2 or more distinct options and nonzero advantage spread, in every decision. None passes (at T = 5, trained
+logits: D1 .670, D3 .380). T = 8 is the lowest value above that grid that passes (.905, .898, .768), so it's outside the
+grid that was planned. Numbers are in `diagnostics/temperature.json`.
+
+T applies identically to every arm, and to sampling, the loss, the importance weights and the KL base (`exp1/policy.py:124`).
+It's passed as `--choice-temperature 8`. The default stays 1.0 so that earlier runs still resume (`exp1/run.py:130`).
+
+**Before longer runs:** a 10-free-day pilot, lived arm, seed 0, T = 8 (`out/exp1/runs/exp1_lived_s0_T8_pilot10/`). Stop rule, set
+before it ran: if the single largest low-π penalty is more than half of the net update on any night, fix the update rule
+before any longer run, with the same change in every arm.
