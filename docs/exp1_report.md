@@ -36,6 +36,9 @@ From the untrained model's exact log-probs on every state this life saw (39 deci
 | 2 | 0.88 | 0.80 | 0.94 | 0.12 to 0.47 |
 | 5 | 0.64 | 0.59 | 0.81 | 0.40 to 0.82 |
 
+This table covers the 39 decisions available when it was written. The full check over all 99 rows is in
+`diagnostics/temperature.json`, and it reads higher at τ = 5 (D3 top option 0.90).
+
 At τ = 1 the agent almost never tries anything but its favourite. Where π is about 1, the policy-gradient (∇ log π) is about
 0, so a lived bad outcome barely moves it. On day 4, leave_early hit its rare bad outcome (reward −0.30), and π(leave_early)
 on the D3 probe stayed at 100%. The base model's prior is leave_early at D3 and side_path at D1. So the lived arm's D3
@@ -66,12 +69,17 @@ so instead of counting it as a fail). D2, no reading (gate closed). D3, "pass" a
 p10 to p90) and 0.150 for always-safe. It does about as well as always-safe, because it nearly always picks a safe or
 50/50 option.
 
-**What did move: the D2 probe.** On the fixed gate-closed probe state, π(back_row) went from 1–2% (lawn_edge 98%) for
-20 nights to 100% over nights 28–30 (free days 20–22). Lived D2 history: back_row 22 times at +0.15 each, lawn_edge 3 times
-(+0.25, +0.25, then +0.05 "busy" on day 18 with advantage −0.13). The baseline caught up with back_row's steady +0.15, so
-its own advantage went to about 0. The shift came from replaying the 5-day window that held the day-18 bad edge spot,
-plus low-π back_row picks with large ∇log π. This is the one place where lived experience changed a strong prior, and it
-went toward the no-variance option.
+**What moved on the D2 probe, and what the check found.** On the one fixed gate-closed probe prompt, π(back_row) went from
+1–5% to 100% over nights 28–30 (free days 21–23). That size is an artifact of that one prompt. Over 4 wordings and all 6
+option orders the untrained model already gives back_row 0.685 on average (0.388 in the original wording, 0.74 to 0.85 in the
+paraphrases), so there was no strong lawn_edge prior to overturn. A smaller shift is real: replaying the three nights from a
+rebuilt pre-shift adapter moves that average from 0.754 to 0.893, and removing the one penalty moves it to 0.674 instead. It
+comes from a single transition, day 18 lawn_edge "busy" (advantage −0.128). back_row and lawn_edge have the same expected
+reward (0.15 on every free day), so this is an overreaction to one bad outcome, not the agent finding a better option.
+
+Details are in `out/exp1/runs/exp1_lived_s0_lr2e-5/diagnostics/d2.json`. Model for the diagnostic: base Qwen3-VL-8B-Instruct,
+bf16 (`models/Qwen3-VL-8B-Instruct`), plus a LoRA r16 rebuilt from a new seeded start on this run's logged rows, because
+each night's checkpoint overwrote the last and the real pre-shift adapter no longer exists.
 
 **Training:** KL from the untrained model was 0.06 or less through night 22, rose to 0.07–0.19 over the next nights while the D2 probe moved, and ended at 0.045.
 Grad norm was mostly under 0.3 and went to 0 in the last two nights, because π is saturated on every state it sees.
