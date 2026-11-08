@@ -25,6 +25,7 @@ function clock(seconds) {
   const s = Math.max(0, Math.floor(seconds)), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60;
   return `${h}:${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
+const QUIET_WARNING = 1800;  // seconds without log output before the board says so
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 // ---- the job on the GPU ------------------------------------------------------------------------------------------------
@@ -39,7 +40,7 @@ function nowMarkup(data) {
   if (!holders.length) {
     const next = data.waiting[0];
     return `<div class="panel-head"><span class="eyebrow">On the GPU now</span></div><div class="holder-name idle">Free</div>
-      <p class="meta">${next ? `${escapeHtml(next.name)} goes at the queue's next check.` : "Nothing is waiting."}</p>`;
+      <p class="meta">${next ? (next.waiting_for && !next.waiting_for.includes("has the GPU") ? `${escapeHtml(next.name)} is held: ${escapeHtml(next.waiting_for)}.` : `${escapeHtml(next.name)} goes at the queue's next check.`) : "Nothing is waiting."}</p>`;
   }
   const job = holders[0];
   const picture = (job.files || []).find(item => item.kind === "image" || item.kind === "video");
@@ -53,7 +54,7 @@ function nowMarkup(data) {
     <div class="holder"><div class="holder-text">
       <div class="holder-name">${dot(job.group)}<span>${escapeHtml(job.name)}</span></div>
       <div class="elapsed" data-since="${job.started_at}">${clock(now() - job.started_at)}</div>
-      ${limit}<p class="about clamp">${escapeHtml(job.about || "Not described.")}</p>${more}
+      ${limit}${job.quiet_seconds >= QUIET_WARNING ? `<p class="warning">No log output for ${span(job.quiet_seconds)}.</p>` : ""}<p class="about clamp">${escapeHtml(job.about || "Not described.")}</p>${more}
     </div>${media ? `<div class="holder-media">${media}</div>` : ""}</div>`;
 }
 
@@ -176,7 +177,7 @@ function lineMarkup(data) {
       <span class="car-name">${dot(ticket.group)}${escapeHtml(ticket.name)}</span>
       <span class="car-wait"><span data-waited="${ticket.queued_at}">${span(now() - ticket.queued_at)}</span> waiting</span>
       <span class="grow" aria-hidden="true"><i data-grow="${ticket.queued_at}" data-longest="${longest}"></i></span>
-      ${position === 0 && holders.length ? `<span class="meta">after ${escapeHtml(holders.map(job => job.name).join(", "))}</span>` : ""}</button>`).join("");
+      ${position === 0 && (ticket.waiting_for || holders.length) ? `<span class="meta">${ticket.waiting_for ? escapeHtml(ticket.waiting_for) : `after ${escapeHtml(holders.map(job => job.name).join(", "))}`}</span>` : ""}</button>`).join("");
   const staged = (data.staged || []).map(job => `<div class="car staged"><span class="car-top"><span class="prio">p${escapeHtml(job.priority)}</span>${tag("ready to start")}</span>
       <span class="car-name">${escapeHtml(job.name)}</span><span class="meta">${job.estimate ? `about ${job.estimate.hours} h` : ""}</span>
       <button type="button" class="btn-primary" data-act="start" data-name="${escapeHtml(job.name)}"${ui.busy ? " disabled" : ""}>Start</button></div>`).join("");
@@ -186,6 +187,7 @@ function lineMarkup(data) {
 // ---- recent ------------------------------------------------------------------------------------------------------------
 
 function outcome(job) {
+  if (job.stopped) return {word: "stopped", bad: false};
   if (job.timed_out) return {word: "timed out", bad: true};
   if (job.state === "finished") return {word: job.exit_code === 0 ? "done" : job.exit_code === 75 ? "paused" : `exit ${job.exit_code}`, bad: job.failed};
   return {word: job.state === "gave_up" ? "gave up" : job.state, bad: job.failed};
@@ -241,6 +243,13 @@ function controlsMarkup(job) {
     <button type="button" data-act="cancel" class="${confirming ? "confirm" : ""}"${ui.busy ? " disabled" : ""}>${confirming ? "Click again to cancel" : "Cancel job"}</button></div>`;
 }
 
+function stopMarkup(job) {
+  if (!job.keeper) return job.where === "pace" ? "" : `<p class="meta">Started before jobs had keepers, so it can't be stopped from here.</p>`;
+  const confirming = ui.confirming === job.id;
+  return `<div class="eyebrow">Change it</div><div class="controls" data-id="${escapeHtml(job.id)}">
+    <button type="button" data-act="stop" class="${confirming ? "confirm" : ""}"${ui.busy ? " disabled" : ""}>${confirming ? "Click again to stop it" : "Stop job"}</button></div>`;
+}
+
 function drawerMarkup() {
   const found = ui.open && findJob(ui.open);
   if (!found) return "";
@@ -248,7 +257,9 @@ function drawerMarkup() {
   const result = job.result;
   const {word, bad} = kind === "past" ? outcome(job) : {word: kind === "running" ? "running" : "waiting", bad: false};
   const facts = [job.priority != null ? `priority ${job.priority}` : "", job.seconds != null ? `ran ${span(job.seconds)}` : "",
-                 job.waited != null ? `waited ${span(job.waited)}` : "", job.peak_rss_gb != null ? `${job.peak_rss_gb} GB peak` : "",
+                 job.waited != null ? `waited ${span(job.waited)}` : "", job.peak_job_gb != null ? `${job.peak_job_gb} GB peak` : job.peak_rss_gb != null ? `${job.peak_rss_gb} GB peak` : "",
+                 job.swap_grew_gb != null ? `swap +${job.swap_grew_gb} GB` : "", job.gpu_busy_mean != null ? `GPU ${Math.round(job.gpu_busy_mean * 100)}% busy` : "", job.watts_mean != null ? `${Math.round(job.watts_mean)} W` : "",
+                 job.gpu_temp_max != null ? `${Math.round(job.gpu_temp_max)} °C peak` : "",
                  job.at ? `${span(now() - job.at)} ago` : ""].filter(Boolean).join(" · ");
   const judged = result ? `<div class="judged">${result.rating != null ? `<span class="score">${escapeHtml(result.rating)}<small>/ 5</small></span>${scale(result.rating)}` : tag("not rated", "unsaid")}
       <span class="label">${escapeHtml(result.rating_label || "")}</span></div>${result.summary ? `<p>${escapeHtml(result.summary)}</p>` : ""}
@@ -259,7 +270,7 @@ function drawerMarkup() {
       <button type="button" class="link" data-close aria-label="Close details">Close</button></div>
     <div>${tag(word, bad ? "fail" : "")} <span class="meta">${escapeHtml(facts)}</span></div>
     <p class="about">${escapeHtml(job.about || "Queued before jobs had to say what they do.")}</p>
-    ${judged}${kind === "waiting" ? controlsMarkup(job) : ""}${filesMarkup(job)}${log}${command}`;
+    ${judged}${kind === "waiting" ? controlsMarkup(job) : kind === "running" ? stopMarkup(job) : ""}${filesMarkup(job)}${log}${command}`;
 }
 
 function drawDrawer() {
@@ -307,7 +318,8 @@ function draw() {
   $("recent-counts").textContent = `${data.finished} finished · ${data.failed} failed`;
   $("busy-value").textContent = data.device.busy_percent ?? "–";
   $("memory-value").textContent = data.device.memory_gb ?? "–";
-  $("memory-total").textContent = `of ${data.device.total_gb} GB`;
+  $("memory-total").textContent = `of ${data.device.total_gb} GB${data.machine ? ` · swap ${data.machine.swap_gb}` : ""}`;
+  $("busy-note").textContent = data.machine ? `${data.machine.gpu_temp} °C · ${data.machine.watts} W` : "last 15 min";
   const busy = data.running.length + data.outside.length > 0;
   $("status-line").classList.toggle("live", busy);
   $("status-text").textContent = data.error ? `Can't read the queue: ${data.error}` : `Updated ${new Date().toLocaleTimeString([], {hour: "numeric", minute: "2-digit", second: "2-digit"})}`;
@@ -403,13 +415,14 @@ function act(button) {
     if (!(priority >= 0 && priority <= 999)) return notify("A priority is a whole number from 0 to 999.", true);
     return change("/api/queue/move", {id, priority}, answer => `Moved ${answer.moved} to priority ${answer.priority}.`);
   }
-  // Cancelling takes a second click on the same button, so one stray click can't drop a job.
+  // Cancelling and stopping take a second click on the same button, so one stray click can't drop a job.
   if (ui.confirming !== id) {
     ui.confirming = id;
     setTimeout(() => { if (ui.confirming === id) { ui.confirming = null; ui.drawerHtml = ""; drawDrawer(); } }, CONFIRM_MS);
     ui.drawerHtml = "";
     return drawDrawer();
   }
+  if (button.dataset.act === "stop") return change("/api/queue/stop", {id}, answer => `Stopped ${answer.stopped}.`);
   change("/api/queue/cancel", {id}, answer => `Cancelled ${answer.cancelled}. A script waiting on it sees it fail.`);
 }
 

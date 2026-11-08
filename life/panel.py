@@ -229,6 +229,9 @@ class Api:
     def queue_cancel(self, body):
         return gpu_queue.cancel(body["id"])
 
+    def queue_stop(self, body):
+        return gpu_queue.stop(body["id"])
+
     def queue_past(self, params):
         return gpu_queue.past_page(int(params.get("offset", 0)), int(params.get("limit", gpu_queue.LEDGER_SHOWN)))
 
@@ -302,7 +305,7 @@ class Handler(BaseHTTPRequestHandler):
            "/api/city-live/runs": "city_live_runs", "/api/city-live/run": "city_live_run"}
     POST = {"/api/runs": "new_run", "/api/step": "step", "/api/run": "run", "/api/stop": "stop", "/api/fork": "fork"}
     # These change real jobs, so unlike the mock buttons they work while watching, and only for this panel's own page.
-    QUEUE_POST = {"/api/queue/move": "queue_move", "/api/queue/cancel": "queue_cancel", "/api/queue/where": "queue_where",
+    QUEUE_POST = {"/api/queue/move": "queue_move", "/api/queue/cancel": "queue_cancel", "/api/queue/stop": "queue_stop", "/api/queue/where": "queue_where",
                   "/api/queue/default": "queue_default", "/api/queue/start": "queue_start"}
     # These save pictures to disk, so they too only take requests from this panel's own page.
     MOODBOARD_POST = {"/api/moodboard/add": "moodboard_add", "/api/moodboard/update": "moodboard_update"}

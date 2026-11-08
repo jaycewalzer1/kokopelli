@@ -12,6 +12,7 @@ A claim says how much a job may use at its peak. What it isn't using yet still c
 model into memory the claimed job is about to need.
 """
 import argparse
+import ctypes
 import json
 import os
 import re
@@ -42,13 +43,28 @@ def available_gb():
     return level / 100 * total_gb()
 
 
+class _Usage(ctypes.Structure):  # rusage_info_v0 from <sys/resource.h>
+    _fields_ = [("uuid", ctypes.c_ubyte * 16)] + [(name, ctypes.c_uint64) for name in (
+        "user", "system", "idle_wakeups", "interrupt_wakeups", "pageins", "wired", "resident", "phys_footprint", "start", "exit")]
+
+
+_LIBPROC = ctypes.CDLL("/usr/lib/libproc.dylib")
+
+
+def footprint_gb(pid):
+    """A process's real memory. `ps` RSS leaves out Metal buffers, so a claim holding an MLX model read as nearly all unused
+    and was counted twice: once as memory in use, again as room still promised to it. 0 if it can't be read."""
+    usage = _Usage()
+    return 0.0 if _LIBPROC.proc_pid_rusage(pid, 0, ctypes.byref(usage)) else usage.phys_footprint / 2 ** 30
+
+
 def processes():
     rows = subprocess.run(["ps", "-axo", "pid=,ppid=,rss=,command="], capture_output=True, text=True).stdout.splitlines()
     found = []
     for row in rows:
         parts = row.split(None, 3)
         if len(parts) == 4:
-            found.append({"pid": int(parts[0]), "parent": int(parts[1]), "rss_gb": int(parts[2]) / 2 ** 20, "command": parts[3]})
+            found.append({"pid": int(parts[0]), "parent": int(parts[1]), "rss_gb": max(int(parts[2]) / 2 ** 20, footprint_gb(int(parts[0]))), "command": parts[3]})
     return found
 
 
