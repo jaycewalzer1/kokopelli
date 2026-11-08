@@ -67,13 +67,13 @@ p10 to p90) and 0.150 for always-safe. It does about as well as always-safe, bec
 50/50 option.
 
 **What did move: the D2 probe.** On the fixed gate-closed probe state, π(back_row) went from 1–2% (lawn_edge 98%) for
-20 nights to 100% over nights 28–30 (free days 20–22). Lived D2 history: back_row 21 times at +0.15 each, lawn_edge 3 times
+20 nights to 100% over nights 28–30 (free days 20–22). Lived D2 history: back_row 22 times at +0.15 each, lawn_edge 3 times
 (+0.25, +0.25, then +0.05 "busy" on day 18 with advantage −0.13). The baseline caught up with back_row's steady +0.15, so
 its own advantage went to about 0. The shift came from replaying the 5-day window that held the day-18 bad edge spot,
 plus low-π back_row picks with large ∇log π. This is the one place where lived experience changed a strong prior, and it
 went toward the no-variance option.
 
-**Training:** KL from the untrained model stayed under 0.02 for most nights, peaked at 0.19 (night 23) and ended at 0.045.
+**Training:** KL from the untrained model was 0.06 or less through night 22, rose to 0.07–0.19 over the next nights while the D2 probe moved, and ended at 0.045.
 Grad norm was mostly under 0.3 and went to 0 in the last two nights, because π is saturated on every state it sees.
 
 **Guardrails** (untrained against trained, same questions):
@@ -84,8 +84,7 @@ Grad norm was mostly under 0.3 and went to 0 in the last two nights, because π 
 | IFEval subset | 30 | 66.7 | 60.0 | −6.7 ± 6.7 | flagged (more than 1 point down) |
 
 IFEval is 2 prompts out of 30 and is within one standard error of zero. The flag is doing its job, but at this size it
-can't tell harm from noise. Before the arm runs I'd raise IFEval to all the prompts we can verify (the set is about 4×
-larger), so a 1-point flag means something.
+can't tell harm from noise. Before the arm runs, IFEval should use every prompt our verifiers can check, so that a 1-point flag means something.
 
 **Done-means check:** tests pass (except the two Qwen-loading suites that can't find weights inside a worktree); the
 25-day lived+RL run finished end to end with full logs; the panel shows it and the causal trace works on every decision
