@@ -1,0 +1,5 @@
+name: base
+model: Qwen/Qwen3-VL-8B-Instruct
+adapter: null
+seed: 0
+notes: The base model with no adapter. Every other arm is read against this.

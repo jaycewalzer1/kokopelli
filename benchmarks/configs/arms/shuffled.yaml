@@ -1,0 +1,8 @@
+name: shuffled
+model: Qwen/Qwen3-VL-8B-Instruct
+adapter: out/adapters/shuffled/seed{seed}
+api_model: shuffled_seed{seed}
+seed: 0
+training_text:
+  - out/adapters/shuffled/seed{seed}/training_text/*
+notes: LoRA from a lived run with outcomes decoupled from the agent's choices. The adapter doesn't exist yet.

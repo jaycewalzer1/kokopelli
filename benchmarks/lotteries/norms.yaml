@@ -1,0 +1,22 @@
+# Human results from the same table the items came from. Each group had 25 people per problem.
+# The values below are percentages of choices going to the option that rare-event underweighting predicts,
+# worked out from Hertwig et al. (2004) Table 1 and checked in tests against the items file.
+metric: underweighting_rate
+primary: description_group  # Our prompts state the odds, so a person reading the same prompt was in this group.
+norms:
+  - id: description_group
+    label: "Humans who read the odds"
+    mean: 0.3733
+    n: 25
+    n_note: "25 per problem, 50 in the group"
+    source: "Hertwig et al. (2004), Psychological Science, Table 1 (averaged over 6 problems)"
+    verified: true
+  - id: experience_group
+    label: "Humans who learned the odds by sampling"
+    mean: 0.7333
+    n: 25
+    n_note: "25 per problem, 50 in the group"
+    source: "Hertwig et al. (2004), Psychological Science, Table 1 (averaged over 6 problems)"
+    verified: true
+caveats:
+  - "Fox & Hadar (2006) argue that most of this gap comes from sampling error: people who sample few draws often never see the rare event. It may not be a difference in how people weigh probabilities."

@@ -1,0 +1,7 @@
+name: fake_null
+model: mock
+adapter: benchmarks/tests/fixtures/fake_adapter_null
+seed: 0
+mock:
+  malformed_rate: 0.02
+notes: Test only. A fake adapter with no effect, for checking that the stats don't find effects that aren't there.

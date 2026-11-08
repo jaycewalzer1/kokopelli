@@ -1,0 +1,6 @@
+name: base_cautious
+model: Qwen/Qwen3-VL-8B-Instruct
+adapter: null
+seed: 0
+prompt_prefix: "You are an extremely cautious person who strongly dislikes taking any risk.\n\n"
+notes: Positive control for the noise check. Can the instrument see a shift when we force one? Exploratory runs only.

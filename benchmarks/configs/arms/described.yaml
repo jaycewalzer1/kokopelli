@@ -1,0 +1,8 @@
+name: described
+model: Qwen/Qwen3-VL-8B-Instruct
+adapter: out/adapters/described/seed{seed}
+api_model: described_seed{seed}
+seed: 0
+training_text:
+  - out/adapters/described/seed{seed}/training_text/*
+notes: LoRA from a text description of the same odds and outcomes. The adapter doesn't exist yet.

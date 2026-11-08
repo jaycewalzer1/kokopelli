@@ -1,0 +1,11 @@
+{"_meta": {"instrument": "Holt-Laury low-payoff menu of 10 paired lotteries", "verified": true, "verified_how": "All 10 rows read from a reproduction of the table in the published paper, and row 1 cross-checked against search excerpts quoting the original table. The original AER PDF could not be opened (401/403 from the copies tried). The expected-payoff gaps are recomputed in tests.", "sources": ["Holt, C. A. & Laury, S. K. (2002). Risk Aversion and Incentive Effects. American Economic Review 92(5), 1644-1655. doi:10.1257/000282802762024700", "Filippin, A. & Crosetto, P. (2016). A Reconsideration of Gender Differences in Risk Attitudes. Management Science 62(11), 3138-3160. Table 2, 'The 10 Lotteries of the Original Holt and Laury (2002) Paper' (full ladder read from this table)."], "payoffs": {"safe_high": 2.00, "safe_low": 1.60, "risky_high": 3.85, "risky_low": 0.10}}}
+{"row": 1, "p_high_tenths": 1}
+{"row": 2, "p_high_tenths": 2}
+{"row": 3, "p_high_tenths": 3}
+{"row": 4, "p_high_tenths": 4}
+{"row": 5, "p_high_tenths": 5}
+{"row": 6, "p_high_tenths": 6}
+{"row": 7, "p_high_tenths": 7}
+{"row": 8, "p_high_tenths": 8}
+{"row": 9, "p_high_tenths": 9}
+{"row": 10, "p_high_tenths": 10}

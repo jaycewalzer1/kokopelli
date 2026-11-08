@@ -1,0 +1,23 @@
+# The pre-registered contrasts. PREREG.md explains them in words. The lock hashes this file too.
+# difference = a minus b. Positive means a scored higher.
+# Prediction: living the shortcut world, where the rare cost seldom happens, makes rare events count for less
+# than reading the odds does. That means fewer safe choices on Holt-Laury and more underweighting choices on lotteries.
+settings:
+  alpha: 0.05
+  min_seeds_right: 3   # The brief's rule: right direction in at least 3 seeds...
+  max_seeds_wrong: 0   # ...and, a stricter choice for the owner to review, none going the wrong way.
+contrasts:
+  - {id: lived_vs_described_hl, kind: difference, instrument: holt_laury, a: lived, b: described, direction: negative}
+  - {id: lived_vs_described_lot, kind: difference, instrument: lotteries, a: lived, b: described, direction: positive}
+  - {id: flipped_vs_lived_hl, kind: difference, instrument: holt_laury, a: flipped_lived, b: lived, direction: positive}
+  - {id: flipped_vs_lived_lot, kind: difference, instrument: lotteries, a: flipped_lived, b: lived, direction: negative}
+  - {id: shuffled_near_base_hl, kind: equivalence, instrument: holt_laury, a: shuffled, b: base, margin: 0.5}
+  - {id: shuffled_near_base_lot, kind: equivalence, instrument: lotteries, a: shuffled, b: base, margin: 0.05}
+  - {id: guardrail_ifeval_lived, kind: guardrail, instrument: ifeval, a: lived, b: base, margin: 1.0}
+  - {id: guardrail_ifeval_described, kind: guardrail, instrument: ifeval, a: described, b: base, margin: 1.0}
+  - {id: guardrail_ifeval_shuffled, kind: guardrail, instrument: ifeval, a: shuffled, b: base, margin: 1.0}
+  - {id: guardrail_ifeval_flipped, kind: guardrail, instrument: ifeval, a: flipped_lived, b: base, margin: 1.0}
+  - {id: guardrail_mmlu_lived, kind: guardrail, instrument: mmlu, a: lived, b: base, margin: 1.0}
+  - {id: guardrail_mmlu_described, kind: guardrail, instrument: mmlu, a: described, b: base, margin: 1.0}
+  - {id: guardrail_mmlu_shuffled, kind: guardrail, instrument: mmlu, a: shuffled, b: base, margin: 1.0}
+  - {id: guardrail_mmlu_flipped, kind: guardrail, instrument: mmlu, a: flipped_lived, b: base, margin: 1.0}

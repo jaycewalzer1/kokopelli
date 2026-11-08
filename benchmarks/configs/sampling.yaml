@@ -1,0 +1,6 @@
+# Fixed for a whole run and stored in its run record. A resumed run refuses different values.
+# 0.7 and 0.8 and 20 match Qwen's own generation_config.json, which is what llm_model.ask uses for top_p and top_k.
+temperature: 0.7
+top_p: 0.8
+top_k: 20
+max_tokens: 128
