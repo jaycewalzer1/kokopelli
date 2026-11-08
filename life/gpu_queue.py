@@ -1,9 +1,9 @@
 """What the GPU queue view shows: who has the GPU, who goes next, and how past turns ended.
 
-The queue itself is ops/gpu.py, on the feat/ops worktree. The view reads it with the pipeline view's readers, and changes it
-in only three ways, all to a job still waiting: a new priority, through gpu.py's own `move`; sending it to PACE or back,
-through gpu.py's `where`; and cancelling. A job with its turn is never touched, since stopping its gpu.py would leave the
-model job running in its own process group. Where new jobs go by default is set through gpu.py's `default`.
+The queue itself is ops/gpu.py, on the feat/ops worktree. The view reads it with the pipeline view's readers. A waiting job can
+get a new priority (gpu.py's `move`), go to PACE or back (`where`), or be cancelled. A running job can only be stopped, through
+gpu.py's `stop`, which has its keeper end the whole process group. A job started before keepers existed can't be stopped here,
+since stopping its gpu.py would leave the model running. Where new jobs go by default is set through gpu.py's `default`.
 
 For the pictures: a timeline of every job in the last hours, GPU readings kept while the panel runs, and each job's outputs.
 gpu.py makes every job say what it does (`about`) and what it writes (`outputs`). Its images and videos are shown, other
@@ -15,9 +15,11 @@ import fcntl
 import json
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -36,6 +38,10 @@ QUEUE_BLIND = {"mind.run", "benchmarks.run"}
 TIMELINE_HOURS = 12
 HISTORY = deque(maxlen=400)  # about 20 minutes of readings at the page's 3 second poll, kept while the panel runs
 HISTORY_GAP = 2.5
+STOP_TIMEOUT = 60  # gpu.py's stop allows the job its grace period, then SIGKILL
+MACHINE_EVERY_MS = 3000
+MACHINE_STALE_SECONDS = 15
+_machine = {"reading": None, "at": 0.0, "feeding": False}
 IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp"}
 VIDEO_TYPES = {".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime"}
 MEDIA_TYPES = {**IMAGE_TYPES, **VIDEO_TYPES}
@@ -68,6 +74,36 @@ def read_device(text=None):
             "total_gb": round(os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE") / 2 ** 30)}
 
 
+def parse_machine(line):
+    """Swap, power and GPU temperature from one line of `macmon pipe`. None if it isn't a reading."""
+    try:
+        reading = json.loads(line)
+        return {"swap_gb": round(reading["memory"]["swap_usage"] / 2 ** 30, 1), "watts": round(reading["all_power"]), "gpu_temp": round(reading["temp"]["gpu_temp_avg"])}
+    except (ValueError, KeyError, TypeError):
+        return None
+
+
+def feed_machine():
+    """Keep the latest macmon reading. It stops by itself if the panel goes, on its next write to the closed pipe."""
+    try:
+        process = subprocess.Popen([shutil.which("macmon") or "/opt/homebrew/bin/macmon", "pipe", "-i", str(MACHINE_EVERY_MS)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        for line in process.stdout:
+            if reading := parse_machine(line):
+                _machine.update(reading=reading, at=time.time())
+    except OSError:
+        pass
+    finally:
+        _machine["feeding"] = False
+
+
+def read_machine():
+    """Swap, watts and GPU temperature, or None without macmon. A failed reading is None, never 0."""
+    if not _machine["feeding"]:
+        _machine["feeding"] = True
+        threading.Thread(target=feed_machine, daemon=True).start()
+    return _machine["reading"] if time.time() - _machine["at"] < MACHINE_STALE_SECONDS else None
+
+
 def log_tail(ops, name):
     """The end of a job's log and when it was last written. Only a bare file name inside job_logs can be read."""
     if not name:
@@ -96,7 +132,7 @@ def ticket_extras(ops, ticket):
     except (OSError, ValueError):
         raw = {}
     return {"where": raw.get("where") or "local", "pace": raw.get("pace"), "can_pace": bool(raw.get("pace_command")), "group": group(ticket["name"]),
-            "about": raw.get("about"), "outputs": raw.get("outputs") or []}
+            "about": raw.get("about"), "outputs": raw.get("outputs") or [], "waiting_for": raw.get("waiting_for"), "keeper": bool(raw.get("keeper"))}
 
 
 def timeline(rows, tickets, now, hours=TIMELINE_HOURS):
@@ -325,11 +361,19 @@ def time_limit(parts):
         return None
 
 
+def quiet_seconds(log):
+    """How long since a job last wrote to its log, so a hang shows. None if there's no log to read."""
+    try:
+        return max(0.0, time.time() - Path(log).stat().st_mtime)
+    except (OSError, TypeError):
+        return None
+
+
 def holder(ticket, job, parts, ops):
     """A ticket with a turn, with what the ledger and its process add. Its ledger entry says "queued" until the job has really started."""
     started = job.get("state") == "started"
     return {**ticket, "started_at": job.get("at") if started else None, "waited": job.get("waited"), "log": job.get("log"),
-            "limit_seconds": time_limit(parts), **log_tail(ops, job.get("log"))}
+            "limit_seconds": time_limit(parts), "quiet_seconds": quiet_seconds(job.get("log")), **log_tail(ops, job.get("log"))}
 
 
 def queue_section(paths, table):
@@ -397,11 +441,11 @@ def move(ticket_id, priority, paths=PIPELINE_PATHS, script=GPU_QUEUE_SCRIPT):
     return {"moved": ticket["name"], "priority": priority}
 
 
-def gpu(script, ops, *args):
+def gpu(script, ops, *args, timeout=30):
     """Run one of gpu.py's own commands on the queue this page reads."""
     if not Path(script).is_file():
         raise QueueError(f"The queue's gpu.py isn't there: {script}")
-    done = subprocess.run([sys.executable, str(script), *args], capture_output=True, text=True, timeout=30,
+    done = subprocess.run([sys.executable, str(script), *args], capture_output=True, text=True, timeout=timeout,
                           env={**os.environ, "KOKOPELLI_ROOT": str(Path(ops).parent.parent)})
     if done.returncode:
         message = (done.stderr or done.stdout).strip()
@@ -432,6 +476,19 @@ def set_default(where, paths=PIPELINE_PATHS, script=GPU_QUEUE_SCRIPT):
         raise QueueError("New jobs go either to this Mac or to PACE.")
     gpu(script, paths["ops"], "default", "--to", where)
     return {"default": where}
+
+
+def stop(ticket_id, paths=PIPELINE_PATHS, script=GPU_QUEUE_SCRIPT):
+    """End a running job through gpu.py, so its keeper takes down the whole process group and writes the ledger."""
+    ops = Path(paths["ops"])
+    tickets, _ = read_tickets(ops / "queue", process_table())
+    ticket = next((ticket for ticket in tickets if ticket["id"] == ticket_id and ticket["running"]), None)
+    if ticket is None:
+        raise QueueError("That job isn't running any more.")
+    if not ticket_extras(ops, ticket)["keeper"]:
+        raise QueueError(f"{ticket['name']} started before jobs had keepers. Stopping it here would leave the model running, so stop its own process.")
+    gpu(script, ops, "stop", "--name", ticket_id, timeout=STOP_TIMEOUT)
+    return {"stopped": ticket["name"]}
 
 
 def stopped(pid):
@@ -468,4 +525,4 @@ def collect(paths=PIPELINE_PATHS, listing=None, device=None, now=None):
              "last_result": None}
     section = safely(queue_section, empty, paths, process_table(listing))
     reading = read_device(device)
-    return {"now": now, "device": reading, "history": remember(reading, now), "pace": safely(pace_status, {"ready": False, "missing": []}, now), **section}
+    return {"now": now, "device": reading, "machine": read_machine() if device is None else None, "history": remember(reading, now), "pace": safely(pace_status, {"ready": False, "missing": []}, now), **section}

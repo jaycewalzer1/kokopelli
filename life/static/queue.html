@@ -29,7 +29,7 @@
 <main class="board">
   <section class="panel now" id="now" aria-label="On the GPU now"></section>
   <section class="panel gauge" aria-label="GPU busy">
-    <div class="panel-head"><span class="eyebrow">GPU busy</span><span class="eyebrow">last 15 min</span></div>
+    <div class="panel-head"><span class="eyebrow">GPU busy</span><span class="eyebrow" id="busy-note">last 15 min</span></div>
     <div class="reading"><span id="busy-value">–</span><small>%</small></div>
     <canvas id="busy-chart" aria-label="GPU busy over the last 15 minutes" role="img"></canvas>
   </section>

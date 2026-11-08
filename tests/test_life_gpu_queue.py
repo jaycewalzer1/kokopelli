@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 from life.gpu_queue import group, newest_image, output_files, past_page, read_result, with_result, send, set_default, ticket_extras, timeline
-from life.gpu_queue import QueueError, cancel, collect, log_tail, move, read_device, stopped
+from life.gpu_queue import QueueError, cancel, collect, log_tail, move, parse_machine, quiet_seconds, read_device, stop, stopped
 from settings import GPU_QUEUE_SCRIPT
 
 PYTHON = "/usr/bin/python"
@@ -128,6 +128,20 @@ class QueueChangeTest(unittest.TestCase):
 
     def ledger(self):
         return [json.loads(line) for line in (self.ops / "gpu_ledger.jsonl").read_text().splitlines()]
+
+    def test_a_job_that_is_not_running_cannot_be_stopped(self):
+        with self.assertRaises(QueueError):
+            stop("nope", self.paths)
+
+    def test_macmon_lines_are_read_and_bad_ones_are_none(self):
+        line = json.dumps({"memory": {"swap_usage": 2 * 2 ** 30}, "all_power": 37.6, "temp": {"gpu_temp_avg": 66.6}})
+        self.assertEqual(parse_machine(line), {"swap_gb": 2.0, "watts": 38, "gpu_temp": 67})
+        self.assertIsNone(parse_machine("not json"))
+        self.assertIsNone(parse_machine("{}"))
+
+    def test_quiet_seconds_is_none_without_a_log(self):
+        self.assertIsNone(quiet_seconds(None))
+        self.assertIsNone(quiet_seconds("/nonexistent/log"))
 
     def test_cancelling_a_waiting_job_stops_it_and_says_so_in_the_ledger(self):
         ticket_id, process = self.waiter("a")

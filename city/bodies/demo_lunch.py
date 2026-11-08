@@ -8,6 +8,7 @@ This wrapper only adds, by subclassing:
   - a director camera: SimCV camera 0 (the level camera, which no agent uses) is placed every capture tick by a small
     shot planner (aerial establishing shot, tracking shots while they walk, a side two-shot when they are close, an
     over-the-shoulder shot of whoever is talking) and rendered lit at --director-size into director/f000000.png ...
+  - idle head sway on both agents' eye cameras (head_sway; a still camera makes the world model break up);
   - talking gestures: each spoken line sends `vbp <actor> SetSpeaking <s>` (city/bodies/ANIMATION.md) at its slot in
     the step; the lines of one step are laid out one after another (speaker, then the reply) so the gestures and the
     captions agree;
@@ -15,6 +16,7 @@ This wrapper only adds, by subclassing:
     (speaker, text, start/end sim time), which city/bodies/demo_cut.py turns into the captioned demo films.
 The agents never see the director camera. If it fails, the run goes on without it (logged in director/errors.log).
 """
+import difflib
 import json
 import math
 import sys
@@ -30,10 +32,23 @@ from lunch_wm import c, FRIEND_ACTOR, AGENT_ACTOR  # noqa: E402
 DIRECTOR_CAM = 0
 SHOT_MIN_S = 3.0          # hold a shot at least this long before cutting
 EYE_CM = 160.0
+MAX_WORDS = 24            # a longer line is sent back; two per 10 s step have to fit (words_seconds)
+SAME_LINE = 0.6           # difflib ratio from which a line counts as something this person already said
+FRIEND_SWAY_PHASE = 2.1   # radians, so the two agents don't sway in sync
+BESIDE_M = 3.5            # "approach" is refused this close to the other agent
+
+
+def head_sway(t, phase=0.0):
+    """(pitch, yaw) offset in degrees at film time t. A perfectly still camera makes Cosmos break into a coloured mosaic
+    (out/world_stream/still_test: 241 still frames shatter, the same frame with these few pixels of sway stays clean)."""
+    tau = 2 * math.pi
+    return (0.31 * math.sin(tau * t / 2.3 + 1 + phase) + 0.13 * math.sin(tau * t / 0.9 + phase),
+            0.64 * math.sin(tau * t / 3.1 + phase) + 0.26 * math.sin(tau * t / 1.3 + phase))
 
 
 def words_seconds(text):
-    return max(2.0, min(8.0, 0.36 * len(text.split()) + 0.8))
+    # never shorter than demo_cut.retime keeps the caption up, so the shot labels and the captions name the same speaker
+    return max(2.2, min(12.0, max(0.36 * len(text.split()) + 0.8, len(text) / 24.0)))
 
 
 class DirectorSim(L.TwoBodySim):
@@ -269,8 +284,24 @@ class DirectorSim(L.TwoBodySim):
             self._d_error(f"plan t={t}: {e!r}")
             return None
 
+    def _sway(self, t):
+        """Both eye cameras get the idle head motion, at the camera so every control sees it. super()._before_capture has
+        already put the agent's camera on its base aim (and does so every capture once _camera_overridden is set);
+        the friend's follows its body, so its base aim is just the body's yaw."""
+        try:
+            base = [float(v) for v in str(self.wire.request(c.get_camera_rotation(self.camera_id))).split()]
+            pitch, yaw = head_sway(t)
+            self.wire.request(c.set_camera_rotation(self.camera_id, round(base[0] + pitch, 4), round(base[1] + yaw, 4), 0), resend=False)
+            self._camera_overridden = True
+            pitch, yaw = head_sway(t, FRIEND_SWAY_PHASE)
+            body = self._read_pose(FRIEND_ACTOR).rotation.yaw
+            self.wire.request(c.set_camera_rotation(self.friend_camera_id, round(pitch, 4), round(body + yaw, 4), 0), resend=False)
+        except Exception as e:
+            self._d_error(f"sway t={t}: {e!r}")
+
     def _before_capture(self, capture_time_s):
         super()._before_capture(capture_time_s)
+        self._sway(capture_time_s)
         self._speak_due(capture_time_s)
         self._pending_row = self._place(capture_time_s)
 
@@ -320,6 +351,16 @@ def chunked_stream_class():
     return ChunkedWorldStream
 
 
+class DemoCast(L.QuietCast):
+    """After a resident's first hello she only speaks when named. In bodies_demo_sim2 Ana still broke into the agents'
+    talk because "Loom & Thread" and "coffee" matched her topics."""
+
+    def reply(self, pid, text, listener_xy):
+        if pid in self.met and self.people[pid]["name"].split()[0].lower() not in text.lower():
+            return None
+        return super().reply(pid, text, listener_xy)
+
+
 class DeadlineStop(Exception):
     pass
 
@@ -331,8 +372,36 @@ class DemoLunch(L.Lunch):
         super().__init__(*a, **kw)
         self.captions = (self.out / "captions.jsonl").open("a")
         self._slot_step, self._slot_t = None, 0.0
+        self.said = {}    # person id -> the lines they've spoken, for check()
 
     deadline = None   # epoch seconds; set by --deadline HH:MM
+
+    TALK_NOTE = (f"\nWhen you speak, keep it to one short sentence, at most {MAX_WORDS - 4} words, like real conversation. "
+                 "If someone just spoke to you, answer what they said. Never say again something you already said: "
+                 "move the talk on, or tell them your own news. Once a question has been answered, don't ask it again in other words: "
+                 "talk about something else, like the fair, what to eat, or your plans for the afternoon.")
+
+    def prompt(self, mind):
+        return super().prompt(mind) + self.TALK_NOTE
+
+    def check(self, mind, act):
+        """lunch_wm's check, plus the talk rules. In wmbodies_demo Iris walked up to Mara three times instead of answering
+        her from 2 m away, so Mara asked about the bees three times in nearly the same words."""
+        super().check(mind, act)
+        t = act.get("type")
+        bodies = self.world.bodies()
+        other = self.minds[mind.other]
+        d = math.dist(bodies[mind.id].xy, bodies[other.id].xy)
+        if t == "say":
+            text = str(act.get("text", ""))
+            if len(text.split()) > MAX_WORDS:
+                raise ValueError(f"that is too long to say in one breath; use at most {MAX_WORDS - 4} words")
+            if any(difflib.SequenceMatcher(None, text.lower(), old.lower()).ratio() >= SAME_LINE for old in self.said.get(mind.id, ())):
+                raise ValueError("you already said that; say something new, answer them, or tell them your own news")
+        elif mind.pending == "heard" and d <= L.HEAR_M and any(h.startswith(f"{other.name} (") for h in mind.heard):
+            raise ValueError(f"{other.name} just spoke to you and is waiting; use a say action to answer her")
+        elif t == "approach" and act.get("target") == other.id and d <= BESIDE_M:
+            raise ValueError(f"you are already beside {other.name}; use a say action to talk to her")
 
     def step(self):
         import time
@@ -364,6 +433,7 @@ class DemoLunch(L.Lunch):
 
     def _schedule(self, who, name, text):
         sim = self.world.sim
+        self.said.setdefault(who, []).append(text)
         base = sim.now_s()
         # one line after another, also across steps (resetting per step let a reply that spilled past the step end be
         # talked over by the next step's first line in wmbodies_demo; demo_cut.retime repairs that run's captions)
@@ -411,6 +481,8 @@ def main(argv=None):
     nav = NavMap()
     L.people(args, nav)
     cast = None if args.no_npcs else L.lunch_cast(nav)
+    if cast is not None:
+        cast.__class__ = DemoCast
     args.out = args.out or str(ROOT / "out" / "bodies" / "demo" / "runs" / (datetime.now().strftime("%Y%m%d-%H%M%S") + "_lunch"))
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -421,7 +493,7 @@ def main(argv=None):
     L.Lunch = DemoLunch
     (out / "demo_wrapper.json").write_text(json.dumps({
         "wrapper": "city/bodies/demo_lunch.py", "lunch_code": "city/agents/lunch_wm.py (unchanged)",
-        "director_camera": DIRECTOR_CAM if director else None, "director_size": size, "argv": argv}, indent=1))
+        "director_camera": DIRECTOR_CAM if director else None, "director_size": size, "head_sway": True, "argv": argv}, indent=1))
     wm = chunked_stream_class()(out_dir=out / "wm", quantize=args.quantize, fake=args.fake_wm)
     try:
         L.open_streams(wm, args, [args.first["id"], args.second["id"]])

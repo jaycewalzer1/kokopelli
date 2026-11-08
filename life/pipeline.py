@@ -209,7 +209,7 @@ def ledger_jobs(rows, live_ids):
         job = jobs.setdefault(event["id"], {"id": event["id"], "name": event.get("name", "?"), "state": "queued"})
         job["state"] = event.get("event", job["state"])
         job["at"] = event.get("at")
-        for key in ("priority", "waited", "exit_code", "timed_out", "seconds", "peak_rss_gb"):
+        for key in ("priority", "waited", "exit_code", "timed_out", "seconds", "peak_rss_gb", "stopped", "peak_job_gb", "peak_swap_gb", "swap_grew_gb", "gpu_busy_mean", "watts_mean", "gpu_temp_max"):
             if key in event:
                 job[key] = event[key]
         if event.get("log"):
