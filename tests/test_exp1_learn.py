@@ -193,6 +193,8 @@ class BaselinesTest(unittest.TestCase):
         self.assertTrue(found["D1"]["pass"])
         self.assertIsNone(found["D2 gate open"]["pass"])
         self.assertFalse(found["D3"]["pass"])
+        neither = {**shares, "D1": {"n": 4, "options": {"run_main": 0.0, "check_desk": 0.0}}}
+        self.assertIsNone(baselines.direction("lived", neither)["D1"]["pass"])
 
 
 if __name__ == "__main__":

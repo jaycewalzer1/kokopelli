@@ -101,7 +101,8 @@ def direction(arm, shares):
     out = {}
     for name, (bad, good) in PAIRS.items():
         b, g = shares[name]["options"].get(bad), shares[name]["options"].get(good)
-        if b is None or g is None:
+        # Neither option picked (the policy sat on a third one) says nothing about the pair, so it's no reading, not a fail.
+        if b is None or g is None or b == g == 0:
             out[name] = {"predicted": None, "observed": None, "pass": None, "n": shares[name]["n"]}
             continue
         predicted = {"lived": f"{bad} > {good}", "flipped": f"{good} > {bad}", "shuffled": "about equal"}[arm]

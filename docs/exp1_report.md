@@ -1,4 +1,4 @@
-# Experiment 1: first long run (draft, filled in when the run finishes)
+# Experiment 1: first long run
 
 Run `exp1_lived_s0_lr2e-5`, started 2026-11-07 12:52. Base model Qwen3-VL-8B-Instruct, bf16 (`models/Qwen3-VL-8B-Instruct`),
 fresh LoRA r16 on q and v. Lived arm, seed 0, 25 free days after 8 forced exploration mornings. lr 2e-5, β 0.05, 2 steps
@@ -44,12 +44,65 @@ prior.
 
 ## Results
 
-(Filled in at the end: shares against the tabular band and the untrained model, reward against random and always-safe,
-KL and π over nights, guardrails, the direction table.)
+Finished 2026-11-08: 99 decisions (24 forced, 75 free), 25 trained nights, 50 LoRA steps. It was paused overnight at its
+night-24 checkpoint for the bodies demo and resumed with the same life (checked by replay). Panel: `/exp1`.
+
+**What it picked (free days, second half, 13 picks each):**
+
+| Decision | Trained run | Untrained π on the same states |
+|---|---|---|
+| D1 | side_path 100% | side_path 100% |
+| D2 (gate always closed) | back_row 77%, lawn_edge 23% | back_row 78%, lawn_edge 22% |
+| D3 | leave_early 100% | leave_early 100% |
+
+The gate never opened on a free day: side_path gets there at 9:12 or 9:16, so front_gap was never offered and the D2
+rare-bad/rare-good pair was never tested.
+
+**Direction readings:** D1, no reading (neither run_main nor check_desk was picked; I changed `baselines.direction` to say
+so instead of counting it as a fail). D2, no reading (gate closed). D3, "pass" at 100/0, but the untrained model is also at
+100/0, so this is the prior, not learning.
+
+**Reward:** 0.151 per decision against 0.126 for random choices on the same seed (random across 200 lives: 0.129 to 0.165,
+p10 to p90) and 0.150 for always-safe. It does about as well as always-safe, because it nearly always picks a safe or
+50/50 option.
+
+**What did move: the D2 probe.** On the fixed gate-closed probe state, π(back_row) went from 1–2% (lawn_edge 98%) for
+20 nights to 100% over nights 28–30 (free days 20–22). Lived D2 history: back_row 21 times at +0.15 each, lawn_edge 3 times
+(+0.25, +0.25, then +0.05 "busy" on day 18 with advantage −0.13). The baseline caught up with back_row's steady +0.15, so
+its own advantage went to about 0. The shift came from replaying the 5-day window that held the day-18 bad edge spot,
+plus low-π back_row picks with large ∇log π. This is the one place where lived experience changed a strong prior, and it
+went toward the no-variance option.
+
+**Training:** KL from the untrained model stayed under 0.02 for most nights, peaked at 0.19 (night 23) and ended at 0.045.
+Grad norm was mostly under 0.3 and went to 0 in the last two nights, because π is saturated on every state it sees.
+
+**Guardrails** (untrained against trained, same questions):
+
+| Check | Questions | Untrained | Trained | Difference | Flag |
+|---|---|---|---|---|---|
+| MMLU | 200 | 75.0 | 75.0 | +0.0 ± 0.7 | ok |
+| IFEval subset | 30 | 66.7 | 60.0 | −6.7 ± 6.7 | flagged (more than 1 point down) |
+
+IFEval is 2 prompts out of 30 and is within one standard error of zero. The flag is doing its job, but at this size it
+can't tell harm from noise. Before the arm runs I'd raise IFEval to all the prompts we can verify (the set is about 4×
+larger), so a 1-point flag means something.
+
+**Done-means check:** tests pass (except the two Qwen-loading suites that can't find weights inside a worktree); the
+25-day lived+RL run finished end to end with full logs; the panel shows it and the causal trace works on every decision
+(checked on day 18 D2); this report.
+
+**Model:** base Qwen3-VL-8B-Instruct, bf16, `models/Qwen3-VL-8B-Instruct`, plus this run's LoRA
+(`out/exp1/runs/exp1_lived_s0_lr2e-5/checkpoint/adapters.safetensors`).
 
 ## Decisions for you
+
+Production-ready for longer tests: yes for the machinery (resume, polite memory sharing, logs, panel, guardrails). For the
+science, one run says the spec's settings mostly measure the prior. These decisions shape the next runs:
 
 1. **Choice temperature.** Keep 1.0 (the spec; this run), or flatten π with `--choice-temperature`. τ doesn't change the
    model, only how far the sampled choice strays from its favourite and how big the gradient is.
 2. **The lr sweep.** Planned for 3 values.
 3. **Flipped and shuffled runs.** They're what separates learning from prior.
+4. **IFEval size.** 30 prompts is too few for a 1-point flag.
+5. **D2 gate.** With side_path the favourite, the gate never opens, so the front_gap pair is never tested. Either accept
+   that as the model's own behaviour or make the gate easier to open.
