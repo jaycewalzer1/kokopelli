@@ -11,8 +11,7 @@ import time
 from functools import lru_cache
 from pathlib import Path
 
-from exp1 import baselines, homeostasis, learn, observe, policy, world
-from exp1 import run as runner
+from exp1 import baselines, homeostasis, observe, world
 from exp1.world import FLIP
 
 RUNS = Path(os.environ.get("EXP1_RUNS", Path.home() / "Desktop/kokopelli/out/exp1/runs"))
@@ -29,6 +28,9 @@ def _where(obj):
 @lru_cache(maxsize=1)
 def code_locations():
     """file:line for each step of the pipeline strip."""
+    # These three import mlx. life.panel imports this file, and it also runs from venvs without mlx, so they load only here.
+    from exp1 import learn, policy
+    from exp1 import run as runner
     return {"observation": _where(observe.observation), "policy": _where(policy.QwenPolicy.log_probs), "choice": _where(runner.Run.decide),
             "outcome": _where(world.Life._outcome), "needs": _where(homeostasis.apply), "reward": _where(homeostasis.drive),
             "advantage": _where(learn.Baseline.advantage), "sleep": _where(learn.Sleeper.sleep), "shift": _where(runner.Run.night),
