@@ -30,3 +30,12 @@ rewards:
   belonging_smoothing: 0.5
   belonging_message_weight: 0.6
   belonging_trade_weight: 0.2
+llm:
+  weights: /Users/jaycewalzer/Desktop/kokopelli/models/Qwen3-VL-8B-Instruct-4bit
+  temperature: 0.7
+  top_p: 0.9
+  max_spend_usd: 50.0
+  usd_per_million_input_tokens: 0.0
+  usd_per_million_output_tokens: 0.0
+  attempts: 4
+  backoff_seconds: 5
