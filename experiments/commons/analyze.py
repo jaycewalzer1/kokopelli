@@ -222,6 +222,10 @@ def fmt(value, digits=3):
     return "n/a" if value is None else f"{value:.{digits}f}"
 
 
+def signed(value):
+    return f"{round(value, 3) + 0.0:+.3f}"
+
+
 def main():
     config = sim.load_config()
     seeds = complete_seeds()
@@ -264,10 +268,10 @@ def main():
              f"- Lived vs clones, for context: {'Yes' if versus_clones['beat'] else 'No'} ({versus_clones['word']}).",
              f"- Successful games (survived, no martyrdom, shrinking defector edge): clones {sum(table[s]['clones']['success'] for s in seeds)}, described {sum(table[s]['described']['success'] for s in seeds)}, lived {sum(table[s]['lived']['success'] for s in seeds)}, of {len(seeds)} each.", "",
              floor_note,
-             "This is a pilot on a small number of seeds with one local model. No correction for multiple contrasts. Intervals are 95% percentile bootstraps over seeds and are wide.", "",
+             "This is a pilot on a small number of seeds with one local model. No correction for multiple contrasts. Intervals are 95% percentile bootstraps over seeds." + (f" With only {len(seeds)} seeds an interval just spans the seeds' own differences: a narrow one is not evidence of precision, and none of them should be read as significance." if len(seeds) < 5 else " They are wide."), "",
              "## Paired effects", "", "| Outcome | lived - described | described - clones | lived - clones |", "|---|---|---|---|"]
     for key in ("survived", "final_SK", "goal_mean", "goal_min", "edge_slope", "success"):
-        cells = [f"{c['diffs'][key][0]:+.3f} [{c['diffs'][key][1]:+.3f}, {c['diffs'][key][2]:+.3f}]" for c in (primary, secondary, versus_clones)]
+        cells = [f"{signed(c['diffs'][key][0])} [{signed(c['diffs'][key][1])}, {signed(c['diffs'][key][2])}]" for c in (primary, secondary, versus_clones)]
         lines.append(f"| {key} | " + " | ".join(cells) + " |")
     lines += ["", "## Outcomes by arm (mean over seeds)", "", "| Outcome | clones | described | lived |", "|---|---|---|---|"]
     lines += [f"| {key} | " + " | ".join(fmt(means[arm][key]) for arm in ARMS) + " |" for key in keys]
@@ -282,12 +286,30 @@ def main():
     for s in seeds:
         lines += [f"| {s} | {arm} | {table[s][arm]['survived']} | {table[s][arm]['collapse_season']} | {table[s][arm]['final_SK']:.3f} | {table[s][arm]['goal_min']:.3f} | {table[s][arm]['edge_slope']:+.3f} | {table[s][arm]['success']} | {table[s][arm]['mean_founder_harvest']:.1f} |" for arm in ARMS]
     lines += ["", "## Transcript excerpts around the newcomer's arrival", "", f"### Best lived game (seed {ranked[-1]})", "", excerpt("R3", ranked[-1], "lived"), "", f"### Worst lived game (seed {ranked[0]})", "", excerpt("R3", ranked[0], "lived"), "",
-              f"### Against the thesis (seed {against}: lived ended {gap:+.3f} S/K relative to described)", "", "Lived:", "", excerpt("R3", against, "lived"), "", "Described, same seed:", "", excerpt("R3", against, "described"), ""]
+              f"### Against the thesis (seed {against}: lived ended {signed(gap)} S/K relative to described)", "", *(["Both lakes were already dead, so this shows no real difference in governance. The section after this one shows the seasons when decisions still mattered.", ""] if abs(gap) < 0.0005 else []), "Lived:", "", excerpt("R3", against, "lived"), "", "Described, same seed:", "", excerpt("R3", against, "described"), ""]
+    if floor:
+        lines += ["## Transcript excerpts just before collapse (exploratory)", "", "Not requested by the prereg; added because the lake was gone by the newcomer's arrival, so \"best\" and \"worst\" above only rank dead games.", ""]
+        for arm in ARMS:
+            when = table[seeds[0]][arm]["collapse_season"]
+            lines += [f"### {arm}, seed {seeds[0]}, collapse at season {when}", "", excerpt("R3", seeds[0], arm, max(1, when - 2), when), ""]
+    satiation = []
+    for s in seeds:
+        if (ROOT / "R1" / f"seed_{s:03d}" / "clones" / "done.json").exists():
+            world, rows = load("R1", s, "clones")
+            satiation.append((s, score(world, rows, config)))
+    lines += ["## R1 diagnostic (clones only, not part of the verdict)", ""]
+    if satiation:
+        lines += ["Same seeds and clones as above with satiation-only rewards (R1).", "", "| Seed | R3 collapse season | R1 collapse season | R1 survived | R1 final S/K |", "|---|---|---|---|---|"]
+        lines += [f"| {s} | {table[s]['clones']['collapse_season']} | {g['collapse_season']} | {g['survived']} | {g['final_SK']:.3f} |" for s, g in satiation]
+        lines.append("")
+    else:
+        lines += ["Not run: no complete R1 game.", ""]
     lint = (ROOT / "lint_report.md").read_text() if (ROOT / "lint_report.md").exists() else "No lint report."
     fallback = 0
     for s in seeds:
         fallback += sum(p["fallback_choices"] for p in json.loads((ROOT / "upbringings" / f"seed_{s:03d}.json").read_text()).values())
-    lines += ["## Failures, leakage, deviations, spend", "", f"- Invalid first attempts: " + ", ".join(f"{arm} {means[arm]['invalid_rate']:.1%}" for arm in ARMS) + f". Defaulted to no harvest (mean per game): " + ", ".join(f"{arm} {means[arm]['defaulted']:.1f}" for arm in ARMS) + ".",
+    lines += ["## Failures, leakage, deviations, spend", "", f"- Invalid first attempts: " + ", ".join(f"{arm} {means[arm]['invalid_rate']:.1%}" for arm in ARMS) + f". Defaulted to no harvest (mean per game): " + ", ".join(f"{arm} {means[arm]['defaulted']:.1f}" for arm in ARMS) + ". Most of these came after collapse, when agents tried to spend fish they no longer had; before collapse the invalid rate was " + ", ".join(f"{arm} {extra_means[arm]['invalid_before_collapse']:.0%}" for arm in ARMS) + ".",
+              "- Bug fixed after the first full run, so described and lived were rerun for both seeds and the old games kept in `runs/commons/R3_before_speech_fix/`: JSON typed into speech reached other agents as speech, and offers in malformed replies were lost. Clones were unaffected (0 of 840 utterances changed) and were kept. Before the fix, malformed speech was 0 of 840 in clones, 127 of 840 in described and 119 of 840 in lived. The same fix removed a JSON wrapper from 3 diary lines in the lived upbringings.",
               f"- Life-choice parse fallbacks (choice taken by seeded draw): {fallback} across all complete seeds.",
               f"- Spend: ${spend.get('usd', 0):.2f} cash (local model). Calls {spend.get('calls', 0):,}, input tokens {spend.get('input_tokens', 0):,}, output tokens {spend.get('output_tokens', 0):,}, model time {spend.get('seconds', 0) / 3600:.1f} h.",
               "- Deviations and judgment calls: `experiments/commons/DECISIONS.md`.", "", "### Leakage lint", "", lint, ""]
@@ -295,7 +317,7 @@ def main():
                  "Increase seeds in the current design until the paired success interval is informative, and add a second model to check the result isn't specific to Qwen 8B.")
     lines += ["## Recommended next experiment", "", next_step, ""]
     lines += ["## Rerun", "", "```", "cd .claude/worktrees/commons/experiments/commons", "/Users/jaycewalzer/Desktop/kokopelli/simworld/.venv/bin/python audit.py", "/Users/jaycewalzer/Desktop/kokopelli/simworld/.venv/bin/python -m pytest tests -q",
-              "/Users/jaycewalzer/Desktop/kokopelli/.venv/bin/python run.py full --seeds 0-9 --deadline <ISO time>", "/Users/jaycewalzer/Desktop/kokopelli/.venv/bin/python analyze.py", "```", "", "Runs resume from the last whole season, so rerunning the same command continues them. Long runs go through `ops/gpu.py run` as this repo requires.", ""]
+              "bash overnight.sh <deadline, e.g. 2026-11-09T11:00> 0-1", "```", "", "`overnight.sh` puts `run.py full --seeds 0-1 --deadline <deadline> --satiation` on the GPU queue, runs `analyze.py` and commits the summaries. `--seeds 0-9` targets all ten seeds. Runs resume from the last whole season, so rerunning the same command continues them; finished games are skipped.", ""]
     (ROOT / "REPORT.md").write_text("\n".join(lines))
     print("report written", len(seeds), "seeds;", primary["word"])
     return 0
