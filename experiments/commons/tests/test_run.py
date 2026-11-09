@@ -183,3 +183,20 @@ def test_rule_board_is_bounded(run, config):
     world["rules"] = {str(i): {"text": "x" * 500, "by": "A", "status": "open", "proposed": 1} for i in range(1, 20)}
     board = run.pt.rule_board(world)
     assert board.count("Rule") == 3 and len(board) < 500
+
+
+def test_replies_that_stop_short_are_finished(run):
+    assert run.pt.parse_json('{"harvest": 30, "eat": 3, "burn": 2, "invest": 0') == {"harvest": 30, "eat": 3, "burn": 2, "invest": 0}
+    assert run.pt.parse_json('{"say": "Going well') == {"say": "Going well"}
+    assert run.pt.parse_json('{"gifts": [{"to": "Asa", "amount": 2') == {"gifts": [{"to": "Asa", "amount": 2}]}
+    assert run.pt.parse_json("no object here") is None
+
+
+def test_an_inner_object_is_never_taken_for_the_answer(run):
+    reply = 'x {"harvest": 30 "eat": 3, "offer": {"give": "fish"}}'
+    parsed = run.pt.parse_json(reply)
+    assert parsed is None or "give" not in parsed
+
+
+def test_non_text_speech_becomes_silence(run):
+    assert run.pt.field_text('{"say": {"amount": 3}}', "say") == ""

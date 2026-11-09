@@ -31,8 +31,9 @@ This season people said:
 
 {offers}
 Decide privately. You can catch up to {cap:g}, and spend at most what you hold plus what you catch. Fish you promised in your own offer count as spent.
-Reply with one JSON object on a single line, with your own numbers: {{"harvest": H, "eat": E, "burn": B, "invest": I}}
-Only if you want them, add any of: "accept": [offer number], "gifts": [{{"to": "name", "amount": N}}], "sanctions": [{{"target": "name", "amount": N}}], "propose_rule": "short text", "votes": {{"5": "yes"}}, "store": S.
+Reply with one JSON object on a single line, with your own numbers:
+{{"harvest": H, "eat": E, "burn": B, "invest": I, "accept": [], "gifts": [], "sanctions": [], "propose_rule": null, "votes": {{}}}}
+The last five stay empty unless you want them. "accept" lists offer numbers. A gift is {{"to": "name", "amount": N}}. A sanction (penalty) is {{"target": "name", "amount": N}}. "propose_rule" is a short text. "votes" maps an open rule's number to "yes" or "no". You may also add "store": S.
 Without "store" you keep everything left over; a number keeps only that many fish and the rest rots. In "votes" the key is the number of an open rule."""
 
 
@@ -133,25 +134,50 @@ def life_lessons(diary):
     return f"Your diary:\n{diary}\n\nIn two sentences, first person, write what you have come to believe from your own life. Reply as {{\"lessons\": \"...\"}}"
 
 
+def close_json(text):
+    """Finish an object the model stopped writing just short of its end: close the open string, lists and braces."""
+    closers, in_string, escaped = [], False, False
+    for char in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+        elif char == '"':
+            in_string = True
+        elif char in "{[":
+            closers.append("}" if char == "{" else "]")
+        elif char in "}]" and closers:
+            closers.pop()
+    return text.rstrip().rstrip(",:") + ('"' if in_string else "") + "".join(reversed(closers))
+
+
 def parse_json(text):
-    """The first JSON object in a reply, ignoring code fences and chatter around it. None if there isn't one."""
+    """The first JSON object in a reply, ignoring fences and chatter, and finishing it if it was cut short. None if there isn't one."""
     start = text.find("{")
-    while start >= 0:
-        try:
-            value, _ = json.JSONDecoder().raw_decode(text[start:])
-            if isinstance(value, dict):
-                return value
-        except ValueError:
-            pass
-        start = text.find("{", start + 1)
-    return None
+    if start < 0:
+        return None
+    try:
+        value, _ = json.JSONDecoder().raw_decode(text[start:])
+        return value if isinstance(value, dict) else None
+    except ValueError:
+        pass
+    try:
+        value = json.loads(close_json(text[start:]))
+        return value if isinstance(value, dict) else None
+    except ValueError:
+        return None
 
 
 def field_text(reply, field):
     """A text field from a reply, even when the JSON was cut off before it closed."""
     parsed = parse_json(reply)
-    if parsed and parsed.get(field):
-        return str(parsed[field])
+    if parsed and isinstance(parsed.get(field), str) and parsed[field]:
+        return parsed[field]
+    if parsed and field in parsed:
+        return ""
     match = re.search(r'"%s"\s*:\s*"?(.*)' % field, reply, re.S)
     if not match:
         return reply.strip()
