@@ -148,3 +148,25 @@ def test_cut_off_json_still_gives_clean_text(run):
     assert run.pt.field_text('{"diary":"I feel proud to speak', "diary") == "I feel proud to speak"
     assert run.pt.field_text('{"diary": "Whole sentence."}', "diary") == "Whole sentence."
     assert run.pt.field_text("Plain words.", "diary") == "Plain words."
+
+
+def test_stray_votes_and_own_offers_are_dropped_not_fatal(run, config):
+    world = run.sim.new_world(config, 3)
+    run.sim.begin_season(world, config)
+    a, b = run.sim.active(world)[:2]
+    run.sim.apply_discussion(world, {a: {"say": "", "offer": {"give": "fish", "give_amount": 1, "want": "fuel", "want_amount": 1}}})
+    world["rules"]["5"] = {"text": "x", "by": b, "status": "open", "proposed": 0}
+    clean, dropped = run.tidy(world, a, {"votes": {"rule 5": "yes", "rule number": "no"}, "accept": [1, 9]})
+    assert clean["votes"] == {"5": "yes"} and clean["accept"] == []
+    assert len(dropped) == 3
+    clean, _ = run.tidy(world, b, {"accept": ["1"]})
+    assert clean["accept"] == [1]
+
+
+def test_prompt_lists_only_other_peoples_offers(run, config):
+    world = run.sim.new_world(config, 3)
+    run.sim.begin_season(world, config)
+    a, b = run.sim.active(world)[:2]
+    run.sim.apply_discussion(world, {a: {"say": "", "offer": {"give": "fish", "give_amount": 1, "want": "fuel", "want_amount": 1}}})
+    assert "Offer 1:" not in run.pt.act_prompt(world, a, config)
+    assert "Offer 1:" in run.pt.act_prompt(world, b, config)

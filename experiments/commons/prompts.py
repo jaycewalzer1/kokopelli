@@ -13,7 +13,7 @@ Eat {eat:g} fish a season to hold your strength and burn {burn:g} fuel to stay w
 Fish put into your project are spent for good. A penalty costs you A fish and takes {mult:g}A from the person you name. Anyone may propose a rule; people vote the next season; a rule changes nothing unless people act on it.
 
 WHAT YOU WANT
-To be fed, warm, free of worry about the seasons ahead, and among people; and to build {project}. It needs {target:.0f} fish put in, and more makes it finer still.
+To be fed, warm, free of worry about the seasons ahead, and among people; and to build your own personal project, {project}. It is yours alone. It needs {target:.0f} fish put in by you, and more makes it finer still.
 
 WHO YOU ARE
 {identity}"""
@@ -31,9 +31,9 @@ This season people said:
 
 {offers}
 Decide privately. You can catch up to {cap:g}, and spend at most what you hold plus what you catch. Fish you promised in your own offer count as spent.
-Reply with one JSON object using these keys, with your own numbers:
-{{"harvest": H, "eat": E, "burn": B, "invest": I, "store": null, "accept": [offer numbers], "gifts": [{{"to": "name", "amount": N}}], "sanctions": [{{"target": "name", "amount": N}}], "propose_rule": null or "text", "votes": {{"rule number": "yes" or "no"}}}}
-"store": null keeps everything left over; a number keeps only that many fish and the rest rots. Leave lists empty if you do nothing there."""
+Reply with one JSON object on a single line. Leave out any key you do not use:
+{{"harvest": H, "eat": E, "burn": B, "invest": I, "store": S, "accept": [numbers of offers above], "gifts": [{{"to": "name", "amount": N}}], "sanctions": [{{"target": "name", "amount": N}}], "propose_rule": "text", "votes": {{"5": "yes"}}}}
+Without "store" you keep everything left over; a number keeps only that many fish and the rest rots. In "votes" the key is the number of an open rule."""
 
 
 def identity(arm, agent_name, identities):
@@ -107,8 +107,11 @@ def speak_prompt(world, name, config):
 
 def act_prompt(world, name, config):
     messages = "\n".join(f"{who}: {text}" for who, text in sorted(world["messages"].items()) if text) or "(nobody spoke)"
-    offers = "\n".join(f"Offer {o['id']} by {o['by']}: gives {o['give_amount']:g} {o['give']}, wants {o['want_amount']:g} {o['want']}." for o in world["offers"])
-    return ACT.format(state=state_text(world, name, config), messages=messages, offers=(f"Offers open now:\n{offers}\n" if offers else ""), cap=sim.harvest_cap(world["agents"][name], config))
+    describe = lambda o: f"{o['by']} gives {o['give_amount']:g} {o['give']} and wants {o['want_amount']:g} {o['want']}."
+    theirs = "\n".join(f"Offer {o['id']}: {describe(o)}" for o in world["offers"] if o["by"] != name)
+    mine = "\n".join(f"Your own standing offer: you give {o['give_amount']:g} {o['give']} if someone accepts." for o in world["offers"] if o["by"] == name)
+    board = (f"Offers you can accept:\n{theirs}\n" if theirs else "There are no offers you can accept.\n") + (f"{mine}\n" if mine else "")
+    return ACT.format(state=state_text(world, name, config), messages=messages, offers=board, cap=sim.harvest_cap(world["agents"][name], config))
 
 
 def repair_prompt(original, error):

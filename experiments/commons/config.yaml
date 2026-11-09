@@ -39,8 +39,8 @@ llm:
   usd_per_million_output_tokens: 0.0
   attempts: 4
   backoff_seconds: 5
-  discussion_max_tokens: 70
-  action_max_tokens: 130
+  discussion_max_tokens: 90
+  action_max_tokens: 170
   life_max_tokens: 100
 experiment:
   memory_cap_chars: 1200

@@ -9,6 +9,7 @@ import datetime as dt
 import json
 import os
 import random
+import re
 import statistics as st
 import sys
 import time
@@ -207,6 +208,31 @@ def coerce(raw):
     return out
 
 
+def tidy(world, name, raw):
+    """Stray references that can't change anything are dropped rather than failing a whole action: votes on rules that
+    aren't open, and offers that don't exist or are the person's own. Spending, harvest and names stay strictly checked."""
+    if not isinstance(raw, dict):
+        return raw, []
+    out, dropped, votes, accepted = dict(raw), [], {}, []
+    given = raw.get("votes")
+    for rule_id, vote in (given.items() if isinstance(given, dict) else []):
+        digits = re.search(r"\d+", str(rule_id))
+        if digits and world["rules"].get(digits.group(0), {}).get("status") == "open" and str(vote).lower() in ("yes", "no"):
+            votes[digits.group(0)] = str(vote).lower()
+        else:
+            dropped.append(f"vote {rule_id}")
+    out["votes"] = votes
+    others = {o["id"] for o in world["offers"] if o["by"] != name}
+    for offer in sim._listed(raw.get("accept")):
+        digits = re.search(r"\d+", str(offer))
+        if digits and int(digits.group(0)) in others:
+            accepted.append(int(digits.group(0)))
+        else:
+            dropped.append(f"accept {offer}")
+    out["accept"] = accepted
+    return out, dropped
+
+
 def default_action(world, name, config):
     """After a failed repair: no harvest, as specified. Food and fuel are still consumed from what the person has."""
     game, agent = config["game"], world["agents"][name]
@@ -246,9 +272,8 @@ def play(seed, arm, config, model, deadline=None, mode="R3", log=print):
         talk = {}
         for name, answer, request in zip(people, answers, requests):
             parsed = pt.parse_json(answer)
-            rows.append({"season": season, "phase": "talk", "agent": name, "raw": answer, "parse_ok": parsed is not None, **({"prompt": list(request)} if season in (1, 31) else {})})
-            parsed = parsed or {"say": answer[:200]}
-            talk[name] = {"say": str(parsed.get("say") or "")[:400], "offer": clean_offer(parsed.get("offer"))}
+            rows.append({"season": season, "phase": "talk", "agent": name, "raw": answer, "parse_ok": parsed is not None, **({"prompt": list(request)} if season in (1, config["game"]["defector_enters"]) else {})})
+            talk[name] = {"say": pt.field_text(answer, "say")[:400], "offer": clean_offer((parsed or {}).get("offer"))}
         if world["defector"] in sim.active(world):
             talk[world["defector"]] = policies.defector_talk(world)
         sim.apply_discussion(world, talk)
@@ -256,9 +281,10 @@ def play(seed, arm, config, model, deadline=None, mode="R3", log=print):
         answers = model.ask(requests, config["llm"]["action_max_tokens"], key(seed, arm, season, "act"))
         actions, failed = {}, []
         for name, answer, request in zip(people, answers, requests):
-            row = {"season": season, "phase": "act", "agent": name, "raw": answer, "attempt": 1, **({"prompt": list(request)} if season in (1, 31) else {})}
+            row = {"season": season, "phase": "act", "agent": name, "raw": answer, "attempt": 1, **({"prompt": list(request)} if season in (1, config["game"]["defector_enters"]) else {})}
             try:
-                actions[name] = sim.validate_action(world, name, coerce(pt.parse_json(answer)), config)
+                cleaned, row["dropped"] = tidy(world, name, coerce(pt.parse_json(answer)))
+                actions[name] = sim.validate_action(world, name, cleaned, config)
                 row["valid"] = True
             except sim.InvalidAction as error:
                 row["valid"], row["error"] = False, str(error)
@@ -269,7 +295,8 @@ def play(seed, arm, config, model, deadline=None, mode="R3", log=print):
             for (name, request, error), answer in zip(failed, repaired):
                 row = {"season": season, "phase": "act", "agent": name, "raw": answer, "attempt": 2}
                 try:
-                    actions[name] = sim.validate_action(world, name, coerce(pt.parse_json(answer)), config)
+                    cleaned, row["dropped"] = tidy(world, name, coerce(pt.parse_json(answer)))
+                    actions[name] = sim.validate_action(world, name, cleaned, config)
                     row["valid"] = True
                 except sim.InvalidAction as error:
                     actions[name] = default_action(world, name, config)
@@ -352,7 +379,8 @@ def main():
     parser.add_argument("--fake", action="store_true")
     parser.add_argument("--satiation", action="store_true")
     parser.add_argument("--smoke-seed", type=int, default=100)
-    parser.add_argument("--smoke-seasons", type=int, default=34)
+    parser.add_argument("--smoke-seasons", type=int, default=12)
+    parser.add_argument("--smoke-defector", type=int, default=8)
     args = parser.parse_args()
     config = sim.load_config()
     model = make_model(args, config)
@@ -361,7 +389,7 @@ def main():
     if args.action == "smoke":
         if not lint_all([args.smoke_seed], config, model):
             return 2
-        shortened = {**config, "game": {**config["game"], "seasons": args.smoke_seasons}}
+        shortened = {**config, "game": {**config["game"], "seasons": args.smoke_seasons, "defector_enters": args.smoke_defector}}
         for arm in ARM_ORDER:
             play(args.smoke_seed, arm, shortened, model, None, "smoke")
         return 0
