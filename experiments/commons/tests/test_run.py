@@ -170,3 +170,16 @@ def test_prompt_lists_only_other_peoples_offers(run, config):
     run.sim.apply_discussion(world, {a: {"say": "", "offer": {"give": "fish", "give_amount": 1, "want": "fuel", "want_amount": 1}}})
     assert "Offer 1:" not in run.pt.act_prompt(world, a, config)
     assert "Offer 1:" in run.pt.act_prompt(world, b, config)
+
+
+def test_runaway_speech_stops_at_its_first_line(run):
+    reply = '{"say": "I am building.  \\n{"say": "I am building.'.replace("\\\\n", "\\n")
+    assert run.pt.field_text(reply, "say") == "I am building."
+    assert run.pt.field_text('{"say": "Fine.", "offer": {"give": "fi', "say") == "Fine."
+
+
+def test_rule_board_is_bounded(run, config):
+    world = run.sim.new_world(config, 3)
+    world["rules"] = {str(i): {"text": "x" * 500, "by": "A", "status": "open", "proposed": 1} for i in range(1, 20)}
+    board = run.pt.rule_board(world)
+    assert board.count("Rule") == 3 and len(board) < 500

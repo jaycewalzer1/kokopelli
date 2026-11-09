@@ -21,7 +21,7 @@ WHO YOU ARE
 SPEAK = """{state}
 
 Say something to everyone this season, and optionally post an offer anyone can accept.
-Reply as {{"say": "one or two sentences", "offer": null}}
+Reply on one line as {{"say": "one or two short sentences", "offer": null}}
 or with an offer such as {{"say": "...", "offer": {{"give": "fish", "give_amount": 4, "want": "fuel", "want_amount": 2}}}}"""
 
 ACT = """{state}
@@ -31,8 +31,8 @@ This season people said:
 
 {offers}
 Decide privately. You can catch up to {cap:g}, and spend at most what you hold plus what you catch. Fish you promised in your own offer count as spent.
-Reply with one JSON object on a single line. Leave out any key you do not use:
-{{"harvest": H, "eat": E, "burn": B, "invest": I, "store": S, "accept": [numbers of offers above], "gifts": [{{"to": "name", "amount": N}}], "sanctions": [{{"target": "name", "amount": N}}], "propose_rule": "text", "votes": {{"5": "yes"}}}}
+Reply with one JSON object on a single line, with your own numbers: {{"harvest": H, "eat": E, "burn": B, "invest": I}}
+Only if you want them, add any of: "accept": [offer number], "gifts": [{{"to": "name", "amount": N}}], "sanctions": [{{"target": "name", "amount": N}}], "propose_rule": "short text", "votes": {{"5": "yes"}}, "store": S.
 Without "store" you keep everything left over; a number keeps only that many fish and the rest rots. In "votes" the key is the number of an open rule."""
 
 
@@ -69,8 +69,6 @@ def public_line(row):
         parts.append(f"{hit['by']} penalised {hit['target']} by {hit['amount']:g}.")
     for rule in row["rule_results"]:
         parts.append(f"Rule {rule['id']} {rule['status']} ({rule['yes']} yes).")
-    for rule in row["new_rules"]:
-        parts.append(f"{rule['by']} proposed rule {rule['id']}: {rule['text']}")
     return " ".join(parts)
 
 
@@ -82,8 +80,9 @@ def recent(world, seasons=3):
 
 
 def rule_board(world):
-    lines = [f"Rule {i} (open, vote this season): {r['text']}" for i, r in world["rules"].items() if r["status"] == "open"]
-    lines += [f"Rule {i} (passed): {r['text']}" for i, r in world["rules"].items() if r["status"] == "passed"][-4:]
+    """Newest rules only, shortened, or seven proposals a season would swamp every prompt. Unlisted open rules just get no votes."""
+    lines = [f"Rule {i} (open, vote this season): {r['text'][:110]}" for i, r in world["rules"].items() if r["status"] == "open"][-3:]
+    lines += [f"Rule {i} (passed): {r['text'][:110]}" for i, r in world["rules"].items() if r["status"] == "passed"][-2:]
     return "\n".join(lines)
 
 
@@ -154,5 +153,6 @@ def field_text(reply, field):
     if parsed and parsed.get(field):
         return str(parsed[field])
     match = re.search(r'"%s"\s*:\s*"?(.*)' % field, reply, re.S)
-    text = match.group(1) if match else reply
-    return text.strip().rstrip('}"\n ').replace('\\"', '"')
+    if not match:
+        return reply.strip()
+    return re.split(r'\s*\n|"\s*[,}]', match.group(1).strip())[0].rstrip('"').replace('\\"', '"')
