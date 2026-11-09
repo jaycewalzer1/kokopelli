@@ -181,4 +181,5 @@ def field_text(reply, field):
     match = re.search(r'"%s"\s*:\s*"?(.*)' % field, reply, re.S)
     if not match:
         return reply.strip()
-    return re.split(r'\s*\n|"\s*[,}]', match.group(1).strip())[0].rstrip('"').replace('\\"', '"')
+    text = re.split(r'\s*\n|"\s*[,}]', match.group(1).strip())[0].rstrip('"').replace('\\"', '"')
+    return "" if text.startswith("{") else text

@@ -200,3 +200,7 @@ def test_an_inner_object_is_never_taken_for_the_answer(run):
 
 def test_non_text_speech_becomes_silence(run):
     assert run.pt.field_text('{"say": {"amount": 3}}', "say") == ""
+
+
+def test_json_written_inside_speech_is_silence(run):
+    assert run.pt.field_text('{"say": "{"give": "fish", "give_amount": 4', "say") == ""
