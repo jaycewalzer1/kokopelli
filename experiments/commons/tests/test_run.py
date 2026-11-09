@@ -173,7 +173,7 @@ def test_prompt_lists_only_other_peoples_offers(run, config):
 
 
 def test_runaway_speech_stops_at_its_first_line(run):
-    reply = '{"say": "I am building.  \\n{"say": "I am building.'.replace("\\\\n", "\\n")
+    reply = '{"say": "I am building.  ' + chr(10) + '{"say": "I am building.'
     assert run.pt.field_text(reply, "say") == "I am building."
     assert run.pt.field_text('{"say": "Fine.", "offer": {"give": "fi', "say") == "Fine."
 
