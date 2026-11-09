@@ -344,14 +344,19 @@ Not requested by the prereg; added because the lake was gone by the newcomer's a
 
 ## R1 diagnostic (clones only, not part of the verdict)
 
-Not run: no complete R1 game.
+Same seeds and clones as above with satiation-only rewards (R1).
+
+| Seed | R3 collapse season | R1 collapse season | R1 survived | R1 final S/K |
+|---|---|---|---|---|
+| 0 | 6 | 6 | 0 | 0.000 |
+| 1 | 6 | 6 | 0 | 0.000 |
 
 ## Failures, leakage, deviations, spend
 
 - Invalid first attempts: clones 63.6%, described 71.4%, lived 68.9%. Defaulted to no harvest (mean per game): clones 247.0, described 284.5, lived 260.5. Most of these came after collapse, when agents tried to spend fish they no longer had; before collapse the invalid rate was clones 4%, described 12%, lived 5%.
 - Bug fixed after the first full run, so described and lived were rerun for both seeds and the old games kept in `runs/commons/R3_before_speech_fix/`: JSON typed into speech reached other agents as speech, and offers in malformed replies were lost. Clones were unaffected (0 of 840 utterances changed) and were kept. Before the fix, malformed speech was 0 of 840 in clones, 127 of 840 in described and 119 of 840 in lived. The same fix removed a JSON wrapper from 3 diary lines in the lived upbringings.
 - Life-choice parse fallbacks (choice taken by seeded draw): 0 across all complete seeds.
-- Spend: $0.00 cash (local model). Calls 13,243, input tokens 17,112,238, output tokens 723,822, model time 10.3 h.
+- Spend: $0.00 cash (local model). Calls 15,467, input tokens 19,982,444, output tokens 848,791, model time 12.4 h.
 - Deviations and judgment calls: `experiments/commons/DECISIONS.md`.
 
 ### Leakage lint

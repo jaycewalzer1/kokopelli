@@ -340,10 +340,10 @@
  },
  "spend": {
   "usd": 0.0,
-  "calls": 13243,
-  "input_tokens": 17112238,
-  "output_tokens": 723822,
-  "seconds": 37043.61648894963
+  "calls": 15467,
+  "input_tokens": 19982444,
+  "output_tokens": 848791,
+  "seconds": 44599.875989822554
  },
  "model": "/Users/jaycewalzer/Desktop/kokopelli/models/Qwen3-VL-8B-Instruct-4bit",
  "config_sha256": "6b62947d7f09f5061b6c4d4b4e9701d5164f74c271a58b39f7d76ef9d578d255",
