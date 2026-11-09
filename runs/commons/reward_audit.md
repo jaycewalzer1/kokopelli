@@ -1,6 +1,6 @@
 # Reward audit (scripted policies, no LLM)
 
-Config sha256: `3edc14da7cc0ca89dd8cb49e40ae78166e96ed3d13bb95e55aea684e93ce4325`. Averages over seeds 0-9.
+Config sha256: `6b62947d7f09f5061b6c4d4b4e9701d5164f74c271a58b39f7d76ef9d578d255`. Averages over seeds 0-9.
 
 ## Requirements
 
