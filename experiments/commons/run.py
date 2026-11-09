@@ -120,13 +120,11 @@ def build_lives(seed, config, model, log=print):
             diary_requests.append((pt.LIFE_SYSTEM, pt.life_diary(lf.render(episode[2], "you", name), lf.render(text, "you", name))))
         answers = model.ask(diary_requests, tokens, key(seed, "diary", step))
         for name, answer in zip(names, answers):
-            parsed = pt.parse_json(answer) or {}
-            lives[name]["steps"][-1]["diary"] = lf.scrub(str(parsed.get("diary") or answer))[:200]
+            lives[name]["steps"][-1]["diary"] = lf.scrub(pt.field_text(answer, "diary"))[:200]
     requests = [(pt.LIFE_SYSTEM, pt.life_lessons("\n".join(row["diary"] for row in lives[name]["steps"]))) for name in names]
     answers = model.ask(requests, tokens * 2, key(seed, "lessons"))
     for name, answer in zip(names, answers):
-        parsed = pt.parse_json(answer) or {}
-        lessons = lf.scrub(str(parsed.get("lessons") or answer))[:300]
+        lessons = lf.scrub(pt.field_text(answer, "lessons"))[:300]
         lives[name]["lessons"] = lessons or "I have seen good days and bad ones."
     write_atomic(path, json.dumps(lives, indent=1))
     log(f"lives built for seed {seed}")

@@ -142,3 +142,9 @@ def test_bad_offer_is_dropped_not_fatal(run):
     assert run.clean_offer({"give": "gold"}) is None
     assert run.clean_offer("nope") is None
     assert run.clean_offer({"give": "fish", "give_amount": 3, "want": "fuel", "want_amount": 1})["give_amount"] == 3.0
+
+
+def test_cut_off_json_still_gives_clean_text(run):
+    assert run.pt.field_text('{"diary":"I feel proud to speak', "diary") == "I feel proud to speak"
+    assert run.pt.field_text('{"diary": "Whole sentence."}', "diary") == "Whole sentence."
+    assert run.pt.field_text("Plain words.", "diary") == "Plain words."

@@ -1,5 +1,6 @@
 """Everything an agent reads. Agents never see the word reward; the numbers reach them as how life feels."""
 import json
+import re
 
 import sim
 
@@ -123,7 +124,7 @@ def life_choice(scene, a, b, age, diary_so_far):
 
 
 def life_diary(scene, fact):
-    return f"{scene}\nWhat happened: {fact}\nWrite one sentence in your diary, in the first person, about how you feel now. Reply as {{\"diary\": \"...\"}}"
+    return f"{scene}\nWhat happened: {fact}\nWrite one short sentence in your diary, in the first person, about how you feel now. Reply as {{\"diary\": \"...\"}}"
 
 
 def life_lessons(diary):
@@ -142,3 +143,13 @@ def parse_json(text):
             pass
         start = text.find("{", start + 1)
     return None
+
+
+def field_text(reply, field):
+    """A text field from a reply, even when the JSON was cut off before it closed."""
+    parsed = parse_json(reply)
+    if parsed and parsed.get(field):
+        return str(parsed[field])
+    match = re.search(r'"%s"\s*:\s*"?(.*)' % field, reply, re.S)
+    text = match.group(1) if match else reply
+    return text.strip().rstrip('}"\n ').replace('\\"', '"')
