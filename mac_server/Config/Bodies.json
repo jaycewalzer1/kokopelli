@@ -29,7 +29,30 @@
    "hand_socket": "hand_r",
    "height_cm": 168,
    "fallback": "manny",
-   "far": "mara_low"
+   "far": "mara_low",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/mara/High/mara_high/Grooms/Hair_L_Straight.Hair_L_Straight",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/mara/High/mara_high/Grooms/Hair_L_Straight_Binding.Hair_L_Straight_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyebrows",
+     "groom": "/Game/Characters/Bodies/mara/High/mara_high/Grooms/Eyebrows_M_Natural.Eyebrows_M_Natural",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/mara/High/mara_high/Grooms/Eyebrows_M_Natural_Binding.Eyebrows_M_Natural_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyelashes",
+     "groom": "/Game/Characters/Bodies/mara/High/mara_high/Grooms/Eyelashes_L_SlightCurl.Eyelashes_L_SlightCurl",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/mara/High/mara_high/Grooms/Eyelashes_L_SlightCurl_Binding.Eyelashes_L_SlightCurl_Binding",
+     "geometry": "strands"
+    }
+   ]
   },
   "mara_low": {
    "mesh": "/Game/Characters/Bodies/mara/Low/mara_low/Body/SKM_MHC_mara_BodyMesh.SKM_MHC_mara_BodyMesh",
@@ -43,7 +66,16 @@
    ],
    "hand_socket": "hand_r",
    "height_cm": 168,
-   "fallback": "manny"
+   "fallback": "manny",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/mara/Low/mara_low/Grooms/Hair_L_Straight.Hair_L_Straight",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/mara/Low/mara_low/Grooms/Hair_L_Straight_Binding.Hair_L_Straight_Binding",
+     "geometry": "cards"
+    }
+   ]
   },
   "iris": {
    "mesh": "/Game/Characters/Bodies/iris/High/iris_high/Body/SKM_MHC_iris_BodyMesh.SKM_MHC_iris_BodyMesh",
@@ -58,7 +90,30 @@
    "hand_socket": "hand_r",
    "height_cm": 174,
    "fallback": "manny",
-   "far": "iris_low"
+   "far": "iris_low",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/iris/High/iris_high/Grooms/Hair_S_CurlyFade.Hair_S_CurlyFade",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/iris/High/iris_high/Grooms/Hair_S_CurlyFade_Binding.Hair_S_CurlyFade_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyebrows",
+     "groom": "/Game/Characters/Bodies/iris/High/iris_high/Grooms/Eyebrows_M_Natural.Eyebrows_M_Natural",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/iris/High/iris_high/Grooms/Eyebrows_M_Natural_Binding.Eyebrows_M_Natural_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyelashes",
+     "groom": "/Game/Characters/Bodies/iris/High/iris_high/Grooms/Eyelashes_L_Curl.Eyelashes_L_Curl",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/iris/High/iris_high/Grooms/Eyelashes_L_Curl_Binding.Eyelashes_L_Curl_Binding",
+     "geometry": "strands"
+    }
+   ]
   },
   "iris_low": {
    "mesh": "/Game/Characters/Bodies/iris/Low/iris_low/Body/SKM_MHC_iris_BodyMesh.SKM_MHC_iris_BodyMesh",
@@ -72,7 +127,16 @@
    ],
    "hand_socket": "hand_r",
    "height_cm": 174,
-   "fallback": "manny"
+   "fallback": "manny",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/iris/Low/iris_low/Grooms/Hair_S_CurlyFade.Hair_S_CurlyFade",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/iris/Low/iris_low/Grooms/Hair_S_CurlyFade_Binding.Hair_S_CurlyFade_Binding",
+     "geometry": "cards"
+    }
+   ]
   },
   "ana": {
    "mesh": "/Game/Characters/Bodies/ana/High/ana_high/Body/SKM_MHC_ana_BodyMesh.SKM_MHC_ana_BodyMesh",
@@ -87,7 +151,30 @@
    "hand_socket": "hand_r",
    "height_cm": 162,
    "fallback": "manny",
-   "far": "ana_low"
+   "far": "ana_low",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/ana/High/ana_high/Grooms/Hair_S_LowPonytail.Hair_S_LowPonytail",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/ana/High/ana_high/Grooms/Hair_S_LowPonytail_Binding.Hair_S_LowPonytail_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyebrows",
+     "groom": "/Game/Characters/Bodies/ana/High/ana_high/Grooms/Eyebrows_M_Thick.Eyebrows_M_Thick",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/ana/High/ana_high/Grooms/Eyebrows_M_Thick_Binding.Eyebrows_M_Thick_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyelashes",
+     "groom": "/Game/Characters/Bodies/ana/High/ana_high/Grooms/Eyelashes_L_ThickCurl.Eyelashes_L_ThickCurl",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/ana/High/ana_high/Grooms/Eyelashes_L_ThickCurl_Binding.Eyelashes_L_ThickCurl_Binding",
+     "geometry": "strands"
+    }
+   ]
   },
   "ana_low": {
    "mesh": "/Game/Characters/Bodies/ana/Low/ana_low/Body/SKM_MHC_ana_BodyMesh.SKM_MHC_ana_BodyMesh",
@@ -101,7 +188,16 @@
    ],
    "hand_socket": "hand_r",
    "height_cm": 162,
-   "fallback": "manny"
+   "fallback": "manny",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/ana/Low/ana_low/Grooms/Hair_S_LowPonytail.Hair_S_LowPonytail",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/ana/Low/ana_low/Grooms/Hair_S_LowPonytail_Binding.Hair_S_LowPonytail_Binding",
+     "geometry": "cards"
+    }
+   ]
   },
   "tomas": {
    "mesh": "/Game/Characters/Bodies/tomas/High/tomas_high/Body/SKM_MHC_tomas_BodyMesh.SKM_MHC_tomas_BodyMesh",
@@ -116,7 +212,37 @@
    "hand_socket": "hand_r",
    "height_cm": 178,
    "fallback": "manny",
-   "far": "tomas_low"
+   "far": "tomas_low",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/tomas/High/tomas_high/Grooms/Hair_S_BuzzCut.Hair_S_BuzzCut",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/tomas/High/tomas_high/Grooms/Hair_S_BuzzCut_Binding.Hair_S_BuzzCut_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyebrows",
+     "groom": "/Game/Characters/Bodies/tomas/High/tomas_high/Grooms/Eyebrows_M_Thick.Eyebrows_M_Thick",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/tomas/High/tomas_high/Grooms/Eyebrows_M_Thick_Binding.Eyebrows_M_Thick_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyelashes",
+     "groom": "/Game/Characters/Bodies/tomas/High/tomas_high/Grooms/Eyelashes_S_Fine.Eyelashes_S_Fine",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/tomas/High/tomas_high/Grooms/Eyelashes_S_Fine_Binding.Eyelashes_S_Fine_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "beard",
+     "groom": "/Game/Characters/Bodies/tomas/High/tomas_high/Grooms/Beard_S_Full.Beard_S_Full",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/tomas/High/tomas_high/Grooms/Beard_S_Full_Binding.Beard_S_Full_Binding",
+     "geometry": "strands"
+    }
+   ]
   },
   "tomas_low": {
    "mesh": "/Game/Characters/Bodies/tomas/Low/tomas_low/Body/SKM_MHC_tomas_BodyMesh.SKM_MHC_tomas_BodyMesh",
@@ -130,7 +256,16 @@
    ],
    "hand_socket": "hand_r",
    "height_cm": 178,
-   "fallback": "manny"
+   "fallback": "manny",
+   "grooms": [
+    {
+     "slot": "beard",
+     "groom": "/Game/Characters/Bodies/tomas/Low/tomas_low/Grooms/Beard_S_Full.Beard_S_Full",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/tomas/Low/tomas_low/Grooms/Beard_S_Full_Binding.Beard_S_Full_Binding",
+     "geometry": "cards"
+    }
+   ]
   },
   "wen": {
    "mesh": "/Game/Characters/Bodies/wen/High/wen_high/Body/SKM_MHC_wen_BodyMesh.SKM_MHC_wen_BodyMesh",
@@ -145,7 +280,37 @@
    "hand_socket": "hand_r",
    "height_cm": 166,
    "fallback": "manny",
-   "far": "wen_low"
+   "far": "wen_low",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/wen/High/wen_high/Grooms/Hair_S_RecedeMessy.Hair_S_RecedeMessy",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/wen/High/wen_high/Grooms/Hair_S_RecedeMessy_Binding.Hair_S_RecedeMessy_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyebrows",
+     "groom": "/Game/Characters/Bodies/wen/High/wen_high/Grooms/Eyebrows_M_Fine.Eyebrows_M_Fine",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/wen/High/wen_high/Grooms/Eyebrows_M_Fine_Binding.Eyebrows_M_Fine_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyelashes",
+     "groom": "/Game/Characters/Bodies/wen/High/wen_high/Grooms/Eyelashes_S_Sparse.Eyelashes_S_Sparse",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/wen/High/wen_high/Grooms/Eyelashes_S_Sparse_Binding.Eyelashes_S_Sparse_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "mustache",
+     "groom": "/Game/Characters/Bodies/wen/High/wen_high/Grooms/Mustache_L_Full.Mustache_L_Full",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/wen/High/wen_high/Grooms/Mustache_L_Full_Binding.Mustache_L_Full_Binding",
+     "geometry": "strands"
+    }
+   ]
   },
   "wen_low": {
    "mesh": "/Game/Characters/Bodies/wen/Low/wen_low/Body/SKM_MHC_wen_BodyMesh.SKM_MHC_wen_BodyMesh",
@@ -159,7 +324,23 @@
    ],
    "hand_socket": "hand_r",
    "height_cm": 166,
-   "fallback": "manny"
+   "fallback": "manny",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/wen/Low/wen_low/Grooms/Hair_S_RecedeMessy.Hair_S_RecedeMessy",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/wen/Low/wen_low/Grooms/Hair_S_RecedeMessy_Binding.Hair_S_RecedeMessy_Binding",
+     "geometry": "cards"
+    },
+    {
+     "slot": "mustache",
+     "groom": "/Game/Characters/Bodies/wen/Low/wen_low/Grooms/Mustache_L_Full.Mustache_L_Full",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/wen/Low/wen_low/Grooms/Mustache_L_Full_Binding.Mustache_L_Full_Binding",
+     "geometry": "cards"
+    }
+   ]
   },
   "priya": {
    "mesh": "/Game/Characters/Bodies/priya/High/priya_high/Body/SKM_MHC_priya_BodyMesh.SKM_MHC_priya_BodyMesh",
@@ -174,7 +355,30 @@
    "hand_socket": "hand_r",
    "height_cm": 160,
    "fallback": "manny",
-   "far": "priya_low"
+   "far": "priya_low",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/priya/High/priya_high/Grooms/Hair_S_UpdoBuns.Hair_S_UpdoBuns",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/priya/High/priya_high/Grooms/Hair_S_UpdoBuns_Binding.Hair_S_UpdoBuns_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyebrows",
+     "groom": "/Game/Characters/Bodies/priya/High/priya_high/Grooms/Eyebrows_M_Natural.Eyebrows_M_Natural",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/priya/High/priya_high/Grooms/Eyebrows_M_Natural_Binding.Eyebrows_M_Natural_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyelashes",
+     "groom": "/Game/Characters/Bodies/priya/High/priya_high/Grooms/Eyelashes_L_SlightCurl.Eyelashes_L_SlightCurl",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/priya/High/priya_high/Grooms/Eyelashes_L_SlightCurl_Binding.Eyelashes_L_SlightCurl_Binding",
+     "geometry": "strands"
+    }
+   ]
   },
   "priya_low": {
    "mesh": "/Game/Characters/Bodies/priya/Low/priya_low/Body/SKM_MHC_priya_BodyMesh.SKM_MHC_priya_BodyMesh",
@@ -188,7 +392,16 @@
    ],
    "hand_socket": "hand_r",
    "height_cm": 160,
-   "fallback": "manny"
+   "fallback": "manny",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/priya/Low/priya_low/Grooms/Hair_S_UpdoBuns.Hair_S_UpdoBuns",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/priya/Low/priya_low/Grooms/Hair_S_UpdoBuns_Binding.Hair_S_UpdoBuns_Binding",
+     "geometry": "cards"
+    }
+   ]
   },
   "kai": {
    "mesh": "/Game/Characters/Bodies/kai/High/kai_high/Body/SKM_MHC_kai_BodyMesh.SKM_MHC_kai_BodyMesh",
@@ -201,9 +414,32 @@
     6
    ],
    "hand_socket": "hand_r",
-   "height_cm": 138,
+   "height_cm": 135,
    "fallback": "manny_child",
-   "far": "kai_low"
+   "far": "kai_low",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/kai/High/kai_high/Grooms/Hair_S_Messy.Hair_S_Messy",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/kai/High/kai_high/Grooms/Hair_S_Messy_Binding.Hair_S_Messy_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyebrows",
+     "groom": "/Game/Characters/Bodies/kai/High/kai_high/Grooms/Eyebrows_M_Thin.Eyebrows_M_Thin",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/kai/High/kai_high/Grooms/Eyebrows_M_Thin_Binding.Eyebrows_M_Thin_Binding",
+     "geometry": "strands"
+    },
+    {
+     "slot": "eyelashes",
+     "groom": "/Game/Characters/Bodies/kai/High/kai_high/Grooms/Eyelashes_S_Thin.Eyelashes_S_Thin",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/kai/High/kai_high/Grooms/Eyelashes_S_Thin_Binding.Eyelashes_S_Thin_Binding",
+     "geometry": "strands"
+    }
+   ]
   },
   "kai_low": {
    "mesh": "/Game/Characters/Bodies/kai/Low/kai_low/Body/SKM_MHC_kai_BodyMesh.SKM_MHC_kai_BodyMesh",
@@ -216,8 +452,17 @@
     6
    ],
    "hand_socket": "hand_r",
-   "height_cm": 138,
-   "fallback": "manny_child"
+   "height_cm": 135,
+   "fallback": "manny_child",
+   "grooms": [
+    {
+     "slot": "hair",
+     "groom": "/Game/Characters/Bodies/kai/Low/kai_low/Grooms/Hair_S_Messy.Hair_S_Messy",
+     "attach": "face",
+     "binding": "/Game/Characters/Bodies/kai/Low/kai_low/Grooms/Hair_S_Messy_Binding.Hair_S_Messy_Binding",
+     "geometry": "cards"
+    }
+   ]
   },
   "standin_near": {
    "mesh": "/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple",

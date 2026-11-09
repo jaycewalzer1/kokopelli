@@ -6,6 +6,7 @@ public class SimWorld : ModuleRules
 	public SimWorld(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		bUseUnity = false; // City/*.cpp each define their own file-local helpers (Xf, M, P), which clash when batched together
 
 		PrivateIncludePaths.Add(Path.Combine(ModuleDirectory, "Private"));
 

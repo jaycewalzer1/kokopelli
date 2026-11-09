@@ -78,8 +78,8 @@ def validate(looks):
                 continue
             s = p[slot]
             if s is None:
-                if slot in ("hair", "eyebrows", "outfit"):
-                    errs.append(f"{where}.{slot} must not be null (everyone has hair, brows and clothes here)")
+                if slot in ("hair", "eyebrows"):
+                    errs.append(f"{where}.{slot} must not be null (everyone has hair and brows here)")
                 continue
             if not isinstance(s, dict) or not (s.get("items") or s.get("keywords")):
                 errs.append(f"{where}.{slot} needs 'items' and/or 'keywords'")

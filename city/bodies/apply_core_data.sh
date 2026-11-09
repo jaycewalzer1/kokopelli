@@ -43,7 +43,7 @@ STEPS=()
 # the bodies_demo_* two-agent demo on 9001 and wm* runs have priority). Otherwise keep our 9004 game down.
 queue_ok() {
   local st; st="$(python3 "$K/.claude/worktrees/ops/ops/gpu.py" status 2>/dev/null)" || return 1
-  if echo "$st" | grep -E '^(RUNNING|waiting)\s+\S+\s+(wm|bodies_demo)' >/dev/null; then return 1; fi
+  if echo "$st" | grep -E '^(RUNNING|waiting)\s+\S+\s+(wmbodies|bodies_demo)' >/dev/null; then return 1; fi
   return 0
 }
 gate() {  # gate <step name>

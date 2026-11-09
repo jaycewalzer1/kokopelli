@@ -594,6 +594,10 @@ void ASWCharacterBase::BuildParts(const FSWBodyDef* Def)
 				Comp->SetForcedLOD(ForcedLOD);
 				Comp->SetEnableSimulation(false); // Low: no hair sim either
 			}
+			else
+			{
+				Comp->SetForcedLOD(0); // the groom's own LOD pick drops to cards at mid range, and those don't draw
+			}
 			Made = Comp;
 		}
 		else

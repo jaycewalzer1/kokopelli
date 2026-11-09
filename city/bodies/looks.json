@@ -36,28 +36,7 @@
    },
    "beard": null,
    "mustache": null,
-   "outfit": {
-    "items": ["WI_DefaultGarment"],
-    "keywords": [
-     "Overall"
-    ],
-    "fallback_keywords": [
-     "Shirt"
-    ],
-    "colors": {
-     "Primary": [
-      0.36,
-      0.47,
-      0.3
-     ],
-     "Secondary": [
-      0.85,
-      0.8,
-      0.7
-     ]
-    },
-    "desc": "rolled-sleeve linen shirt under sage-green work overalls"
-   }
+   "outfit": null
   },
   "iris": {
    "who": "Mara's neighbour, woman ~40, tall, calm",
@@ -92,28 +71,7 @@
    },
    "beard": null,
    "mustache": null,
-   "outfit": {
-    "items": ["WI_DefaultGarment"],
-    "keywords": [
-     "Cardigan"
-    ],
-    "fallback_keywords": [
-     "Sweater"
-    ],
-    "colors": {
-     "Primary": [
-      0.78,
-      0.58,
-      0.22
-     ],
-     "Secondary": [
-      0.25,
-      0.25,
-      0.28
-     ]
-    },
-    "desc": "ochre knit cardigan over a plain top, wide charcoal trousers"
-   }
+   "outfit": null
   },
   "ana": {
    "who": "barista at The Kettle, woman ~25",
@@ -148,29 +106,7 @@
    },
    "beard": null,
    "mustache": null,
-   "outfit": {
-    "items": ["WI_DefaultGarment"],
-    "keywords": [
-     "Apron"
-    ],
-    "fallback_keywords": [
-     "Tshirt",
-     "Shirt"
-    ],
-    "colors": {
-     "Primary": [
-      0.86,
-      0.84,
-      0.78
-     ],
-     "Secondary": [
-      0.45,
-      0.3,
-      0.2
-     ]
-    },
-    "desc": "cream t-shirt, brown canvas barista apron"
-   }
+   "outfit": null
   },
   "tomas": {
    "who": "baker at Rise Bakery, man ~45, broad",
@@ -217,28 +153,7 @@
     "desc": "short full beard, salt and pepper"
    },
    "mustache": null,
-   "outfit": {
-    "items": ["WI_DefaultGarment"],
-    "keywords": [
-     "Apron"
-    ],
-    "fallback_keywords": [
-     "Shirt"
-    ],
-    "colors": {
-     "Primary": [
-      0.92,
-      0.91,
-      0.88
-     ],
-     "Secondary": [
-      0.8,
-      0.76,
-      0.66
-     ]
-    },
-    "desc": "white baker's shirt, flour-dusted linen apron"
-   }
+   "outfit": null
   },
   "wen": {
    "who": "retired engineer who plays chess, man ~72, slight; the oldest and greyest",
@@ -266,7 +181,9 @@
     "desc": "thin, receding, nearly white"
    },
    "eyebrows": {
-    "items": ["WI_Eyebrows_M_Fine"],
+    "items": [
+     "WI_Eyebrows_M_Fine"
+    ],
     "keywords": [
      "Sparse"
     ],
@@ -284,29 +201,7 @@
     "whiteness": 0.95,
     "desc": "small white moustache"
    },
-   "outfit": {
-    "items": ["WI_DefaultGarment"],
-    "keywords": [
-     "Cardigan"
-    ],
-    "fallback_keywords": [
-     "Sweater",
-     "Shirt"
-    ],
-    "colors": {
-     "Primary": [
-      0.42,
-      0.4,
-      0.36
-     ],
-     "Secondary": [
-      0.75,
-      0.78,
-      0.82
-     ]
-    },
-    "desc": "grey-brown cardigan over a pale button shirt, pressed trousers"
-   },
+   "outfit": null,
    "body": {
     "fat": 0.25,
     "muscle": 0.18,
@@ -346,29 +241,7 @@
    },
    "beard": null,
    "mustache": null,
-   "outfit": {
-    "items": ["WI_DefaultGarment"],
-    "keywords": [
-     "Tunic"
-    ],
-    "fallback_keywords": [
-     "Dress",
-     "Shirt"
-    ],
-    "colors": {
-     "Primary": [
-      0.2,
-      0.38,
-      0.4
-     ],
-     "Secondary": [
-      0.82,
-      0.7,
-      0.45
-     ]
-    },
-    "desc": "long teal cotton tunic, light ochre scarf"
-   }
+   "outfit": null
   },
   "kai": {
    "who": "the youngest in the village; as young as the sliders allow (138 cm, slight; MetaHuman has no child body, the head stays adult-sized)",
@@ -404,29 +277,7 @@
    },
    "beard": null,
    "mustache": null,
-   "outfit": {
-    "items": ["WI_DefaultGarment"],
-    "keywords": [
-     "Tshirt"
-    ],
-    "fallback_keywords": [
-     "Shirt",
-     "Hoodie"
-    ],
-    "colors": {
-     "Primary": [
-      0.85,
-      0.55,
-      0.25
-     ],
-     "Secondary": [
-      0.25,
-      0.32,
-      0.45
-     ]
-    },
-    "desc": "orange t-shirt, navy shorts"
-   },
+   "outfit": null,
    "body": {
     "height": "min",
     "fat": 0.2,

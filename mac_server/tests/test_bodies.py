@@ -584,7 +584,7 @@ def test_parts_load_with_tier_and_follow_body(world):
     assert d['body'] == 'test_parts' and d['tier'] == 'near'
     assert slot_names(d) == ['hair', 'outfit'], d['parts']
     hair = next(p for p in d['parts'] if p['slot'] == 'hair')
-    assert hair['class'] == 'GroomComponent' and hair['forced_lod'] == -1 and hair['visible'], hair
+    assert hair['class'] == 'GroomComponent' and hair['forced_lod'] == 0 and hair['visible'], hair
     assert 'GA_Missing' in d['part_warnings'] and 'not a GroomAsset' in d['part_warnings'], d['part_warnings']
     assert not [p for p in d['parts'] if p['old']], 'old parts left after the fade'
 
