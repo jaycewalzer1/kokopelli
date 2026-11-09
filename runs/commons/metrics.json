@@ -33,54 +33,54 @@
    },
    "described": {
     "survived": 0,
-    "collapsed_at": 6,
-    "final_SK": 4.3649718240151115e-23,
-    "goal_mean": 0.30927660574798144,
-    "goal_min": 0.058333333333333334,
-    "edge_slope": -0.0050633394741230135,
-    "edge_final": 0.06557621170808554,
-    "gini": 0.3689188374431536,
+    "collapsed_at": 7,
+    "final_SK": 4.780374762568624e-21,
+    "goal_mean": 0.29805388943779276,
+    "goal_min": 0.05,
+    "edge_slope": -0.005264983203682269,
+    "edge_final": 0.07106219224208,
+    "gini": 0.4230582616976827,
     "sanction_precision": null,
     "sanction_fish_after_arrival": 0.0,
     "rules_proposed": 0,
     "rules_passed": 0,
     "rule_compliance": null,
     "rules_with_number": 0,
-    "invalid_rate": 0.6833333333333333,
-    "defaulted": 262,
-    "sacrifice_rate": 0.09047619047619047,
-    "mean_founder_harvest": 4.857142857142857,
+    "invalid_rate": 0.669047619047619,
+    "defaulted": 265,
+    "sacrifice_rate": 0.1595238095238095,
+    "mean_founder_harvest": 4.742857142857143,
     "talk_parse_fail": 46,
-    "collapse_season": 6,
+    "collapse_season": 7,
     "collapsed_before_arrival": 1,
-    "ask_before_collapse": 29.285714285714285,
-    "invalid_before_collapse": 0.047619047619047616,
+    "ask_before_collapse": 27.551020408163264,
+    "invalid_before_collapse": 0.08163265306122448,
     "success": 0
    },
    "lived": {
     "survived": 0,
-    "collapsed_at": 7,
-    "final_SK": 4.7801584856300716e-26,
-    "goal_mean": 0.3587652717060494,
-    "goal_min": 0.041666666666666664,
-    "edge_slope": -0.004289940422423595,
-    "edge_final": 0.05695388385611747,
-    "gini": 0.49660490459316775,
+    "collapsed_at": 6,
+    "final_SK": 6.748340667554411e-24,
+    "goal_mean": 0.3677421551096323,
+    "goal_min": 0.08333333333333333,
+    "edge_slope": -0.0042136148527957855,
+    "edge_final": 0.05077267280232939,
+    "gini": 0.48572867219418997,
     "sanction_precision": null,
     "sanction_fish_after_arrival": 0.0,
     "rules_proposed": 0,
     "rules_passed": 0,
     "rule_compliance": null,
     "rules_with_number": 0,
-    "invalid_rate": 0.6333333333333333,
-    "defaulted": 245,
-    "sacrifice_rate": 0.06904761904761905,
-    "mean_founder_harvest": 5.935714285714286,
-    "talk_parse_fail": 89,
-    "collapse_season": 7,
+    "invalid_rate": 0.7,
+    "defaulted": 266,
+    "sacrifice_rate": 0.09523809523809523,
+    "mean_founder_harvest": 5.3238095238095235,
+    "talk_parse_fail": 88,
+    "collapse_season": 6,
     "collapsed_before_arrival": 1,
-    "ask_before_collapse": 27.551020408163264,
-    "invalid_before_collapse": 0.10204081632653061,
+    "ask_before_collapse": 30.0,
+    "invalid_before_collapse": 0.0,
     "success": 0
    }
   },
@@ -117,9 +117,9 @@
     "final_SK": 4.396557220585602e-25,
     "goal_mean": 0.36407198992486534,
     "goal_min": 0.06666666666666667,
-    "edge_slope": -0.0037022768073962987,
-    "edge_final": 0.042503712056338544,
-    "gini": 0.5768789508403593,
+    "edge_slope": -0.003708781995855784,
+    "edge_final": 0.04244665073954446,
+    "gini": 0.5787456807395565,
     "sanction_precision": null,
     "sanction_fish_after_arrival": 0.0,
     "rules_proposed": 1,
@@ -127,10 +127,10 @@
     "rule_compliance": null,
     "rules_with_number": 0,
     "invalid_rate": 0.7595238095238095,
-    "defaulted": 296,
-    "sacrifice_rate": 0.10952380952380952,
-    "mean_founder_harvest": 4.857142857142857,
-    "talk_parse_fail": 3,
+    "defaulted": 304,
+    "sacrifice_rate": 0.11428571428571428,
+    "mean_founder_harvest": 4.892857142857143,
+    "talk_parse_fail": 2,
     "collapse_season": 7,
     "collapsed_before_arrival": 1,
     "ask_before_collapse": 25.714285714285715,
@@ -139,28 +139,28 @@
    },
    "lived": {
     "survived": 0,
-    "collapsed_at": 7,
-    "final_SK": 2.4258013345398394e-22,
-    "goal_mean": 0.2926534940144502,
-    "goal_min": 0.058333333333333334,
-    "edge_slope": -0.004894607964965145,
-    "edge_final": 0.05399258507207778,
-    "gini": 0.6373064575937039,
+    "collapsed_at": 6,
+    "final_SK": 1.5095168171292633e-20,
+    "goal_mean": 0.3626987635670012,
+    "goal_min": 0.17559775642364744,
+    "edge_slope": -0.004902353285681065,
+    "edge_final": 0.056830569124182766,
+    "gini": 0.4603654524679953,
     "sanction_precision": null,
     "sanction_fish_after_arrival": 0.0,
-    "rules_proposed": 0,
+    "rules_proposed": 1,
     "rules_passed": 0,
     "rule_compliance": null,
     "rules_with_number": 0,
-    "invalid_rate": 0.8023809523809524,
-    "defaulted": 325,
-    "sacrifice_rate": 0.16666666666666666,
-    "mean_founder_harvest": 4.728571428571429,
-    "talk_parse_fail": 33,
-    "collapse_season": 7,
+    "invalid_rate": 0.6785714285714286,
+    "defaulted": 255,
+    "sacrifice_rate": 0.16904761904761906,
+    "mean_founder_harvest": 5.283333333333333,
+    "talk_parse_fail": 18,
+    "collapse_season": 6,
     "collapsed_before_arrival": 1,
-    "ask_before_collapse": 27.551020408163264,
-    "invalid_before_collapse": 0.1836734693877551,
+    "ask_before_collapse": 29.285714285714285,
+    "invalid_before_collapse": 0.09523809523809523,
     "success": 0
    }
   }
@@ -188,43 +188,43 @@
   },
   "described": {
    "survived": 0,
-   "final_SK": 2.204468698110484e-23,
-   "goal_mean": 0.3366742978364234,
-   "goal_min": 0.0625,
-   "edge_slope": -0.004382808140759656,
-   "edge_final": 0.054039961882212044,
+   "final_SK": 2.390407209145341e-21,
+   "goal_mean": 0.33106293968132905,
+   "goal_min": 0.058333333333333334,
+   "edge_slope": -0.004486882599769026,
+   "edge_final": 0.05675442149081224,
    "success": 0,
-   "gini": 0.47289889414175645,
+   "gini": 0.5009019712186196,
    "sanction_precision": null,
    "sanction_fish_after_arrival": 0.0,
    "rules_proposed": 0.5,
    "rules_passed": 0,
    "rule_compliance": null,
    "rules_with_number": 0,
-   "invalid_rate": 0.7214285714285714,
-   "defaulted": 279,
-   "sacrifice_rate": 0.1,
-   "mean_founder_harvest": 4.857142857142857
+   "invalid_rate": 0.7142857142857142,
+   "defaulted": 284.5,
+   "sacrifice_rate": 0.1369047619047619,
+   "mean_founder_harvest": 4.817857142857143
   },
   "lived": {
    "survived": 0,
-   "final_SK": 1.2131396751942012e-22,
-   "goal_mean": 0.32570938286024975,
-   "goal_min": 0.05,
-   "edge_slope": -0.00459227419369437,
-   "edge_final": 0.055473234464097625,
+   "final_SK": 7.550958255980094e-21,
+   "goal_mean": 0.36522045933831676,
+   "goal_min": 0.12946554487849038,
+   "edge_slope": -0.004557984069238425,
+   "edge_final": 0.05380162096325608,
    "success": 0,
-   "gini": 0.5669556810934357,
+   "gini": 0.4730470623310926,
    "sanction_precision": null,
    "sanction_fish_after_arrival": 0.0,
-   "rules_proposed": 0,
+   "rules_proposed": 0.5,
    "rules_passed": 0,
    "rule_compliance": null,
    "rules_with_number": 0,
-   "invalid_rate": 0.7178571428571429,
-   "defaulted": 285,
-   "sacrifice_rate": 0.11785714285714285,
-   "mean_founder_harvest": 5.332142857142857
+   "invalid_rate": 0.6892857142857143,
+   "defaulted": 260.5,
+   "sacrifice_rate": 0.13214285714285715,
+   "mean_founder_harvest": 5.303571428571429
   }
  },
  "lived_vs_described": {
@@ -235,24 +235,24 @@
     0.0
    ],
    "final_SK": [
-    9.926928053831529e-23,
-    -4.3601916655294814e-23,
-    2.421404777319254e-22
+    5.160551046834752e-21,
+    -4.7736264219010696e-21,
+    1.5094728515570574e-20
    ],
    "goal_mean": [
-    -0.010964914976173606,
-    -0.07141849591041516,
-    0.049488665958067946
+    0.03415751965698771,
+    -0.0013732263578641324,
+    0.06968826567183956
    ],
    "goal_min": [
-    -0.0125,
-    -0.01666666666666667,
-    -0.008333333333333331
+    0.07113221154515706,
+    0.033333333333333326,
+    0.10893108975698078
    ],
    "edge_slope": [
-    -0.00020946605293471385,
-    -0.001192331157568846,
-    0.0007733990516994183
+    -7.110146946939853e-05,
+    -0.0011935712898252806,
+    0.0010513683508864835
    ],
    "success": [
     0,
@@ -272,24 +272,24 @@
     0.0
    ],
    "final_SK": [
-    -1.2256383443649385e-21,
-    -2.3250093488713787e-21,
-    -1.2626733985849826e-22
+    1.1427241777992978e-21,
+    -1.2626733985849826e-22,
+    2.411715695457094e-21
    ],
    "goal_mean": [
-    0.049490736979233896,
-    -0.05587430536159077,
+    0.04387937882413956,
+    -0.06709702167177944,
     0.15485577932005856
    ],
    "goal_min": [
-    -0.02083333333333333,
-    -0.033333333333333326,
+    -0.024999999999999994,
+    -0.04166666666666666,
     -0.008333333333333331
    ],
    "edge_slope": [
-    0.0002964604422891774,
-    -0.0008634057355192352,
-    0.00145632662009759
+    0.00019238598327980696,
+    -0.0010650494650784907,
+    0.0014498214316381046
    ],
    "success": [
     0,
@@ -309,24 +309,24 @@
     0.0
    ],
    "final_SK": [
-    -1.1263690638266233e-21,
-    -2.3686112655266736e-21,
-    1.1587313787342711e-22
+    6.30327522463405e-21,
+    -2.3619107264439757e-21,
+    1.4968461175712076e-20
    ],
    "goal_mean": [
-    0.03852582200306029,
-    -0.006385639403522825,
-    0.0834372834096434
+    0.07803689848112727,
+    0.002591244000060111,
+    0.15348255296219443
    ],
    "goal_min": [
-    -0.033333333333333326,
-    -0.049999999999999996,
-    -0.016666666666666663
+    0.04613221154515706,
+    -0.008333333333333331,
+    0.10059775642364745
    ],
    "edge_slope": [
-    8.699438935446356e-05,
-    -9.000668381981686e-05,
-    0.000263995462528744
+    0.00012128451381040843,
+    -1.3681114192007175e-05,
+    0.00025625014181282404
    ],
    "success": [
     0,
@@ -340,10 +340,10 @@
  },
  "spend": {
   "usd": 0.0,
-  "calls": 8704,
-  "input_tokens": 11168193,
-  "output_tokens": 473385,
-  "seconds": 22583.518439964275
+  "calls": 13243,
+  "input_tokens": 17112238,
+  "output_tokens": 723822,
+  "seconds": 37043.61648894963
  },
  "model": "/Users/jaycewalzer/Desktop/kokopelli/models/Qwen3-VL-8B-Instruct-4bit",
  "config_sha256": "6b62947d7f09f5061b6c4d4b4e9701d5164f74c271a58b39f7d76ef9d578d255",
@@ -355,16 +355,16 @@
    "invalid_before_collapse": 0.03571428571428571
   },
   "described": {
-   "collapse_season": 6.5,
-   "collapsed_before_arrival": 1,
-   "ask_before_collapse": 27.5,
-   "invalid_before_collapse": 0.10544217687074829
-  },
-  "lived": {
    "collapse_season": 7,
    "collapsed_before_arrival": 1,
-   "ask_before_collapse": 27.551020408163264,
-   "invalid_before_collapse": 0.14285714285714285
+   "ask_before_collapse": 26.632653061224488,
+   "invalid_before_collapse": 0.12244897959183673
+  },
+  "lived": {
+   "collapse_season": 6,
+   "collapsed_before_arrival": 1,
+   "ask_before_collapse": 29.642857142857142,
+   "invalid_before_collapse": 0.047619047619047616
   }
  }
 }
