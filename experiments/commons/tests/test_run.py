@@ -204,3 +204,15 @@ def test_non_text_speech_becomes_silence(run):
 
 def test_json_written_inside_speech_is_silence(run):
     assert run.pt.field_text('{"say": "{"give": "fish", "give_amount": 4', "say") == ""
+
+
+def test_offer_run_into_speech_is_cut_and_kept(run):
+    reply = '{"say": "I will trade.{"offer": {"give": "fuel", "give_amount": 2, "want": "fish", "want_amount": 4}}'
+    assert run.pt.field_text(reply, "say") == "I will trade."
+    assert run.pt.field_object(reply, "offer") == {"give": "fuel", "give_amount": 2, "want": "fish", "want_amount": 4}
+    assert run.pt.field_object('{"say": "Hi", "offer": null', "offer") is None
+
+
+def test_json_without_the_field_is_silence_but_plain_words_are_kept(run):
+    assert run.pt.field_text('{"amount": 2}}', "say") == ""
+    assert run.pt.field_text("Plain words.", "say") == "Plain words."

@@ -273,7 +273,7 @@ def play(seed, arm, config, model, deadline=None, mode="R3", log=print):
         for name, answer, request in zip(people, answers, requests):
             parsed = pt.parse_json(answer)
             rows.append({"season": season, "phase": "talk", "agent": name, "raw": answer, "parse_ok": parsed is not None, **({"prompt": list(request)} if season in (1, config["game"]["defector_enters"]) else {})})
-            talk[name] = {"say": pt.field_text(answer, "say")[:400], "offer": clean_offer((parsed or {}).get("offer"))}
+            talk[name] = {"say": pt.field_text(answer, "say")[:400], "offer": clean_offer((parsed or {}).get("offer") or pt.field_object(answer, "offer"))}
         if world["defector"] in sim.active(world):
             talk[world["defector"]] = policies.defector_talk(world)
         sim.apply_discussion(world, talk)
@@ -353,7 +353,7 @@ def full(args, config, model):
                 continue
             if deadline and seed_times and time.time() + st.mean(seed_times) > deadline:
                 print(f"stopping before seed {seed}: a whole seed takes about {st.mean(seed_times) / 60:.0f} min", flush=True)
-                return 0
+                break
             started = time.time()
             linted.append(seed)
             if not lint_all(linted, config, model):

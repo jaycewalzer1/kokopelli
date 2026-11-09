@@ -1,7 +1,8 @@
 #!/bin/bash
 # Runs the full experiment through the GPU queue, retrying a killed job (runs resume by season), then analyzes and commits the summaries.
-# usage: overnight.sh <deadline ISO, e.g. 2026-11-09T08:30>
+# usage: overnight.sh <deadline ISO, e.g. 2026-11-09T08:30> [seeds, default 0-9]
 DEADLINE="$1"
+SEEDS="${2:-0-9}"
 MAIN=/Users/jaycewalzer/Desktop/kokopelli
 HERE="$MAIN/.claude/worktrees/commons/experiments/commons"
 RUNS="$MAIN/.claude/worktrees/commons/runs/commons"
@@ -14,7 +15,7 @@ for attempt in 1 2 3 4 5 6; do
   echo "$(date) attempt $attempt, up to $hours h"
   "$MAIN/simworld/.venv/bin/python" "$MAIN/.claude/worktrees/ops/ops/gpu.py" run --name "commons_full_$attempt" --priority 40 --gb 10 --max-hours "$hours" --cwd "$HERE" \
     --about "Lake-governance pilot: 60-season games of clones vs described vs lived upbringings, 7 Qwen3-VL-8B-Instruct-4bit agents plus a scripted defector; no world model, video or LoRA. Resumable by season." \
-    --output ../../runs/commons/R3 -- "$MAIN/.venv/bin/python" run.py full --seeds 0-9 --deadline "$DEADLINE" --satiation
+    --output ../../runs/commons/R3 -- "$MAIN/.venv/bin/python" run.py full --seeds "$SEEDS" --deadline "$DEADLINE" --satiation
   code=$?
   echo "$(date) attempt $attempt exited $code"
   [ "$code" -eq 0 ] && break

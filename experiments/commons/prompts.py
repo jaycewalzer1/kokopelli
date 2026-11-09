@@ -175,11 +175,22 @@ def field_text(reply, field):
     """A text field from a reply, even when the JSON was cut off before it closed."""
     parsed = parse_json(reply)
     if parsed and isinstance(parsed.get(field), str) and parsed[field]:
-        return parsed[field]
+        return re.split(r'\s*\{"', parsed[field])[0]
     if parsed and field in parsed:
         return ""
     match = re.search(r'"%s"\s*:\s*"?(.*)' % field, reply, re.S)
     if not match:
-        return reply.strip()
-    text = re.split(r'\s*\n|"\s*[,}]', match.group(1).strip())[0].rstrip('"').replace('\\"', '"')
-    return "" if text.startswith("{") else text
+        return "" if reply.lstrip().startswith("{") else reply.strip()
+    return re.split(r'\s*\n|"\s*[,}]|\s*\{"', match.group(1).strip())[0].rstrip('"').replace('\\"', '"')
+
+
+def field_object(reply, field):
+    """A flat object field from a reply whose JSON as a whole would not parse, or None."""
+    match = re.search(r'"%s"\s*:\s*(\{[^{}]*\}?)' % field, reply)
+    if not match:
+        return None
+    text = match.group(1)
+    try:
+        return json.loads(text if text.endswith("}") else text + "}")
+    except ValueError:
+        return None
