@@ -39,3 +39,11 @@ llm:
   usd_per_million_output_tokens: 0.0
   attempts: 4
   backoff_seconds: 5
+  discussion_max_tokens: 70
+  action_max_tokens: 130
+  life_max_tokens: 60
+experiment:
+  memory_cap_chars: 1200
+  length_tolerance: 0.05
+  arms: [clones, described, lived]
+  min_goal_attainment: 0.40

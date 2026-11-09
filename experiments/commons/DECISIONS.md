@@ -1,0 +1,23 @@
+# Decisions and judgment calls
+
+Dated 2026-11-09 unless noted.
+
+1. **Worktree, not branch switch.** `AGENTS.md` says sessions must not switch branches in the shared checkout. The branch is `exp/commons-homeostasis` in `.claude/worktrees/commons`. Paths `experiments/commons/` and `runs/commons/` are inside it.
+2. **Model.** Local `Qwen3-VL-8B-Instruct-4bit` through `mlx_vlm`, the repo's existing inference, cash cost $0. The spend limit is enforced in `llm.Budget` at $0/token and tested with a non-zero price. The real limit overnight is time, so runs also carry a deadline.
+3. **Throughput.** Measured 2026-11-09 00:06: about 6 s per batch of 7 at 400-token prompts (`runs/commons/bench/bench.json`). All agents act at the same moment, so calls are batched per phase. Memory cap and prompts were kept short to fit more seeds. 10 seeds probably does not fit in one night; analysis uses complete seeds.
+4. **GPU queue.** Model runs go through `ops/gpu.py` with `--about` and `--output` (repo rule), launched with a detached wrapper.
+5. **Existing life generator not reused.** `life/` writes scenes and closings with the LLM; the brief requires consequences from code or pre-written branches, so `life.py` here has a hand-written bank of 24 episodes. `life/seed.py`'s named-RNG idea is reused in `sim.rng`.
+6. **`benchmarks/PREREG.md` is about LoRA updates**, a different question and still a draft. Its pattern (frozen contrasts, paired bootstrap, explicit pass rules) is reused here; nothing in `benchmarks/` is changed.
+7. **Second good.** The brief lists warmth and trade with one fish resource. Fuel was added (seeded unequal income, no lake) so warmth has a source and trade has something to swap. A fish-for-fish trade would be meaningless.
+8. **Store.** Holdings keep by default. `store: N` keeps only N and the rest rots, so storing is a real choice but omitting it is not punished.
+9. **Trade mechanism.** Offers are posted during discussion and accepted during actions. That keeps actions simultaneous. If several accept one offer, a seeded draw picks one.
+10. **Resolution order.** Harvest (proportional rationing above stock), then eat and burn, trades, gifts, sanctions, investment, storage. All agents are processed by sorted name or seeded draw; a test confirms list order can't change an outcome.
+11. **Harvest cap 30**, eat need 3, burn need 2, sanction multiplier 3 and lambda 0.3 are first-guess values that passed the audit without tuning.
+12. **Starving** (energy 0) halves the harvest cap; nobody dies, so every arm keeps eight players.
+13. **Failed repairs** take no harvest as specified, but still eat and burn what the person holds, so a parser failure doesn't also starve them. Discussion parse failures keep the raw text as speech and drop the offer.
+14. **Defector** eats and burns what it needs, never trades, gifts, invests, votes or proposes.
+15. **Lived memory = code-written event + the model's own diary sentence + lessons.** `described` gets events and choices only, with scene text used to match length. So `lived` differs from `described` in voice and in having authored its reflections; that is the treatment. Lessons or diary sentences containing banned terms are removed sentence by sentence.
+16. **Lint scope.** Lint covers rules, goals, episode text, filler, defector lines and every identity text. Speech agents produce during the game is behaviour, not leakage, and isn't linted.
+17. **Rule compliance** is computed from numbers stated in passed rules with a regex. Rules without a clear number are counted but excluded from compliance.
+18. **Plots use Pillow** because no Python environment here has matplotlib and adding packages wasn't needed.
+19. **Audit scenario c** has one founder defecting from season 1, as "beats sustainable agents over the first 10 seasons" requires ten seasons of play by both. The scripted season-31 newcomer is reported as well.
