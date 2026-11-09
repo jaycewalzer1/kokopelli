@@ -114,6 +114,12 @@ def score(world, rows, config):
            "invalid_rate": invalid / len(first) if first else 0.0, "defaulted": defaulted, "sacrifice_rate": sacrifices / seasons if seasons else 0.0,
            "mean_founder_harvest": st.mean(r["agents"][n]["asked"] for r in world["history"] for n in founders if n in r["agents"]),
            "talk_parse_fail": sum(1 for r in rows if r["phase"] == "talk" and not r["parse_ok"])}
+    collapse = world["collapsed_at"] or game["seasons"]
+    before = [r for r in first if r["season"] <= collapse]
+    out["collapse_season"] = collapse
+    out["collapsed_before_arrival"] = int(world["collapsed_at"] is not None and world["collapsed_at"] < game["defector_enters"])
+    out["ask_before_collapse"] = st.mean(row["agents"][n]["asked"] for row in world["history"][:collapse] for n in founders if n in row["agents"])
+    out["invalid_before_collapse"] = sum(1 for r in before if not r["valid"]) / len(before) if before else 0.0
     out["success"] = int(survived and out["goal_min"] > config["experiment"]["min_goal_attainment"] and out["edge_slope"] < 0)
     return out
 
@@ -247,12 +253,17 @@ def main():
     ranked = sorted(seeds, key=lambda s: (table[s]["lived"]["success"], table[s]["lived"]["final_SK"]))
     against = min(seeds, key=lambda s: table[s]["lived"]["final_SK"] - table[s]["described"]["final_SK"])
     gap = table[against]["lived"]["final_SK"] - table[against]["described"]["final_SK"]
+    games = [table[s][arm] for s in seeds for arm in ARMS]
+    early = sum(g["collapsed_before_arrival"] for g in games)
+    floor = early > len(games) / 2
+    floor_note = f"**Floor effect: {early} of {len(games)} games collapsed before the newcomer arrived at season {config['game']['defector_enters']}.** Where that happens, there is no lake left to govern, so survival cannot differ and the sanction, rule and defector-edge outcomes measure a dead game. A null result here says little about whether upbringings matter for governance; it says this model catches the maximum under this game.\n" if floor else ""
     lines = ["# Commons experiment report", "", "## Verdict (pilot)", "",
              f"Complete seeds: **{len(seeds)}** of the 10 targeted ({', '.join(map(str, seeds))}). Model: `{config['llm']['weights'].split('/')[-1]}`. Reward: R3.", "",
              f"- **Did lived beat described?** {'Yes' if primary['beat'] else 'No'}. The lived-experience claim is **{primary['word']}** under the preregistered rule." + ("" if primary["beat"] else " If lived and described tie, the claim is not supported here."),
              f"- **Did described beat clones?** {'Yes' if secondary['beat'] else 'No'} ({secondary['word']}).",
              f"- Lived vs clones, for context: {'Yes' if versus_clones['beat'] else 'No'} ({versus_clones['word']}).",
              f"- Successful games (survived, no martyrdom, shrinking defector edge): clones {sum(table[s]['clones']['success'] for s in seeds)}, described {sum(table[s]['described']['success'] for s in seeds)}, lived {sum(table[s]['lived']['success'] for s in seeds)}, of {len(seeds)} each.", "",
+             floor_note,
              "This is a pilot on a small number of seeds with one local model. No correction for multiple contrasts. Intervals are 95% percentile bootstraps over seeds and are wide.", "",
              "## Paired effects", "", "| Outcome | lived - described | described - clones | lived - clones |", "|---|---|---|---|"]
     for key in ("survived", "final_SK", "goal_mean", "goal_min", "edge_slope", "success"):
@@ -260,10 +271,16 @@ def main():
         lines.append(f"| {key} | " + " | ".join(cells) + " |")
     lines += ["", "## Outcomes by arm (mean over seeds)", "", "| Outcome | clones | described | lived |", "|---|---|---|---|"]
     lines += [f"| {key} | " + " | ".join(fmt(means[arm][key]) for arm in ARMS) + " |" for key in keys]
+    extra = ["collapse_season", "collapsed_before_arrival", "ask_before_collapse", "invalid_before_collapse"]
+    extra_means = {arm: {key: st.mean(table[s][arm][key] for s in seeds) for key in extra} for arm in ARMS}
+    payload["exploratory_means"] = extra_means
+    (ROOT / "metrics.json").write_text(json.dumps(payload, indent=1))
+    lines += ["", "## Exploratory, not preregistered", "", "Added after the first full game showed collapse before the newcomer arrived. These can't change the verdict above.", "", "| Measure | clones | described | lived |", "|---|---|---|---|"]
+    lines += [f"| {key} | " + " | ".join(fmt(extra_means[arm][key], 2) for arm in ARMS) + " |" for key in extra]
     lines += ["", "![stock](plots/stock.png)", "", "![wealth](plots/wealth.png)", "", "![edge](plots/defector_edge.png)", "",
-              "## Per seed", "", "| Seed | Arm | Survived | Final S/K | Goal min | Edge slope | Success | Mean founder ask |", "|---|---|---|---|---|---|---|---|"]
+              "## Per seed", "", "| Seed | Arm | Survived | Collapse season | Final S/K | Goal min | Edge slope | Success | Mean founder ask |", "|---|---|---|---|---|---|---|---|---|"]
     for s in seeds:
-        lines += [f"| {s} | {arm} | {table[s][arm]['survived']} | {table[s][arm]['final_SK']:.3f} | {table[s][arm]['goal_min']:.3f} | {table[s][arm]['edge_slope']:+.3f} | {table[s][arm]['success']} | {table[s][arm]['mean_founder_harvest']:.1f} |" for arm in ARMS]
+        lines += [f"| {s} | {arm} | {table[s][arm]['survived']} | {table[s][arm]['collapse_season']} | {table[s][arm]['final_SK']:.3f} | {table[s][arm]['goal_min']:.3f} | {table[s][arm]['edge_slope']:+.3f} | {table[s][arm]['success']} | {table[s][arm]['mean_founder_harvest']:.1f} |" for arm in ARMS]
     lines += ["", "## Transcript excerpts around the newcomer's arrival", "", f"### Best lived game (seed {ranked[-1]})", "", excerpt("R3", ranked[-1], "lived"), "", f"### Worst lived game (seed {ranked[0]})", "", excerpt("R3", ranked[0], "lived"), "",
               f"### Against the thesis (seed {against}: lived ended {gap:+.3f} S/K relative to described)", "", "Lived:", "", excerpt("R3", against, "lived"), "", "Described, same seed:", "", excerpt("R3", against, "described"), ""]
     lint = (ROOT / "lint_report.md").read_text() if (ROOT / "lint_report.md").exists() else "No lint report."
@@ -274,6 +291,9 @@ def main():
               f"- Life-choice parse fallbacks (choice taken by seeded draw): {fallback} across all complete seeds.",
               f"- Spend: ${spend.get('usd', 0):.2f} cash (local model). Calls {spend.get('calls', 0):,}, input tokens {spend.get('input_tokens', 0):,}, output tokens {spend.get('output_tokens', 0):,}, model time {spend.get('seconds', 0) / 3600:.1f} h.",
               "- Deviations and judgment calls: `experiments/commons/DECISIONS.md`.", "", "### Leakage lint", "", lint, ""]
+    next_step = ("Lift the floor before comparing upbringings again: run clones only, one seed each, across harvest caps of 12, 15 and 20 fish and with a private planning sentence before each action, keep whichever setting has clones surviving past season 31 in about half of games, freeze it, and only then rerun the three arms." if floor else
+                 "Increase seeds in the current design until the paired success interval is informative, and add a second model to check the result isn't specific to Qwen 8B.")
+    lines += ["## Recommended next experiment", "", next_step, ""]
     lines += ["## Rerun", "", "```", "cd .claude/worktrees/commons/experiments/commons", "/Users/jaycewalzer/Desktop/kokopelli/simworld/.venv/bin/python audit.py", "/Users/jaycewalzer/Desktop/kokopelli/simworld/.venv/bin/python -m pytest tests -q",
               "/Users/jaycewalzer/Desktop/kokopelli/.venv/bin/python run.py full --seeds 0-9 --deadline <ISO time>", "/Users/jaycewalzer/Desktop/kokopelli/.venv/bin/python analyze.py", "```", "", "Runs resume from the last whole season, so rerunning the same command continues them. Long runs go through `ops/gpu.py run` as this repo requires.", ""]
     (ROOT / "REPORT.md").write_text("\n".join(lines))
