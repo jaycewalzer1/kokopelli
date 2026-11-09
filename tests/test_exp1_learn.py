@@ -77,6 +77,19 @@ class SleepTest(unittest.TestCase):
         whole = nn.value_and_grad(policy.model, lambda model: sleeper._loss_of_scores(policy.scores(row), row, 0.5)[0])(policy.model)[1]
         np.testing.assert_allclose(np.array(split["logits"]), np.array(whole["logits"]), atol=1e-6)
 
+    def test_a_steps_transition_shares_add_up_to_one(self):
+        from exp1.diagnose_pilot import night_summary, shares_step
+        policy = TablePolicy()
+        policy.model.logits = mx.array(np.random.default_rng(0).normal(size=policy.model.logits.size).astype(np.float32))
+        sleeper = Sleeper(policy, {"lr": 0.05, "beta": 0.3})
+        pi = {"walk_main": 0.1, "run_main": 0.3, "check_desk": 0.4, "side_path": 0.2}
+        rows = [self.row(c, a, pi) | {"day": 1, "decision": "D1", "outcome_label": "x"} for c, a in (("run_main", -0.3), ("check_desk", 0.1))]
+        step = shares_step(sleeper, rows)
+        self.assertAlmostEqual(sum(t["share_pg"] + t["share_kl"] for t in step["transitions"]), 1.0, places=5)
+        summary = night_summary([step])
+        self.assertEqual(summary["top_low_pi_penalty"]["choice"], "run_main")
+        self.assertEqual(summary["tripped"], summary["top_low_pi_penalty"]["share_pg"] > 0.5)
+
     def test_replay_takes_free_days_in_the_window_only(self):
         rows = [{"forced": True, "day": None}] + [{"forced": False, "day": d} for d in range(1, 11)]
         self.assertEqual([r["day"] for r in replay_rows(rows, 10, 5)], [5, 6, 7, 8, 9, 10])

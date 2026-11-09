@@ -3,6 +3,7 @@
     python -m exp1.diagnose temperature RUN   offline: how pi would look at other choice temperatures, from saved log-probs
     python -m exp1.diagnose d2 RUN            GPU: rebuild the adapter before the D2 shift, replay those nights three ways,
                                               attribute the update to each replayed transition, re-measure the D2 probe
+    python -m exp1.diagnose pilot RUN         GPU: rebuild a pilot's nights and split each night's update by transition (the stop rule)
 """
 import argparse
 import json
@@ -71,7 +72,7 @@ def temperature(run, logp_field="logp", seed=0, temperatures=TEMPERATURES):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("what", choices=["temperature", "d2"])
+    parser.add_argument("what", choices=["temperature", "d2", "pilot"])
     parser.add_argument("run", type=Path)
     args = parser.parse_args(argv)
     out = args.run / "diagnostics"
@@ -85,9 +86,12 @@ def main(argv=None):
             for d, by_t in result["table"].items():
                 for t, c in by_t.items():
                     print(f"  {d} T={t}: top {c['top']:.3f}  entropy {c['entropy']:.3f}  spread {c['spread']:.3f}  (n {c['n']})")
-    else:
+    elif args.what == "d2":
         from exp1 import diagnose_d2
         diagnose_d2.main(args.run, out)
+    else:
+        from exp1 import diagnose_pilot
+        diagnose_pilot.main(args.run, out)
 
 
 if __name__ == "__main__":
