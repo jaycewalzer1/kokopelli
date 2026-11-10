@@ -438,16 +438,41 @@ def quiet_note(ticket):
     return f"  log quiet {minutes:.0f} min" if minutes >= 1 else ""
 
 
+def finished_counts():
+    """Every finished job in the ledger, by how it ended. Exit 75 is a polite yield and a stop the owner asked for is not a failure."""
+    counts = {"ok": 0, "failed": 0, "stopped": 0, "yielded(75)": 0}
+    try:
+        lines = LEDGER.read_text().splitlines()
+    except OSError:
+        return counts
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if event.get("event") != "finished":
+            continue
+        code = event.get("exit_code")
+        kind = "stopped" if event.get("stopped") else "yielded(75)" if code == 75 else "ok" if code == 0 else "failed"
+        counts[kind] += 1
+    return counts
+
+
 def status(_args):
-    for ticket in tickets():
+    queued, outside = tickets(), outside_model_jobs()
+    if not queued and not outside:
+        print("idle")
+        return 0
+    for ticket in queued:
         state = "RUNNING" if ticket.get("running") else "waiting"
         if where(ticket) == "pace":
             state = f"PACE {ticket.get('pace', {}).get('state', 'waiting').lower()}"
         waited = (time.time() - ticket["queued_at"]) / 60
         note = quiet_note(ticket) if ticket.get("running") else f"  ({ticket['waiting_for']})" if ticket.get("waiting_for") else ""
         print(f"{state:8} p{ticket['priority']:<3} {ticket['name']:28} {waited:6.1f} min  pid {ticket['pid']}{note}")
-    for pid, command in outside_model_jobs():
+    for pid, command in outside:
         print(f"outside  pid {pid}: {command}")
+    print("finished " + ", ".join(f"{count} {kind}" for kind, count in finished_counts().items()))
     return 0
 
 

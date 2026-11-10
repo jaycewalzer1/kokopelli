@@ -21,8 +21,8 @@ report:
 	$(PY) -m life.report
 
 test:
-	for file in life/static/*.js; do cp $$file /tmp/kokopelli-check.mjs && node --check /tmp/kokopelli-check.mjs || exit 1; done
-	$(PY) -m unittest tests.test_life_store tests.test_life_windows tests.test_life_engine tests.test_life_panel tests.test_life_memory tests.test_life_architecture tests.test_life_pipeline tests.test_life_gpu_queue
+	@for file in life/static/*.js; do cp $$file /tmp/kokopelli-check.mjs && node --check /tmp/kokopelli-check.mjs || { echo "node --check failed: $$file"; exit 1; }; done
+	@$(PY) -m unittest -q tests.test_life_store tests.test_life_windows tests.test_life_engine tests.test_life_panel tests.test_life_memory tests.test_life_architecture tests.test_life_pipeline tests.test_life_gpu_queue
 
 homeostatic:
 	caffeinate -is $(PY) -u -m homeostatic.experiment --seeds $(or $(SEEDS),0)
@@ -33,5 +33,6 @@ homeostatic-test:
 homeostatic-report:
 	$(PY) -m homeostatic.report
 
+# Every suite, one line each. MAC=1 adds mac_server, VERBOSE=1 shows full output.
 test-all:
-	$(PY) -m unittest discover -s tests -v
+	@bash scripts/fable/test_all.sh

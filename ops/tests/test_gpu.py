@@ -147,6 +147,24 @@ class GpuQueue(unittest.TestCase):
         old.wait()  # reaped, so its pid is really gone and the queue moves on
         self.assertEqual(self.start("next", 1, "true").wait(timeout=20), 0)
 
+    def test_status_says_idle_and_sorts_finished_jobs_by_how_they_ended(self):
+        self.assertEqual(self.gpu("status").stdout, "idle\n")
+        ledger = self.root / "out/ops/gpu_ledger.jsonl"
+        ledger.parent.mkdir(parents=True, exist_ok=True)
+        endings = [(0, False), (0, False), (1, False), (-15, False), (-15, True), (75, False)]
+        ledger.write_text("".join(json.dumps({"event": "finished", "exit_code": code, "stopped": stopped}) + "\n"
+                                  for code, stopped in endings) + "not json\n")
+        self.assertEqual(self.gpu("status").stdout, "idle\n")
+        queue = self.root / "out/ops/queue"
+        queue.mkdir(parents=True, exist_ok=True)
+        job = subprocess.Popen(["sleep", "2"])
+        (queue / "job.json").write_text(json.dumps({"id": "job", "name": "job", "priority": 0, "pid": job.pid, "queued_at": 0, "running": True}))
+        status = self.gpu("status").stdout
+        job.kill()
+        job.wait()
+        self.assertIn("RUNNING", status)
+        self.assertEqual(status.splitlines()[-1], "finished 2 ok, 2 failed, 1 stopped, 1 yielded(75)")
+
 
 if __name__ == "__main__":
     unittest.main()
