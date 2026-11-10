@@ -40,7 +40,7 @@ own subagent (they touch different files, so they can run in parallel), then que
   A1 blur alone (baseline via world_transfer.py), A2 blur 0.5 + seg 0.5, A3 blur 0.4 + seg 0.3 + depth 0.3;
   B1 blur 0.5 + seg 0.5. Only scale up after the user has seen these.
 - Queue every model run through the GPU queue (see AGENTS.md "Overnight coordination"):
-  `python3 .claude/worktrees/ops/ops/gpu.py run --name wmmc_<x> --priority 25 --max-hours H --cwd ... --about "..." --output ... -- CMD`
+  `python3 ops/gpu.py run --name wmmc_<x> --priority 25 --max-hours H --cwd ... --about "..." --output ... -- CMD`
   with `ram_share.py hold --name wmmc_<x> --gb N` inside it. Never run a model outside the queue. Outputs to
   `out/wm_multicontrol/<run>/` with a JSON sidecar (model, controls, weights, steps, seed, runtime, peak memory).
 - Measure and record runtime and peak memory; they replace the estimates in RESEARCH.md.

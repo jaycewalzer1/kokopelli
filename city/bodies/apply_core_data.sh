@@ -42,7 +42,7 @@ STEPS=()
 # Heavy steps only while no demo or world-model job is RUNNING or waiting in the GPU queue (coordinator, 2026-11-08:
 # the bodies_demo_* two-agent demo on 9001 and wm* runs have priority). Otherwise keep our 9004 game down.
 queue_ok() {
-  local st; st="$(python3 "$K/.claude/worktrees/ops/ops/gpu.py" status 2>/dev/null)" || return 1
+  local st; st="$(python3 "$K/ops/gpu.py" status 2>/dev/null)" || return 1
   if echo "$st" | grep -E '^(RUNNING|waiting)\s+\S+\s+(wmbodies|bodies_demo)' >/dev/null; then return 1; fi
   return 0
 }
