@@ -289,7 +289,7 @@ class LunchRecord:
                 "controls": {"blur": f"downup {BLUR_DOWNUP} (v2 high)", "seg": "SimWorld masks x material class",
                              "depth": f"inverse depth, near {NEAR_CM} cm, far {FAR_CM} cm", "edge": "Canny 100/200",
                              "weights": "0.25 each"},
-                "wm_prompt": a.wm_prompt, "wm_prompts": __import__("lunch_text").prompts_for(a, list(self.minds)), "size": a.size, "fps": a.fps, "seeds": {k: a.seed + i for i, k in enumerate(self.minds)},
+                "wm_prompt": a.wm_prompt, "wm_prompts": __import__("kokopelli.agents.lunch_text", fromlist=["prompts_for"]).prompts_for(a, list(self.minds)), "size": a.size, "fps": a.fps, "seeds": {k: a.seed + i for i, k in enumerate(self.minds)},
                 "denoise_steps": 4, "window": a.window, "sink": a.sink, "quantize": a.quantize,
                 "sim_steps": a.steps, "step_seconds": a.step_s, "clock": a.clock, "meet": a.meet,
                 "agents": {k: {"name": m.name, "who": m.who, "situation": m.situation, "decisions": m.decisions}
