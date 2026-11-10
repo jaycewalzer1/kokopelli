@@ -8,7 +8,7 @@ per night, 5 replay days, choice temperature 1.0 (the spec). Folder: `out/exp1/r
 
 - Phase 1: the 3-decision world with homeostatic reward, balance and leak tests, and the tabular reference. See
   `docs/exp1_phase1.md`. D1 is kept as written (a weak decision under the capped drive).
-- Phase 2: `python -m exp1.run`. Scores options, samples at T=1, writes the reason after the choice, sleeps each free night,
+- Phase 2: `python -m experiments.exp1.run`. Scores options, samples at T=1, writes the reason after the choice, sleeps each free night,
   checkpoints after every night and resumes with the same command. Guardrails and baselines run at the end.
 - Phase 3: the `/exp1` panel page. It has the pipeline strip with file:line references, the causal trace, the timelines,
   shares against the tabular band and the untrained model, the training charts beside the random and always-safe
@@ -120,8 +120,8 @@ science, one run says the spec's settings mostly measure the prior. These decisi
 logits: D1 .670, D3 .380). T = 8 is the lowest value above that grid that passes (.905, .898, .768), so it's outside the
 grid that was planned. Numbers are in `diagnostics/temperature.json`.
 
-T applies identically to every arm, and to sampling, the loss, the importance weights and the KL base (`exp1/policy.py:124`).
-It's passed as `--choice-temperature 8`. The default stays 1.0 so that earlier runs still resume (`exp1/run.py:130`).
+T applies identically to every arm, and to sampling, the loss, the importance weights and the KL base (`experiments/exp1/policy.py:124`).
+It's passed as `--choice-temperature 8`. The default stays 1.0 so that earlier runs still resume (`experiments/exp1/run.py:130`).
 
 **Before longer runs:** a 10-free-day pilot, lived arm, seed 0, T = 8 (`out/exp1/runs/exp1_lived_s0_T8_pilot10/`). Stop rule, set
 before it ran: if the single largest low-π penalty is more than half of the net update on any night, fix the update rule

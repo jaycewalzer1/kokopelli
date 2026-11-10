@@ -4,7 +4,7 @@ Variant A (Cosmos3-Nano-Sim-Transfer, four controls at 0.25, gen weights 8-bit) 
 
 ## Why two 150-frame paints took 935 s and 1,782 s
 
-Source: `python3 scripts/fable/p4_paint_gap.py` (read-only; job metrics every ~15 s, paint window only, sidecar timings), plus `pmset -g log` and `pmset -g custom`.
+Source: `python3 tools/fable/p4_paint_gap.py` (read-only; job metrics every ~15 s, paint window only, sidecar timings), plus `pmset -g log` and `pmset -g custom`.
 
 | paint | frames | paint s | denoise s | decode s | encode s | watts mean | GPU busy | temp mean | temp max | s at ≥95 °C | swap start → max GB | other RAM GB | other queue jobs |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -42,4 +42,4 @@ Source: `out/bodies/demo/runs/wm/events.jsonl` (2026-11-08 two-agent run, on AC;
 | controls from the sim frames (`controls_s`) | 12.9 |
 | **not recorded** | **183.3** |
 
-The brief's "about 475 s, while the per-latent figure explains about 310 s" is the same gap, from a different run. The 183 s is the worker's encode, decode, weight reload (`weight_loads` rises by one per step: the loop drops the weights while Qwen thinks) and the `.npy` handoff. The worker already returns `encode_s`, `paint_s` and `decode_s` for every push, but `city/agents/lunch_wm.py:126` logs only `latents`, `s_per_latent`, `peak_gb` and `weight_loads`, so the recorded logs can't split it further. The profile below does.
+The brief's "about 475 s, while the per-latent figure explains about 310 s" is the same gap, from a different run. The 183 s is the worker's encode, decode, weight reload (`weight_loads` rises by one per step: the loop drops the weights while Qwen thinks) and the `.npy` handoff. The worker already returns `encode_s`, `paint_s` and `decode_s` for every push, but `kokopelli/agents/lunch_wm.py:126` logs only `latents`, `s_per_latent`, `peak_gb` and `weight_loads`, so the recorded logs can't split it further. The profile below does.

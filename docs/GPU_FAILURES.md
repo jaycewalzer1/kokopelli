@@ -18,7 +18,7 @@ Source: `out/ops/gpu_ledger.jsonl` (93 finished jobs) and the tails of `out/ops/
 | `mind_change_check` | 127 | 0 s (after a 150 s wait) | A | `env PYTHONPATH=...` was passed as one word, so no such program existed |
 | `edge_filter_long` | 2 | 0 s (after a 195 s wait) | A | `world_filter.py: error: the following arguments are required: --model-dir` |
 | `wmloop_demo_lowmem` | 1 | 1.5 min | B | `condition_video needs 1 + 4n frames, got 3` |
-| `bridge_simtransfer_5s` | 1 | 0 min | B | `city/wm/prompts/bridge.json` had become a list; the script indexed it by name |
+| `bridge_simtransfer_5s` | 1 | 0 min | B | `kokopelli/wm/controls/prompts/bridge.json` had become a list; the script indexed it by name |
 | `wmbodies_demo` (1st) | 1 | 1.0 min | B | relative `--out` doubled into `out/bodies/demo/runs/wm/wm/in_mara_00001_blur.npy` |
 | `wmbodies_demo` (2nd) | 1 | 1.1 min | B | Qwen got image path `None` (`Failed to load image from None`) |
 | `commons_bench` | 1 | 0.6 min | B | `BatchGenerator.__init__() got an unexpected keyword argument 'temperature'` (mlx_vlm API changed) |
@@ -32,12 +32,12 @@ Source: `out/ops/gpu_ledger.jsonl` (93 finished jobs) and the tails of `out/ops/
 
 **A.** `gpu.py check` refuses `mind_change_check`'s command in 0.04 s ("command not found"). Before, it waited 150 s for
 its turn and then failed. `edge_filter_long`'s missing argument isn't caught: the check never runs the job's code
-(that would load a model), so argument errors still need a dry run, and `world_filter.py` doesn't honor `KOKO_DRY_RUN`.
+(that would load a model), so argument errors still need a dry run, and `kokopelli/wm/world_filter.py` doesn't honor `KOKO_DRY_RUN`.
 
 **B.** These are bugs in each job's own script, and each cost about a minute of queue time. The queue can't find them
-without running the job. `--dry-run` runs the job cut to one latent: `core/world_transfer_multi.py` and
-`python -m core.world_stream_multi --dry-run` honor it. Other scripts run in full under `--dry-run` until they read
-`KOKO_DRY_RUN` too (`city/agents/lunch_wm.py` and `runtime.run` are the obvious next ones).
+without running the job. `--dry-run` runs the job cut to one latent: `kokopelli/wm/world_transfer_multi.py` and
+`python -m kokopelli.wm.world_stream_multi --dry-run` honor it. Other scripts run in full under `--dry-run` until they read
+`KOKO_DRY_RUN` too (`kokopelli/agents/lunch_wm.py` and `kokopelli.loop.run` are the obvious next ones).
 
 **C.** All 7 ended before 2026-11-08 11:22, when keepers arrived. Before that, the only way to end a job was to kill
 its process by hand, and the ledger couldn't tell that from a crash. The long ones (8.8 h and 8.7 h) were probably

@@ -1,8 +1,8 @@
 # Experiment 1, phase 1: balance and tabular reference
 
-2026-11-06. `life/scenario.py` as written (unchanged), reward math from `exp1/homeostasis.py`: linear deficit-only drive,
+2026-11-06. `kokopelli/life/scenario.py` as written (unchanged), reward math from `experiments/exp1/homeostasis.py`: linear deficit-only drive,
 setpoint 0.7, start 0.45 + N(0, 0.05), depletion 0.15 between decisions (never rewarded). CPU only, no model.
-Reproduce with `python -m exp1.balance` and `python -m exp1.tabular_check`.
+Reproduce with `python -m experiments.exp1.balance` and `python -m experiments.exp1.tabular_check`.
 
 ## Balance (expected reward vs the safe option, 20k entry states per row)
 
@@ -24,7 +24,7 @@ Reproduce with `python -m exp1.balance` and `python -m exp1.tabular_check`.
 - **The solver can't fix run_main** (`balance()` returns None): scaling its common branch only adds more calm past the
   cap and more comfort loss. Other scales are within 1.000 to 1.044. Applying them would push the mean-state spread to
   2.6–3.1% and fail the 2% test, so `Life` doesn't use them unless passed `scales=`.
-- Fixing it means changing run_main's common need change in `life/scenario.py` (the world's owner's call). Spreading it
+- Fixing it means changing run_main's common need change in `kokopelli/life/scenario.py` (the world's owner's call). Spreading it
   to (0, +0.20, 0), still 4 points, brings D1 to within 2.6% over real states.
 
 ## Tabular reference (2000 lives per arm, second half of 25 free days, after ~8 forced mornings)
