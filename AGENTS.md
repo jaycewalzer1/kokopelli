@@ -47,7 +47,7 @@ Standing rules first, then one line per live area. Status, results and dates go 
 
 Five full test runs at once (18 GB each) ran the Mac out of memory and swap on 2026-11-09 and it panicked. Since then:
 
-- Run tests with `make test-all` (it claims 20 GB and waits its turn), or one module with `python3 ops/memguard.py run --name <what> --gb 2 -- .venv/bin/python -m unittest tests.test_x`. Never run `unittest` or `pytest` bare.
+- Run tests with `make test-all` (it claims its memory and waits its turn), or one module with `python3 ops/memguard.py run --name <what> --gb 2 -- .venv/bin/python -m unittest tests.test_x`. Never run `unittest` or `pytest` bare.
 - Anything else heavy (whole-repo linters, `uv`, `npx`, builds) also goes through `ops/memguard.py run` with its peak in `--gb`. Model jobs go through `ops/gpu.py run --gb`.
 - Exit 75 from the guard means memory ran short. Wait and run it again later; don't retry in a loop and don't start a second copy.
 - Don't put a heavy command in the background and then start another. At most two guarded commands run at once.

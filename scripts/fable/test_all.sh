@@ -6,7 +6,7 @@
 #   VERBOSE=1  print each suite's full output with -v.
 # Interpreters resolve from the repo this script lives in, so it works from any checkout or worktree.
 cd "$(dirname "$0")/../.." || exit 2
-# The tests suite peaks near 18 GB, and five copies at once crashed the Mac on 2026-11-09. So the whole run takes one
+# The tests suite peaked near 18 GB while it loaded real models, and five copies at once crashed the Mac on 2026-11-09. So the whole run takes one
 # memory claim and waits its turn: python3 ops/memguard.py status shows who holds it.
 [ -n "$MEMGUARD" ] || exec python3 ops/memguard.py run --name test_all --gb "${TEST_GB:-2}" -- bash "$0" "$@"
 want=${*:-tests runtime simworld ops benchmarks}
