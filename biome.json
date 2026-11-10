@@ -2,7 +2,7 @@
   "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",
   "files": {
     "includes": [
-      "life/static/**/*.js"
+      "kokopelli/life/static/**/*.js"
     ]
   },
   "formatter": {
@@ -20,7 +20,7 @@
   "overrides": [
     {
       "includes": [
-        "life/static/app.js"
+        "kokopelli/life/static/app.js"
       ],
       "linter": {
         "rules": {
@@ -32,7 +32,7 @@
     },
     {
       "includes": [
-        "life/static/architecture.js"
+        "kokopelli/life/static/architecture.js"
       ],
       "linter": {
         "rules": {
@@ -48,7 +48,7 @@
     },
     {
       "includes": [
-        "life/static/city-live.js"
+        "kokopelli/life/static/city-live.js"
       ],
       "linter": {
         "rules": {
@@ -60,7 +60,7 @@
     },
     {
       "includes": [
-        "life/static/city-plan.js"
+        "kokopelli/life/static/city-plan.js"
       ],
       "linter": {
         "rules": {
@@ -73,7 +73,7 @@
     },
     {
       "includes": [
-        "life/static/exp1.js"
+        "kokopelli/life/static/exp1.js"
       ],
       "linter": {
         "rules": {
@@ -91,7 +91,7 @@
     },
     {
       "includes": [
-        "life/static/layout.js"
+        "kokopelli/life/static/layout.js"
       ],
       "linter": {
         "rules": {
@@ -106,7 +106,7 @@
     },
     {
       "includes": [
-        "life/static/moodboard.js"
+        "kokopelli/life/static/moodboard.js"
       ],
       "linter": {
         "rules": {
@@ -118,7 +118,7 @@
     },
     {
       "includes": [
-        "life/static/rulers.js"
+        "kokopelli/life/static/rulers.js"
       ],
       "linter": {
         "rules": {

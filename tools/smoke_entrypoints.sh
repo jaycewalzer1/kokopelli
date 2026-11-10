@@ -11,7 +11,7 @@
 # Nothing here loads Qwen or Cosmos or touches the GPU queue: `--help` exits in
 # argparse before any work, and the import checks only import (model loading
 # lives inside functions). Heavy enough to run through the memory guard:
-#   python3 ops/memguard.py run --name reorg-smoke --gb 2 -- tools/smoke_entrypoints.sh
+#   python3 kokopelli/ops/memguard.py run --name reorg-smoke --gb 2 -- tools/smoke_entrypoints.sh
 #
 # Adding an entry: one line in the ENTRIES table below.
 #   tags    which interpreters it belongs to, comma separated:
@@ -40,152 +40,139 @@ COS_PATH="$HOME/cosmos3/cosmos3-mlx"   # the Cosmos runner's own package, as the
 TIMEOUT="${SMOKE_TIMEOUT:-90}"
 
 ENTRIES='
-# --- root stand-ins (aliases of core.*; removed in phase 2) ---
-all     help    ram_share.py
-main    import  blend
-main    import  edges
-main    import  llm_model
-main    import  settings
-main    import  world_model
-main,cos help   world_stream.py                    # prints its docstring unless --worker
-main,cos help   world_stream_multi.py
-cos     help    world_transfer.py
-cos     help    world_transfer_multi.py
-cos     help    world_filter.py
-cos     help    world_multicontrol_base.py
 # --- core ---
-all     help    core.ram_share
-main    help    core.video_check
-main,cos help   core.world_stream                  # prints its docstring unless --worker
-main,cos help   core.world_stream_multi
-cos     help    core.world_transfer
-cos     help    core.world_transfer_multi
-cos     help    core.world_filter
-cos     help    core.world_multicontrol_base
+all     help    kokopelli.ops.ram_share
+main    help    kokopelli.wm.video_check
+main,cos help   kokopelli.wm.world_stream                  # prints its docstring unless --worker
+main,cos help   kokopelli.wm.world_stream_multi
+cos     help    kokopelli.wm.world_transfer
+cos     help    kokopelli.wm.world_transfer_multi
+cos     help    kokopelli.wm.world_filter
+cos     help    kokopelli.wm.world_multicontrol_base
 # --- ops (system python3 runs gpu.py and memguard.py: keep them stdlib-only) ---
-all     help    ops/gpu.py
-all     help    ops/memguard.py
-main    help    ops/out_report.py
-main    help    ops/status.py
-main    help    ops/summarize.py
+all     help    kokopelli/ops/gpu.py
+all     help    kokopelli/ops/memguard.py
+main    help    kokopelli/ops/out_report.py
+main    help    kokopelli/ops/status.py
+main    help    kokopelli/ops/summarize.py
 # --- life ---
-main    help    life.overnight
-main    help    life.panel
-main    help    life.report
-main    help    life.scenario_night
+main    help    kokopelli.life.overnight
+main    help    kokopelli.life.panel
+main    help    kokopelli.life.report
+main    help    kokopelli.life.scenario_night
 # --- runtime ---
-main,sw help    runtime.check_video
-main,sw help    runtime.compare
-main,sw help    runtime.plan
-main,sw help    runtime.preflight
-main,sw help    runtime.probe_decisions
-main,sw help    runtime.run
-main,sw help    runtime.viewer
+main,sw help    kokopelli.loop.check_video
+main,sw help    kokopelli.loop.compare
+main,sw help    kokopelli.loop.plan
+main,sw help    kokopelli.loop.preflight
+main,sw help    kokopelli.loop.probe_decisions
+main,sw help    kokopelli.loop.run
+main,sw help    kokopelli.loop.viewer
 # --- mind (namespace package, launched with -m) ---
-main    help    mind.change_check
-main    help    mind.check
-main    help    mind.run
+main    help    kokopelli.mind.change_check
+main    help    kokopelli.mind.check
+main    help    kokopelli.mind.run
 # --- homeostatic ---
-main    help    homeostatic.evaluate
-main    help    homeostatic.experiment
-main    help    homeostatic.export
-main    import  homeostatic.report                 # no argparse: running it writes the report
-main    help    homeostatic.train
+main    help    experiments.homeostatic.evaluate
+main    help    experiments.homeostatic.experiment
+main    help    experiments.homeostatic.export
+main    import  experiments.homeostatic.report                 # no argparse: running it writes the report
+main    help    experiments.homeostatic.train
 # --- exp1 ---
-main    help    exp1.balance
-main    help    exp1.diagnose
-main    help    exp1.run
-main    import  exp1.smoke                         # takes a positional run folder, no --help; running it loads Qwen
-main    help    exp1.tabular_check
-# --- benchmarks (launch with -m: benchmarks/core.py shadows core by path) ---
-main    help    benchmarks.before_after
-main    help    benchmarks.freeze
-main    help    benchmarks.leakage
-main    help    benchmarks.mid_travel.generate
-main    help    benchmarks.noise_check
-main    help    benchmarks.prereg
-main    help    benchmarks.report
-main    help    benchmarks.report_screenshots
-main    help    benchmarks.run
+main    help    experiments.exp1.balance
+main    help    experiments.exp1.diagnose
+main    help    experiments.exp1.run
+main    import  experiments.exp1.smoke                         # takes a positional run folder, no --help; running it loads Qwen
+main    help    experiments.exp1.tabular_check
+# --- benchmarks (launch with -m: experiments/benchmarks/core.py shadows core by path) ---
+main    help    experiments.benchmarks.before_after
+main    help    experiments.benchmarks.freeze
+main    help    experiments.benchmarks.leakage
+main    help    experiments.benchmarks.mid_travel.generate
+main    help    experiments.benchmarks.noise_check
+main    help    experiments.benchmarks.prereg
+main    help    experiments.benchmarks.report
+main    help    experiments.benchmarks.report_screenshots
+main    help    experiments.benchmarks.run
 # --- city ---
-main    help    city/agents/live.py
-main    help    city/agents/live_wm.py
-main    help    city/agents/lunch_bench.py
-main    help    city/agents/lunch_life.py
-main    help    city/agents/lunch_wm.py
-main    import  city/agents/navmap.py              # no argparse: running it builds the nav map
-main    help    city/bodies/demo_cut.py
-main    import  city/bodies/demo_lunch.py          # hand-parses argv and forwards the rest to lunch_wm; running it starts a demo
-main    help    city/bodies/demo_promptcheck.py
-main    help    city/bodies/metahuman/looks.py
-sw      help    city/bodies/wave1_renders.py
-sw      help    city/bodies/wave2_renders.py
-main    help    city/bodies/write_parts.py
-sw      help    city/realism/replay_bridge.py
-main    help    city/source_arena.py
-main    help    city/source_commons.py
-main    help    city/source_tiktok.py
-sw      help    city/ue/build_city.py
-sw      import  city.ue.kinds.locked               # runs argv as a command under a lock; no --help
-sw      help    city.ue.kinds.preview
-sw      help    city.ue.kinds.watchdog
-sw      help    city/ue/plan_varied/check.py
-sw      import  city/ue/plan_varied/kitmap.py      # hand-parses argv; no --help
-sw      help    city/ue/plan_varied/plan.py
-sw      help    city/ue/plan_varied/run_build.py
-sw      help    city/ue/plan_varied/views.py
-sw      help    city/ue/render_views.py
-main    help    city/wm/blur_variants.py
-main    help    city/wm/controls.py
-sw      import  city/wm/plaza_clip.py              # no argparse: running it needs the city server on 9001
-main    help    city/wm/prompts/build.py
-cos     import  city/wm/run_bridge_final.py        # no argparse: running it paints with Cosmos
+main    help    kokopelli/agents/live.py
+main    help    kokopelli/agents/live_wm.py
+main    help    kokopelli/agents/lunch_bench.py
+main    help    kokopelli/agents/lunch_life.py
+main    help    kokopelli/agents/lunch_wm.py
+main    import  kokopelli/agents/navmap.py              # no argparse: running it builds the nav map
+main    help    tools/bodies/demo_cut.py
+main    import  tools/bodies/demo_lunch.py          # hand-parses argv and forwards the rest to lunch_wm; running it starts a demo
+main    help    tools/bodies/demo_promptcheck.py
+main    help    tools/bodies/metahuman/looks.py
+sw      help    tools/bodies/wave1_renders.py
+sw      help    tools/bodies/wave2_renders.py
+main    help    tools/bodies/write_parts.py
+sw      help    tools/realism/replay_bridge.py
+main    help    tools/moodboard/source_arena.py
+main    help    tools/moodboard/source_commons.py
+main    help    tools/moodboard/source_tiktok.py
+sw      help    tools/city_build/build_city.py
+sw      import  tools.city_build.kinds.locked               # runs argv as a command under a lock; no --help
+sw      help    tools.city_build.kinds.preview
+sw      help    tools.city_build.kinds.watchdog
+sw      help    tools/city_build/plan_varied/check.py
+sw      import  tools/city_build/plan_varied/kitmap.py      # hand-parses argv; no --help
+sw      help    tools/city_build/plan_varied/plan.py
+sw      help    tools/city_build/plan_varied/run_build.py
+sw      help    tools/city_build/plan_varied/views.py
+sw      help    tools/city_build/render_views.py
+main    help    kokopelli/wm/controls/blur_variants.py
+main    help    kokopelli/wm/controls/controls.py
+sw      import  kokopelli/wm/controls/plaza_clip.py              # no argparse: running it needs the city server on 9001
+main    help    kokopelli/wm/controls/prompts/build.py
+cos     import  kokopelli/wm/controls/run_bridge_final.py        # no argparse: running it paints with Cosmos
 # --- experiments, filter_test ---
 sw      import  experiments/commons/analyze.py     # no argparse: running it rewrites the report
 sw      import  experiments/commons/audit.py       # no argparse: running it runs the audit
 sw      help    experiments/commons/run.py
-main    help    filter_test/scripts/capture.py
-main    import  filter_test/scripts/controls.py    # no argparse: running it rewrites the control videos
-main    import  filter_test/scripts/preview_videos.py  # no argparse: running it renders previews
-main    help    filter_test/scripts/run_cosmos.py
-skip    -       filter_test/scripts/run_sd.py      # runs in its own filter_test/.venv (torch, diffusers), not one of the three; by hand: filter_test/.venv/bin/python filter_test/scripts/run_sd.py --help
+main    help    experiments/filter_test/scripts/capture.py
+main    import  experiments/filter_test/scripts/controls.py    # no argparse: running it rewrites the control videos
+main    import  experiments/filter_test/scripts/preview_videos.py  # no argparse: running it renders previews
+main    help    experiments/filter_test/scripts/run_cosmos.py
+skip    -       experiments/filter_test/scripts/run_sd.py      # runs in its own experiments/filter_test/.venv (torch, diffusers), not one of the three; by hand: experiments/filter_test/.venv/bin/python experiments/filter_test/scripts/run_sd.py --help
 # --- scripts ---
-main    import  scripts/fable/p4_c_compare.py      # no argparse: running it runs the comparison
-main    import  scripts/fable/p4_paint_gap.py      # no argparse: running it runs the measurement
-main    help    scripts/fable/p4_profile.py
-main    import  scripts/fable/p4_profile_table.py  # treats every argument as a file to read
-main    import  scripts/fable/reach.py             # hand-parses argv and ignores --help; running it scans the repo
-main    help    scripts/fable/stillness.py
-main    help    scripts/fable/stillness_score.py
-sw      help    scripts/pace/wmloop_one_tick.py
-sw      help    scripts/pace/wmloop_wait_server.py
+main    import  tools/fable/p4_c_compare.py      # no argparse: running it runs the comparison
+main    import  tools/fable/p4_paint_gap.py      # no argparse: running it runs the measurement
+main    help    tools/fable/p4_profile.py
+main    import  tools/fable/p4_profile_table.py  # treats every argument as a file to read
+main    import  tools/fable/reach.py             # hand-parses argv and ignores --help; running it scans the repo
+main    help    tools/fable/stillness.py
+main    help    tools/fable/stillness_score.py
+sw      help    tools/pace/wmloop_one_tick.py
+sw      help    tools/pace/wmloop_wait_server.py
 # --- shell launchers ---
-main    bash    benchmarks/noise_check_turns.sh
-main    bash    city/agents/run_wm_life.sh
-main    bash    city/agents/run_wm_lunch.sh
-main    bash    city/bodies/apply_core_data.sh
-main    bash    city/bodies/metahuman/run_editor_gui.sh
-main    bash    city/bodies/metahuman/setup_scratch.sh
-main    bash    city/bodies/migrate_bodies.sh
-main    bash    city/bodies/package_bodies.sh
-main    bash    city/bodies/perf_maxnear.sh
-main    bash    city/bodies/run_demo_lunch.sh
-main    bash    city/bodies/serve_9004.sh
+main    bash    experiments/benchmarks/noise_check_turns.sh
+main    bash    kokopelli/agents/run_wm_life.sh
+main    bash    kokopelli/agents/run_wm_lunch.sh
+main    bash    tools/bodies/apply_core_data.sh
+main    bash    tools/bodies/metahuman/run_editor_gui.sh
+main    bash    tools/bodies/metahuman/setup_scratch.sh
+main    bash    tools/bodies/migrate_bodies.sh
+main    bash    tools/bodies/package_bodies.sh
+main    bash    tools/bodies/perf_maxnear.sh
+main    bash    tools/bodies/run_demo_lunch.sh
+main    bash    tools/bodies/serve_9004.sh
 main    bash    experiments/commons/overnight.sh
-main    bash    filter_test/scripts/queue_all.sh
-main    bash    scripts/fable/p4_c_bits.sh
-main    bash    scripts/fable/p4_queue_all.sh
-main    bash    scripts/fable/p4_queue_profile.sh
-main    bash    scripts/fable/stillness300.sh
-main    bash    scripts/fable/stillness_queue.sh
-main    bash    scripts/fable/test_all.sh
-main    bash    scripts/pace/download_simworld.sh
-main    bash    scripts/pace/env.sh
-main    bash    scripts/pace/evals/dry_run.sh
-main    bash    scripts/pace/evals/env.sh
-main    bash    scripts/pace/setup_client.sh
-main    bash    scripts/pace/simworld_server.sh
-main    bash    wm_multicontrol/run_a.sh
+main    bash    experiments/filter_test/scripts/queue_all.sh
+main    bash    tools/fable/p4_c_bits.sh
+main    bash    tools/fable/p4_queue_all.sh
+main    bash    tools/fable/p4_queue_profile.sh
+main    bash    tools/fable/stillness300.sh
+main    bash    tools/fable/stillness_queue.sh
+main    bash    tools/fable/test_all.sh
+main    bash    tools/pace/download_simworld.sh
+main    bash    tools/pace/env.sh
+main    bash    tools/pace/evals/dry_run.sh
+main    bash    tools/pace/evals/env.sh
+main    bash    tools/pace/setup_client.sh
+main    bash    tools/pace/simworld_server.sh
+main    bash    experiments/wm_multicontrol/run_a.sh
 # --- console commands (phase 1 adds koko-* here) ---
 '
 

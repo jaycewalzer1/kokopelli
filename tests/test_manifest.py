@@ -1,4 +1,4 @@
-"""core/manifest.py: commit and dirty state from a throwaway git repo, weight identity from a toy weights folder."""
+"""kokopelli/wm/manifest.py: commit and dirty state from a throwaway git repo, weight identity from a toy weights folder."""
 import hashlib
 import json
 import os
@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from core import manifest as mf  # noqa: E402
+from kokopelli.wm import manifest as mf  # noqa: E402
 
 FIELDS = ("commit", "dirty", "weights", "seed", "prompt", "quantize", "controls", "resolution", "fake")
 

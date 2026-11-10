@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from homeostatic.watch import baselines, collapsed, describe_run, held_out_results, list_runs, read_rows, trainers
-from core.settings import ROOT
+from kokopelli.life.watch import baselines, collapsed, describe_run, held_out_results, list_runs, read_rows, trainers
+from kokopelli.settings import ROOT
 
 
 def write_run(out, name, iterations=3, finished=False):
@@ -41,9 +41,9 @@ class WatchTest(unittest.TestCase):
         self.assertEqual(states, {"alive": "training", "killed": "stopped", "done": "finished"})
 
     def test_finding_training_processes_in_a_listing(self):
-        listing = ("/usr/bin/python -u -m homeostatic.train out/homeostatic/runs/a --reward maximize --iters 25\n"
-                   "/usr/bin/python -m homeostatic.train /tmp/b\n"
-                   "/usr/bin/python -m homeostatic.experiment\n"
+        listing = ("/usr/bin/python -u -m experiments.homeostatic.train out/homeostatic/runs/a --reward maximize --iters 25\n"
+                   "/usr/bin/python -m experiments.homeostatic.train /tmp/b\n"
+                   "/usr/bin/python -m experiments.homeostatic.experiment\n"
                    "vim homeostatic.train\n")
         found = trainers(listing)
         self.assertEqual(found[(ROOT / "out/homeostatic/runs/a").resolve()], 25)
@@ -51,9 +51,9 @@ class WatchTest(unittest.TestCase):
         self.assertEqual(len(found), 2)
 
     def test_a_job_waiting_in_the_gpu_queue_isnt_training(self):
-        waiting = "/opt/python ops/gpu.py run --name pilot --priority 50 -- .venv/bin/python -u -m homeostatic.train out/x --iters 75\n"
+        waiting = "/opt/python kokopelli/ops/gpu.py run --name pilot --priority 50 -- .venv/bin/python -u -m experiments.homeostatic.train out/x --iters 75\n"
         self.assertEqual(trainers(waiting), {})
-        running = "caffeinate -is .venv/bin/python -u -m homeostatic.train out/x --iters 75\n"
+        running = "caffeinate -is .venv/bin/python -u -m experiments.homeostatic.train out/x --iters 75\n"
         self.assertEqual(trainers(waiting + running), {(ROOT / "out/x").resolve(): 75})
 
     def test_describing_a_run_reports_progress_and_newest_groups_first(self):

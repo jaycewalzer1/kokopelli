@@ -1,0 +1,34 @@
+# Every benchmark the suite knows. To add one (say a moral judgment task with human norms):
+#   1. Make experiments/benchmarks/<name>/__init__.py with an Instrument subclass, and items.jsonl with sources in its _meta line.
+#   2. Optionally add experiments/benchmarks/<name>/norms.yaml. Reports then show human norms beside each arm.
+#   3. Add an entry here. Add contrasts to contrasts.yaml if it's part of the pre-registered test.
+# role: main = the result we care about. guardrail = must not move.
+instruments:
+  holt_laury:
+    class: experiments.benchmarks.holt_laury:HoltLaury
+    role: main
+    transfer: far
+    norms: holt_laury/norms.yaml
+  holt_laury_rows:
+    class: experiments.benchmarks.holt_laury_rows:HoltLauryRows
+    role: pilot   # Not pre-registered. Tests a fix for the position bias found in the noise check.
+    transfer: far
+  lotteries:
+    class: experiments.benchmarks.lotteries:Lotteries
+    role: main
+    transfer: far
+    norms: lotteries/norms.yaml
+  mid_travel:
+    class: experiments.benchmarks.mid_travel:MidTravel
+    role: main
+    transfer: mid
+  near_errand:
+    class: experiments.benchmarks.near_errand:NearErrand
+    role: main
+    transfer: near
+  ifeval:
+    class: experiments.benchmarks.guardrails:IFEval
+    role: guardrail
+  mmlu:
+    class: experiments.benchmarks.guardrails:MMLU
+    role: guardrail

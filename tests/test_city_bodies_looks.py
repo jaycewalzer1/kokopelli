@@ -1,7 +1,7 @@
 """Planned looks and wardrobe parts (city/bodies, wave 2b), testable before MetaHuman Creator Core Data exists.
 
-city/bodies/looks.json (who wears what), city/bodies/metahuman/looks.py (validation + wardrobe matching, the dry run),
-city/bodies/write_parts.py (assembly report -> Bodies.json grooms/outfit), city/bodies/apply_core_data.sh (guard).
+tools/bodies/looks.json (who wears what), tools/bodies/metahuman/looks.py (validation + wardrobe matching, the dry run),
+tools/bodies/write_parts.py (assembly report -> Bodies.json grooms/outfit), tools/bodies/apply_core_data.sh (guard).
 No Unreal, no server.
 
     .venv/bin/python -m unittest tests/test_city_bodies_looks.py -v
@@ -15,8 +15,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "city" / "bodies" / "metahuman"))
-sys.path.insert(0, str(ROOT / "city" / "bodies"))
+sys.path.insert(0, str(ROOT / "tools" / "bodies" / "metahuman"))
+sys.path.insert(0, str(ROOT / "tools" / "bodies"))
 
 import looks  # noqa: E402
 import write_parts  # noqa: E402
@@ -94,7 +94,7 @@ class Matching(unittest.TestCase):
 
     def test_dry_run_cli(self):
         with tempfile.TemporaryDirectory() as d:  # an empty Optional dir: Core Data absent
-            r = subprocess.run([sys.executable, str(ROOT / "city/bodies/metahuman/looks.py"), "--check", "--json",
+            r = subprocess.run([sys.executable, str(ROOT / "tools/bodies/metahuman/looks.py"), "--check", "--json",
                                 "--optional", d], capture_output=True, text=True)
             self.assertEqual(r.returncode, 0, r.stderr)
             out = json.loads(r.stdout)
@@ -107,7 +107,7 @@ class Matching(unittest.TestCase):
                 (opt / folder).mkdir(parents=True, exist_ok=True)
                 for n in FAKE_CATALOG[slot]:
                     (opt / folder / f"{n}.uasset").write_bytes(b"")
-            r = subprocess.run([sys.executable, str(ROOT / "city/bodies/metahuman/looks.py"), "--check", "--json",
+            r = subprocess.run([sys.executable, str(ROOT / "tools/bodies/metahuman/looks.py"), "--check", "--json",
                                 "--optional", d], capture_output=True, text=True)
             out = json.loads(r.stdout)
             self.assertEqual(r.returncode, 0, out["unresolved"])
@@ -183,11 +183,11 @@ class WriteParts(unittest.TestCase):
             rep, bj = Path(d) / "r.json", Path(d) / "b.json"
             rep.write_text(json.dumps(REPORT))
             bj.write_text(json.dumps(self.bodies))
-            r = subprocess.run([sys.executable, str(ROOT / "city/bodies/write_parts.py"), "--report", str(rep), "--bodies",
+            r = subprocess.run([sys.executable, str(ROOT / "tools/bodies/write_parts.py"), "--report", str(rep), "--bodies",
                                 str(bj), "--dry-run"], capture_output=True, text=True)
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertEqual(json.loads(bj.read_text()), self.bodies)
-            r = subprocess.run([sys.executable, str(ROOT / "city/bodies/write_parts.py"), "--report", str(rep), "--bodies",
+            r = subprocess.run([sys.executable, str(ROOT / "tools/bodies/write_parts.py"), "--report", str(rep), "--bodies",
                                 str(bj), "--out", str(Path(d) / "w.json")], capture_output=True, text=True)
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertIn("grooms", json.loads(bj.read_text())["bodies"]["tomas"])
@@ -195,7 +195,7 @@ class WriteParts(unittest.TestCase):
 
 class ApplyScript(unittest.TestCase):
     def test_apply_core_data_refuses_without_core_data(self):
-        script = ROOT / "city" / "bodies" / "apply_core_data.sh"
+        script = ROOT / "tools" / "bodies" / "apply_core_data.sh"
         self.assertTrue(script.exists())
         with tempfile.TemporaryDirectory() as d:
             r = subprocess.run(["bash", str(script), "--check-only"], capture_output=True, text=True,

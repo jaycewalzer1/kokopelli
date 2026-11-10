@@ -1,4 +1,4 @@
-"""ops/gpu.py's job ownership: a job outlives the `run` that queued it, stays counted, and can be stopped. Tiny shell jobs, a private queue."""
+"""kokopelli/ops/gpu.py's job ownership: a job outlives the `run` that queued it, stays counted, and can be stopped. Tiny shell jobs, a private queue."""
 import importlib.util
 import json
 import os
@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-SCRIPT = Path(os.environ.get("KOKOPELLI_GPU_SCRIPT", Path(__file__).resolve().parent.parent / "ops" / "gpu.py"))
+SCRIPT = Path(os.environ.get("KOKOPELLI_GPU_SCRIPT", Path(__file__).resolve().parent.parent / "kokopelli" / "ops" / "gpu.py"))
 
 
 def wait_until(check, seconds=15):
@@ -139,14 +139,14 @@ class OutsideJobs(unittest.TestCase):
             return [pid for pid, _ in self.gpu.outside_model_jobs()]
 
     def test_a_big_python_counts_whatever_it_is_called(self):
-        self.assertEqual(self.found([{"pid": 5, "parent": 1, "gb": 19.0, "command": "/x/Python -m exp1.smoke"}]), [5])
+        self.assertEqual(self.found([{"pid": 5, "parent": 1, "gb": 19.0, "command": "/x/Python -m experiments.exp1.smoke"}]), [5])
 
     def test_a_small_python_and_a_big_app_do_not(self):
-        table = [{"pid": 5, "parent": 1, "gb": 0.2, "command": "/x/Python -m life.panel"}, {"pid": 6, "parent": 1, "gb": 30.0, "command": "/Applications/Chrome"}]
+        table = [{"pid": 5, "parent": 1, "gb": 0.2, "command": "/x/Python -m kokopelli.life.panel"}, {"pid": 6, "parent": 1, "gb": 30.0, "command": "/Applications/Chrome"}]
         self.assertEqual(self.found(table), [])
 
     def test_a_job_under_a_running_ticket_is_not_outside(self):
-        table = [{"pid": 4, "parent": 1, "gb": 0.1, "command": "python ops/gpu.py keep"}, {"pid": 5, "parent": 4, "gb": 0.1, "command": "caffeinate"}, {"pid": 6, "parent": 5, "gb": 19.0, "command": "/x/Python -m exp1.run"}]
+        table = [{"pid": 4, "parent": 1, "gb": 0.1, "command": "python kokopelli/ops/gpu.py keep"}, {"pid": 5, "parent": 4, "gb": 0.1, "command": "caffeinate"}, {"pid": 6, "parent": 5, "gb": 19.0, "command": "/x/Python -m experiments.exp1.run"}]
         self.assertEqual(self.found(table, [{"pid": 4, "running": True}]), [])
 
     def test_footprint_sees_this_process(self):
@@ -180,7 +180,7 @@ class WorldModelDryRun(unittest.TestCase):
     """KOKO_DRY_RUN in the two world-model scripts, without a model: the argument rewrite and the fake worker."""
 
     def test_the_transfer_dry_run_is_one_latent_beside_the_real_output(self):
-        from core import world_transfer_multi as wtm
+        from kokopelli.wm import world_transfer_multi as wtm
         args = wtm.parser().parse_args(["a street", "--control", "blur=b.mp4", "--output", "out/x/film.mp4", "--frames", "121",
                                         "--extra", '{"run": "r1"}', "--dry-run"])
         args = wtm.dry_run_args(args)
@@ -190,7 +190,7 @@ class WorldModelDryRun(unittest.TestCase):
 
     def test_the_stream_dry_run_paints_one_frame_and_labels_it(self):
         with tempfile.TemporaryDirectory() as folder:
-            done = subprocess.run([sys.executable, "-m", "core.world_stream_multi", "--dry-run", "--fake", "--out", folder],
+            done = subprocess.run([sys.executable, "-m", "kokopelli.wm.world_stream_multi", "--dry-run", "--fake", "--out", folder],
                                   cwd=Path(__file__).resolve().parent.parent, capture_output=True, text=True, timeout=60)
             self.assertEqual(done.returncode, 0, done.stderr[-500:])
             sidecar = json.loads((Path(folder) / "dry_run.json").read_text())

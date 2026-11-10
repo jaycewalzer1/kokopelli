@@ -1,4 +1,4 @@
-"""P5 lunch switches (city/agents/lunch_fixes.py, lunch_bench.py): all off by default, and each does what it says on
+"""P5 lunch switches (kokopelli/agents/lunch_fixes.py, lunch_bench.py): all off by default, and each does what it says on
 the toy world with the fake brains. No model runs."""
 import json
 import shutil
@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-for _p in (ROOT, ROOT / "tests", ROOT / "city" / "agents"):
+for _p in (ROOT, ROOT / "tests", ROOT / "kokopelli" / "agents"):
     sys.path.insert(0, str(_p))
 
 import lunch_bench as lb  # noqa: E402

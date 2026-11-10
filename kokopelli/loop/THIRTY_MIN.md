@@ -1,0 +1,89 @@
+# Gates to the 30 minute run
+
+In order. Each gate should pass before spending on the next. A full run is 60 ticks: SimWorld, Cosmos and Qwen on NVIDIA GPUs. The Mac can't be the route, since a real 30 seconds takes about 2 hours there.
+
+**Nothing real has run through this loop yet.** Everything marked done was tested against mocks or fake servers.
+
+| # | Gate | Check | Status | Blocked by |
+|---|---|---|---|---|
+| 1 | Loop works end to end | `python -m unittest discover -s kokopelli/loop/tests -t .`, both Pythons | Done on fakes | |
+| 2 | Tools hold up at full scale | 60 ticks in the real shape on mocks, then `runtime.check_video --expect-seconds 1800` | Done on mocks: 240 clips joined into 43,201 frames, exactly 1800.0 s, in about 6.5 minutes. Its speed and storage don't predict a real run | |
+| 3 | Real models in the loop | 3 ticks on the Mac: real Cosmos and Qwen, mock sim, real life text. Passes only with valid decisions that weren't forced waits | Passed: `runs/wmloop_demo_real2`, 3 of 3 valid on the first try, video with no cuts. See the repeat warning under "What could change the plan" | |
+| 4 | Lower-RAM mode | 4-bit Qwen conversion, then 3 ticks with `--low-memory` | Passed: `runs/wmloop_demo_lowmem2`. Demo only, not for experiment results | |
+| 5 | PACE access filled in | `CHANGE_ME` values in `tools/pace/env.sh` and both `.sbatch` files; `WMLOOP_DRY_RUN=1 bash tools/pace/wmloop_run.sbatch` | Not started | Owner: account, partition, GPU type |
+| 6 | SimWorld on a real server | `sbatch tools/pace/wmloop_gate.sbatch`; every checklist line passes | Not started | Gate 5, package download |
+| 7 | Cosmos server on a GPU | One real chunk through `/v1/videos/sync`; `runtime.preflight` sees the model | Not started | Gate 5 |
+| 8 | Qwen server on a GPU | One real decision with images; replies validate | Not started | Gate 5 |
+| 9 | 10 ticks, everything real | `WMLOOP_TICKS=10 sbatch tools/pace/wmloop_run.sbatch` | Not started | Gates 6 to 8 |
+| 10 | Preemption on the real stack | Cancel gate 9's job partway, then rerun with the same `WMLOOP_RUN_NAME`; it continues | Done on fakes only | Gate 9 |
+| 11 | Drift control earns its place | Same seed with and without `--no-drift-control`, then `runtime.compare` | Done on mocks only | Gate 9 |
+| 12 | Budget | `runtime.plan` on gate 9's run gives hours, GPU-hours, storage and fallbacks; choose one | Tool done | Gate 9, then owner's decision |
+| 13 | Null agent on the real sim | Same seed with `--agent null --wm mock`, then `runtime.compare` | Tool done | Gate 9 |
+| 14 | The 60 tick run | `WMLOOP_TICKS=60 WMLOOP_RUN_NAME=full sbatch tools/pace/wmloop_run.sbatch` | Not started | Gates 9 to 12 |
+| 15 | Result checks out | `runtime.check_video --expect-seconds 1800`, then watch it; replay in `runtime.viewer` | Tool done | Gate 14 |
+
+## Measured so far
+
+Passing real run, on the Mac at 448x256, 16 frames per tick, so about 0.7 s of video rather than 30 s: 436 s for 3 ticks, of which Cosmos was 395 s and Qwen 41 s. The machine's peak RAM was 30.9 GB from a 12.0 GB baseline, with Cosmos and Qwen taking turns.
+
+The low-memory run, at 256x256 with 20 steps, took 222 s for 3 ticks. The machine's peak while Qwen ran fell from 30.9 to 20.0 GB, but its peak while Cosmos ran only fell from 29.5 to 28.2 GB, so 8-bit Cosmos barely reduces its peak. These compare one short run each, from baselines of 12 and 13 GB.
+
+The longest real run, `runs/wmloop_real_20`, was 20 ticks of real Cosmos and Qwen on the mock sim, same seed and settings as above: 2963 s, of which Cosmos was 2691 s (about 135 s a tick) and Qwen 270 s. The machine's peak RAM was 30.4 GB. It gave 18 identical waits, and 9.4 s of video. It showed two things:
+
+- **Real frames don't unstick the agent.** Ticks 2 to 19 are the same `wait` with the same diary line, so it locks in sooner than on the mock world model (`runs/wmloop_agent_20b`, from tick 6). This is one run at one seed.
+- **The picture falls apart without re-anchoring.** Each chunk continues from the last chunk's frame, and the sim is a mock, so nothing pulls it back. Tick 4 is soft, tick 8 is smeared, and by tick 20 the child and the gate are no longer recognizable. Edge strength at 16 pixel boundaries, compared with elsewhere, rose from 1.03 to 1.85 and average brightness fell from 53 to 35. Neither the drift score nor `runtime.check_video` flags this: drift is measured against the mock's grid picture, so it reads about 0.99 throughout, and the video check only looks for cuts, black and frozen stretches. The agent's frames were this degraded too, which weakens the first finding for the later ticks.
+
+`autonomy` reads 1.0 on this run even though the agent's actions changed nothing compared with the null agent (`final_distance` 0.0). It only says that the choice differed from the life default, so don't read it as the agent doing something.
+
+## Filter mode (owner's decision)
+
+The owner chose to make the sim the source of truth and have the world model repaint it: `--wm-filter depth` or `seg`, on `nvidia/Cosmos3-Nano-Sim-Transfer`. Every frame's geometry comes from the sim, so there's no drift control or re-anchoring on this path. It's tested on mocks and a fake server only. To reach a real run:
+
+1. **Let SimWorld capture every frame.** At 24 fps it needs `tick_interval_s` of 1/24, and `SimWorldConfig` refuses captures inside the first `velocity_window_s`. Both are unsolved, and each capture costs a velocity snapshot.
+2. **Measure render speed on real SimWorld.** A 30 minute run is 43,200 frames. Only this can say whether that's practical.
+3. **Serve the right model.** `vllm serve nvidia/Cosmos3-Nano-Sim-Transfer --omni --model-class-name Cosmos3NanoSimTransferPipeline --deploy-config /app/vllm-omni/vllm_omni/deploy/cosmos3_nano_sim_transfer.yaml`. The server must be able to read the run folder, because `control_path` is a path on its filesystem. `tools/pace/wmloop_run.sbatch` doesn't do this yet.
+4. **Check a session continues across requests.** `reset` is only sent on the first request. The model card only shows one-request sessions, so if this doesn't carry appearance, expect a seam at every chunk.
+5. **Check the depth picture.** Near bright and far black is read off one NVIDIA sample by eye, and the 0.5 m to 100 m range is a guess.
+
+The model card lists 14.6 frames/s on an H100 at 480p, which is about 49 minutes for 43,200 frames, rendering only. The scene has to exist in the sim, so this makes "which half hour of which life" a blocker: the text can restyle what's there, but not add an apartment to a city.
+
+## Notes
+
+Notes are now a folder of markdown, `memory/` in each run, in Google's Open Knowledge Format v0.2 (`kokopelli/loop/notebook.py`). A note at least 90% similar to an existing one updates it, so the prompt shows it once. The prompt also says what the agent last chose and what changed in view. The agent can't open files yet, so it only gets its 5 most recently touched notes.
+
+**This didn't unstick the agent.** `runs/wmloop_notes_20`, with real Qwen on the mock world model and the same seed as `runs/wmloop_agent_20b`, gave 19 waits out of 20, against 18 before. The note repeats from tick 3 to tick 20, so the folder holds 3 notes rather than 20. It's one run, on a mock sim where what's in view never changes, so the prompt told it the same thing every tick and it had nothing to react to. Whether a world where things happen changes this is the next thing to test.
+
+## What could change the plan
+
+Most likely to bite first:
+
+0. **The agent may get stuck.** With the prompt's example removed, 20 real ticks gave 18 waits, with the same diary line from tick 6 to tick 20 (`runs/wmloop_agent_20b`). With the example it varied more (`runs/wmloop_agent_20`), so that earlier variety isn't reliable. Both ran on the mock world model. Probing ticks 12 and 20 points at its own notes: hiding them changed the action on both, while 0.7 temperature still gave 6 of 6 waits, and neither reversing the list nor more randomness broke it. Hiding notes only made it start over, walking back to the bench, so that's amnesia rather than a fix. The prompt also never tells it the result of its last action. A 30 minute run says little until this is fixed. `kokopelli/loop/probe_decisions.py` re-asked 3 logged moments, about 27 replies, so these are first reads:
+   - Frames matter: blank frames moved it from the door to Ana.
+   - Hidden notes didn't change its action, only some diary wording, so its notes aren't what picks the action. They may still explain its repeated phrases.
+   - A named target in the prompt's example changed its choice, so the prompt no longer names one.
+   - List order didn't matter, and 0.7 temperature still gave the door 9 of 9, so at this moment it's a real preference.
+   - It sometimes targets things from the life text, such as a clock, which the sim doesn't have. Those replies are rejected. This is the scene mismatch in the first owner decision below.
+1. **Do SimWorld's actions play out while paused?** The adapter steps a paused game, but every SimWorld example runs unpaused. If movement doesn't advance on paused ticks, stepping needs a redesign. Gate 6 answers this. `kokopelli/loop/SIMWORLD.md` has the full list.
+2. **Does `/v1/models` exist on the vLLM-Omni Cosmos server?** The README shows it on plain vLLM, not with `--omni`. The PACE job waits on it, so if it's missing the job fails at startup. The fix is a small change to the wait and to preflight. Gate 7 answers this.
+3. **Is Cosmos's video good enough across a whole run?** Without re-anchoring it isn't: `runs/wmloop_real_20` is unrecognizable by tick 20. Whether re-anchoring every 60 sim-seconds holds it together is untested, because re-anchoring needs real sim frames. Each chunk also continues from one frame, so motion may not carry between chunks, and a re-anchor may show as a jump. Only gate 9 can show this.
+4. **Cosmos's safety guardrails may refuse a prompt.** That comes back as a 4xx error, which stops the run instead of retrying. It's resumable, but the same prompt would refuse again.
+5. **GPU type and count on PACE.** The job assumes 3 GPUs on one node, one each. NVIDIA recommends H200s for Cosmos, and I don't know what PACE offers or whether smaller cards fit it.
+
+## Decisions for the owner
+
+| Decision | Why it matters | Needed by |
+|---|---|---|
+| How should the agent's notes work? | They're what keeps it stuck. Options: show repeated notes once, tell it what its last action did and what changed, keep notes for sleep and training only, or summarize them. This changes what the agent is, so it also affects the benchmark comparison. | Gate 9 |
+| Which half hour of which life? | The latest real tree only has text for a few days at age 2, in an apartment, and SimWorld is an outdoor city. The sim, the prompt and the agent's life will disagree until these match. | Gate 9 |
+| Write more of the tree, or use coarse nodes? | Most moments have no `sec30` node, so the prompt reuses the deepest node for many ticks. | Gate 9 |
+| What counts as the tree's "default" action? | The autonomy metric uses a stand-in mapping, `VERB_TO_ACTION` in `adapters/life_db.py`. | Gate 13 |
+| Use `--mind`? | It wraps the agent in the feeling loop and works with the rest of this path, but doubles Qwen's time on decision ticks. See `kokopelli/mind/OPEN_DECISIONS.md`. | Gate 9 |
+| Which fallback, if the run is too slow? | `runtime.plan` lists them in order, but only its first row is measured. | Gate 12 |
+
+## Known gaps that won't stop a run
+
+- `--mind` imports `kokopelli/mind/`, which isn't committed on this branch, so it has to be on the path. It builds prompts from the loop's prompt plus its own past rows, and those added rows don't pass through the leak guard. They only hold earlier feelings.
+- The agent's list of things it can see comes from the sim, not from what the world model drew.
+- Drift scores compare pixels only. Depth, segmentation and key objects need an estimator model.
+- Real-sim replays drift by an amount only gate 13 can measure, and that sets how far to trust the null-agent comparison.
+- `kokopelli/loop/HANDOFF.md` lists proposed changes outside this folder, none applied.

@@ -1,7 +1,0 @@
-name: fake_flipped
-model: mock
-adapter: benchmarks/tests/fixtures/fake_adapter_cautious
-seed: 0
-mock:
-  malformed_rate: 0.02
-notes: Test only. A fake adapter with a planted opposite tilt.

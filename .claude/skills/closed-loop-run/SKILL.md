@@ -5,7 +5,7 @@ description: Run the two-agent lunch closed loop (Mara and Iris on Qwen3-VL-8B 4
 
 # Closed-loop run (two agents at lunch)
 
-Distilled from `city/agents/run_wm_lunch.sh`, `city/agents/lunch_wm.py` and the queued `wmbodies_demo` job (`city/bodies/run_demo_lunch.sh`). Nothing new.
+Distilled from `kokopelli/agents/run_wm_lunch.sh`, `kokopelli/agents/lunch_wm.py` and the queued `wmbodies_demo` job (`tools/bodies/run_demo_lunch.sh`). Nothing new.
 
 **Models and weights:**
 - Agents: Qwen3-VL-8B-Instruct 4-bit MLX, `models/Qwen3-VL-8B-Instruct-4bit` (`lunch_wm.py --weights`, the default), loaded once for both agents.
@@ -23,14 +23,14 @@ Distilled from `city/agents/run_wm_lunch.sh`, `city/agents/lunch_wm.py` and the 
 
 ```
 K=/Users/jaycewalzer/Desktop/kokopelli; NAME=wmlunch_<run>
-python3 ops/gpu.py run --name $NAME --priority 32 --max-hours 4 --cwd $K \
+python3 kokopelli/ops/gpu.py run --name $NAME --priority 32 --max-hours 4 --cwd $K \
   --about "Closed loop: Mara and Iris (Qwen3-VL-8B 4-bit) meet for lunch at The Kettle, each seeing only her own Cosmos3-Nano-Sim-Transfer film (8-bit, 4 controls at 0.25, <size>): <why>" \
   --output out/city_agents/$NAME -- \
-  city/agents/run_wm_lunch.sh --minutes 5 --quantize 8 --size 832x480 --out $K/out/city_agents/$NAME
+  kokopelli/agents/run_wm_lunch.sh --minutes 5 --quantize 8 --size 832x480 --out $K/out/city_agents/$NAME
 ```
-The script starts the server minimized only if 9001 is free (and stops only a server it started), claims 10 GB for it with `ram_share.py claim`, builds the city with `simworld/.venv/bin/python -I city/ue/build_city.py`, then runs `ram_share.py hold --name wmlunch_agents --gb 24 -- .venv/bin/python city/agents/lunch_wm.py --port 9001 ...`.
+The script starts the server minimized only if 9001 is free (and stops only a server it started), claims 10 GB for it with `ram_share.py claim`, builds the city with `simworld/.venv/bin/python -I tools/city_build/build_city.py`, then runs `ram_share.py hold --name wmlunch_agents --gb 24 -- .venv/bin/python kokopelli/agents/lunch_wm.py --port 9001 ...`.
 
-Other `lunch_wm.py` flags: `--fps 24 --step-s 10 --window 24 --sink 1 --seed 2025 --clock 12:20 --meet kettle_cafe --first-start fern_common --second-start fern_bakery --no-npcs`. The bodies demo wrapper is `city/bodies/run_demo_lunch.sh` with the same flags plus `--deadline HH:MM`.
+Other `lunch_wm.py` flags: `--fps 24 --step-s 10 --window 24 --sink 1 --seed 2025 --clock 12:20 --meet kettle_cafe --first-start fern_common --second-start fern_bakery --no-npcs`. The bodies demo wrapper is `tools/bodies/run_demo_lunch.sh` with the same flags plus `--deadline HH:MM`.
 
 Stop with `gpu.py stop --name $NAME`, never `pkill` a model process. Dry test without GPU or server: `.venv/bin/python -m unittest tests.test_city_lunch`.
 

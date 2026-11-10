@@ -8,7 +8,7 @@ import unittest
 import mlx.core as mx
 import numpy as np
 
-from core.world_multicontrol_base import (forward, guided, multi_control_attention, normalise_weights, parse_pairs,
+from kokopelli.wm.world_multicontrol_base import (forward, guided, multi_control_attention, normalise_weights, parse_pairs,
                                      query_blocks, sdpa, shared_positions, vision_positions)
 
 
@@ -50,7 +50,7 @@ class PositionTest(unittest.TestCase):
         self.assertTrue(same(theirs[:, 0, 37:], vision_positions(37, 5, 8, 14, 24.0)))
 
     def test_controls_repeat_the_targets_positions(self):
-        from core.world_filter import pack_positions
+        from kokopelli.wm.world_filter import pack_positions
         target = vision_positions(7, 2, 3, 3, 24.0)
         layout = shared_positions(target, 3)
         self.assertEqual(layout.shape, (3, 3 * 18))
@@ -148,7 +148,7 @@ class TinyGenerator:
     Generator.__call__ hardcodes them), 2 layers and a 64-wide MLP, so it builds in a second."""
 
     def __init__(self, layers=2, mlp=64):
-        from core.world_transfer import Generator
+        from kokopelli.wm.world_transfer import Generator
         mx.random.seed(11)
         lin = lambda o, i: (lambda w: (lambda x: x @ w.T))(rand(o, i) * (i ** -0.5))
         self.gen = Generator.__new__(Generator)
@@ -167,7 +167,7 @@ class TinyGenerator:
 class ForwardTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        from core.world_transfer import Rope
+        from kokopelli.wm.world_transfer import Rope
         cls.tiny = TinyGenerator()
         cls.n = 2 * 2 * 3                     # 2 latents of a 2 x 3 patch grid
         cls.cos, cls.sin = Rope().tables(vision_positions(7, 2, 2, 3, 30.0))

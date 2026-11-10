@@ -1,4 +1,4 @@
-"""Scripted-policy reward audit (Gate 2). No LLM. Writes runs/commons/reward_audit.md and exits nonzero if a requirement fails."""
+"""Scripted-policy reward audit (Gate 2). No LLM. Writes experiments/commons/results/reward_audit.md and exits nonzero if a requirement fails."""
 import copy
 import statistics as st
 import sys
@@ -8,7 +8,7 @@ import policies
 import rewards as rw
 import sim
 
-OUT = Path(__file__).parents[2] / "runs" / "commons" / "reward_audit.md"
+OUT = Path(__file__).parent / "results" / "reward_audit.md"
 SEEDS = range(10)
 
 

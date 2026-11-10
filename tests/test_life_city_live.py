@@ -9,8 +9,8 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
-from life import city_live
-from life.panel import make_server
+from kokopelli.life import city_live
+from kokopelli.life.panel import make_server
 
 TRANSCRIPT = """# A life in the city — 2026-11-06 10:38
 

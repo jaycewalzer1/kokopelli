@@ -11,9 +11,29 @@ dependencies = [
     "opencv-python==5.0.0.93",
 ]
 
+[project.scripts]
+# The same entry points as `python -m <module>`. The transfer and filter commands only run in the Cosmos venv.
+koko-gpu = "kokopelli.ops.gpu:main"
+koko-ram = "kokopelli.ops.ram_share:main"
+koko-memguard = "kokopelli.ops.memguard:main"
+koko-panel = "kokopelli.life.panel:main"
+koko-video-check = "kokopelli.wm.video_check:main"
+koko-transfer = "kokopelli.wm.world_transfer:main"
+koko-transfer-multi = "kokopelli.wm.world_transfer_multi:main"
+koko-filter = "kokopelli.wm.world_filter:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# Only the library is installed. experiments/, tools/ and tests/ run from the repo root.
+packages = ["kokopelli"]
+
 [tool.uv]
-# Not an installable package: modules run from the repo root with `python -m`.
-package = false
+# The library is installed editable (`uv pip install --no-deps -e .`) in .venv and the Cosmos venv, so `import kokopelli`
+# works from any folder. Everything also still runs from the repo root with `python -m`.
+package = true
 # MLX only runs on Apple silicon, and this repo only runs on this Mac.
 environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'"]
 # Transitive versions held to what the main .venv had on 2026-11-09, so a fresh
@@ -42,7 +62,7 @@ constraint-dependencies = [
 target-version = "py312"
 extend-exclude = [
     "simworld",
-    "wm_multicontrol/upstream",
+    "vendor/wm_multicontrol_upstream",
     "mac_server",
     "out",
     "models",
@@ -52,9 +72,9 @@ extend-exclude = [
 
 [tool.ruff.per-file-target-version]
 # These run under simworld/.venv, which is Python 3.10.
-"runtime/adapters/simworld*.py" = "py310"
-"runtime/tests/test_simworld*.py" = "py310"
-"city/ue/build_city.py" = "py310"
+"kokopelli/loop/adapters/simworld*.py" = "py310"
+"kokopelli/loop/tests/test_simworld*.py" = "py310"
+"tools/city_build/build_city.py" = "py310"
 
 [tool.ruff.lint]
 # Syntax errors, pyflakes, bugbear, pyupgrade. No formatter and no repo-wide autofix:
@@ -65,96 +85,96 @@ select = ["E9", "F", "B", "UP"]
 # BASELINE (generated 2026-11-09, P2-D): existing findings, not fixed in this pass.
 # Remove a code from a file once its findings there are fixed. Counts: docs/fable_log/P2-D.md.
 # Added 2026-11-10 when the commons and exp1 branches were merged, same rule: baselined, not fixed.
-"exp1/diagnose_pilot.py" = ["F821"]  # closure over names deleted later in the function; check by hand
+"experiments/exp1/diagnose_pilot.py" = ["F821"]  # closure over names deleted later in the function; check by hand
 "experiments/commons/analyze.py" = ["B905", "F541"]
 "experiments/commons/audit.py" = ["B905"]
 "experiments/commons/prompts.py" = ["UP031"]
 "experiments/commons/run.py" = ["B007", "B905", "UP031"]
 "experiments/commons/sim.py" = ["UP038"]
 "experiments/commons/tests/test_run.py" = ["B905"]
-"benchmarks/before_after.py" = ["B905"]
-"benchmarks/core.py" = ["B905"]
-"benchmarks/freeze.py" = ["UP017"]
-"benchmarks/holt_laury/__init__.py" = ["B905"]
-"benchmarks/prereg.py" = ["UP017"]
-"benchmarks/run.py" = ["B007", "B905", "UP017"]
-"benchmarks/stats.py" = ["B905"]
-"city/agents/live.py" = ["B007", "B905"]
-"city/agents/live_wm.py" = ["F401"]
-"city/bodies/client.py" = ["UP007"]
-"city/bodies/demo_cut.py" = ["B905"]
-"city/bodies/demo_lunch.py" = ["B905"]
-"city/bodies/metahuman/looks.py" = ["F401", "UP038"]
-"city/bodies/metahuman/make_bodies.py" = ["B008", "B905"]
-"city/bodies/metahuman/render_bodies.py" = ["F401"]
-"city/bodies/standins/import_standins.py" = ["F841"]
-"city/bodies/standins/make_groom_usda.py" = ["B007", "UP031"]
-"city/bodies/wave1_renders.py" = ["UP031"]
-"city/bodies/wave2_renders.py" = ["F841", "UP031"]
-"city/bodies/write_parts.py" = ["F401"]
-"city/realism/replay_bridge.py" = ["UP038"]
-"city/source_arena.py" = ["B905"]
-"city/ue/build_city.py" = ["B007", "B905"]
-"city/ue/kinds/california_modern.py" = ["B007", "B905", "F401", "F841"]
-"city/ue/kinds/glass_houses.py" = ["B007", "B905", "F841"]
-"city/ue/kinds/handmade.py" = ["B007", "B905", "F401", "F841"]
-"city/ue/kinds/japanese_homes.py" = ["B007", "B905", "F841"]
-"city/ue/kinds/mcm_housing.py" = ["B007", "B023", "B905", "F841"]
-"city/ue/kinds/norcal_modern.py" = ["B007", "F401", "F841"]
-"city/ue/kinds/park.py" = ["B007"]
-"city/ue/kinds/tropical_modern.py" = ["B007", "F821"]
-"city/ue/plan_varied/check.py" = ["B905"]
-"city/ue/plan_varied/kitmap.py" = ["UP031"]
-"city/ue/plan_varied/plan.py" = ["F401", "F841"]
-"city/ue/plan_varied/tile.py" = ["B905"]
-"core/world_filter.py" = ["B905"]
-"core/world_multicontrol_base.py" = ["B905"]
-"core/world_stream.py" = ["B905"]
-"core/world_transfer.py" = ["B023", "B905", "F821"]
-"core/world_transfer_multi.py" = ["B905"]
-"exp1/diagnose_d2.py" = ["B023", "F401", "F821"]
-"exp1/guardrails.py" = ["B905"]
-"exp1/homeostasis.py" = ["B023", "B905"]
-"exp1/learn.py" = ["B023"]
-"exp1/policy.py" = ["B905"]
-"exp1/run.py" = ["B905", "UP038"]
-"exp1/smoke.py" = ["B905"]
-"exp1/tabular_check.py" = ["B905"]
-"filter_test/scripts/capture.py" = ["B905", "F401"]
-"filter_test/scripts/head.py" = ["B905"]
-"filter_test/scripts/preview_videos.py" = ["B905"]
-"homeostatic/grpo.py" = ["B905"]
-"homeostatic/world.py" = ["B905"]
-"life/city.py" = ["B905"]
-"life/llm_generator.py" = ["UP038"]
-"life/overnight.py" = ["B904", "F401"]
-"life/report.py" = ["B905"]
-"life/scenario.py" = ["B905"]
-"life/scenario_night.py" = ["B007", "B904", "F401"]
-"life/windows.py" = ["B905"]
-"mind/change_check.py" = ["F401"]
-"mind/check.py" = ["B905"]
-"runtime/actions.py" = ["UP007"]
-"runtime/adapters/life_db.py" = ["F401"]
-"runtime/adapters/simworld.py" = ["UP007", "UP038"]
-"runtime/adapters/simworld_actions.py" = ["UP007"]
-"runtime/adapters/simworld_config.py" = ["UP007"]
-"runtime/adapters/simworld_control.py" = ["UP007", "UP035"]
-"runtime/adapters/simworld_math.py" = ["UP007"]
-"runtime/adapters/simworld_weather.py" = ["UP007"]
-"runtime/adapters/simworld_wire.py" = ["UP007", "UP035"]
-"runtime/interfaces.py" = ["B027"]
-"runtime/leak_guard.py" = ["UP038"]
-"runtime/memory.py" = ["F401"]
-"runtime/physics.py" = ["UP007", "UP035", "UP037"]
-"runtime/tests/fake_unrealcv.py" = ["UP007"]
-"runtime/tests/test_life_context.py" = ["F401"]
-"runtime/tests/test_simworld_actions.py" = ["B904"]
-"runtime/tests/test_simworld_adapter.py" = ["B904"]
-"runtime/tests/test_simworld_contract.py" = ["B023", "B904"]
-"runtime/tests/test_simworld_gate.py" = ["B904"]
-"runtime/tests/test_simworld_recovery.py" = ["B904", "B905", "F401"]
-"scripts/pace/wmloop_one_tick.py" = ["B905", "F401"]
+"experiments/benchmarks/before_after.py" = ["B905"]
+"experiments/benchmarks/core.py" = ["B905"]
+"experiments/benchmarks/freeze.py" = ["UP017"]
+"experiments/benchmarks/holt_laury/__init__.py" = ["B905"]
+"experiments/benchmarks/prereg.py" = ["UP017"]
+"experiments/benchmarks/run.py" = ["B007", "B905", "UP017"]
+"experiments/benchmarks/stats.py" = ["B905"]
+"kokopelli/agents/live.py" = ["B007", "B905"]
+"kokopelli/agents/live_wm.py" = ["F401"]
+"tools/bodies/client.py" = ["UP007"]
+"tools/bodies/demo_cut.py" = ["B905"]
+"tools/bodies/demo_lunch.py" = ["B905"]
+"tools/bodies/metahuman/looks.py" = ["F401", "UP038"]
+"tools/bodies/metahuman/make_bodies.py" = ["B008", "B905"]
+"tools/bodies/metahuman/render_bodies.py" = ["F401"]
+"tools/bodies/standins/import_standins.py" = ["F841"]
+"tools/bodies/standins/make_groom_usda.py" = ["B007", "UP031"]
+"tools/bodies/wave1_renders.py" = ["UP031"]
+"tools/bodies/wave2_renders.py" = ["F841", "UP031"]
+"tools/bodies/write_parts.py" = ["F401"]
+"tools/realism/replay_bridge.py" = ["UP038"]
+"tools/moodboard/source_arena.py" = ["B905"]
+"tools/city_build/build_city.py" = ["B007", "B905"]
+"tools/city_build/kinds/california_modern.py" = ["B007", "B905", "F401", "F841"]
+"tools/city_build/kinds/glass_houses.py" = ["B007", "B905", "F841"]
+"tools/city_build/kinds/handmade.py" = ["B007", "B905", "F401", "F841"]
+"tools/city_build/kinds/japanese_homes.py" = ["B007", "B905", "F841"]
+"tools/city_build/kinds/mcm_housing.py" = ["B007", "B023", "B905", "F841"]
+"tools/city_build/kinds/norcal_modern.py" = ["B007", "F401", "F841"]
+"tools/city_build/kinds/park.py" = ["B007"]
+"tools/city_build/kinds/tropical_modern.py" = ["B007", "F821"]
+"tools/city_build/plan_varied/check.py" = ["B905"]
+"tools/city_build/plan_varied/kitmap.py" = ["UP031"]
+"tools/city_build/plan_varied/plan.py" = ["F401", "F841"]
+"tools/city_build/plan_varied/tile.py" = ["B905"]
+"kokopelli/wm/world_filter.py" = ["B905"]
+"kokopelli/wm/world_multicontrol_base.py" = ["B905"]
+"kokopelli/wm/world_stream.py" = ["B905"]
+"kokopelli/wm/world_transfer.py" = ["B023", "B905", "F821"]
+"kokopelli/wm/world_transfer_multi.py" = ["B905"]
+"experiments/exp1/diagnose_d2.py" = ["B023", "F401", "F821"]
+"experiments/exp1/guardrails.py" = ["B905"]
+"experiments/exp1/homeostasis.py" = ["B023", "B905"]
+"experiments/exp1/learn.py" = ["B023"]
+"experiments/exp1/policy.py" = ["B905"]
+"experiments/exp1/run.py" = ["B905", "UP038"]
+"experiments/exp1/smoke.py" = ["B905"]
+"experiments/exp1/tabular_check.py" = ["B905"]
+"experiments/filter_test/scripts/capture.py" = ["B905", "F401"]
+"experiments/filter_test/scripts/head.py" = ["B905"]
+"experiments/filter_test/scripts/preview_videos.py" = ["B905"]
+"experiments/homeostatic/grpo.py" = ["B905"]
+"experiments/homeostatic/world.py" = ["B905"]
+"kokopelli/life/city.py" = ["B905"]
+"kokopelli/life/llm_generator.py" = ["UP038"]
+"kokopelli/life/overnight.py" = ["B904", "F401"]
+"kokopelli/life/report.py" = ["B905"]
+"kokopelli/life/scenario.py" = ["B905"]
+"kokopelli/life/scenario_night.py" = ["B007", "B904", "F401"]
+"kokopelli/life/windows.py" = ["B905"]
+"kokopelli/mind/change_check.py" = ["F401"]
+"kokopelli/mind/check.py" = ["B905"]
+"kokopelli/loop/actions.py" = ["UP007"]
+"kokopelli/loop/adapters/life_db.py" = ["F401"]
+"kokopelli/loop/adapters/simworld.py" = ["UP007", "UP038"]
+"kokopelli/loop/adapters/simworld_actions.py" = ["UP007"]
+"kokopelli/loop/adapters/simworld_config.py" = ["UP007"]
+"kokopelli/loop/adapters/simworld_control.py" = ["UP007", "UP035"]
+"kokopelli/loop/adapters/simworld_math.py" = ["UP007"]
+"kokopelli/loop/adapters/simworld_weather.py" = ["UP007"]
+"kokopelli/loop/adapters/simworld_wire.py" = ["UP007", "UP035"]
+"kokopelli/loop/interfaces.py" = ["B027"]
+"kokopelli/loop/leak_guard.py" = ["UP038"]
+"kokopelli/loop/memory.py" = ["F401"]
+"kokopelli/loop/physics.py" = ["UP007", "UP035", "UP037"]
+"kokopelli/loop/tests/fake_unrealcv.py" = ["UP007"]
+"kokopelli/loop/tests/test_life_context.py" = ["F401"]
+"kokopelli/loop/tests/test_simworld_actions.py" = ["B904"]
+"kokopelli/loop/tests/test_simworld_adapter.py" = ["B904"]
+"kokopelli/loop/tests/test_simworld_contract.py" = ["B023", "B904"]
+"kokopelli/loop/tests/test_simworld_gate.py" = ["B904"]
+"kokopelli/loop/tests/test_simworld_recovery.py" = ["B904", "B905", "F401"]
+"tools/pace/wmloop_one_tick.py" = ["B905", "F401"]
 "tests/test_city_lunch.py" = ["B905", "F401"]
 "tests/test_continuous_video.py" = ["F401"]
 "tests/test_exp1.py" = ["B905"]

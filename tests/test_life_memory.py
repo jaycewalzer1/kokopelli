@@ -6,16 +6,16 @@ from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
 
-from life.engine import Budget, Engine
-from life.generator import MockGenerator
-from life.llm_generator import BadAnswer, LLMGenerator, parse_closing, parse_opening
-from life.memory import recall
-from life.overnight import month_at, overnight_phases
-from life.panel import make_server
-from life.seed import LifeSeed
-from life.store import Store
-from life.windows import children, find, life_window
-from core.settings import LIFE_LLM
+from kokopelli.life.engine import Budget, Engine
+from kokopelli.life.generator import MockGenerator
+from kokopelli.life.llm_generator import BadAnswer, LLMGenerator, parse_closing, parse_opening
+from kokopelli.life.memory import recall
+from kokopelli.life.overnight import month_at, overnight_phases
+from kokopelli.life.panel import make_server
+from kokopelli.life.seed import LifeSeed
+from kokopelli.life.store import Store
+from kokopelli.life.windows import children, find, life_window
+from kokopelli.settings import LIFE_LLM
 
 BIRTH = date(1990, 3, 14)
 SEED = LifeSeed("test", BIRTH, place="Atlanta", family=({"name": "Ana", "relationship": "mother"},), rng_seed=7, hidden_target="CANARY")

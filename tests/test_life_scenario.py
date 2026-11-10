@@ -9,7 +9,7 @@ from datetime import time as clock
 from pathlib import Path
 from unittest import mock
 
-from life import scenario, scenario_night, staged
+from kokopelli.life import scenario, scenario_night, staged
 
 
 class ScenarioRulesTest(unittest.TestCase):
@@ -85,7 +85,7 @@ class NightTest(unittest.TestCase):
 
     def test_only_the_decision_moments_reach_30_seconds(self):
         scenario_night.work(self.folder)
-        from life.store import Store
+        from kokopelli.life.store import Store
         store = Store(self.folder / "life.db")
         try:
             finest = [row[0] for row in store.conn.execute("SELECT node_id FROM openings WHERE level = 'sec30' AND node_id IN "
@@ -159,7 +159,7 @@ class PoliteTest(unittest.TestCase):
                 self.assertEqual(scenario_night.more_important_waiting(60), [])
 
     def test_the_memory_guard_waits_for_room_and_gives_the_model_back(self):
-        from core import ram_share
+        from kokopelli.ops import ram_share
         unloaded, rooms = [], iter([5.0, 25.0, -3.0, 25.0])
         guard = ram_share.Guard("t", 20, unload=lambda: unloaded.append(1), log=lambda line: None, poll=0)
         with mock.patch.object(ram_share, "room_gb", side_effect=lambda folder: (next(rooms), [], [])):
@@ -170,7 +170,7 @@ class PoliteTest(unittest.TestCase):
         self.assertTrue(guard.loaded)
 
     def test_a_shell_that_names_a_build_isnt_heavy_but_the_build_is(self):
-        from core import ram_share
+        from kokopelli.ops import ram_share
         table = [{"pid": 1, "parent": 0, "rss_gb": 0.01, "command": "/bin/zsh -c cd mac_server && xcodebuild -scheme SimWorld"},
                  {"pid": 2, "parent": 1, "rss_gb": 3.0, "command": "/usr/bin/xcodebuild -scheme SimWorld"}]
         heavy, extra = ram_share.unclaimed_heavy(table, [])

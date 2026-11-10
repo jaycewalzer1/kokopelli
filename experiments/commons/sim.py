@@ -32,7 +32,7 @@ def config_hash(path=None):
 
 
 def rng(*parts):
-    """A random stream named by its parts, as in life/seed.py, so one draw never shifts another."""
+    """A random stream named by its parts, as in kokopelli/life/seed.py, so one draw never shifts another."""
     return random.Random(":".join(str(part) for part in parts))
 
 

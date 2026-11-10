@@ -1,4 +1,4 @@
-"""Dry tests for two agents having lunch inside the world model (city/agents/lunch_wm.py, world_stream_multi.py).
+"""Dry tests for two agents having lunch inside the world model (kokopelli/agents/lunch_wm.py, world_stream_multi.py).
 
 No GPU, no Unreal, no Qwen, no weights:
   - the lunch loop runs on a fake world (real NavMap coordinates, toy walking), a scripted brain, and the fake
@@ -23,10 +23,10 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "city" / "agents"))
+sys.path.insert(0, str(ROOT / "kokopelli" / "agents"))
 
 import lunch_wm as lw  # noqa: E402
-from core.world_stream_multi import MultiWorldStream, SharedWeights, stream_class  # noqa: E402
+from kokopelli.wm.world_stream_multi import MultiWorldStream, SharedWeights, stream_class  # noqa: E402
 
 W, H = 64, 32
 STEP_S, FPS = 2.0, 4
@@ -366,7 +366,7 @@ class TwoBodySimTest(unittest.TestCase):
 
     def setUp(self):
         try:
-            from runtime.tests.fake_unrealcv import FakeUnrealCV
+            from kokopelli.loop.tests.fake_unrealcv import FakeUnrealCV
         except ImportError as e:
             self.skipTest(f"no fake server: {e}")
         self.server = FakeUnrealCV().start()

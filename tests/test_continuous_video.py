@@ -7,9 +7,9 @@ import subprocess
 import unittest
 from pathlib import Path
 
-from core.blend import FPS, blend, probe
-from core.settings import ROOT
-from core.world_model import continue_video, text_to_video
+from kokopelli.wm.blend import FPS, blend, probe
+from kokopelli.settings import ROOT
+from kokopelli.wm.world_model import continue_video, text_to_video
 
 PROMPT = "walking to the kitchen to grab water"
 OUT = ROOT / "out" / "continuous_video"

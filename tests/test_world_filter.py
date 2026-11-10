@@ -4,7 +4,7 @@ import unittest
 import mlx.core as mx
 import numpy as np
 
-from core.world_filter import chunk_windows, guided, latent_frames, noisy_mask, pack_positions
+from kokopelli.wm.world_filter import chunk_windows, guided, latent_frames, noisy_mask, pack_positions
 
 
 class ChunkTest(unittest.TestCase):

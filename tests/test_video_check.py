@@ -1,5 +1,5 @@
-"""core/video_check.py: the mosaic and drift scores, the push-by-push run check, and its hook in world_stream_multi.
-Synthetic frames only; the calibration on real painted clips is `python -m core.video_check calibrate`."""
+"""kokopelli/wm/video_check.py: the mosaic and drift scores, the push-by-push run check, and its hook in world_stream_multi.
+Synthetic frames only; the calibration on real painted clips is `python -m kokopelli.wm.video_check calibrate`."""
 import json
 import os
 import sys
@@ -13,8 +13,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from core import video_check as vc  # noqa: E402
-from core.world_stream_multi import MultiWorldStream  # noqa: E402
+from kokopelli.wm import video_check as vc  # noqa: E402
+from kokopelli.wm.world_stream_multi import MultiWorldStream  # noqa: E402
 
 
 def scene(h=128, w=224, seed=0):

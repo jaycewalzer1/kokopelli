@@ -1,4 +1,4 @@
-"""Scores finished games against PREREG.md and writes runs/commons/REPORT.md, metrics.json and the plots."""
+"""Scores finished games against PREREG.md and writes experiments/commons/results/REPORT.md, metrics.json and the plots."""
 import json
 import os
 import random
@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 import llm as _llm  # noqa: F401  (kept so a broken environment fails here rather than in the report)
 import sim
 
-ROOT = Path(os.environ.get("COMMONS_RUNS", Path(__file__).parents[2] / "runs" / "commons"))
+ROOT = Path(os.environ.get("COMMONS_RUNS", Path(__file__).parent / "results"))
 ARMS = ["clones", "described", "lived"]
 COLORS = {"clones": "#2a78d6", "described": "#eb6834", "lived": "#1baf7a"}
 LIMIT = re.compile(r"(?:at most|no more than|not more than|up to|limit(?:ed)? to|maximum of|max(?:imum)?(?: of)?|under|below|only|exceed)\s+(\d+(?:\.\d+)?)", re.I)
@@ -309,7 +309,7 @@ def main():
     for s in seeds:
         fallback += sum(p["fallback_choices"] for p in json.loads((ROOT / "upbringings" / f"seed_{s:03d}.json").read_text()).values())
     lines += ["## Failures, leakage, deviations, spend", "", f"- Invalid first attempts: " + ", ".join(f"{arm} {means[arm]['invalid_rate']:.1%}" for arm in ARMS) + f". Defaulted to no harvest (mean per game): " + ", ".join(f"{arm} {means[arm]['defaulted']:.1f}" for arm in ARMS) + ". Most of these came after collapse, when agents tried to spend fish they no longer had; before collapse the invalid rate was " + ", ".join(f"{arm} {extra_means[arm]['invalid_before_collapse']:.0%}" for arm in ARMS) + ".",
-              "- Bug fixed after the first full run, so described and lived were rerun for both seeds and the old games kept in `runs/commons/R3_before_speech_fix/`: JSON typed into speech reached other agents as speech, and offers in malformed replies were lost. Clones were unaffected (0 of 840 utterances changed) and were kept. Before the fix, malformed speech was 0 of 840 in clones, 127 of 840 in described and 119 of 840 in lived. The same fix removed a JSON wrapper from 3 diary lines in the lived upbringings.",
+              "- Bug fixed after the first full run, so described and lived were rerun for both seeds and the old games kept in `experiments/commons/results/R3_before_speech_fix/`: JSON typed into speech reached other agents as speech, and offers in malformed replies were lost. Clones were unaffected (0 of 840 utterances changed) and were kept. Before the fix, malformed speech was 0 of 840 in clones, 127 of 840 in described and 119 of 840 in lived. The same fix removed a JSON wrapper from 3 diary lines in the lived upbringings.",
               f"- Life-choice parse fallbacks (choice taken by seeded draw): {fallback} across all complete seeds.",
               f"- Spend: ${spend.get('usd', 0):.2f} cash (local model). Calls {spend.get('calls', 0):,}, input tokens {spend.get('input_tokens', 0):,}, output tokens {spend.get('output_tokens', 0):,}, model time {spend.get('seconds', 0) / 3600:.1f} h.",
               "- Deviations and judgment calls: `experiments/commons/DECISIONS.md`.", "", "### Leakage lint", "", lint, ""]

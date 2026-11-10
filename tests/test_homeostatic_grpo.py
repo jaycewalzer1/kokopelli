@@ -16,10 +16,10 @@ from mlx_vlm.trainer.peft.utils import apply_lora_layers, get_peft_model
 from mlx_vlm.trainer.vlm.grpo.loss import completion_logps
 from mlx_vlm.utils import load_processor
 
-from homeostatic.benchmark import planner_policy, run_episode
-from homeostatic.grpo import Actor, branch_return, make_homeostatic_task, score_actions, targets, training_args, visit
-from homeostatic.world import done, homeostatic_reward, start, step
-from core.settings import HOMEOSTATIC_TRAIN, HOMEOSTATIC_WORLD as WORLD, LLM_MODEL_WEIGHTS
+from experiments.homeostatic.benchmark import planner_policy, run_episode
+from experiments.homeostatic.grpo import Actor, branch_return, make_homeostatic_task, score_actions, targets, training_args, visit
+from experiments.homeostatic.world import done, homeostatic_reward, start, step
+from kokopelli.settings import HOMEOSTATIC_TRAIN, HOMEOSTATIC_WORLD as WORLD, LLM_MODEL_WEIGHTS
 
 
 def tiny_model():

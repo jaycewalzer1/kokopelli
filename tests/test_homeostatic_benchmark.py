@@ -6,10 +6,10 @@ from pathlib import Path
 
 import numpy as np
 
-from homeostatic.benchmark import constant_policy, paired_difference, planner_policy, random_policy, run_benchmark, run_episode, summarize
-from homeostatic.evaluate import evaluate
-from homeostatic.report import write_report
-from core.settings import HOMEOSTATIC_SEEDS, HOMEOSTATIC_WORLD as WORLD
+from experiments.homeostatic.benchmark import constant_policy, paired_difference, planner_policy, random_policy, run_benchmark, run_episode, summarize
+from experiments.homeostatic.evaluate import evaluate
+from experiments.homeostatic.report import write_report
+from kokopelli.settings import HOMEOSTATIC_SEEDS, HOMEOSTATIC_WORLD as WORLD
 
 SEEDS = range(200000, 200040)
 

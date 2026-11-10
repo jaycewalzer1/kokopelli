@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from life import world_runs
+from kokopelli.life import world_runs
 from tests.test_life_world_runs import make_video
 
 

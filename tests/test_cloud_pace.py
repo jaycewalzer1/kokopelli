@@ -1,10 +1,10 @@
-"""cloud/pace.py against a fake PACE: a stand-in for the SSH connection that answers like Slurm. Nothing leaves this Mac."""
+"""kokopelli/ops/cloud/pace.py against a fake PACE: a stand-in for the SSH connection that answers like Slurm. Nothing leaves this Mac."""
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from cloud.pace import batch_script, connection_state, missing, run_job, slurm_state
+from kokopelli.ops.cloud.pace import batch_script, connection_state, missing, run_job, slurm_state
 
 CONFIG = {"host": "pace", "remote_root": "~/scratch/k", "setup": ["module load x"], "sbatch": ["-A acct", "--gres=gpu:1"], "poll_seconds": 0}
 
@@ -45,7 +45,7 @@ class PaceTest(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.log = self.root / "job.log"
         self.updates = []
-        self.ticket = {"id": "1-2", "name": "mind_x", "cwd": str(self.root / "kokopelli"), "pace_command": "python -m mind.run --cuda", "pull": ["out/mind/x"]}
+        self.ticket = {"id": "1-2", "name": "mind_x", "cwd": str(self.root / "kokopelli"), "pace_command": "python -m kokopelli.mind.run --cuda", "pull": ["out/mind/x"]}
 
     def run_with(self, remote, config=CONFIG):
         return run_job(self.ticket, self.log, self.updates.append, config=config, remote=remote, sleep=lambda _: None)
@@ -73,7 +73,7 @@ class PaceTest(unittest.TestCase):
         self.assertEqual(self.run_with(remote), 0)
         self.assertEqual(remote.copied[0], ("up", self.ticket["cwd"], "~/scratch/k/kokopelli"))
         self.assertIn(("down", "~/scratch/k/kokopelli/out/mind/x", str(Path(self.ticket["cwd"]) / "out/mind/x")), remote.copied)
-        self.assertIn("python -m mind.run --cuda", next(script for script in remote.scripts if "sbatch" in script))
+        self.assertIn("python -m kokopelli.mind.run --cuda", next(script for script in remote.scripts if "sbatch" in script))
         self.assertEqual([update["state"] for update in self.updates], ["COPYING", "PENDING", "PENDING", "RUNNING", "COMPLETED", "COMPLETED"])
         self.assertEqual(self.updates[-1]["job"], "12345")
         self.assertIn("Slurm job 12345", self.log.read_text())
@@ -96,7 +96,7 @@ class PaceTest(unittest.TestCase):
         self.assertTrue(connection_state(CONFIG, FakeRemote([]))["ready"])
 
     def test_the_example_config_is_valid_json_and_still_counts_as_not_set_up(self):
-        example = json.loads((Path(__file__).resolve().parents[1] / "cloud" / "pace.example.json").read_text())
+        example = json.loads((Path(__file__).resolve().parents[1] / "kokopelli" / "ops" / "cloud" / "pace.example.json").read_text())
         self.assertEqual(set(missing(example)), {"remote_root", "setup", "sbatch"})
 
 
