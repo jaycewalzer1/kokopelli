@@ -1,7 +1,0 @@
-name: fake_lived
-model: mock
-adapter: benchmarks/tests/fixtures/fake_adapter_risky
-seed: 0
-mock:
-  malformed_rate: 0.02
-notes: Test only. A fake adapter with a planted risk tilt, used to prove the stats can see an effect.

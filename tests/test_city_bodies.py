@@ -1,4 +1,4 @@
-"""Bodies on the Python side (city/bodies/PLAN.md, wave 1 C): SetBody/GetBody replies, the old-server fallback,
+"""Bodies on the Python side (tools/bodies/PLAN.md, wave 1 C): SetBody/GetBody replies, the old-server fallback,
 npcs.json body ids, and live.py asking for bodies after spawn.
 
 No server, no Qwen, no GPU: live.py runs zero steps against a fake sim whose wire answers like the server would.
@@ -16,13 +16,13 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "city" / "agents"))
+sys.path.insert(0, str(ROOT / "kokopelli" / "agents"))
 
 import live  # noqa: E402  (puts the wm-agent-loop worktree on the path)
-from city.bodies import client as bodies  # noqa: E402
-from runtime.adapters.simworld_wire import CommandError  # noqa: E402
+from tools.bodies import client as bodies  # noqa: E402
+from kokopelli.loop.adapters.simworld_wire import CommandError  # noqa: E402
 
-NPCS = json.loads((ROOT / "city" / "agents" / "npcs.json").read_text())["npcs"]
+NPCS = json.loads((ROOT / "kokopelli" / "agents" / "npcs.json").read_text())["npcs"]
 OLD_SERVER = "error mock server does not implement blueprint function SetBody"   # mac_server/tests/mock_server.py
 
 

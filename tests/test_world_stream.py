@@ -17,7 +17,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from core import world_stream  # noqa: E402
+from kokopelli.wm import world_stream  # noqa: E402
 
 H, W = 16, 32
 
@@ -152,7 +152,7 @@ class Profile(WorkerCase):
         self.assertTrue(all(v >= 0 for v in prof.values()))
 
     def test_client_side_with_fake_worker(self):
-        from core.world_stream_multi import MultiWorldStream
+        from kokopelli.wm.world_stream_multi import MultiWorldStream
         with unittest.mock.patch.object(world_stream, "PROFILE", True):
             wm = MultiWorldStream(out_dir=self.tmp.name, fake=True)
             try:
@@ -168,7 +168,7 @@ class SharedMemoryHandoff(unittest.TestCase):
     """KOKO_WM_SHM=1: the same frames as the .npy files, and no files."""
 
     def run_fake(self, shm, out_dir):
-        from core.world_stream_multi import MultiWorldStream
+        from kokopelli.wm.world_stream_multi import MultiWorldStream
         rng = np.random.default_rng(0)
         wm = MultiWorldStream(out_dir=out_dir, fake=True, shm=shm)
         got, seen = [], set()

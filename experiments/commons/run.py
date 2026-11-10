@@ -21,7 +21,7 @@ import policies
 import prompts as pt
 import sim
 
-ROOT = Path(os.environ.get("COMMONS_RUNS", Path(__file__).parents[2] / "runs" / "commons"))
+ROOT = Path(os.environ.get("COMMONS_RUNS", Path(__file__).parent / "results"))
 ARM_ORDER = ["clones", "described", "lived"]
 
 
@@ -339,7 +339,7 @@ def lint_all(seeds, config, model):
         reports.append(lint_seed(seed, identities_for(seed, build_lives(seed, config, model), config), config))
     ok = write_lint(reports, static)
     if not ok:
-        print("LINT FAILED: see runs/commons/lint_report.md", file=sys.stderr)
+        print("LINT FAILED: see experiments/commons/results/lint_report.md", file=sys.stderr)
     return ok
 
 

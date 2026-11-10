@@ -8,8 +8,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from life import moodboard
-from life.panel import make_server
+from kokopelli.life import moodboard
+from kokopelli.life.panel import make_server
 
 PNG = base64.b64encode(b"\x89PNG\r\n\x1a\n" + b"\x00" * 32).decode()
 

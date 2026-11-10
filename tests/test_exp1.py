@@ -4,10 +4,10 @@ from datetime import time
 
 import numpy as np
 
-from exp1 import balance, observe, tabular_check
-from exp1 import homeostasis as H
-from exp1.world import ARMS, FLIP, Life
-from life import scenario
+from experiments.exp1 import balance, observe, tabular_check
+from experiments.exp1 import homeostasis as H
+from experiments.exp1.world import ARMS, FLIP, Life
+from kokopelli.life import scenario
 
 
 def play(seed, arm, choose=None, days=25):
@@ -125,7 +125,7 @@ class TabularReferenceTest(unittest.TestCase):
     """Hot-stove direction at lr 8. D3 shows it clearly with scenario.py as written. D1 only weakly (run_main 0.255 vs
     check_desk 0.223 at 2000 lives, not reliably past the margin at 800): run_main's common outcome puts all of its gain
     on calm, which the deficit-only drive caps at 0.7, so run_main earns about 12% less than the safe option and the cap
-    works against the effect (exp1/balance.py). Those cases are expected failures until that need change is decided;
+    works against the effect (experiments/exp1/balance.py). Those cases are expected failures until that need change is decided;
     they'll report an unexpected success once it's fixed. See docs/exp1_phase1.md."""
 
     @classmethod

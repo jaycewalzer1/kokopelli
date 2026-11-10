@@ -6,7 +6,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from core.edges import edge_clip, edge_frame, read_frames, write_frames
+from kokopelli.wm.edges import edge_clip, edge_frame, read_frames, write_frames
 
 
 def square(shift=0, brightness=1.0):

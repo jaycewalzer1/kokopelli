@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from core.blend import blend, probe
+from kokopelli.wm.blend import blend, probe
 
 
 def solid_clip(path, color, frames=24, size="64x64"):

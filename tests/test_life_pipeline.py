@@ -7,8 +7,8 @@ import time
 import unittest
 from pathlib import Path
 
-from life.pipeline import collect, signals, video_path
-from core.settings import PIPELINE_PATHS, ROOT
+from kokopelli.life.pipeline import collect, signals, video_path
+from kokopelli.settings import PIPELINE_PATHS, ROOT
 
 PYTHON = "/usr/bin/python"
 GPU = "/x/ops/gpu.py run --name n --priority 10 --"
@@ -108,7 +108,7 @@ class PipelineTest(unittest.TestCase):
 
     def test_a_job_started_by_its_ticket_is_not_outside(self):
         self.ticket("turn", 400, running=True)
-        listing = f"400 1 {PYTHON} {GPU} python -m homeostatic.train out/a\n401 400 caffeinate -is python -m homeostatic.train out/a\n402 401 {PYTHON} -m homeostatic.train out/a\n"
+        listing = f"400 1 {PYTHON} {GPU} python -m experiments.homeostatic.train out/a\n401 400 caffeinate -is python -m experiments.homeostatic.train out/a\n402 401 {PYTHON} -m experiments.homeostatic.train out/a\n"
         gpu = self.collect(listing)["gpu"]
         self.assertEqual(gpu["outside"], [])
         self.assertEqual([ticket["name"] for ticket in gpu["running"]], ["turn"])
@@ -116,17 +116,17 @@ class PipelineTest(unittest.TestCase):
 
     def test_a_waiting_tickets_command_doesnt_count_as_using_the_gpu(self):
         self.ticket("waiting", 400)
-        gpu = self.collect(f"400 1 {PYTHON} {GPU} python -m homeostatic.train out/a\n")["gpu"]
+        gpu = self.collect(f"400 1 {PYTHON} {GPU} python -m experiments.homeostatic.train out/a\n")["gpu"]
         self.assertFalse(gpu["busy"])
 
     def test_shells_greps_and_mock_runs_are_not_model_jobs(self):
-        listing = ("1 0 /bin/zsh -c python -m homeostatic.train x\n2 0 grep collect.py\n3 0 vim txt2video.py\n"
-                   f"4 0 {PYTHON} -m runtime.run --ticks 60\n5 0 {PYTHON} -m benchmarks.run --backend mock\n6 0 {PYTHON} -m mind.run --ticks 8\n7 0 {PYTHON} notes.py txt2video.py\n")
+        listing = ("1 0 /bin/zsh -c python -m experiments.homeostatic.train x\n2 0 grep collect.py\n3 0 vim txt2video.py\n"
+                   f"4 0 {PYTHON} -m kokopelli.loop.run --ticks 60\n5 0 {PYTHON} -m experiments.benchmarks.run --backend mock\n6 0 {PYTHON} -m kokopelli.mind.run --ticks 8\n7 0 {PYTHON} notes.py txt2video.py\n")
         self.assertEqual(self.collect(listing)["gpu"]["outside"], [])
 
     def test_real_runs_of_the_loop_are_model_jobs(self):
-        listing = f"4 0 {PYTHON} -m runtime.run --wm cosmos\n5 0 {PYTHON} -m benchmarks.run --backend llm_model\n6 0 {PYTHON} -m mind.run --agent qwen\n"
-        self.assertEqual([job["name"] for job in self.collect(listing)["gpu"]["outside"]], ["runtime.run", "benchmarks.run", "mind.run"])
+        listing = f"4 0 {PYTHON} -m kokopelli.loop.run --wm cosmos\n5 0 {PYTHON} -m experiments.benchmarks.run --backend llm_model\n6 0 {PYTHON} -m kokopelli.mind.run --agent qwen\n"
+        self.assertEqual([job["name"] for job in self.collect(listing)["gpu"]["outside"]], ["kokopelli.loop.run", "experiments.benchmarks.run", "kokopelli.mind.run"])
 
     def test_the_ledger_becomes_one_line_per_job(self):
         self.ledger({"at": 1, "event": "queued", "id": "a", "name": "a", "priority": 10},
@@ -175,9 +175,9 @@ class PipelineTest(unittest.TestCase):
     def test_only_a_live_process_with_fresh_writes_is_moving(self):
         self.run_folder(MOCK, tick_rows(1))
         self.assertEqual(self.collect()["agent"]["runs"][0]["state"], "stopped", "fresh files with no process")
-        listing = f"9 1 {PYTHON} -m runtime.run --out runs/one\n"
+        listing = f"9 1 {PYTHON} -m kokopelli.loop.run --out runs/one\n"
         self.assertEqual(self.collect(listing)["agent"]["runs"][0]["state"], "moving")
-        other = f"9 1 {PYTHON} -m runtime.run --out runs/other\n"
+        other = f"9 1 {PYTHON} -m kokopelli.loop.run --out runs/other\n"
         self.assertEqual(self.collect(other)["agent"]["runs"][0]["state"], "stopped", "that process is writing another run")
         taken = collect(self.paths, listing, self.out, now=time.time() + 3600)
         self.assertEqual(taken["agent"]["runs"][0]["state"], "alive, quiet")
@@ -185,7 +185,7 @@ class PipelineTest(unittest.TestCase):
 
     def test_a_finished_run_doesnt_move_whatever_is_alive(self):
         self.run_folder(MOCK, tick_rows(1), end=True)
-        self.assertEqual(self.collect(f"9 1 {PYTHON} -m runtime.run --out runs/one\n")["agent"]["runs"][0]["state"], "finished")
+        self.assertEqual(self.collect(f"9 1 {PYTHON} -m kokopelli.loop.run --out runs/one\n")["agent"]["runs"][0]["state"], "finished")
 
     def test_mind_runs_add_their_feelings(self):
         folder = self.run_folder(MOCK, tick_rows(2), name="m", base=self.paths["mind"])
@@ -228,7 +228,7 @@ class PipelineTest(unittest.TestCase):
         folder = self.out / "run"
         folder.mkdir(parents=True)
         (folder / "train.jsonl").write_text(rows({"iteration": 5}))
-        taken = self.collect(f"9 1 {PYTHON} {GPU} python -m homeostatic.train {folder} --iters 75\n")
+        taken = self.collect(f"9 1 {PYTHON} {GPU} python -m experiments.homeostatic.train {folder} --iters 75\n")
         self.assertEqual(taken["training"]["runs"][0]["state"], "stopped")
 
     def write_blocker_files(self, blanks):
@@ -309,7 +309,7 @@ class SettingsTest(unittest.TestCase):
             self.assertTrue(path.is_relative_to(ROOT))
 
     def test_the_view_never_imports_a_model_library(self):
-        code = "import sys, life.pipeline; print([name for name in sys.modules if name.split('.')[0] in ('mlx', 'mlx_vlm', 'torch', 'numpy', 'pandas')])"
+        code = "import sys, kokopelli.life.pipeline; print([name for name in sys.modules if name.split('.')[0] in ('mlx', 'mlx_vlm', 'torch', 'numpy', 'pandas')])"
         result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=ROOT, check=True)
         self.assertEqual(result.stdout.strip(), "[]")
 

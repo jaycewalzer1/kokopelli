@@ -9,8 +9,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from life.panel import divergences, ensure_run, make_server
-from life.store import Store
+from kokopelli.life.panel import divergences, ensure_run, make_server
+from kokopelli.life.store import Store
 
 SEED = {"prompt": "test", "birth_date": "1990-03-14", "place": "Atlanta", "rng_seed": 7,
         "family": [["Ana", "mother"]], "anchors": [["1992-03-16T10:20:45", "a storm"]], "hidden_target": "CANARY"}

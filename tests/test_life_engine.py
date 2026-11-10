@@ -7,13 +7,13 @@ import unittest
 from datetime import date, datetime
 from pathlib import Path
 
-from life.engine import Budget, Engine
-from life.generator import MockGenerator
-from life.resolver import Resolver
-from life.scoring import load_target
-from life.seed import LifeSeed
-from life.store import Store
-from life.windows import children, find
+from kokopelli.life.engine import Budget, Engine
+from kokopelli.life.generator import MockGenerator
+from kokopelli.life.resolver import Resolver
+from kokopelli.life.scoring import load_target
+from kokopelli.life.seed import LifeSeed
+from kokopelli.life.store import Store
+from kokopelli.life.windows import children, find
 
 BIRTH = date(1990, 3, 14)
 ANCHOR = {"at": "1992-03-16T10:20:45", "text": "a storm knocks out the power"}
@@ -141,11 +141,11 @@ class EngineTest(EngineTestCase):
 
     def test_mock_mode_never_loads_the_llm(self):
         code = ("import sys, tempfile, pathlib, datetime;"
-                "from life.engine import Engine; from life.store import Store; from life.seed import LifeSeed;"
+                "from kokopelli.life.engine import Engine; from kokopelli.life.store import Store; from kokopelli.life.seed import LifeSeed;"
                 "s = Store(pathlib.Path(tempfile.mkdtemp()) / 'l.db');"
                 "r = s.create_run(LifeSeed('t', datetime.date(1990, 3, 14)));"
                 "[Engine(s, r).step() for _ in range(5)];"
-                "assert not {'llm_model', 'core.llm_model', 'mlx', 'mlx_vlm'} & set(sys.modules)")
+                "assert not {'llm_model', 'kokopelli.wm.llm_model', 'mlx', 'mlx_vlm'} & set(sys.modules)")
         subprocess.run([sys.executable, "-c", code], check=True)
 
 
@@ -235,7 +235,7 @@ class FirewallTest(unittest.TestCase):
         self.assertEqual(load_target(self.store, fork), self.CANARY)
 
     def test_generation_code_does_not_import_scoring(self):
-        root = Path(__file__).resolve().parent.parent / "life"
+        root = Path(__file__).resolve().parent.parent / "kokopelli" / "life"
         for name in ("generator", "engine", "agent", "resolver", "store", "panel"):
             self.assertNotIn("scoring", (root / f"{name}.py").read_text(), name)
 

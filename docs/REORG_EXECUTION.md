@@ -2,6 +2,11 @@
 
 Written 2026-11-10 for a Claude Code session that has none of the earlier conversation. Read this file fully, then `docs/REORG_PLAN.md` (the design and the reasons), then `AGENTS.md`. This file is the how; the plan is the what and why. Where they disagree, this file wins, and you note the disagreement in the log.
 
+> **Update, 2026-11-10 evening.** Phase 0 is merged, and a fast pass then did phases 1, 2, 4, 5 and 6 as one scripted move
+> (`tools/reorg/migrate.py`). The paths in this brief describe the repo *before* that move. Read
+> `docs/log/reorg/PROGRESS.md` first: it says what the layout is now and what is left (phases 3, 7, 8, 9 and a list of
+> leftovers). Sections 3 to 5 (rules, method, traps) still apply.
+
 To start the session, the owner pastes:
 
 > Read docs/REORG_EXECUTION.md and execute it from the first unfinished phase. Just do it, no teaching mode.

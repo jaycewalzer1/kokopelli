@@ -8,10 +8,10 @@ import mlx.core as mx
 import mlx.nn as nn
 import numpy as np
 
-from exp1 import baselines, observe
-from exp1.learn import Baseline, Sleeper, replay_rows
-from exp1.policy import TablePolicy, continuation
-from exp1.run import Run, probes
+from experiments.exp1 import baselines, observe
+from experiments.exp1.learn import Baseline, Sleeper, replay_rows
+from experiments.exp1.policy import TablePolicy, continuation
+from experiments.exp1.run import Run, probes
 
 FIELDS = ("h_pre", "h_post", "delta", "drive_pre", "drive_post", "reward", "baseline", "advantage", "pi", "choice", "schedule_index",
           "outcome_label", "felt_text", "lora_step")
@@ -78,7 +78,7 @@ class SleepTest(unittest.TestCase):
         np.testing.assert_allclose(np.array(split["logits"]), np.array(whole["logits"]), atol=1e-6)
 
     def test_a_steps_transition_shares_add_up_to_one(self):
-        from exp1.diagnose_pilot import night_summary, shares_step
+        from experiments.exp1.diagnose_pilot import night_summary, shares_step
         policy = TablePolicy()
         policy.model.logits = mx.array(np.random.default_rng(0).normal(size=policy.model.logits.size).astype(np.float32))
         sleeper = Sleeper(policy, {"lr": 0.05, "beta": 0.3})
@@ -142,9 +142,9 @@ class RunTest(unittest.TestCase):
     def test_a_polite_run_gives_memory_back_and_resumes_to_the_same_life(self):
         import sys
         from unittest import mock
-        from exp1 import run as runner
+        from experiments.exp1 import run as runner
         sys.path.insert(0, str(runner.ROOT))
-        from core import ram_share
+        from kokopelli.ops import ram_share
         # Plenty of room except right after the third night, when it runs short once.
         rooms = iter([50, 50, 50, -10] + [50] * 1000)
         with tempfile.TemporaryDirectory() as whole, tempfile.TemporaryDirectory() as politely, \
@@ -171,7 +171,7 @@ class RunTest(unittest.TestCase):
 
 class PanelTest(unittest.TestCase):
     def test_the_page_data_is_plain_json_and_explains_every_decision(self):
-        from exp1 import panel
+        from experiments.exp1 import panel
         with tempfile.TemporaryDirectory() as runs:
             quiet_run(Path(runs, "t"))
             old, panel.RUNS = panel.RUNS, Path(runs)

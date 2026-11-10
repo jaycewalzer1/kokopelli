@@ -23,7 +23,7 @@ for attempt in 1 2 3 4 5 6; do
 done
 "$MAIN/.venv/bin/python" analyze.py
 cd "$MAIN/.claude/worktrees/commons" || exit 1
-git add -f runs/commons/REPORT.md runs/commons/metrics.json runs/commons/reward_audit.md runs/commons/lint_report.md runs/commons/lint_report.json runs/commons/plots runs/commons/spend.json
+git add -f experiments/commons/results/REPORT.md experiments/commons/results/metrics.json experiments/commons/results/reward_audit.md experiments/commons/results/lint_report.md experiments/commons/results/lint_report.json experiments/commons/results/plots experiments/commons/results/spend.json
 git add -A experiments/commons
 git commit -qm "Add overnight results, plots and the generated report"
 echo "$(date) finished"

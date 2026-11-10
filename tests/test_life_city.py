@@ -1,7 +1,7 @@
 """The city plan's checks, on small worlds built to break one rule each."""
 import unittest
 
-from life import city
+from kokopelli.life import city
 
 
 def tiny(**changes):

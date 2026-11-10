@@ -2,9 +2,9 @@
 import unittest
 from dataclasses import replace
 
-from homeostatic.world import (discounted, done, drive, deviation, homeostatic_reward, maximize_reward, parse_action,
+from experiments.homeostatic.world import (discounted, done, drive, deviation, homeostatic_reward, maximize_reward, parse_action,
                                start, step, system_prompt, user_prompt)
-from core.settings import HOMEOSTATIC_WORLD as WORLD
+from kokopelli.settings import HOMEOSTATIC_WORLD as WORLD
 
 
 def state_at(values, low=40, high=60):

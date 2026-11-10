@@ -4,15 +4,15 @@ import unittest
 from dataclasses import dataclass
 from pathlib import Path
 
-from mind.check import flip, stats, verdict
-from mind.feeling import (APPRAISE, BIG_NOTE, CHANGE, FeelingAgent, decision_point, inner_context, parse_appraisal, parse_change, read_rows, settle,
+from kokopelli.mind.check import flip, stats, verdict
+from kokopelli.mind.feeling import (APPRAISE, BIG_NOTE, CHANGE, FeelingAgent, decision_point, inner_context, parse_appraisal, parse_change, read_rows, settle,
                           timeline)
 
 try:
-    from runtime.config import Config
-    from runtime.run import run
-    from mind.check import compare, replay
-    from mind.run import MockMind, check_weights, measured_qwen, summarize
+    from kokopelli.loop.config import Config
+    from kokopelli.loop.run import run
+    from kokopelli.mind.check import compare, replay
+    from kokopelli.mind.run import MockMind, check_weights, measured_qwen, summarize
 except ImportError:
     Config = None
 
@@ -444,9 +444,9 @@ class WeightsTest(unittest.TestCase):
 
     @needs_runtime
     def test_a_tiny_fused_folder_loads_and_answers_through_the_measured_agent(self):
-        from core import llm_model
-        from homeostatic.export import write_full_weights
-        from core.settings import LLM_MODEL_WEIGHTS
+        from kokopelli.wm import llm_model
+        from experiments.homeostatic.export import write_full_weights
+        from kokopelli.settings import LLM_MODEL_WEIGHTS
         from tests.test_homeostatic_grpo import tiny_model
 
         folder = Path(tempfile.mkdtemp(prefix="mind_")) / "fused"

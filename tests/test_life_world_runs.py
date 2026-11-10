@@ -9,8 +9,8 @@ import urllib.request
 from pathlib import Path
 from unittest import mock
 
-from life import world_runs
-from life.panel import make_server
+from kokopelli.life import world_runs
+from kokopelli.life.panel import make_server
 
 
 def make_video(path, frames=24):

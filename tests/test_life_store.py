@@ -6,9 +6,9 @@ from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
-from life.seed import LifeSeed
-from life.store import InvalidNodeError, OrderError, Store, WriteOnceError
-from life.windows import children, life_window
+from kokopelli.life.seed import LifeSeed
+from kokopelli.life.store import InvalidNodeError, OrderError, Store, WriteOnceError
+from kokopelli.life.windows import children, life_window
 
 BIRTH = date(1990, 3, 14)
 OPENING = {"setting": "x", "exogenous": [], "pressures": [], "open_questions": []}

@@ -7,9 +7,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from life.gpu_queue import group, newest_image, output_files, past_page, read_result, with_result, send, set_default, ticket_extras, timeline
-from life.gpu_queue import QueueError, cancel, collect, log_tail, move, parse_machine, quiet_seconds, read_device, stop, stopped
-from core.settings import GPU_QUEUE_SCRIPT
+from kokopelli.life.gpu_queue import group, newest_image, output_files, past_page, read_result, with_result, send, set_default, ticket_extras, timeline
+from kokopelli.life.gpu_queue import QueueError, cancel, collect, log_tail, move, parse_machine, quiet_seconds, read_device, stop, stopped
+from kokopelli.settings import GPU_QUEUE_SCRIPT
 
 PYTHON = "/usr/bin/python"
 GPU = "/x/ops/gpu.py run --name n --priority 10 --max-hours 2 --"
@@ -75,9 +75,9 @@ class GpuQueueTest(unittest.TestCase):
         self.assertEqual([ticket["name"] for ticket in taken["stale"]], ["gone"])
 
     def test_it_says_which_outside_jobs_the_queue_would_wait_for(self):
-        listing = f"21 1 {PYTHON} -m homeostatic.train\n22 1 {PYTHON} -m mind.run --agent qwen\n23 1 {PYTHON} -m mind.run --agent mock"
+        listing = f"21 1 {PYTHON} -m experiments.homeostatic.train\n22 1 {PYTHON} -m kokopelli.mind.run --agent qwen\n23 1 {PYTHON} -m kokopelli.mind.run --agent mock"
         waits = {job["name"]: job["queue_waits"] for job in self.collect(listing)["outside"]}
-        self.assertEqual(waits, {"homeostatic.train": True, "mind.run": False})
+        self.assertEqual(waits, {"experiments.homeostatic.train": True, "kokopelli.mind.run": False})
 
     def test_a_child_of_the_holder_is_not_outside(self):
         self.ticket("a", 11, running=True)

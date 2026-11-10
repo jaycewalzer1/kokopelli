@@ -3,8 +3,8 @@
 # meets the rules without a repo-wide rewrite. Counts: docs/fable_log/P2-D.md.
 #
 #   uvx pre-commit install              # once, runs on every commit
-#   uvx pre-commit run --all-files      # whole repo; wrap in ops/memguard.py run
-exclude: ^(simworld/|wm_multicontrol/upstream/|mac_server/Binaries/|\.venv/|out/|models/)
+#   uvx pre-commit run --all-files      # whole repo; wrap in kokopelli/ops/memguard.py run
+exclude: ^(simworld/|vendor/wm_multicontrol_upstream/|mac_server/Binaries/|\.venv/|out/|models/)
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -17,7 +17,7 @@ repos:
     hooks:
       - id: shellcheck
         name: shellcheck
-        exclude: &sh_baseline ^(city/agents/run_wm_life\.sh|city/agents/run_wm_lunch\.sh|city/bodies/metahuman/run_editor_gui\.sh|city/bodies/perf_maxnear\.sh|city/bodies/run_demo_lunch\.sh|city/bodies/serve_9004\.sh|filter_test/scripts/queue_all\.sh|mac_server/scripts/relaunch\.sh|scripts/pace/simworld_server\.sh|scripts/pace/wmloop_gate\.sbatch|scripts/pace/wmloop_run\.sbatch|wm_multicontrol/run_a\.sh)$
+        exclude: &sh_baseline ^(kokopelli/agents/run_wm_life\.sh|kokopelli/agents/run_wm_lunch\.sh|tools/bodies/metahuman/run_editor_gui\.sh|tools/bodies/perf_maxnear\.sh|tools/bodies/run_demo_lunch\.sh|tools/bodies/serve_9004\.sh|experiments/filter_test/scripts/queue_all\.sh|mac_server/scripts/relaunch\.sh|tools/pace/simworld_server\.sh|tools/pace/wmloop_gate\.sbatch|tools/pace/wmloop_run\.sbatch|experiments/wm_multicontrol/run_a\.sh)$
       - id: shellcheck
         name: shellcheck (baselined scripts)
         # Codes these scripts had on 2026-11-09. Fix a script, then move it to the strict hook.
@@ -27,10 +27,10 @@ repos:
   - repo: local
     hooks:
       - id: biome
-        name: biome lint (life/static)
+        name: biome lint (kokopelli/life/static)
         language: system
         entry: npx -y @biomejs/biome@2.6.6 lint --no-errors-on-unmatched
-        files: ^life/static/.*\.js$
+        files: ^kokopelli/life/static/.*\.js$
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -38,4 +38,4 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
         # These files lacked a final newline on 2026-11-09; the fixer would rewrite them.
-        exclude: ^(city/bodies/standins/import_standins\.json|life/static/inspector\.js|mac_server/SimWorld\.uproject|mac_server/Tools/look/realism_means\.json)$
+        exclude: ^(tools/bodies/standins/import_standins\.json|kokopelli/life/static/inspector\.js|mac_server/SimWorld\.uproject|mac_server/Tools/look/realism_means\.json)$

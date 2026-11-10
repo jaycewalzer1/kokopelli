@@ -7,9 +7,9 @@ import unittest
 import unittest.mock
 from pathlib import Path
 
-from life.agent import LLMAgent
-from life.architecture import EDGES, LANES, NODES, PLAN_SECTIONS, STATUSES, catalog, overnight_signal, snapshot, python_lines, runs_module
-from core.settings import ROOT
+from kokopelli.life.agent import LLMAgent
+from kokopelli.life.architecture import EDGES, LANES, NODES, PLAN_SECTIONS, STATUSES, catalog, overnight_signal, snapshot, python_lines, runs_module
+from kokopelli.settings import ROOT
 
 IDLE_PANEL = {"running": False, "mock_running": 0, "writes": 9, "events": 5, "choices": 2, "runs": 1}
 PYTHON = "/usr/bin/python"
@@ -90,12 +90,12 @@ class CatalogTest(unittest.TestCase):
     def test_the_claims_most_likely_to_go_stale_still_hold(self):
         with self.assertRaises(NotImplementedError):
             LLMAgent().choose({})
-        python_files = [*ROOT.glob("*.py"), *ROOT.glob("core/*.py"), *ROOT.glob("life/*.py"), *ROOT.glob("homeostatic/*.py")]
+        python_files = [*ROOT.glob("*.py"), *ROOT.glob("kokopelli/wm/*.py"), *ROOT.glob("kokopelli/life/*.py"), *ROOT.glob("experiments/homeostatic/*.py")]
         python_files = [path for path in python_files if path.name != "architecture.py"]
         source = "\n".join(path.read_text() for path in python_files)
         self.assertNotIn("import simworld", source)
         self.assertNotIn("import scoring", source)
-        self.assertNotIn("life.scoring", source)
+        self.assertNotIn("kokopelli.life.scoring", source)
         for word in ("tinker", "imprint", "vault"):
             self.assertNotIn(word, source.lower(), f"{word} now appears in code, so its planned status needs a look")
 
@@ -126,7 +126,7 @@ class SnapshotTest(unittest.TestCase):
         run.mkdir(parents=True)
         (run / "config.json").write_text(json.dumps({"sim": "mock", "wm": "mock", "agent": "mock", "context": "mock", "ticks": 60}))
         (run / "events.jsonl").write_text(json.dumps({"kind": "tick_end", "tick": 1}) + "\n")
-        taken = self.snap(f"{PYTHON} -m runtime.run --out runs/one")
+        taken = self.snap(f"{PYTHON} -m kokopelli.loop.run --out runs/one")
         self.assertTrue(taken["flags"]["loop.running"])
         self.assertFalse(taken["flags"]["loop.wm_real"] or taken["flags"]["loop.agent_real"] or taken["flags"]["loop.sim_real"])
         self.assertEqual(set(taken["active_nodes"]), {"loop", "agent"})
@@ -137,14 +137,14 @@ class SnapshotTest(unittest.TestCase):
         run.mkdir(parents=True)
         (run / "config.json").write_text(json.dumps({"sim": "mock", "wm": "cosmos", "agent": "qwen", "context": "life", "ticks": 3}))
         (run / "events.jsonl").write_text("")
-        taken = self.snap(f"{PYTHON} -m runtime.run --out runs/one --wm cosmos --agent qwen")
+        taken = self.snap(f"{PYTHON} -m kokopelli.loop.run --out runs/one --wm cosmos --agent qwen")
         self.assertTrue(taken["flags"]["loop.wm_real"] and taken["flags"]["loop.agent_real"] and taken["flags"]["loop.life_real"])
         self.assertFalse(taken["flags"]["loop.sim_real"])
         self.assertIn("cosmos", taken["active_nodes"])
 
     def test_a_job_waiting_in_the_queue_is_not_a_trainer(self):
         folder = write_run(self.out, "waiting")
-        taken = self.snap(f"{PYTHON} /x/ops/gpu.py run --name a --priority 50 -- .venv/bin/python -m homeostatic.train {folder} --iters 75")
+        taken = self.snap(f"{PYTHON} /x/ops/gpu.py run --name a --priority 50 -- .venv/bin/python -m experiments.homeostatic.train {folder} --iters 75")
         self.assertFalse(taken["flags"]["trainer.training"])
         self.assertEqual(taken["running"], [])
 
@@ -157,7 +157,7 @@ class SnapshotTest(unittest.TestCase):
 
     def test_a_live_trainer_lights_only_the_training_path(self):
         folder = write_run(self.out, "alive")
-        taken = self.snap(f"{PYTHON} -u -m homeostatic.train {folder} --iters 75")
+        taken = self.snap(f"{PYTHON} -u -m experiments.homeostatic.train {folder} --iters 75")
         self.assertTrue(taken["flags"]["trainer.training"])
         self.assertFalse(taken["flags"]["trainer.validating"])
         self.assertFalse(taken["flags"]["overnight.running"])
@@ -169,7 +169,7 @@ class SnapshotTest(unittest.TestCase):
     def test_validation_moves_a_different_path_from_training(self):
         folder = write_run(self.out, "alive", validation=[{"iteration": 25, "mean_drive": 30.0, "invalid": 0.0}])
         (folder / "validating.json").write_text('{"done": 4, "total": 30}')
-        taken = self.snap(f"{PYTHON} -m homeostatic.train {folder} --iters 75")
+        taken = self.snap(f"{PYTHON} -m experiments.homeostatic.train {folder} --iters 75")
         self.assertFalse(taken["flags"]["trainer.training"])
         self.assertTrue(taken["flags"]["trainer.validating"])
         self.assertEqual(taken["counts"]["trainer.lives"], 34)
@@ -181,14 +181,14 @@ class SnapshotTest(unittest.TestCase):
 
     def test_a_silent_process_is_not_shown_moving(self):
         folder = write_run(self.out, "stuck")
-        with unittest.mock.patch("life.architecture.STALL_SECONDS", 0):
-            taken = self.snap(f"{PYTHON} -m homeostatic.train {folder}")
+        with unittest.mock.patch("kokopelli.life.architecture.STALL_SECONDS", 0):
+            taken = self.snap(f"{PYTHON} -m experiments.homeostatic.train {folder}")
         self.assertFalse(taken["flags"]["trainer.training"])
         self.assertFalse(taken["flags"]["trainer.running"])
         self.assertEqual(taken["active_nodes"], [])
 
     def test_a_shell_mentioning_a_module_is_not_a_run(self):
-        listing = ("/bin/zsh -c 'python -m life.overnight; python -m homeostatic.train out/x; txt2video.py'\n"
+        listing = ("/bin/zsh -c 'python -m kokopelli.life.overnight; python -m experiments.homeostatic.train out/x; txt2video.py'\n"
                    "grep life.overnight\ngrep homeostatic.train out/x\nvim collect.py\n")
         write_run(self.out, "x")
         taken = self.snap(listing)
@@ -196,9 +196,9 @@ class SnapshotTest(unittest.TestCase):
         self.assertEqual(taken["running"], [])
 
     def test_real_process_lines_are_recognized(self):
-        lines = python_lines(f"{PYTHON} -u -m life.overnight --hours 8\n/x/.venv/bin/python txt2video.py a prompt\n/Library/Python.app/Contents/MacOS/Python collect.py")
+        lines = python_lines(f"{PYTHON} -u -m kokopelli.life.overnight --hours 8\n/x/.venv/bin/python txt2video.py a prompt\n/Library/Python.app/Contents/MacOS/Python collect.py")
         self.assertEqual(len(lines), 3)
-        self.assertTrue(runs_module(lines[0][1], "life.overnight"))
+        self.assertTrue(runs_module(lines[0][1], "kokopelli.life.overnight"))
         taken = self.snap("/x/.venv/bin/python txt2video.py a prompt\n/Library/Python.app/Contents/MacOS/Python collect.py")
         self.assertEqual(taken["running"], ["collect.py, on Cosmos", "txt2video.py, on Cosmos"])
 
@@ -233,7 +233,7 @@ class SnapshotTest(unittest.TestCase):
         self.assertEqual(taken["counts"]["world.clips"], 2)
         self.assertEqual(taken["counts"]["overnight.calls"], 2)
         self.assertFalse(taken["flags"]["overnight.running"], "old logs alone don't mean a run is going")
-        self.assertTrue(self.snap(f"{PYTHON} -m life.overnight --hours 1")["flags"]["overnight.running"])
+        self.assertTrue(self.snap(f"{PYTHON} -m kokopelli.life.overnight --hours 1")["flags"]["overnight.running"])
 
     def test_a_panel_mock_run_moves_the_life_path_only(self):
         taken = self.snap(panel={**IDLE_PANEL, "running": True, "mock_running": 1})
@@ -254,7 +254,7 @@ class CountingTest(unittest.TestCase):
 
 class ImportTest(unittest.TestCase):
     def test_the_panel_side_never_imports_a_model_library(self):
-        code = "import sys, life.architecture, life.panel; print([name for name in sys.modules if name.split('.')[0] in ('mlx', 'mlx_vlm', 'torch')])"
+        code = "import sys, kokopelli.life.architecture, kokopelli.life.panel; print([name for name in sys.modules if name.split('.')[0] in ('mlx', 'mlx_vlm', 'torch')])"
         result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=ROOT, check=True)
         self.assertEqual(result.stdout.strip(), "[]")
 

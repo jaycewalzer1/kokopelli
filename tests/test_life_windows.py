@@ -2,7 +2,7 @@
 import unittest
 from datetime import date, datetime
 
-from life.windows import LEVELS, age_at, children, depth_limit_for, find, life_window, stage_at
+from kokopelli.life.windows import LEVELS, age_at, children, depth_limit_for, find, life_window, stage_at
 
 BIRTH = date(1990, 3, 14)
 

@@ -1,0 +1,290 @@
+{
+ "_doc": "Planned look of every city person (wave 2b), applied by tools/bodies/metahuman/make_bodies.py once MetaHuman Creator Core Data is installed. Wardrobe ids are not knowable before Core Data exists: each slot lists exact wardrobe item names to try first ('items', WI_* asset names under /MetaHumanCharacter/Optional/...), then 'keywords' (all must appear in the item name, case-insensitive; best partial match otherwise). Hair colour uses the groom pipeline's parameters: melanin 0 (blond) .. 1 (black), redness 0..1, whiteness 0..1 (grey/white), lightness 0..1. Skin: u ~ melanin (0 light .. 1 dark), v ~ undertone (0 cool/pink .. 1 warm/yellow), on MetaHuman Creator's skin-tone picker. face_texture_index picks the synthesized skin detail set (pores, wrinkles); its ordering by age is unknown until Core Data exists, so it is a starting value to tune after the first render. Outfit 'colors' are matched against the outfit's instance parameters by name (e.g. PrimaryColorShirt). Low (far) bodies get the same choices; the assembly turns hair into cards/helmets and the server never shows strands on Low. Setting: a solarpunk village, everyday practical clothes (linen, knit, canvas, aprons, work trousers), muted natural dyes.",
+ "version": 1,
+ "people": {
+  "mara": {
+   "who": "woman ~30, warm, chatty, tends the community gardens",
+   "age": 30,
+   "skin": {
+    "u": 0.3,
+    "v": 0.65,
+    "freckles": 0.35,
+    "face_texture_index": 4
+   },
+   "hair": {
+    "items": [
+     "WI_Hair_L_Wavy",
+     "WI_Hair_L_WavyBangs",
+     "WI_Hair_L_Straight"
+    ],
+    "keywords": [
+     "L",
+     "Wavy"
+    ],
+    "melanin": 0.78,
+    "redness": 0.35,
+    "whiteness": 0.0,
+    "lightness": 0.0,
+    "desc": "long, loosely wavy, dark brown with warm tint"
+   },
+   "eyebrows": {
+    "keywords": [
+     "Natural"
+    ],
+    "melanin": 0.78,
+    "redness": 0.3
+   },
+   "beard": null,
+   "mustache": null,
+   "outfit": null
+  },
+  "iris": {
+   "who": "Mara's neighbour, woman ~40, tall, calm",
+   "age": 40,
+   "skin": {
+    "u": 0.7,
+    "v": 0.5,
+    "freckles": 0.0,
+    "face_texture_index": 9
+   },
+   "hair": {
+    "items": [
+     "WI_Hair_S_Afro",
+     "WI_Hair_S_Curly"
+    ],
+    "keywords": [
+     "S",
+     "Curl"
+    ],
+    "melanin": 0.95,
+    "redness": 0.1,
+    "whiteness": 0.0,
+    "lightness": 0.0,
+    "desc": "short natural curls, black"
+   },
+   "eyebrows": {
+    "keywords": [
+     "Natural"
+    ],
+    "melanin": 0.95,
+    "redness": 0.1
+   },
+   "beard": null,
+   "mustache": null,
+   "outfit": null
+  },
+  "ana": {
+   "who": "barista at The Kettle, woman ~25",
+   "age": 25,
+   "skin": {
+    "u": 0.5,
+    "v": 0.7,
+    "freckles": 0.0,
+    "face_texture_index": 1
+   },
+   "hair": {
+    "items": [
+     "WI_Hair_L_Ponytail",
+     "WI_Hair_M_Ponytail",
+     "WI_Hair_L_Bun"
+    ],
+    "keywords": [
+     "Pony"
+    ],
+    "melanin": 0.85,
+    "redness": 0.2,
+    "whiteness": 0.0,
+    "lightness": 0.0,
+    "desc": "tied-back ponytail, very dark brown"
+   },
+   "eyebrows": {
+    "keywords": [
+     "Thick"
+    ],
+    "melanin": 0.85,
+    "redness": 0.2
+   },
+   "beard": null,
+   "mustache": null,
+   "outfit": null
+  },
+  "tomas": {
+   "who": "baker at Rise Bakery, man ~45, broad",
+   "age": 45,
+   "skin": {
+    "u": 0.4,
+    "v": 0.55,
+    "freckles": 0.0,
+    "face_texture_index": 11
+   },
+   "hair": {
+    "items": [
+     "WI_Hair_S_Crop",
+     "WI_Hair_S_Buzzcut"
+    ],
+    "keywords": [
+     "S"
+    ],
+    "melanin": 0.6,
+    "redness": 0.15,
+    "whiteness": 0.35,
+    "lightness": 0.0,
+    "desc": "short, greying at the temples"
+   },
+   "eyebrows": {
+    "keywords": [
+     "Thick"
+    ],
+    "melanin": 0.6,
+    "redness": 0.15,
+    "whiteness": 0.25
+   },
+   "beard": {
+    "items": [
+     "WI_Beard_M_Full",
+     "WI_Beard_S_Full"
+    ],
+    "keywords": [
+     "Beard"
+    ],
+    "melanin": 0.6,
+    "redness": 0.15,
+    "whiteness": 0.4,
+    "desc": "short full beard, salt and pepper"
+   },
+   "mustache": null,
+   "outfit": null
+  },
+  "wen": {
+   "who": "retired engineer who plays chess, man ~72, slight; the oldest and greyest",
+   "age": 72,
+   "skin": {
+    "u": 0.25,
+    "v": 0.75,
+    "freckles": 0.0,
+    "face_texture_index": 20
+   },
+   "hair": {
+    "items": [
+     "WI_Hair_S_Receding",
+     "WI_Hair_S_Thin",
+     "WI_Hair_S_Balding"
+    ],
+    "keywords": [
+     "S",
+     "Reced"
+    ],
+    "melanin": 0.3,
+    "redness": 0.0,
+    "whiteness": 0.95,
+    "lightness": 0.2,
+    "desc": "thin, receding, nearly white"
+   },
+   "eyebrows": {
+    "items": [
+     "WI_Eyebrows_M_Fine"
+    ],
+    "keywords": [
+     "Sparse"
+    ],
+    "melanin": 0.3,
+    "redness": 0.0,
+    "whiteness": 0.9
+   },
+   "beard": null,
+   "mustache": {
+    "keywords": [
+     "Mustache"
+    ],
+    "melanin": 0.3,
+    "redness": 0.0,
+    "whiteness": 0.95,
+    "desc": "small white moustache"
+   },
+   "outfit": null,
+   "body": {
+    "fat": 0.25,
+    "muscle": 0.18,
+    "desc": "slight, low muscle, a little stooped (sliders only)"
+   }
+  },
+  "priya": {
+   "who": "librarian at Lantern Library, woman ~55",
+   "age": 55,
+   "skin": {
+    "u": 0.62,
+    "v": 0.7,
+    "freckles": 0.0,
+    "face_texture_index": 15
+   },
+   "hair": {
+    "items": [
+     "WI_Hair_L_Bun",
+     "WI_Hair_M_Bun"
+    ],
+    "keywords": [
+     "Bun"
+    ],
+    "melanin": 0.85,
+    "redness": 0.1,
+    "whiteness": 0.45,
+    "lightness": 0.0,
+    "desc": "grey-streaked low bun"
+   },
+   "eyebrows": {
+    "keywords": [
+     "Natural"
+    ],
+    "melanin": 0.85,
+    "redness": 0.1,
+    "whiteness": 0.3
+   },
+   "beard": null,
+   "mustache": null,
+   "outfit": null
+  },
+  "kai": {
+   "who": "the youngest in the village; as young as the sliders allow (138 cm, slight; MetaHuman has no child body, the head stays adult-sized)",
+   "age": 12,
+   "skin": {
+    "u": 0.45,
+    "v": 0.6,
+    "freckles": 0.15,
+    "face_texture_index": 0
+   },
+   "hair": {
+    "items": [
+     "WI_Hair_S_Messy",
+     "WI_Hair_M_Messy",
+     "WI_Hair_S_Crop"
+    ],
+    "keywords": [
+     "S",
+     "Mess"
+    ],
+    "melanin": 0.55,
+    "redness": 0.3,
+    "whiteness": 0.0,
+    "lightness": 0.1,
+    "desc": "short and messy, mid brown"
+   },
+   "eyebrows": {
+    "keywords": [
+     "Thin"
+    ],
+    "melanin": 0.5,
+    "redness": 0.3
+   },
+   "beard": null,
+   "mustache": null,
+   "outfit": null,
+   "body": {
+    "height": "min",
+    "fat": 0.2,
+    "muscle": 0.15,
+    "fem": 0.45,
+    "desc": "height at the parametric floor (about 135 cm), slight build; the youngest the body sliders allow"
+   }
+  }
+ }
+}
