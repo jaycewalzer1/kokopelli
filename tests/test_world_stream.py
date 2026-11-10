@@ -9,6 +9,7 @@ import sys
 import tempfile
 import types
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import numpy as np
@@ -60,7 +61,7 @@ def fake_decode(latents, vae_dir):
     return np.full((1, 4 * t, H, W, 3), 0.5, np.float32)   # the port: 4 frames per latent, the first included
 
 
-class WorkerFrameCount(unittest.TestCase):
+class WorkerCase(unittest.TestCase):
     def setUp(self):
         sys.modules["cosmos3_mlx"] = types.ModuleType("cosmos3_mlx")
         enc = types.ModuleType("cosmos3_mlx.encode_vae")
@@ -95,6 +96,8 @@ class WorkerFrameCount(unittest.TestCase):
         reply = self.w.push(paths, out)
         return np.load(out) if reply["frames"] else np.zeros((0, H, W, 3), np.uint8)
 
+
+class WorkerFrameCount(WorkerCase):
     def test_first_push_matches_controls(self):
         self.assertEqual(len(self.push(21)), 21)        # 1 + 4*5 frames -> 6 latents -> 21 frames
 
@@ -127,6 +130,38 @@ class WorkerFrameCount(unittest.TestCase):
             sent += n
             got += len(self.push(n))
             self.assertTrue(0 <= sent - got <= 3, (sent, got))
+
+
+class Profile(WorkerCase):
+    """KOKO_PROFILE=1 adds per-stage seconds to every push reply; off, the reply is unchanged."""
+
+    def reply(self, n):
+        paths = {}
+        for h in self.w.hints:
+            paths[h] = f"{self.tmp.name}/{h}_{self.w.frames_in}.npy"
+            np.save(paths[h], np.zeros((n, H, W, 3), np.uint8))
+        return self.w.push(paths, f"{self.tmp.name}/out_{self.w.frames_in}.npy")
+
+    def test_off_by_default(self):
+        self.assertNotIn("profile", self.reply(5))
+
+    def test_on_names_every_stage(self):
+        with unittest.mock.patch.object(world_stream, "PROFILE", True):
+            prof = self.reply(5)["profile"]
+        self.assertEqual(set(prof), {"npy_read_controls", "encode", "weights_load", "decode", "npy_write_frames"})
+        self.assertTrue(all(v >= 0 for v in prof.values()))
+
+    def test_client_side_with_fake_worker(self):
+        from core.world_stream_multi import MultiWorldStream
+        with unittest.mock.patch.object(world_stream, "PROFILE", True):
+            wm = MultiWorldStream(out_dir=self.tmp.name, fake=True)
+            try:
+                wm.open("a", "a street", size=f"{W}x{H}", planned_frames=5)
+                wm.push("a", {h: np.zeros((5, H, W, 3), np.uint8) for h in world_stream.HINTS})
+            finally:
+                wm.close()
+        self.assertEqual(set(wm.last["a"]["client_profile"]), {"client_npy_write_controls", "client_call",
+                                                               "client_npy_read_frames", "client_video_check"})
 
 
 if __name__ == "__main__":

@@ -83,23 +83,33 @@ class MultiWorldStream:
         """controls: {hint: uint8 [n, H, W, 3]}, same n for all. Returns this stream's newly painted frames,
         uint8 [m, H, W, 3]; m can lag n by up to 3 frames (a latent is painted once its 4 frames have arrived)."""
         import numpy as np
+
+        from core.world_stream import PROFILE, Stages
+        stage = Stages()
         self.k += 1
         paths = {}
-        for hint, frames in controls.items():
-            paths[hint] = str(self.dir / f"in_{stream}_{self.k:05d}_{hint}.npy")
-            np.save(paths[hint], np.ascontiguousarray(frames, np.uint8))
+        with stage("client_npy_write_controls"):
+            for hint, frames in controls.items():
+                paths[hint] = str(self.dir / f"in_{stream}_{self.k:05d}_{hint}.npy")
+                np.save(paths[hint], np.ascontiguousarray(frames, np.uint8))
         try:
-            reply = self._call(cmd="push", stream=stream, controls=paths, out=str(self.dir / f"out_{stream}_{self.k:05d}.npy"))
+            with stage("client_call"):
+                reply = self._call(cmd="push", stream=stream, controls=paths,
+                                   out=str(self.dir / f"out_{stream}_{self.k:05d}.npy"))
         finally:
             for p in paths.values():
                 Path(p).unlink(missing_ok=True)
         self.last[stream] = reply
-        if not reply["frames"]:
-            out = np.zeros((0,) + controls[next(iter(controls))].shape[1:], np.uint8)
-        else:
-            out = np.load(reply["out"])
-            Path(reply["out"]).unlink(missing_ok=True)
-        self._check(stream, out, controls.get("blur"))
+        with stage("client_npy_read_frames"):
+            if not reply["frames"]:
+                out = np.zeros((0,) + controls[next(iter(controls))].shape[1:], np.uint8)
+            else:
+                out = np.load(reply["out"])
+                Path(reply["out"]).unlink(missing_ok=True)
+        with stage("client_video_check"):
+            self._check(stream, out, controls.get("blur"))
+        if PROFILE:
+            reply["client_profile"] = stage.report()
         return out
 
     def _check(self, stream, painted, blur):
