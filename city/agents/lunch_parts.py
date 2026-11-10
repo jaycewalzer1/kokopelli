@@ -142,6 +142,9 @@ class Mind:
     last_thought: str = ""
     last_action: dict = None
     decisions: int = 0
+    talk: list = field(default_factory=list)    # --fixes memory: every line said near this mind, both voices
+    decided_frame: str = None   # --decide-on-change: the frame this mind last decided from
+    quiet: int = 0              # --decide-on-change: steps idle without a decision
 
     @property
     def idle(self):
@@ -292,12 +295,14 @@ class LunchRecord:
                 "controls": {"blur": f"downup {BLUR_DOWNUP} (v2 high)", "seg": "SimWorld masks x material class",
                              "depth": f"inverse depth, near {NEAR_CM} cm, far {FAR_CM} cm", "edge": "Canny 100/200",
                              "weights": "0.25 each"},
-                "wm_prompt": a.wm_prompt, "size": a.size, "fps": a.fps, "seeds": {k: a.seed + i for i, k in enumerate(self.minds)},
+                "wm_prompt": a.wm_prompt, "wm_prompts": __import__("lunch_text").prompts_for(a, list(self.minds)), "size": a.size, "fps": a.fps, "seeds": {k: a.seed + i for i, k in enumerate(self.minds)},
                 "denoise_steps": 4, "window": a.window, "sink": a.sink, "quantize": a.quantize,
                 "sim_steps": a.steps, "step_seconds": a.step_s, "clock": a.clock, "meet": a.meet,
                 "agents": {k: {"name": m.name, "who": m.who, "situation": m.situation, "decisions": m.decisions}
                            for k, m in self.minds.items()},
                 "finished": final, "steps_done": self.steps_done,
+                "switches": {"fixes": list(getattr(a, "fixes", None) or []), "decide_on_change": bool(getattr(a, "decide_on_change", False)),
+                             "view_prompts": bool(getattr(a, "view_prompts", False)), "life": getattr(a, "life", None)},
                 "films": {"side_by_side": "film/side_by_side.mp4", **{k: f"film/{k}.mp4" for k in self.minds}}}
         from core.manifest import manifest   # commit, dirty, weight hashes: see core/manifest.py
         fake_wm, fake_brain = meta["fake_world_model"], not isinstance(getattr(self, "brain", None), QwenBrain)
@@ -323,7 +328,9 @@ def place_or_point(nav, text):
 
 
 def open_streams(wm, args, ids):
+    from lunch_text import prompts_for
     planned = int(args.steps * args.step_s * args.fps) + 1
+    prompts = prompts_for(args, ids)
     for i, k in enumerate(ids):
-        wm.open(k, args.wm_prompt, size=args.size, fps=args.fps, seed=args.seed + i, window=args.window, sink=args.sink,
+        wm.open(k, prompts[k], size=args.size, fps=args.fps, seed=args.seed + i, window=args.window, sink=args.sink,
                 planned_frames=planned)
