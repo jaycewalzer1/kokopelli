@@ -617,10 +617,10 @@ def main():
             work(Path(args.worker))
         except YieldTurn as waiting:
             print(f"Giving the GPU to {waiting}. Everything so far is saved; the next turn picks up here.", flush=True)
-            raise SystemExit(YIELDED)
+            raise SystemExit(YIELDED) from None
         except Exception:
             traceback.print_exc()
-            raise SystemExit(1)
+            raise SystemExit(1) from None
         return
     if args.queued:
         raise SystemExit(take_turns(Path(args.queued)))

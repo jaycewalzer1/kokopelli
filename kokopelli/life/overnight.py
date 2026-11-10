@@ -147,7 +147,7 @@ def main():
             work(Path(args.worker))
         except Exception:
             traceback.print_exc()
-            raise SystemExit(1)
+            raise SystemExit(1) from None
         return
     folder = Path(args.resume) if args.resume else new_folder(args.trial, args.hours)
     print(f"Writing to {folder}", flush=True)

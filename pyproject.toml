@@ -87,14 +87,7 @@ select = ["E9", "F", "B", "UP"]
 # Remove a code from a file once its findings there are fixed. Counts: docs/fable_log/P2-D.md.
 # Added 2026-11-10 when the commons and exp1 branches were merged, same rule: baselined, not fixed.
 "tools/bodies/metahuman/make_bodies.py" = ["B008"]
-"kokopelli/life/overnight.py" = ["B904"]
-"kokopelli/life/scenario_night.py" = ["B904"]
 "kokopelli/loop/interfaces.py" = ["B027"]
-"kokopelli/loop/tests/test_simworld_actions.py" = ["B904"]
-"kokopelli/loop/tests/test_simworld_adapter.py" = ["B904"]
-"kokopelli/loop/tests/test_simworld_contract.py" = ["B904"]
-"kokopelli/loop/tests/test_simworld_gate.py" = ["B904"]
-"kokopelli/loop/tests/test_simworld_recovery.py" = ["B904"]
 
 [tool.pyright]
 include = ["core", "ops", "runtime"]
