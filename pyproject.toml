@@ -77,15 +77,13 @@ extend-exclude = [
 "tools/city_build/build_city.py" = "py310"
 
 [tool.ruff.lint]
-# Syntax errors, pyflakes, bugbear, pyupgrade. No formatter and no repo-wide autofix:
-# existing findings are baselined below, per file, so new code is held to the rules.
+# Syntax errors, pyflakes, bugbear, pyupgrade. No formatter. The 2026-11-09 baseline of per-file ignores was
+# burned down in reorg phase 8; the few findings kept have a `# noqa` with a reason on their line.
 select = ["E9", "F", "B", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
+# Every line needs a reason.
 "experiments/benchmarks/*.py" = ["UP017"]  # also run on PACE in a venv whose Python isn't recorded here; datetime.UTC needs 3.11, timezone.utc works on 3.10
-# BASELINE (generated 2026-11-09, P2-D): existing findings, not fixed in this pass.
-# Remove a code from a file once its findings there are fixed. Counts: docs/fable_log/P2-D.md.
-# Added 2026-11-10 when the commons and exp1 branches were merged, same rule: baselined, not fixed.
 
 [tool.pyright]
 include = ["core", "ops", "runtime"]
