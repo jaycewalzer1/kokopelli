@@ -10,7 +10,7 @@
 set -euo pipefail
 K=/Users/jaycewalzer/Desktop/kokopelli
 CM=$HOME/cosmos3/cosmos3-mlx
-GB=28
+GB=${GB:-28}
 mode=${1:-check}; shift || true
 sets=${*:-B C}
 P="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["prompt"])' "$K/out/wm_multicontrol/a4_full_8bit/a4_full_8bit.mp4.json")"
