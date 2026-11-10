@@ -32,6 +32,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RUNNER = Path.home() / "cosmos3" / "cosmos3-mlx"
 HINTS = ("blur", "seg", "depth", "edge")
+# KOKO_DRY_RUN=1 (what `gpu.py run --dry-run` sets) or `python -m core.world_stream_multi --dry-run`: load the weights,
+# open one stream with the four controls at 0.25, push one frame (latent 0), write dry_run.json, exit 0.
+DRY_RUN = os.environ.get("KOKO_DRY_RUN") == "1"
 
 
 class MultiWorldStream:
@@ -264,8 +267,40 @@ def serve(fake=False):
         out.flush()
 
 
+def dry_run(argv=None):
+    """One latent through a real worker (or the fake one with --fake). 0 if it came back as one painted frame."""
+    import argparse
+
+    import numpy as np
+    p = argparse.ArgumentParser(description="world_stream_multi dry run: one stream, one latent")
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--out", default=str(ROOT / "out" / "test_outputs" / "wm_dry_run" / time.strftime("%Y%m%d-%H%M%S")))
+    p.add_argument("--quantize", type=int, choices=(4, 8), default=8)
+    p.add_argument("--size", default="448x256")
+    p.add_argument("--fake", action="store_true", help="the stand-in worker: no MLX, no weights (for the tests)")
+    args = p.parse_args(argv)
+    width, height = (int(n) for n in args.size.split("x"))
+    started = time.time()
+    wm = MultiWorldStream(out_dir=args.out, quantize=args.quantize, fake=args.fake)
+    try:
+        info = wm.open("dry", "A city street by day, seen at eye level.", size=args.size, fps=24, planned_frames=1)
+        grey = np.full((1, height, width, 3), 128, np.uint8)
+        frames = wm.push("dry", {hint: grey for hint in HINTS})
+    finally:
+        wm.close()
+    sidecar = {"dry_run": "dry run, 1 chunk", **wm.hello, "quantize": args.quantize, "size": args.size,
+               "weights": {h: 0.25 for h in HINTS}, "frames_in": 1, "frames_out": int(len(frames)),
+               "frame_shape": list(frames.shape[1:]), "opened": info, "seconds": round(time.time() - started, 1)}
+    (Path(args.out) / "dry_run.json").write_text(json.dumps(sidecar, indent=1))
+    print(json.dumps({"done": str(Path(args.out) / "dry_run.json"), "frames_out": sidecar["frames_out"],
+                      "seconds": sidecar["seconds"]}), flush=True)
+    return 0 if len(frames) == 1 else 1
+
+
 if __name__ == "__main__":
     if "--worker" in sys.argv:
         serve(fake="--fake" in sys.argv)
+    elif "--dry-run" in sys.argv or DRY_RUN:
+        sys.exit(dry_run(sys.argv[1:]))
     else:
         print(__doc__)

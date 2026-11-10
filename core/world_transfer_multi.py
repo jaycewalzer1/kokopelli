@@ -29,6 +29,9 @@ from pathlib import Path
 from core import world_transfer as wt   # stdlib-only at import time; its mlx code lives inside functions
 
 ROOT = Path(__file__).resolve().parent.parent
+# KOKO_DRY_RUN=1 (what `gpu.py run --dry-run` sets) or --dry-run: paint one latent (frame 0) to <output stem>.dryrun.mp4,
+# label the sidecar, exit 0. It proves the weights load and the whole path runs before a long paint takes its turn.
+DRY_RUN = os.environ.get("KOKO_DRY_RUN") == "1"
 
 
 def normalize_weights(controls, weights=None):
@@ -320,14 +323,25 @@ def parser():
     p.add_argument("--save-latents", help="also write the denoised latents to this .npy (equivalence checks)")
     p.add_argument("--raw-prompt", action="store_true", help="skip the reference's duration/fps/resolution metadata")
     p.add_argument("--extra", help="JSON merged into the sidecar")
+    p.add_argument("--dry-run", action="store_true", default=DRY_RUN, help="one latent only, written beside --output (KOKO_DRY_RUN=1)")
     return p
+
+
+def dry_run_args(args):
+    """The same job cut to one latent chunk (latent 0 is frame 0), written beside the real output so it never replaces it."""
+    output = Path(args.output)
+    args.output = str(output.with_name(f"{output.stem}.dryrun{output.suffix or '.mp4'}"))
+    args.frames, args.save_latents = 1, None
+    args.extra = json.dumps({**(json.loads(args.extra) if args.extra else {}),
+                             "dry_run": "dry run, 1 chunk", "dry_run_of": str(output)})
+    return args
 
 
 def main(argv=None):
     args = parser().parse_args(argv)
     if args.window and not 0 <= args.sink < args.window:
         raise SystemExit("need 0 <= sink < window")
-    run(args)
+    run(dry_run_args(args) if args.dry_run else args)
 
 
 if __name__ == "__main__":
