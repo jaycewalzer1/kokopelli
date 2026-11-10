@@ -5,7 +5,7 @@
 #   city/agents/run_wm_lunch.sh --minutes 5          # extra args go to lunch_wm.py (--fps, --size, --quantize 8, ...)
 #
 # Queue it, don't run it bare (AGENTS.md):
-#   python3 .claude/worktrees/ops/ops/gpu.py run --name wmlunch_... -- city/agents/run_wm_lunch.sh --minutes 5
+#   python3 ops/gpu.py run --name wmlunch_... -- city/agents/run_wm_lunch.sh --minutes 5
 # Memory: one world-model worker (weights ~14 GB only while painting, ~2 GB history per agent kept) and Qwen 4-bit
 # (~6 GB only while deciding) take turns; SimWorld ~10 GB is claimed separately.
 set -uo pipefail

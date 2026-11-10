@@ -9,7 +9,7 @@ Nothing goes to PACE until the setup below is done. A job sent there before then
 The Mac runs Cosmos and Qwen with MLX, which only works on Apple chips. PACE has NVIDIA GPUs, so a job needs a second command that works there, given with `--pace-command`:
 
 ```
-python3 .claude/worktrees/ops/ops/gpu.py run --name mind_x --priority 45 --cwd ~/Desktop/kokopelli \
+python3 ops/gpu.py run --name mind_x --priority 45 --cwd ~/Desktop/kokopelli \
   --pace-command "python -m mind.run --agent qwen --ticks 90 --out out/mind/x" --pull out/mind/x \
   -- .venv/bin/python -m mind.run --agent qwen --ticks 90 --out out/mind/x
 ```

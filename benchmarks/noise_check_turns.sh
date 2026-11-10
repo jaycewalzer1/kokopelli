@@ -10,7 +10,7 @@
 #   benchmarks/noise_check_turns.sh benchmarks/results/noise_t07 50 holt_laury lotteries -- base
 set -u
 
-GPU=/Users/jaycewalzer/Desktop/kokopelli/.claude/worktrees/ops/ops/gpu.py
+GPU=/Users/jaycewalzer/Desktop/kokopelli/ops/gpu.py
 PY=/Users/jaycewalzer/Desktop/kokopelli/.venv/bin/python
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$1"; SAMPLES="$2"; shift 2

@@ -37,7 +37,7 @@ Measuring sticks for Kokopelli's first experiment. **Main result:** established 
 Every real model job goes through the shared GPU queue. The queue doesn't recognize `benchmarks.run` as a model job, so a run started directly would be invisible to it.
 
 ```sh
-python3 /Users/jaycewalzer/Desktop/kokopelli/.claude/worktrees/ops/ops/gpu.py run --name evals_<job> --priority 40 \
+python3 /Users/jaycewalzer/Desktop/kokopelli/ops/gpu.py run --name evals_<job> --priority 40 \
   --max-hours 0.75 --cwd <worktree> -- nice -n 10 <venv python> -u -m benchmarks.run ... --minutes 30
 ```
 

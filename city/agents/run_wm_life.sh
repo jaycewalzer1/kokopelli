@@ -4,7 +4,7 @@
 #
 #   city/agents/run_wm_life.sh --minutes 5            # extra args go to live_wm.py
 #
-# Queue it, don't run it bare (AGENTS.md): python3 .claude/worktrees/ops/ops/gpu.py run --name wmlife_... -- city/agents/run_wm_life.sh ...
+# Queue it, don't run it bare (AGENTS.md): python3 ops/gpu.py run --name wmlife_... -- city/agents/run_wm_life.sh ...
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PORT="${PORT:-9001}"
