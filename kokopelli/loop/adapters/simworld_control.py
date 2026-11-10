@@ -6,7 +6,7 @@ blocks until arrival (local_planner.py:146) and only sleeps inside the loop. Not
 tick a paused game, so it would wait forever. Here the stepping loop calls update() instead.
 """
 from dataclasses import asdict, dataclass
-from typing import Callable, Optional
+from typing import Callable
 
 from kokopelli.loop.adapters.simworld_math import angle_delta, distance_2d_cm, heading_to
 from kokopelli.loop.physics import Pose, Vec3
@@ -34,11 +34,11 @@ class Mover:
     stuck_min_cm: float = 20.0
     phase: str = "start"
     turn_end_tick: int = 0
-    progress_tick: Optional[int] = None
+    progress_tick: int | None = None
     progress_x: float = 0.0
     progress_y: float = 0.0
-    last_distance_cm: Optional[float] = None
-    target_id: Optional[str] = None  # set when chasing something that can move
+    last_distance_cm: float | None = None
+    target_id: str | None = None  # set when chasing something that can move
 
     @property
     def finished(self) -> bool:

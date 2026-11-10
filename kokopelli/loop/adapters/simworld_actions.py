@@ -4,7 +4,7 @@ Split out of simworld.py. SimWorldPhysics lists this mixin before PhysicsSim, an
 kokopelli/agents/lunch_wm.py:TwoBodySim still override these methods by name.
 """
 import json
-from typing import Any, Optional
+from typing import Any
 
 from kokopelli.loop.adapters import simworld_commands as c
 from kokopelli.loop.adapters.simworld_config import AGENT_ACTOR, NEW_HUMANOID_PREFIX, NpcSpec
@@ -66,7 +66,7 @@ class ActionsMixin:
                        stop=lambda: self.wire.request(c.npc_stop(npc.actor_name), resend=False),
                        turn=lambda a, d: self.wire.request(c.npc_turn(npc.actor_name, round(a, 3), d), resend=False))
 
-    def _new_mover(self, x: float, y: float, z: float, radius: float, target_id: Optional[str] = None) -> Mover:
+    def _new_mover(self, x: float, y: float, z: float, radius: float, target_id: str | None = None) -> Mover:
         cfg = self.config
         return Mover(goal_x=x, goal_y=y, goal_z=z, arrival_radius_cm=radius, target_id=target_id,
                      turn_ticks=max(1, round(1.0 / cfg.tick_interval_s)),  # TurnAround runs for 1s (unrealcv.py:632)
@@ -104,13 +104,13 @@ class ActionsMixin:
         if self.gaze and kind != "look_at":
             self.gaze = None
 
-    def _on_foot(self) -> Optional[str]:
+    def _on_foot(self) -> str | None:
         """Why locomotion is impossible right now, or None if it is fine."""
         if self.posture != "standing":
             return f"agent is {self.posture}. Use stand_up, get_off_scooter or exit_vehicle first."
         return None
 
-    def _out_of_range(self, target_id: str) -> Optional[str]:
+    def _out_of_range(self, target_id: str) -> str | None:
         here = self._read_location(self._agent_actor)
         there = self._read_location(self._actor_for(target_id))
         d = distance_cm(here, there)
@@ -119,7 +119,7 @@ class ActionsMixin:
         return None
 
     @staticmethod
-    def _success(reply: Any) -> Optional[bool]:
+    def _success(reply: Any) -> bool | None:
         """Parse {"Success": ...}. unrealcv.py:680 only handles the string form, we allow booleans too."""
         try:
             value = json.loads(str(reply))["Success"]

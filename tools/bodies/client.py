@@ -26,7 +26,6 @@ import json
 import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Optional
 
 ROOT = Path(__file__).resolve().parents[2]
 BODIES_JSON = ROOT / "mac_server" / "Config" / "Bodies.json"
@@ -45,12 +44,12 @@ NO_COMMAND = re.compile(r"does not implement|can ?not find (a )?(function|handle
 @dataclass
 class BodyResult:
     actor: str
-    requested: Optional[str]      # None for GetBody
+    requested: str | None      # None for GetBody
     ok: bool
-    body: Optional[str] = None    # the body the actor actually wears, when the server said
-    error: Optional[str] = None
+    body: str | None = None    # the body the actor actually wears, when the server said
+    error: str | None = None
     supported: bool = True        # False: the server doesn't know SetBody/GetBody at all (an old build)
-    tier: Optional[str] = None    # "near" | "far" | "fallback" when the server says (GetBody), else None
+    tier: str | None = None    # "near" | "far" | "fallback" when the server says (GetBody), else None
 
     @property
     def fell_back(self) -> bool:
@@ -60,7 +59,7 @@ class BodyResult:
         return {**asdict(self), "fell_back": self.fell_back}
 
 
-def known_bodies(path=BODIES_JSON) -> Optional[set]:
+def known_bodies(path=BODIES_JSON) -> set | None:
     """Body ids in the server's Bodies.json, or None while that file doesn't exist yet."""
     path = Path(path)
     if not path.exists():

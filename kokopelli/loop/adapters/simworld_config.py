@@ -2,7 +2,6 @@
 
 Split out of simworld.py, which re-exports every name here.
 """
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -33,7 +32,7 @@ class SpawnSpec(BaseModel):
     position: tuple[float, float, float] = (0.0, 0.0, 0.0)
     yaw: float = 0.0
     existing: bool = False
-    actor: Optional[str] = None
+    actor: str | None = None
 
     @property
     def actor_name(self) -> str:
@@ -70,7 +69,7 @@ class SimWorldConfig(BaseModel):
 
     host: str = "127.0.0.1"
     port: int = 9000  # docs: minimal_example.rst:10
-    map_path: Optional[str] = Field(default=None, description="None keeps the map the server launched with.")
+    map_path: str | None = Field(default=None, description="None keeps the map the server launched with.")
 
     tick_interval_s: float = Field(default=0.1, gt=0)
     step_seconds: float = Field(default=30.0, gt=0)
@@ -79,12 +78,12 @@ class SimWorldConfig(BaseModel):
     velocity_window_s: float = Field(default=1.0, gt=0)
     settle_s: float = Field(default=3.0, ge=0, description="Ticks after spawn so actors fall to the ground.")
 
-    camera_id: Optional[int] = Field(default=None, description="None finds the camera nearest the agent.")
+    camera_id: int | None = Field(default=None, description="None finds the camera nearest the agent.")
     resolution: tuple[int, int] = (320, 240)
-    fov_deg: Optional[float] = None
+    fov_deg: float | None = None
     modalities: tuple[str, ...] = ("rgb", "depth", "segmentation")
     out_dir: str = "out/wmloop_simworld"
-    run_id: Optional[str] = None
+    run_id: str | None = None
     assign_mask_colors: bool = True
 
     seed: int = 0
@@ -92,7 +91,7 @@ class SimWorldConfig(BaseModel):
     agent_yaw: float = 0.0
     agent_speed_cm_s: float = 200.0  # config/example.yaml:112
     npc_count: int = Field(default=2, ge=0, description="Random NPCs from the seed. Ignored if npcs is given.")
-    npcs: Optional[list[NpcSpec]] = None
+    npcs: list[NpcSpec] | None = None
     objects: list[SpawnSpec] = Field(default_factory=default_objects)
     spawn_ue_manager: bool = True  # docs: unrealcv+.rst:64 calls it required
     spawn_weather_manager: bool = True
@@ -109,8 +108,8 @@ class SimWorldConfig(BaseModel):
     sunrise_azimuth_deg: float = 90.0
     max_sun_intensity: float = Field(default=10.0, gt=0, le=100, description="Noon brightness. Range from unrealcv.py:1212.")
     sun_pitch_sign: int = Field(default=-1, description="-1 if a daytime sun has negative pitch. Gate script checks it.")
-    fog: Optional[tuple[float, float, float]] = None  # density, distance, falloff
-    atmosphere: Optional[tuple[float, float]] = None  # rayleigh, mie
+    fog: tuple[float, float, float] | None = None  # density, distance, falloff
+    atmosphere: tuple[float, float] | None = None  # rayleigh, mie
 
     request_timeout_s: float = 60.0  # generous: a tick can stall while Unreal compiles shaders
     render_timeout_s: float = 120.0

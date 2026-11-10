@@ -1,6 +1,5 @@
 """Pure formulas: camera geometry, the sun, headings and hearing. No network, easy to test."""
 import math
-from typing import Optional
 
 from kokopelli.loop.physics import Intrinsics, Rotation, TimeOfDay, Vec3
 
@@ -33,7 +32,7 @@ def camera_to_world(rotation: Rotation) -> list[list[float]]:
     return [[forward[i], right[i], up[i]] for i in range(3)]
 
 
-def project_point(point: Vec3, location: Vec3, rotation: Rotation, k: Intrinsics) -> Optional[tuple[float, float]]:
+def project_point(point: Vec3, location: Vec3, rotation: Rotation, k: Intrinsics) -> tuple[float, float] | None:
     """World point to pixel (u right, v down). None if it is behind the camera."""
     d = (point.x - location.x, point.y - location.y, point.z - location.z)
     m = camera_to_world(rotation)

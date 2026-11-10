@@ -12,7 +12,7 @@ import time
 import hashlib
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
@@ -52,7 +52,7 @@ NOT_RESTORED = [
 class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
     """Drives a SimWorld server. One instance, one world, one client connection."""
 
-    def __init__(self, config: Optional[SimWorldConfig] = None):
+    def __init__(self, config: SimWorldConfig | None = None):
         self.config = config or SimWorldConfig()
         cfg = self.config
         self.wire = Wire(cfg.host, cfg.port, cfg.request_timeout_s, cfg.connect_timeout_s, cfg.reconnect_attempts,
@@ -62,11 +62,11 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
         self.tick_count = 0
         self.step_index = 0
         self.branch = 0
-        self.camera_id: Optional[int] = cfg.camera_id
+        self.camera_id: int | None = cfg.camera_id
         self.weather_available = False
         self.start_s = parse_clock(cfg.start_time)
         self.sun_max = cfg.max_sun_intensity
-        self.initial_weather: Optional[Weather] = None  # what the level had, on a server we have not touched
+        self.initial_weather: Weather | None = None  # what the level had, on a server we have not touched
         self.fog = cfg.fog
         self.atmosphere = cfg.atmosphere
         self.npc_specs: list[NpcSpec] = []
@@ -74,25 +74,25 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
         self.targets: dict[str, str] = {}
         self._sync_mode = False
         self._ready = False
-        self._broken: Optional[str] = None
+        self._broken: str | None = None
         self._new_world()
 
     def _new_world(self) -> None:
         self.agent_speed = self.config.agent_speed_cm_s
         self.posture = "standing"
-        self.held: Optional[str] = None
-        self.riding: Optional[str] = None
-        self.vehicle: Optional[str] = None
+        self.held: str | None = None
+        self.riding: str | None = None
+        self.vehicle: str | None = None
         self.walking = False
-        self.gesture: Optional[str] = None
+        self.gesture: str | None = None
         self.gesture_variant = 0
-        self.gaze: Optional[dict] = None
-        self._last_task_result: Optional[Mover] = None
+        self.gaze: dict | None = None
+        self._last_task_result: Mover | None = None
         self._speech: list[SpeechEvent] = []
         self._camera_overridden = False  # true once we have ever set the camera's rotation ourselves
         self._camera_base_pitch = 0.0
         self._camera_yaw_offset = 0.0
-        self.task: Optional[Mover] = None
+        self.task: Mover | None = None
         self.npc_movers: dict[str, Mover] = {}
         self.npc_waypoint: dict[str, int] = {}
         self.mask_colors: list[MaskColor] = []
@@ -145,7 +145,7 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
                     raise
                 time.sleep(1.0)
 
-    def reset(self, seed: Optional[int] = None) -> Capture:
+    def reset(self, seed: int | None = None) -> Capture:
         """Build the world, pause it, and return state and renders at time zero."""
         self.connect()
         cfg = self.config
@@ -403,7 +403,7 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
         for npc in self.npc_specs:
             self._snapshots[npc.actor_name] = (self.tick_count, self._read_location(npc.actor_name))
 
-    def _read_collisions(self) -> Optional[dict[str, int]]:
+    def _read_collisions(self) -> dict[str, int] | None:
         """Reply keys from communicator.py:465-468. Optional because it is a blueprint call."""
         try:
             reply = json.loads(str(self.wire.request(c.get_collisions(self._agent_actor), resend=True)))
@@ -412,7 +412,7 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
         except (CommandError, ValueError, KeyError, TypeError):
             return None
 
-    def _task_status(self) -> Optional[TaskStatus]:
+    def _task_status(self) -> TaskStatus | None:
         if self.task:
             return TaskStatus(type="move_to", phase=self.task.phase, goal=self.task.goal, target_id=self.task.target_id,
                               distance_remaining_cm=self.task.last_distance_cm)
@@ -435,7 +435,7 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
         objects = []
         for spec in self.config.objects:
             try:
-                object_pose: Optional[Pose] = self._read_pose(spec.actor_name)
+                object_pose: Pose | None = self._read_pose(spec.actor_name)
             except CommandError:
                 object_pose = None  # some actions consume the actor, as the humanoid is while riding
             objects.append(ObjectState(id=spec.id, actor=spec.actor_name, kind=spec.kind, present=object_pose is not None,

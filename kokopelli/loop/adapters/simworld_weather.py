@@ -1,7 +1,6 @@
 """Weather, clock and sun for SimWorldPhysics, as a mixin. Split out of simworld.py."""
 import json
 import re
-from typing import Optional
 
 from kokopelli.loop.adapters import simworld_commands as c
 from kokopelli.loop.adapters.simworld_config import WEATHER_ACTOR
@@ -25,8 +24,8 @@ class WeatherMixin:
         if self.atmosphere:
             self.wire.request(c.set_atmosphere(WEATHER_ACTOR, *self.atmosphere), resend=False)
 
-    def set_weather(self, fog: Optional[tuple[float, float, float]] = None,
-                    atmosphere: Optional[tuple[float, float]] = None) -> Weather:
+    def set_weather(self, fog: tuple[float, float, float] | None = None,
+                    atmosphere: tuple[float, float] | None = None) -> Weather:
         """Set fog (density, distance_cm, falloff) and/or atmosphere (rayleigh, mie). Returns a read-back."""
         if not self.weather_available:
             raise SimWorldError("no weather manager in this world")

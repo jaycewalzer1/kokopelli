@@ -8,7 +8,7 @@ from __future__ import annotations
 import abc
 import json
 from pathlib import Path
-from typing import Annotated, Any, Literal, Mapping, Optional, Union
+from typing import Annotated, Any, Literal, Mapping
 
 from pydantic import (BaseModel, ConfigDict, Field, TypeAdapter, ValidationInfo,
                       field_validator, model_validator)
@@ -52,9 +52,9 @@ class TaskStatus(_Model):
     """An action still running across steps, such as a long move_to."""
     type: str
     phase: str
-    goal: Optional[Vec3] = None
-    target_id: Optional[str] = None
-    distance_remaining_cm: Optional[float] = None
+    goal: Vec3 | None = None
+    target_id: str | None = None
+    distance_remaining_cm: float | None = None
 
 
 class AgentState(_Model):
@@ -63,11 +63,11 @@ class AgentState(_Model):
     pose: Pose
     velocity: Velocity
     posture: Literal["standing", "sitting", "on_scooter", "in_vehicle"]
-    held_object: Optional[str] = None
+    held_object: str | None = None
     max_speed_cm_s: float
-    gesture: Optional[str] = None
-    active_task: Optional[TaskStatus] = None
-    collisions: Optional[dict[str, int]] = Field(
+    gesture: str | None = None
+    active_task: TaskStatus | None = None
+    collisions: dict[str, int] | None = Field(
         default=None, description="Running counts since spawn. None if the server would not report them.")
 
 
@@ -83,8 +83,8 @@ class ObjectState(_Model):
     actor: str
     kind: str
     present: bool
-    pose: Optional[Pose] = None
-    held_by: Optional[str] = None
+    pose: Pose | None = None
+    held_by: str | None = None
 
 
 class TimeOfDay(_Model):
@@ -99,14 +99,14 @@ class TimeOfDay(_Model):
 class Weather(_Model):
     """Values read back from the weather manager. available=False means it could not be reached."""
     available: bool
-    sun_pitch_deg: Optional[float] = None
-    sun_yaw_deg: Optional[float] = None
-    sun_intensity: Optional[float] = None
-    fog_density: Optional[float] = None
-    fog_distance_cm: Optional[float] = None
-    fog_falloff: Optional[float] = None
-    rayleigh: Optional[float] = None
-    mie: Optional[float] = None
+    sun_pitch_deg: float | None = None
+    sun_yaw_deg: float | None = None
+    sun_intensity: float | None = None
+    fog_density: float | None = None
+    fog_distance_cm: float | None = None
+    fog_falloff: float | None = None
+    rayleigh: float | None = None
+    mie: float | None = None
 
 
 class Intrinsics(_Model):
@@ -192,7 +192,7 @@ class RenderFile(_Model):
     format: Literal["png", "npy"]
     width: int
     height: int
-    depth_stats: Optional[dict[str, float]] = Field(
+    depth_stats: dict[str, float] | None = Field(
         default=None, description="min, median and max of the raw depth values. Units unverified, see SIMWORLD.md.")
 
 
@@ -200,8 +200,8 @@ class MaskColor(_Model):
     """Which segmentation colour belongs to which tracked actor."""
     id: str
     actor: str
-    assigned_rgb: Optional[list[int]] = None
-    readback_rgb: Optional[list[int]] = Field(default=None, description="What the server reported. None if it refused.")
+    assigned_rgb: list[int] | None = None
+    readback_rgb: list[int] | None = Field(default=None, description="What the server reported. None if it refused.")
 
 
 class Capture(_Model):
@@ -249,7 +249,7 @@ class ActionOutcome(_Model):
     mapping: Literal["native", "composed", "no_physics"]
     status: Literal["completed", "in_progress", "failed", "unverified"]
     detail: str = ""
-    task: Optional[TaskStatus] = None
+    task: TaskStatus | None = None
 
 
 class StepResult(_Model):
@@ -280,7 +280,7 @@ class SimCheckpoint(_Model):
     backend_state: dict[str, Any]
     not_restored: list[str]
 
-    def save(self, path: Union[str, Path]) -> Path:
+    def save(self, path: str | Path) -> Path:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         temp = path.with_suffix(path.suffix + ".tmp")
@@ -289,7 +289,7 @@ class SimCheckpoint(_Model):
         return path
 
     @classmethod
-    def load(cls, path: Union[str, Path]) -> "SimCheckpoint":
+    def load(cls, path: str | Path) -> "SimCheckpoint":
         return cls.model_validate_json(Path(path).read_text())
 
 
@@ -310,7 +310,7 @@ class _Action(_Model):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False, frozen=True)
 
 
-def _check_target(target_id: Optional[str], info: ValidationInfo, kinds: Optional[set[str]] = None) -> Optional[str]:
+def _check_target(target_id: str | None, info: ValidationInfo, kinds: set[str] | None = None) -> str | None:
     """Reject ids the world does not have. Skipped when no target list was passed."""
     targets = (info.context or {}).get("targets")
     if target_id is None or targets is None:
@@ -339,8 +339,8 @@ class Continue(_Action):
 
 class MoveTo(_Action):
     type: Literal["move_to"] = "move_to"
-    position: Optional[Vec3] = None
-    target_id: Optional[str] = None
+    position: Vec3 | None = None
+    target_id: str | None = None
     arrival_radius_cm: float = Field(default=150.0, gt=0, le=2000)
 
     @field_validator("target_id")
@@ -356,8 +356,8 @@ class MoveTo(_Action):
 
 class LookAt(_Action):
     type: Literal["look_at"] = "look_at"
-    position: Optional[Vec3] = None
-    target_id: Optional[str] = None
+    position: Vec3 | None = None
+    target_id: str | None = None
 
     @field_validator("target_id")
     @classmethod
@@ -489,9 +489,7 @@ class StopGesture(_Action):
 
 
 Action = Annotated[
-    Union[Wait, Continue, MoveTo, LookAt, Interact, Speak, MoveForward, StepForward, Rotate, Stop, SetSpeed,
-          SitDown, StandUp, PickUp, DropObject, GetOnScooter, GetOffScooter, EnterVehicle, ExitVehicle,
-          Drive, Gesture, StopGesture],
+    Wait | Continue | MoveTo | LookAt | Interact | Speak | MoveForward | StepForward | Rotate | Stop | SetSpeed | SitDown | StandUp | PickUp | DropObject | GetOnScooter | GetOffScooter | EnterVehicle | ExitVehicle | Drive | Gesture | StopGesture,
     Field(discriminator="type"),
 ]
 _ACTION_ADAPTER = TypeAdapter(Action)
@@ -501,7 +499,7 @@ _ACTION_ADAPTER = TypeAdapter(Action)
 INTERACT_BY_KIND = {"object": "pick_up", "seat": "sit_down", "scooter": "get_on_scooter", "vehicle": "enter_vehicle"}
 
 
-def parse_action(raw: Union[dict, str, BaseModel], targets: Optional[Mapping[str, str]] = None) -> Any:
+def parse_action(raw: dict | str | BaseModel, targets: Mapping[str, str] | None = None) -> Any:
     """Validate an action. `targets` maps each known id to its kind.
 
     Raises pydantic.ValidationError for unknown actions, bad arguments and unknown ids.
@@ -585,7 +583,7 @@ class PhysicsSim(abc.ABC):
     """A simulator that owns physical truth. Actions go here, never to the world model."""
 
     @abc.abstractmethod
-    def reset(self, seed: Optional[int] = None) -> Capture:
+    def reset(self, seed: int | None = None) -> Capture:
         """Build the world and return the state and renders at time zero."""
 
     @abc.abstractmethod

@@ -17,7 +17,6 @@ import struct
 import threading
 import zlib
 from io import BytesIO
-from typing import Optional
 
 import numpy as np
 
@@ -76,7 +75,7 @@ class FakeUnrealCV:
 
     def __init__(self, port: int = 0, advertise_commands: bool = True, drift_cm: float = 0.0):
         self.requested_port = port
-        self.port: Optional[int] = None
+        self.port: int | None = None
         self.advertise_commands = advertise_commands
         self.commands: list[str] = []  # every command accepted, in order
         self.rejected: list[str] = []  # every command we did not recognise
@@ -91,8 +90,8 @@ class FakeUnrealCV:
         # failure modes
         self.silent_hello = False  # accept TCP, never say hello: a server still loading
         self.hello_text = b"connected to fake UnrealCV"
-        self.hang_on: Optional[str] = None  # never answer a command starting with this
-        self.drop_on: Optional[str] = None  # close the socket on a command starting with this
+        self.hang_on: str | None = None  # never answer a command starting with this
+        self.drop_on: str | None = None  # close the socket on a command starting with this
         self.fail_once = True  # hang_on and drop_on fire once, then clear
         self.missing_assets: set[str] = set()  # spawning these does nothing, as if the asset were absent
         self.refuse: set[str] = set()  # command prefixes answered with an error
@@ -108,7 +107,7 @@ class FakeUnrealCV:
             self.actors: dict[str, Actor] = {}
             self.cameras = [Camera()]
             self.paused = False
-            self.tick_interval: Optional[float] = None
+            self.tick_interval: float | None = None
             self.tick_count = 0
             self.level = None
             self.window = None
@@ -185,7 +184,7 @@ class FakeUnrealCV:
         sock.sendall(struct.pack("<II", MAGIC, len(payload)) + payload)
 
     @staticmethod
-    def _recv_exact(sock, count: int) -> Optional[bytes]:
+    def _recv_exact(sock, count: int) -> bytes | None:
         data = b""
         while len(data) < count:
             chunk = sock.recv(count - len(data))
