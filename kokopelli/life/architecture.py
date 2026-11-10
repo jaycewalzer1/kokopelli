@@ -6,7 +6,7 @@ NODES and EDGES are the part to edit. A status comes from reading the code, so c
     unproven  the code runs, but hasn't been shown to work
     planned   only the plan has it, so `files` stays empty
 `kind` is what a part is, which sets its shape on the chart: a model, stored data, a process or loop step, or an input or output.
-`files` are in this checkout, and are checked against the disk by tests/test_life_architecture.py. `branch_files` live only in a worktree
+`files` are in this checkout, and are checked against the disk by tests/life/test_life_architecture.py. `branch_files` live only in a worktree
 under .claude/worktrees, on a branch not merged here, and are only checked while that worktree exists. `plan` is a section of Kokopelli_Perspectives.
 
 `at` is [column, row] on the desktop chart. An edge's `active` and `pulse` name the flags and counts snapshot() measures:
@@ -93,11 +93,11 @@ NODES = [
     {"id": "mind", "name": "Feel-then-decide", "at": [1, 3], "status": "partial", "kind": "process",
      "does": "Wraps any agent so it appraises what it just saw, then decides only at a decision point. A feeling shapes its own later prompts, and is never a score.",
      "why": "Uncommitted on this checkout, and it needs kokopelli/loop/ from the agent loop worktree to run. Tested with scripted feelings. Whether real Qwen has run it is under Live, and kokopelli/mind/OPEN_DECISIONS.md lists what's still undecided.",
-     "files": ["kokopelli/mind/feeling.py", "kokopelli/mind/run.py", "kokopelli/mind/OPEN_DECISIONS.md", "tests/test_mind.py"]},
+     "files": ["kokopelli/mind/feeling.py", "kokopelli/mind/run.py", "kokopelli/mind/OPEN_DECISIONS.md", "tests/mind/test_mind.py"]},
     {"id": "blend", "name": "Clips and blending", "at": [2, 3], "status": "built", "kind": "data",
      "does": "Finished clips land on disk, and blend.py crossfades clips into one video.",
      "why": "Tested and used for the continuous video. Whether blend.py itself is running isn't measured, only clips being written.",
-     "files": ["kokopelli/wm/blend.py", "tests/test_continuous_video.py"]},
+     "files": ["kokopelli/wm/blend.py", "tests/wm/test_continuous_video.py"]},
     {"id": "dreamgym", "name": "DreamGym policy", "at": [4, 3], "status": "planned", "kind": "model", "plan": "§15",
      "does": "Named in the build notes as a starting point for the agent's exact policy.",
      "why": "Not in this repo, and nothing here uses it.",

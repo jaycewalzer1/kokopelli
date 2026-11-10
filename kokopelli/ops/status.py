@@ -39,21 +39,21 @@ BRANCHES = ["feat/wm-agent-loop", "feat/wm-simworld", "feat/evals", "feat/ops"]
 QUIET_MINUTES = 30
 LOW_DISK_GB = 40
 
-LIFE_TESTS = ["tests.test_life_store", "tests.test_life_windows", "tests.test_life_engine", "tests.test_life_panel",
-              "tests.test_life_memory", "tests.test_life_architecture"]
-HOMEOSTATIC_TESTS = ["tests.test_homeostatic_world", "tests.test_homeostatic_benchmark",
-                     "tests.test_homeostatic_watch", "tests.test_homeostatic_grpo"]
+LIFE_TESTS = ["tests.life.test_life_store", "tests.life.test_life_windows", "tests.life.test_life_engine", "tests.life.test_life_panel",
+              "tests.life.test_life_memory", "tests.life.test_life_architecture"]
+HOMEOSTATIC_TESTS = ["experiments.homeostatic.tests.test_homeostatic_world", "experiments.homeostatic.tests.test_homeostatic_benchmark",
+                     "tests.life.test_homeostatic_watch", "experiments.homeostatic.tests.test_homeostatic_grpo"]
 SMOKE_DIR = STATE / "smoke/agent_loop"
 SUITES = [
     ("life", ROOT, [PY, "-m", "unittest", *LIFE_TESTS]),
     ("homeostatic", ROOT, [PY, "-m", "unittest", *HOMEOSTATIC_TESTS]),
-    ("mind", ROOT, ["env", f"PYTHONPATH={AGENT_LOOP}", PY, "-m", "unittest", "tests.test_mind"]),
+    ("mind", ROOT, ["env", f"PYTHONPATH={AGENT_LOOP}", PY, "-m", "unittest", "tests.mind.test_mind"]),
     ("agent loop", AGENT_LOOP, [PY, "-m", "unittest", "discover", "-s", "kokopelli/loop/tests", "-t", "."]),
     ("agent loop mock run", AGENT_LOOP, [PY, "-m", "kokopelli.loop.run", "--ticks", "3", "--seed", "7", "--out", str(SMOKE_DIR)]),
     ("simworld", SIMWORLD, [SIMWORLD_PY, "-W", "ignore", "-m", "unittest", "discover", "-s", "kokopelli/loop/tests", "-t", ".",
                             "-p", "test_simworld*.py"]),
     ("benchmarks", EVALS, [PY, "-m", "unittest", "discover", "-s", "experiments/benchmarks/tests", "-t", "."]),
-    ("ops", OPS, [sys.executable, "-m", "unittest", "kokopelli.ops.tests.test_gpu"]),
+    ("ops", OPS, [sys.executable, "-m", "unittest", "tests.ops.test_gpu"]),
 ]
 
 

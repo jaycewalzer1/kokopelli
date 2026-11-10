@@ -1,32 +1,37 @@
 #!/usr/bin/env bash
-# Run every test suite, one summary line each; a failing suite also prints its failing tests.
-# Usage: tools/fable/test_all.sh [suite ...]   (default: tests runtime simworld ops benchmarks commons)
-#   MAC=1      also run mac_server (starts a mock server on port 9000, so one checkout at a time).
-#              Its 29 known baseline failures are reported but don't fail the run.
-#   VERBOSE=1  print each suite's full output with -v.
+# Run the test tree with pytest, one summary line per run; a failing run also prints its failing tests.
+# Usage: tools/fable/test_all.sh [pytest args or paths ...]   (default: everything, in the runs below)
+#   main         .venv (Python 3.12), -m "not py310": tests/, experiments/exp1/tests, experiments/homeostatic/tests
+#   experiments  .venv, -m "not py310": experiments/benchmarks/tests, experiments/commons/tests
+#   py310        simworld/.venv (Python 3.10), -m py310: the SimWorld tests (tests/loop/test_simworld*.py)
+#   MAC=1        also run mac_server (starts a mock server on port 9000, so one checkout at a time).
+#                Its 29 known baseline failures are reported but don't fail the run.
+#   VERBOSE=1    print each run's full output with -v.
+# Markers (conftest.py): model and slow are skipped unless RUN_MODEL_TESTS / RUN_LONG_TESTS is set; never set them here.
 # Interpreters resolve from the repo this script lives in, so it works from any checkout or worktree.
 cd "$(dirname "$0")/../.." || exit 2
-# The tests suite peaked near 18 GB while it loaded real models, and five copies at once crashed the Mac on 2026-11-09. So the whole run takes one
+# The tests peaked near 18 GB while they loaded real models, and five copies at once crashed the Mac on 2026-11-09. So the whole run takes one
 # memory claim and waits its turn: python3 kokopelli/ops/memguard.py status shows who holds it.
 [ -n "$MEMGUARD" ] || exec python3 kokopelli/ops/memguard.py run --name test_all --gb "${TEST_GB:-2}" -- bash "$0" "$@"
-want=${*:-tests runtime simworld ops benchmarks commons}
-[ "${MAC:-0}" = 1 ] && case " $want " in *" mac_server "*) ;; *) want="$want mac_server" ;; esac
 MAC_KNOWN_FAILURES=29
-v=; [ "${VERBOSE:-0}" = 1 ] && v=-v
+v=-q; [ "${VERBOSE:-0}" = 1 ] && v="-v -rA"
 failed=0
 
 one() {
   local name=$1; shift
-  case " $want " in *" $name "*) ;; *) return ;; esac
   local start=$SECONDS log rc summary
   log=$("$@" 2>&1); rc=$?
-  [ -n "$v" ] && printf '%s\n' "$log"
-  summary=$(printf '%s\n' "$log" | grep -E '^Ran [0-9]+ test|^(FAILED|OK)|[0-9]+ (passed|failed)' | tail -3 | tr '\n' ' ' | cut -c1-160)
+  [ "${VERBOSE:-0}" = 1 ] && printf '%s\n' "$log"
+  summary=$(printf '%s\n' "$log" | grep -E '[0-9]+ (passed|failed|skipped|deselected|errors?)|no tests ran' | tail -1 | tr -d '=' | sed 's/^ *//' | cut -c1-160)
+  if [ "$rc" -eq 5 ]; then  # nothing collected for this interpreter (a path given for the other one)
+    echo "$name none $((SECONDS - start))s"
+    return
+  fi
   if [ "$name" = mac_server ] && [ "$rc" -ne 0 ]; then
     local n
     n=$(printf '%s\n' "$log" | grep -oE '[0-9]+ failed' | tail -1 | cut -d' ' -f1)
     if [ -n "$n" ] && [ "$n" -le "$MAC_KNOWN_FAILURES" ] && ! printf '%s\n' "$log" | grep -qE '[0-9]+ errors?'; then
-      echo "$name ok $((SECONDS - start))s $summary(baseline has $MAC_KNOWN_FAILURES known failures)"
+      echo "$name ok $((SECONDS - start))s $summary (baseline has $MAC_KNOWN_FAILURES known failures)"
       return
     fi
   fi
@@ -35,16 +40,19 @@ one() {
   else
     failed=1
     echo "$name FAILED rc=$rc $((SECONDS - start))s $summary"
-    [ -z "$v" ] && printf '%s\n' "$log" | grep -E '^(FAIL|ERROR):|^FAILED |^ERROR ' | head -40
+    [ "${VERBOSE:-0}" = 1 ] || printf '%s\n' "$log" | grep -E '^(FAILED|ERROR) ' | head -40
   fi
 }
 
-one tests .venv/bin/python -W ignore -m unittest discover $v -s tests
-one runtime .venv/bin/python -W ignore -m unittest discover $v -s kokopelli/loop/tests -t . -p 'test_[!s]*.py'
-one simworld simworld/.venv/bin/python -W ignore -m unittest discover $v -s kokopelli/loop/tests -t . -p 'test_simworld*.py'
-one ops .venv/bin/python -W ignore -m unittest discover $v -s kokopelli/ops/tests -t .
-one benchmarks .venv/bin/python -W ignore -m unittest discover $v -s experiments/benchmarks/tests -t .
-# The commons experiment tests are written for pytest, which only the SimWorld venv has (see docs/REORG_PLAN.md, phase 7).
-one commons simworld/.venv/bin/python -m pytest ${v:--q} -p no:cacheprovider experiments/commons/tests
-one mac_server sh -c "cd mac_server && SIMCV_START_MOCK=1 ../simworld/.venv/bin/python -m pytest ${v:--q} -p no:cacheprovider tests"
+# -W ignore as before: the libraries' deprecation warnings drown the summary.
+# With no arguments, benchmarks and commons get a process of their own, as they had before: benchmarks' resume test fakes
+# time.time, and a daemon thread the life tests leave reading macmon (kokopelli/life/gpu_queue.py) eats the fake clock.
+if [ $# -gt 0 ]; then
+  one main .venv/bin/python -W ignore -m pytest $v -rfE -m "not py310" "$@"
+else
+  one main .venv/bin/python -W ignore -m pytest $v -rfE -m "not py310" tests experiments/exp1/tests experiments/homeostatic/tests
+  one experiments .venv/bin/python -W ignore -m pytest $v -rfE -m "not py310" experiments/benchmarks/tests experiments/commons/tests
+fi
+one py310 simworld/.venv/bin/python -W ignore -m pytest $v -rfE -m py310 "$@"
+[ "${MAC:-0}" = 1 ] && one mac_server sh -c "cd mac_server && SIMCV_START_MOCK=1 ../simworld/.venv/bin/python -m pytest $v -p no:cacheprovider tests"
 exit $failed

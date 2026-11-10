@@ -495,7 +495,7 @@ def main() -> int:
 
     server = None
     if args.fake:
-        from kokopelli.loop.tests.fake_unrealcv import FakeUnrealCV
+        from tests.loop.fake_unrealcv import FakeUnrealCV
         print(FAKE_BANNER)
         server = FakeUnrealCV().start()
         args.host, args.port = "127.0.0.1", server.port

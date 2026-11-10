@@ -62,6 +62,23 @@ constraint-dependencies = [
     "xxhash==4.0.2",
 ]
 
+[tool.pytest.ini_options]
+# `make test-all` runs these twice: .venv with -m "not py310", simworld/.venv with -m py310 (tools/fable/test_all.sh).
+# The markers are applied and enforced in conftest.py. mac_server/tests has its own pytest.ini and runs with MAC=1.
+testpaths = ["tests", "experiments/benchmarks/tests", "experiments/commons/tests", "experiments/exp1/tests",
+             "experiments/homeostatic/tests"]
+# The repo root on sys.path, and experiments/ (no __init__.py) resolved as a namespace package, so every test module
+# imports under its full dotted name (tests.loop.test_x, experiments.benchmarks.tests.test_y) and nothing is loaded twice.
+pythonpath = ["."]
+consider_namespace_packages = true
+addopts = ["-p", "no:cacheprovider"]
+markers = [
+    "model: loads Qwen or Cosmos onto the GPU; skipped unless RUN_MODEL_TESTS is set (queue it through kokopelli/ops/gpu.py)",
+    "py310: needs simworld/.venv (Python 3.10, unrealcv); the SimWorld tests",
+    "unreal: needs a running Unreal server",
+    "slow: takes hours; skipped unless RUN_LONG_TESTS is set",
+]
+
 [tool.ruff]
 target-version = "py312"
 extend-exclude = [
@@ -77,7 +94,8 @@ extend-exclude = [
 [tool.ruff.per-file-target-version]
 # These run under simworld/.venv, which is Python 3.10.
 "kokopelli/loop/adapters/simworld*.py" = "py310"
-"kokopelli/loop/tests/test_simworld*.py" = "py310"
+"tests/loop/test_simworld*.py" = "py310"
+"conftest.py" = "py310"  # the SimWorld test run loads it too
 "tools/city_build/build_city.py" = "py310"
 
 [tool.ruff.lint]
@@ -171,27 +189,27 @@ select = ["E9", "F", "B", "UP"]
 "kokopelli/loop/leak_guard.py" = ["UP038"]
 "kokopelli/loop/memory.py" = ["F401"]
 "kokopelli/loop/physics.py" = ["UP007", "UP035", "UP037"]
-"kokopelli/loop/tests/fake_unrealcv.py" = ["UP007"]
-"kokopelli/loop/tests/test_life_context.py" = ["F401"]
-"kokopelli/loop/tests/test_simworld_actions.py" = ["B904"]
-"kokopelli/loop/tests/test_simworld_adapter.py" = ["B904"]
-"kokopelli/loop/tests/test_simworld_contract.py" = ["B023", "B904"]
-"kokopelli/loop/tests/test_simworld_gate.py" = ["B904"]
-"kokopelli/loop/tests/test_simworld_recovery.py" = ["B904", "B905", "F401"]
+"tests/loop/fake_unrealcv.py" = ["UP007"]
+"tests/loop/test_life_context.py" = ["F401"]
+"tests/loop/test_simworld_actions.py" = ["B904"]
+"tests/loop/test_simworld_adapter.py" = ["B904"]
+"tests/loop/test_simworld_contract.py" = ["B023", "B904"]
+"tests/loop/test_simworld_gate.py" = ["B904"]
+"tests/loop/test_simworld_recovery.py" = ["B904", "B905", "F401"]
 "tools/pace/wmloop_one_tick.py" = ["B905", "F401"]
-"tests/test_city_lunch.py" = ["B905", "F401"]
-"tests/test_continuous_video.py" = ["F401"]
-"tests/test_exp1.py" = ["B905"]
-"tests/test_exp1_learn.py" = ["B905"]
-"tests/test_gpu_keeper.py" = ["F401"]
-"tests/test_homeostatic_benchmark.py" = ["B905"]
-"tests/test_homeostatic_grpo.py" = ["B023", "B905"]
-"tests/test_homeostatic_world.py" = ["B905"]
-"tests/test_life_memory.py" = ["F401"]
-"tests/test_life_pipeline.py" = ["UP031"]
-"tests/test_life_scenario.py" = ["F401"]
-"tests/test_life_windows.py" = ["B905"]
-"tests/test_wm_multicontrol_b.py" = ["B905"]
+"tests/agents/test_city_lunch.py" = ["B905", "F401"]
+"tests/wm/test_continuous_video.py" = ["F401"]
+"experiments/exp1/tests/test_exp1.py" = ["B905"]
+"experiments/exp1/tests/test_exp1_learn.py" = ["B905"]
+"tests/ops/test_gpu_keeper.py" = ["F401"]
+"experiments/homeostatic/tests/test_homeostatic_benchmark.py" = ["B905"]
+"experiments/homeostatic/tests/test_homeostatic_grpo.py" = ["B023", "B905"]
+"experiments/homeostatic/tests/test_homeostatic_world.py" = ["B905"]
+"tests/life/test_life_memory.py" = ["F401"]
+"tests/life/test_life_pipeline.py" = ["UP031"]
+"tests/life/test_life_scenario.py" = ["F401"]
+"tests/life/test_life_windows.py" = ["B905"]
+"tests/wm/test_wm_multicontrol_b.py" = ["B905"]
 
 [tool.pyright]
 include = ["core", "ops", "runtime"]

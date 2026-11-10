@@ -56,7 +56,7 @@ from kokopelli.loop.adapters.simworld_control import MoverIO  # noqa: E402,F401
 from kokopelli.loop.adapters.simworld_math import angle_delta, distance_cm, heading_to  # noqa: E402,F401
 from kokopelli.loop.physics import Vec3  # noqa: E402,F401
 
-# The parts live in four files; every name stays importable from here (tools/bodies/demo_lunch.py, tests/test_city_lunch.py).
+# The parts live in four files; every name stays importable from here (tools/bodies/demo_lunch.py, tests/agents/test_city_lunch.py).
 # demo_lunch.py replaces lunch_wm.TwoBodySim and lunch_wm.Lunch: make_world() and main() below read those names from
 # this module when they run, so keep both functions here.
 from lunch_text import (FORMAT_NOTE, IRIS_SITUATION, IRIS_WHO, LUNCH_TOPIC, MARA_SITUATION,  # noqa: E402,F401

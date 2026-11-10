@@ -22,7 +22,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-for _p in (ROOT, ROOT / "tests", HERE):
+for _p in (ROOT, ROOT / "tests" / "agents", HERE):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 

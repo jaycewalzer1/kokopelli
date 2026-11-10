@@ -66,7 +66,7 @@ def multicontrol_video(prompt, controls, output, weights=None, size="448x256", f
     return output
 
 
-# ---------------------------------------------------------------- pure pieces (tested in tests/test_wm_multicontrol_b.py)
+# ---------------------------------------------------------------- pure pieces (tested in tests/wm/test_wm_multicontrol_b.py)
 
 def normalise_weights(weights):
     """build_transfer_batch: non-negative, positive sum, divided by the sum."""
