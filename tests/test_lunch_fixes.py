@@ -30,6 +30,18 @@ class HelpersTest(unittest.TestCase):
         self.assertEqual(a.fixes, [])
         self.assertFalse(a.decide_on_change)
 
+    def test_view_prompts_off_by_default_and_each_person_worded_the_same(self):
+        import lunch_text as lt
+        a = lw.build_args([])
+        self.assertEqual(lt.prompts_for(a, ["mara", "iris"]), {"mara": lt.WM_PROMPT, "iris": lt.WM_PROMPT})
+        a = lw.build_args(["--view-prompts"])
+        p = lt.prompts_for(a, ["mara", "iris"])
+        self.assertIn(lt.LOOKS["iris"], p["mara"])
+        self.assertIn(lt.LOOKS["mara"], p["iris"])
+        self.assertNotIn(lt.LOOKS["mara"], p["mara"])   # her own eye camera hides her body
+        self.assertIn(lt.LOOKS["ana"], p["mara"])
+        self.assertIn(lt.LOOKS["ana"], p["iris"])
+
     def test_parse_fixes(self):
         self.assertEqual(fx.parse_fixes("all"), set(fx.FIXES))
         self.assertEqual(fx.parse_fixes("memory, loops"), {"memory", "loops"})

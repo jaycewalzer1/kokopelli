@@ -45,6 +45,43 @@ WM_PROMPT = ("First-person view of someone walking through a sunny solarpunk vil
              "walking, chatting and carrying things; a cafe with tables outside; wooded hills on the horizon, deep blue sky "
              "with white clouds. Live-action video, natural light, realistic materials, steady handheld camera.")
 
+# --view-prompts (P5, off by default): one world-model prompt per view, for the varied city around Fern Court
+# (city/world.json: fern_kettle and fern_rise are three-storey coconut_shophouse buildings in sage, cream, brass and
+# coral; Kettle Square has cafe tables under a sail; fern_hall is a bamboo hall), with every person described by the
+# same words in every view (LOOKS, from city/bodies/looks.json plus the clothes the personas mention). The bodies are
+# still drawn in grey underwear (no outfits in Bodies.json), so the clothes here are the prompt-side way to dress them.
+LOOKS = {
+    "mara": ("a woman of about thirty with fair, lightly freckled skin and long, loosely wavy dark-brown hair, wearing a "
+             "rust-red linen shirt with rolled sleeves and loose cream trousers"),
+    "iris": ("a tall woman of about forty with dark brown skin and short natural black curls, wearing a tan canvas work "
+             "jacket over a charcoal t-shirt and olive trousers"),
+    "ana": ("a young woman with medium-brown skin and a dark ponytail, wearing a sage-green apron over a white t-shirt"),
+}
+FERN_COURT = ("Fern Court, a car-free solarpunk neighbourhood at midday in early autumn: three-storey timber shophouses "
+              "in sage, cream and coral with brass trim, vines trailing off their roof edges and planters on every "
+              "balcony; ground floors are open shopfronts, a bakery and a cafe called The Kettle. Kettle Square has "
+              "small cafe tables under a white sail canopy. A tall open bamboo hall, low courtyard houses, fruit trees, "
+              "wildflower beds and a pale stone footpath with moss between the stones. Clear blue sky with a few white "
+              "clouds, warm overhead sun, soft short shadows.")
+VIEW_STYLE = ("Live-action footage filmed at eye level from a person's own point of view as they walk, a natural "
+              "handheld sway, 24 mm lens, everything in focus, realistic materials and skin, true-to-life colour.")
+
+
+def view_prompt(viewer, others):
+    """The world-model prompt for `viewer`'s eyes: the place, then each person they may see, worded the same in every
+    view so a person looks the same in both films."""
+    seen = [f"{LOOKS[o]}" for o in others if o in LOOKS and o != viewer]
+    people = (" People you may see: " + "; ".join(seen) + ". They stand and walk naturally, with natural faces and hands."
+              if seen else "")
+    return f"{VIEW_STYLE} {FERN_COURT}{people}"
+
+
+def prompts_for(args, ids):
+    """Each stream's world-model prompt: --wm-prompt for all, or with --view-prompts one per view."""
+    if not getattr(args, "view_prompts", False):
+        return {k: args.wm_prompt for k in ids}
+    return {k: view_prompt(k, [*ids, "ana"]) for k in ids}
+
 
 def people(args, nav):
     meet = nav.places[args.meet]["name"]

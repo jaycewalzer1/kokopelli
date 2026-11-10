@@ -91,7 +91,6 @@ def bench_world(nav, folder, cast):
     import numpy as np  # noqa: F401  (test_city_lunch needs it importable)
     import test_city_lunch as tcl
     from live_wm import REACH_M
-    tcl.STEP_S, tcl.FRAMES_PER_STEP = STEP_S, int(STEP_S * FPS)
 
     class BenchWorld(tcl.FakeWorld):
         """FakeWorld plus the two lunch bowls on the cafe's doorstep, picking up and putting down."""
@@ -103,7 +102,14 @@ def bench_world(nav, folder, cast):
             self.holder = {b: None for b in self.bowls}
 
         def step(self, actions):
-            outcomes, frames = super().step(actions)
+            # FakeWorld reads its step length from test_city_lunch's globals: set them for this call only, so the
+            # tests that share the module (the golden run) keep theirs
+            saved = tcl.STEP_S, tcl.FRAMES_PER_STEP
+            tcl.STEP_S, tcl.FRAMES_PER_STEP = STEP_S, int(STEP_S * FPS)
+            try:
+                outcomes, frames = super().step(actions)
+            finally:
+                tcl.STEP_S, tcl.FRAMES_PER_STEP = saved
             for k, a in actions.items():
                 if a["type"] == "interact":
                     b = a.get("target_id")

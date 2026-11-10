@@ -295,7 +295,7 @@ class LunchRecord:
                 "controls": {"blur": f"downup {BLUR_DOWNUP} (v2 high)", "seg": "SimWorld masks x material class",
                              "depth": f"inverse depth, near {NEAR_CM} cm, far {FAR_CM} cm", "edge": "Canny 100/200",
                              "weights": "0.25 each"},
-                "wm_prompt": a.wm_prompt, "size": a.size, "fps": a.fps, "seeds": {k: a.seed + i for i, k in enumerate(self.minds)},
+                "wm_prompt": a.wm_prompt, "wm_prompts": __import__("lunch_text").prompts_for(a, list(self.minds)), "size": a.size, "fps": a.fps, "seeds": {k: a.seed + i for i, k in enumerate(self.minds)},
                 "denoise_steps": 4, "window": a.window, "sink": a.sink, "quantize": a.quantize,
                 "sim_steps": a.steps, "step_seconds": a.step_s, "clock": a.clock, "meet": a.meet,
                 "agents": {k: {"name": m.name, "who": m.who, "situation": m.situation, "decisions": m.decisions}
@@ -328,7 +328,9 @@ def place_or_point(nav, text):
 
 
 def open_streams(wm, args, ids):
+    from lunch_text import prompts_for
     planned = int(args.steps * args.step_s * args.fps) + 1
+    prompts = prompts_for(args, ids)
     for i, k in enumerate(ids):
-        wm.open(k, args.wm_prompt, size=args.size, fps=args.fps, seed=args.seed + i, window=args.window, sink=args.sink,
+        wm.open(k, prompts[k], size=args.size, fps=args.fps, seed=args.seed + i, window=args.window, sink=args.sink,
                 planned_frames=planned)
