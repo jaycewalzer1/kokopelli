@@ -31,6 +31,13 @@ repos:
         language: system
         entry: npx -y @biomejs/biome@2.6.6 lint --no-errors-on-unmatched
         files: ^kokopelli/life/static/.*\.js$
+      - id: lint-imports
+        name: import contracts (lint-imports, [tool.importlinter] in pyproject.toml)
+        language: system
+        # The main .venv has import-linter (dev group). It reads the whole graph, so it runs once, not per file.
+        entry: .venv/bin/lint-imports
+        pass_filenames: false
+        types: [python]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
