@@ -13,7 +13,7 @@ cd "$ROOT"
 started=""
 if ! lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1; then
 	echo "starting SimWorld (minimized) on $PORT"
-	MINIMIZED=1 CVPORT="$PORT" mac_server/scripts/run.sh packaged >/tmp/wmlife_server_$PORT.log 2>&1 &
+	MINIMIZED=1 NOMOUSE=1 CVPORT="$PORT" mac_server/scripts/run.sh packaged >/tmp/wmlife_server_$PORT.log 2>&1 &
 	started=$!
 	for _ in $(seq 1 180); do
 		lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1 && break
