@@ -30,7 +30,7 @@ def mmlu_items(n, seed=0):
 
 
 def _mmlu_prompt(item):
-    choices = "\n".join(f"{letter}. {text}" for letter, text in zip(LETTERS, item["choices"]))
+    choices = "\n".join(f"{letter}. {text}" for letter, text in zip(LETTERS, item["choices"], strict=False))
     return (f"The following is a multiple choice question about {item['subject'].replace('_', ' ')}.\n\n"
             f"{item['question']}\n{choices}\n\nAnswer with the letter only.")
 
@@ -103,7 +103,7 @@ def ifeval_items(n, seed=0):
 
 def follows(item, response):
     return all(CHECKS[name](response, {key: value for key, value in kwargs.items() if value is not None})
-               for name, kwargs in zip(item["instruction_id_list"], item["kwargs"]))
+               for name, kwargs in zip(item["instruction_id_list"], item["kwargs"], strict=False))
 
 
 def ifeval_correct(policy, items, max_tokens=400):

@@ -69,7 +69,7 @@ FELT = {
 
 def felt_text(h: np.ndarray) -> str:
     parts = []
-    for name, v in zip(NEEDS, h):
+    for name, v in zip(NEEDS, h, strict=False):
         for cut, phrase in FELT[name]:
             if v < cut:
                 parts.append(phrase)

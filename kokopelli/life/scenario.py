@@ -144,7 +144,7 @@ def relax(state):
 
 
 def apply(state, delta):
-    return {need: clamp(state[need] + change) for need, change in zip(NEEDS, delta)}
+    return {need: clamp(state[need] + change) for need, change in zip(NEEDS, delta, strict=False)}
 
 
 def drive(state):

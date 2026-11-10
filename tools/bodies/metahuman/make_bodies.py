@@ -145,7 +145,7 @@ def landmarks(ch):
 
 
 def rms(a, b):
-    return math.sqrt(sum((p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2 for p, q in zip(a, b)) / max(1, len(a)))
+    return math.sqrt(sum((p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2 for p, q in zip(a, b, strict=False)) / max(1, len(a)))
 
 
 def set_face(ch, spec, rep, amp_cm=float(os.environ.get('MH_FACE_AMP', '1.0'))):

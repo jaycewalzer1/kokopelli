@@ -70,7 +70,7 @@ def qwen_choice(run):
 def first_long_leg(nav, start, place):
     """The first straight stretch of Qwen's route long enough to fill 10 s of walking."""
     points = [start] + nav.route(start, nav.doors[place])
-    for a, b in zip(points, points[1:]):
+    for a, b in zip(points, points[1:], strict=False):
         if math.dist(a, b) >= MIN_LEG_M:
             return a, b
     raise SystemExit(f"no stretch of {MIN_LEG_M} m on the route to {place}")

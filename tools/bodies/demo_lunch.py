@@ -261,8 +261,8 @@ class DirectorSim(L.TwoBodySim):
         pos, look, _ = cands[chosen]
         if not cut and self.d_cam:   # smooth moves within a shot
             k = 0.2
-            pos = tuple(p0 + k * (p1 - p0) for p0, p1 in zip(self.d_cam[0], pos))
-            look = tuple(p0 + k * (p1 - p0) for p0, p1 in zip(self.d_cam[1], look))
+            pos = tuple(p0 + k * (p1 - p0) for p0, p1 in zip(self.d_cam[0], pos, strict=False))
+            look = tuple(p0 + k * (p1 - p0) for p0, p1 in zip(self.d_cam[1], look, strict=False))
         self.d_cam = (pos, look)
         pitch, yaw = self._aim(pos, look)
         return {"shot": want, "cand": chosen, "cut": cut, "cam": [round(v, 1) for v in pos], "pitch": round(pitch, 2),

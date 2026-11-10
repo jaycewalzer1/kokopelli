@@ -92,9 +92,9 @@ def system_prompt(world=HOMEOSTATIC_WORLD, reveal_effects=False):
             f"Reply with exactly one word from: {actions}.")
     if reveal_effects:
         names = world["variables"]
-        drift = ", ".join(f"{name} {change:+d}" for name, change in zip(names, world["drift"]))
-        lines = [f"{action}: " + ", ".join(f"{name} {change:+d}" for name, change in zip(names, effect))
-                 + ("; next turn " + ", ".join(f"{name} {change:+d}" for name, change in zip(names, world["later"][action]) if change)
+        drift = ", ".join(f"{name} {change:+d}" for name, change in zip(names, world["drift"], strict=False))
+        lines = [f"{action}: " + ", ".join(f"{name} {change:+d}" for name, change in zip(names, effect, strict=False))
+                 + ("; next turn " + ", ".join(f"{name} {change:+d}" for name, change in zip(names, world["later"][action], strict=False) if change)
                     if action in world["later"] else "")
                  for action, effect in world["actions"].items()]
         text += f"\nEvery turn, whatever you do: {drift}.\nWhat each action changes:\n" + "\n".join(lines)
@@ -103,7 +103,7 @@ def system_prompt(world=HOMEOSTATIC_WORLD, reveal_effects=False):
 
 def user_prompt(state, world=HOMEOSTATIC_WORLD):
     lines = [f"{name} {value:.0f} (healthy {low:.0f}-{high:.0f})"
-             for name, value, low, high in zip(world["variables"], state.values, state.low, state.high)]
+             for name, value, low, high in zip(world["variables"], state.values, state.low, state.high, strict=False)]
     # The last action is here because its delayed effect is part of the state; without it the model couldn't tell.
     last = state.last or "none"
     return f"Turn {state.turn + 1} of {world['horizon']}. Last action: {last}.\n" + "\n".join(lines) + "\nAction:"

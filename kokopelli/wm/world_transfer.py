@@ -431,7 +431,7 @@ def run(args):
         ctx = layers(history.view(True))
         mx.random.seed(args.seed + f)
         x = mx.random.normal((1, 1, h_lat, w_lat, 48)).astype(mx.float32)
-        for step, (s, s_next) in enumerate(zip(sigmas[:-1], sigmas[1:])):
+        for step, (s, s_next) in enumerate(zip(sigmas[:-1], sigmas[1:], strict=False)):
             v, _ = gen(patchify(x.astype(mx.bfloat16)), cos, sin, ctx, sigma=s)
             x0 = x - s * unpatchify(v, h_lat, w_lat)
             if s_next == 0.0:

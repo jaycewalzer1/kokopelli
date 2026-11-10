@@ -148,7 +148,7 @@ class Cast:
             else:
                 stops = [self.nav.doors[s] for s in p["walk"]]
                 pts = []
-                for a, b in zip(stops, stops[1:] + stops[:1]):
+                for a, b in zip(stops, stops[1:] + stops[:1], strict=False):
                     pts += [w for w in self.nav.route(a, b) or [b]]
                 x, y = stops[0]
                 out.append(NpcSpec(id=pid, position=(x * 100, y * 100, 150), index=k, speed_cm_s=110,

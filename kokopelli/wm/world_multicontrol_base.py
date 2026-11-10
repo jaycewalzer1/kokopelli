@@ -343,7 +343,7 @@ def run(args):
         "runtime": "MLX (world_multicontrol_base.py), bf16, generation half only, query-chunked SDPA",
         "prompt": prompt, "formatted_prompt": text, "negative_prompt": negative,
         "controls": {h: str(controls[h]) for h in hints}, "weights_raw": {h: raw_weights.get(h, 1.0) for h in hints},
-        "weights": dict(zip(hints, weights)), "size": f"{width}x{height}", "frames": int(len(video)),
+        "weights": dict(zip(hints, weights, strict=False)), "size": f"{width}x{height}", "frames": int(len(video)),
         "latent_frames": latents_t, "fps": fps, "seed": args.seed, "steps": args.steps, "sampler": "UniPC bh2 order 2",
         "shift": args.shift, "sigmas": [round(s, 6) for s in sigmas], "guidance": args.guidance,
         "control_guidance": args.control_guidance,

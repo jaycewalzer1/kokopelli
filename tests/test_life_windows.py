@@ -27,7 +27,7 @@ class WindowsTest(unittest.TestCase):
                 with self.subTest(birth=birth, level=window.level):
                     self.assertEqual(kids[0].start, window.start)
                     self.assertEqual(kids[-1].end, window.end)
-                    self.assertTrue(all(a.end == b.start for a, b in zip(kids, kids[1:])))
+                    self.assertTrue(all(a.end == b.start for a, b in zip(kids, kids[1:], strict=False)))
                     self.assertEqual([kid.index for kid in kids], list(range(len(kids))))
 
     def test_path_uses_every_level_in_order(self):

@@ -71,7 +71,7 @@ def _checks(nodes):
     repeats = []
     for family in siblings.values():
         family.sort(key=lambda node: node["idx"])
-        repeats += [(first, second) for first, second in zip(family, family[1:])
+        repeats += [(first, second) for first, second in zip(family, family[1:], strict=False)
                     if SequenceMatcher(None, first["closing"]["summary"], second["closing"]["summary"]).ratio() > 0.8]
     motifs = ", ".join(f"{word} {share:.0%}" for word, share in _motifs(nodes)) or "none"
     return [f"- {failed} writes fell back to a failure placeholder",

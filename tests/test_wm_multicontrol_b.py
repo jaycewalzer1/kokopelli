@@ -119,8 +119,8 @@ class AttentionTest(unittest.TestCase):
         n, L = 40, 9
         ctrl, tgt = [rand(1, h, n, 32) for h in (8, 2, 2)], [rand(1, h, n, 32) for h in (8, 2, 2)]
         tk, tv = rand(1, 2, L, 32), rand(1, 2, L, 32)
-        one = multi_control_attention(*[mx.concatenate([c, t], 2) for c, t in zip(ctrl, tgt)], tk, tv, 1, [1.0], 32)
-        two = multi_control_attention(*[mx.concatenate([c, c, t], 2) for c, t in zip(ctrl, tgt)], tk, tv, 2, [0.5, 0.5], 32)
+        one = multi_control_attention(*[mx.concatenate([c, t], 2) for c, t in zip(ctrl, tgt, strict=False)], tk, tv, 1, [1.0], 32)
+        two = multi_control_attention(*[mx.concatenate([c, c, t], 2) for c, t in zip(ctrl, tgt, strict=False)], tk, tv, 2, [0.5, 0.5], 32)
         self.assertEqual(two.shape, (1, 8, 3 * n, 32))
         self.assertTrue(same(two[:, :, :n], one[:, :, :n]))
         self.assertTrue(same(two[:, :, n:2 * n], one[:, :, :n]))

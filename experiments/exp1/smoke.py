@@ -62,7 +62,7 @@ def main(folder):
     out["sleep"] = {"rows": len(batch), "step_s": round(time.time() - t, 1), "peak_memory_gb": round(mx.get_peak_memory() / 2 ** 30, 1),
                     "kl": stats["kl"], "grad_norm": stats["grad_norm"]}
     after = [_pi(policy, row) for row in rows]
-    out["sleep"]["max_prob_change"] = max(abs(a[o] - p["pi"][o]) for a, p in zip(after, out["probes"]) for o in a)
+    out["sleep"]["max_prob_change"] = max(abs(a[o] - p["pi"][o]) for a, p in zip(after, out["probes"], strict=False) for o in a)
     print(json.dumps(out["sleep"]), flush=True)
     (folder / "smoke.json").write_text(json.dumps(out, indent=1))
 

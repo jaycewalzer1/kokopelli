@@ -1001,7 +1001,7 @@ def main():
     # spawn in batches, then configure one by one (each Configure builds meshes on the game thread)
     for i in range(0, len(actors), 50):
         chunk = actors[i:i + 50]
-        for (_cls, name, _), r in zip(chunk, sim.batch([f"vset /objects/spawn_bp_asset /Script/SimWorld.{cls} {name}" for cls, name, _ in chunk])):
+        for (_cls, name, _), r in zip(chunk, sim.batch([f"vset /objects/spawn_bp_asset /Script/SimWorld.{cls} {name}" for cls, name, _ in chunk]), strict=False):
             if r.lower().startswith("error"):
                 errors += 1
                 print("spawn", name, r)
@@ -1017,7 +1017,7 @@ def main():
     t3 = time.time()
     infos = sim.batch([f"vbp {name} GetBuildInfo" for _, name, _ in actors])
     tris = inst = 0
-    for (_, name, _), r in zip(actors, infos):
+    for (_, name, _), r in zip(actors, infos, strict=False):
         try:
             info = json.loads(json.loads(r)["Info"])
             tris += info["tris"]

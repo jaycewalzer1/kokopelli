@@ -27,7 +27,7 @@ def slope(values):
         return 0.0
     xs = list(range(len(values)))
     mean_x, mean_y = st.mean(xs), st.mean(values)
-    return sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, values)) / sum((x - mean_x) ** 2 for x in xs)
+    return sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, values, strict=False)) / sum((x - mean_x) ** 2 for x in xs)
 
 
 def gini(values):

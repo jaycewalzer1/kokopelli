@@ -136,7 +136,7 @@ class RunTest(unittest.TestCase):
             a = [json.loads(line) for line in Path(whole, "trajectory.jsonl").read_text().splitlines()]
             b = [json.loads(line) for line in Path(split, "trajectory.jsonl").read_text().splitlines()]
             self.assertEqual([r["choice"] for r in a], [r["choice"] for r in b])
-            for x, y in zip(a, b):
+            for x, y in zip(a, b, strict=False):
                 self.assertEqual(x["pi"], y["pi"])
 
     def test_a_polite_run_gives_memory_back_and_resumes_to_the_same_life(self):

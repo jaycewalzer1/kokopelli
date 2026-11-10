@@ -107,4 +107,4 @@ class Instrument:
 
 def position_letters(order):
     """Options are always called A and B by position, so a label can't carry meaning. Returns {letter: option id}."""
-    return dict(zip("ABCDEFGH", order))
+    return dict(zip("ABCDEFGH", order, strict=False))

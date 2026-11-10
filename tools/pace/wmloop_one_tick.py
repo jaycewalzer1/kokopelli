@@ -470,7 +470,7 @@ class Checklist:
             return self.sim.read_state()
         a, b = run(), run()
         agent = distance_2d_cm(a.agent.pose.location, b.agent.pose.location)
-        npc = max((distance_2d_cm(x.pose.location, y.pose.location) for x, y in zip(a.npcs, b.npcs)), default=0.0)
+        npc = max((distance_2d_cm(x.pose.location, y.pose.location) for x, y in zip(a.npcs, b.npcs, strict=False)), default=0.0)
         self.report.extra["replay_drift_cm"] = {"agent": agent, "npc_worst": npc}
         return verdict(agent < 50 and npc < 100, f"after 30 sim-seconds, two replays differ by {agent:.2f}cm for the agent and {npc:.2f}cm for the worst NPC")
 

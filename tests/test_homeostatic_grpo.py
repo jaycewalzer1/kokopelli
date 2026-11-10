@@ -71,7 +71,7 @@ class ActorTest(unittest.TestCase):
             sampler = lambda logits, tokens=tokens: mx.array([next(tokens)])
             stream = generate_step(prompt[None, :], self.model, None, mx.ones_like(prompt)[None, :], max_tokens=len(forced), sampler=sampler)
             generated = []
-            for (token, logprobs), expected in zip(stream, forced):
+            for (token, logprobs), expected in zip(stream, forced, strict=False):
                 self.assertEqual(int(token), expected)
                 generated.append(float(logprobs.reshape(-1)[expected]))
             stream.close()

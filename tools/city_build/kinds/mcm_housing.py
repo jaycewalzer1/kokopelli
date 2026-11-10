@@ -704,7 +704,7 @@ def habitat67(plot):
                 k.obox(rng.choice((sail, sail2)), cxs, cys, z1 + 2.35, hx + 0.2, hy + 0.2, 0.03, 0, 0, rng.uniform(-6, 6))
 
     # ---- lift cores ----------------------------------------------------------------------------------
-    for (cx, _cyc, peak), cr in zip(cores, core_r):
+    for (cx, _cyc, peak), cr in zip(cores, core_r, strict=False):
         zt = min(H - 0.3, peak * BH + 1.2)
         k.box(conc2, cr[0], cr[1], 0, cr[2], cr[3], zt)
         k.box(wood, cx - 0.35, cr[1] - 0.03, 0.0, cx + 0.35, cr[1], 2.3)            # timber door

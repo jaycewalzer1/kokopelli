@@ -405,7 +405,7 @@ def sukiya_villa(plot):
 
     def stones_along(pts, step=0.75, size=0.62):
         out = []
-        for (ax, ay), (bx_, by_) in zip(pts, pts[1:]):
+        for (ax, ay), (bx_, by_) in zip(pts, pts[1:], strict=False):
             L = math.hypot(bx_ - ax, by_ - ay)
             nst = max(1, int(L / step))
             for j in range(nst):

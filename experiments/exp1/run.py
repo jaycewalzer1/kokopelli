@@ -97,7 +97,7 @@ def _logp(policy, row):
 
 def _pi(policy, row, logp=None):
     logp = _logp(policy, row) if logp is None else logp
-    return dict(zip(row["shown"], np.exp(logp).round(6).tolist()))
+    return dict(zip(row["shown"], np.exp(logp).round(6).tolist(), strict=False))
 
 
 def make_policy(kind, weights, rank, alpha, adapter=None, temperature=1.0):
@@ -200,7 +200,7 @@ class Run:
         reason = None if pending.forced else self.policy.reason(row, choice, seed=self.seed * 100003 + n) if self.kind == "qwen" else ""
         record = self.life.choose(choice)
         baseline, advantage = self.baseline.advantage(pending.decision, record["reward"])
-        out = {"n": n, **record, **row, "pi": pi, "logp": logp.tolist(), "base_pi": dict(zip(pending.shown, np.exp(base_logp).round(6).tolist())),
+        out = {"n": n, **record, **row, "pi": pi, "logp": logp.tolist(), "base_pi": dict(zip(pending.shown, np.exp(base_logp).round(6).tolist(), strict=False)),
                "base_logp": base_logp.tolist(), "reason": reason, "baseline": round(baseline, 6), "advantage": round(advantage, 6),
                "trained": not pending.forced, "lora_step": self.sleeper.steps_taken}
         del out["system"]   # in config.json; the same for every row

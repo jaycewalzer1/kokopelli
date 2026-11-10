@@ -47,7 +47,7 @@ def vivid(rgb, s_min=0.68, v_min=0.88):
 
 
 def mix(a, b, t):
-    return tuple(int(round(lerp(x, y, t))) for x, y in zip(a, b))
+    return tuple(int(round(lerp(x, y, t))) for x, y in zip(a, b, strict=False))
 
 
 class Ctx:

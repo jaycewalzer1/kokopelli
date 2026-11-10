@@ -763,7 +763,7 @@ def shiroiya_hill(plot):
         x = sx + (zig * dirx if i % 2 else 0.0) + (hx_c - sx) * 0.5 * i / nfl
         pts.append((_clamp(x, 1.2, W - 1.2), y))
     stair_pts = []
-    for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+    for (ax, ay), (bx, by) in zip(pts, pts[1:], strict=False):
         L = math.hypot(bx - ax, by - ay)
         n = max(2, int(L / 0.45))
         ux, uy = (bx - ax) / L, (by - ay) / L

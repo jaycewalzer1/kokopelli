@@ -26,7 +26,7 @@ class WorldTest(unittest.TestCase):
     def test_reward_is_the_outcome_step_only_and_depletion_follows(self):
         life, _ = play(3, "lived")
         rows = life.records
-        for row, after in zip(rows, rows[1:]):
+        for row, after in zip(rows, rows[1:], strict=False):
             self.assertAlmostEqual(row["reward"], row["drive_pre"] - row["drive_post"], places=5)
             if after["index"] == row["index"]:  # same morning: next decision starts depleted, and that drop earned nothing
                 np.testing.assert_allclose(after["h_pre"], np.clip(np.array(row["h_post"]) - H.DEPLETE, 0, 1), atol=1e-6)

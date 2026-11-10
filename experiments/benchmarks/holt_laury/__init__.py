@@ -100,8 +100,8 @@ class HoltLaury(Instrument):
         letters = position_letters(order)
         picks = [letters[letter] for letter in parsed.choice]
         safe_count = picks.count("safe")
-        switches = sum(1 for before, after in zip(picks, picks[1:]) if before != after)
-        backwards = any(before == "risky" and after == "safe" for before, after in zip(picks, picks[1:]))
+        switches = sum(1 for before, after in zip(picks, picks[1:], strict=False) if before != after)
+        backwards = any(before == "risky" and after == "safe" for before, after in zip(picks, picks[1:], strict=False))
         dominated = picks[-1] == "safe"  # Row 10 is $2.00 for sure or $3.85 for sure.
         consistent = not backwards and switches <= 1 and not dominated
         # The row where the choice first becomes risky. None means it never does.

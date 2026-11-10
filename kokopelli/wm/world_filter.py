@@ -85,7 +85,7 @@ class Painter:
     def cached_pass(self, cache, text_len, tokens, step_time, mask, positions):
         model = self.model
         hidden = model.proj_in(tokens) + mask * mx.expand_dims(model.time_embedder(step_time * 0.001), 1)
-        for layer, kv in zip(model.layers, cache):
+        for layer, kv in zip(model.layers, cache, strict=False):
             hidden = layer.forward_generation_cached(hidden, kv, positions, text_len)
         return model.proj_out(model.norm_moe_gen(hidden))
 

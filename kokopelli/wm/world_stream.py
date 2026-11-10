@@ -192,7 +192,7 @@ class Worker:
         self.n_painted = 0
         self.frames_out = 0
         self.timing = {"text_s": round(time.time() - t, 1)}
-        return {"hints": self.hints, "weights": dict(zip(self.hints, self.weights)), "text_tokens": self.n_text,
+        return {"hints": self.hints, "weights": dict(zip(self.hints, self.weights, strict=False)), "text_tokens": self.n_text,
                 "formatted_prompt": self.text, "model": self.model_dir.name, "checkpoint_id": cfg["checkpoint_id"]}
 
     def _load(self):
@@ -255,7 +255,7 @@ class Worker:
         ctxs = [layers(hist.view(b, True)) for b in branches]
         mx.random.seed(self.seed + f)
         x = mx.random.normal((1, 1, h_lat, w_lat, 48)).astype(mx.float32)
-        for step, (s, s_next) in enumerate(zip(self.sigmas[:-1], self.sigmas[1:])):
+        for step, (s, s_next) in enumerate(zip(self.sigmas[:-1], self.sigmas[1:], strict=False)):
             with stage(f"denoise_{step}"):
                 v, _ = gen.target(wt.patchify(x.astype(mx.bfloat16)), cos, sin, ctxs, self.weights, sigma=s)
                 x0 = x - s * wt.unpatchify(v, h_lat, w_lat)

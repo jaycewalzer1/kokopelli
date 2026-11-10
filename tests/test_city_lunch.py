@@ -216,7 +216,7 @@ class LunchLoopTest(unittest.TestCase):
         talk = [e for e in self.kind("says") if "Is that you" not in e["text"]]
         self.assertGreaterEqual(len(talk), 6, [e["text"] for e in talk])
         speakers = [e["mind"] for e in talk]
-        for a, b in zip(speakers, speakers[1:]):
+        for a, b in zip(speakers, speakers[1:], strict=False):
             self.assertNotEqual(a, b, speakers)
 
     def test_every_line_said_nearby_reaches_the_other_ones_next_prompt(self):

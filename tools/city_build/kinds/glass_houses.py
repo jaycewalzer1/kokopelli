@@ -614,7 +614,7 @@ def casa_de_vidro(plot):
     def slab(s, z0, z1, holes):
         """Slab over the box footprint minus rectangular holes (x-strips)."""
         xs = sorted({bx0, bx1} | {h[0] for h in holes} | {h[2] for h in holes})
-        for a, b in zip(xs, xs[1:]):
+        for a, b in zip(xs, xs[1:], strict=False):
             ys = [by0]
             for h in holes:
                 if h[0] <= a and b <= h[2]:

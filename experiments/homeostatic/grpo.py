@@ -191,8 +191,8 @@ def make_homeostatic_task(actor, processor, args, reward="homeostatic", settings
 def choice_metrics(all_scores, chosen, actions):
     """How the model's own likeliest choices did on these states. Regret is how much better the best action was."""
     # An invalid reply plays out as idling, so that's the score it earned.
-    values = [scores[actions.index(choice or "idle")] for scores, choice in zip(all_scores, chosen)]
-    regrets = [max(scores) - value for scores, value in zip(all_scores, values)]
+    values = [scores[actions.index(choice or "idle")] for scores, choice in zip(all_scores, chosen, strict=False)]
+    regrets = [max(scores) - value for scores, value in zip(all_scores, values, strict=False)]
     named = [choice for choice in chosen if choice]
     return {"reward_mean": mx.array(float(np.mean(values))), "regret": mx.array(float(np.mean(regrets))),
             "invalid_rate": mx.array(float(np.mean([choice is None for choice in chosen]))),

@@ -36,7 +36,7 @@ def run(seed, arm="lived", days=25, lr=2.0, scales=None):
         adv = r - base[decision]; base[decision] += BASELINE_WEIGHT * (r - base[decision])
         if not pending.forced:
             g = -p; g[a] += 1.0                      # grad of log pi(a) wrt the offered logits
-            for o, step in zip(shown, lr * adv * g):
+            for o, step in zip(shown, lr * adv * g, strict=False):
                 logits[decision][o] += step
             if pending.day > days // 2:
                 picks.append((decision, pending.gate_open, shown[a]))
@@ -55,7 +55,7 @@ def shares(results):
             chosen = [choice for d, open_, choice in result["picks"] if d == decision and (gate is None or open_ == gate)]
             if chosen:
                 per_life.append([chosen.count(o) / len(chosen) for o in options])
-        out[name] = {"options": dict(zip(options, np.mean(per_life, axis=0).round(4).tolist())), "lives": len(per_life),
+        out[name] = {"options": dict(zip(options, np.mean(per_life, axis=0).round(4).tolist(), strict=False)), "lives": len(per_life),
                      "chance": round(1 / len(options), 4)}
     return out
 

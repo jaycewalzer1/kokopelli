@@ -105,7 +105,7 @@ def build_lives(seed, config, model, log=print):
             requests.append((pt.LIFE_SYSTEM, pt.life_choice(lf.render(episode[2], "you", name), lf.render(episode[3], "you", name), lf.render(episode[4], "you", name), episode[1], so_far)))
         answers = model.ask(requests, tokens, key(seed, "choice", step))
         diary_requests = []
-        for name, answer in zip(names, answers):
+        for name, answer in zip(names, answers, strict=False):
             person = lives[name]
             parsed = pt.parse_json(answer) or {}
             choice = str(parsed.get("choice", "")).strip().upper()[:1]
@@ -120,11 +120,11 @@ def build_lives(seed, config, model, log=print):
             person["steps"].append({"age": episode[1], "episode": index, "choice": choice, "option": episode[3 if choice == "A" else 4], "fact": text, "theme": episode[0]})
             diary_requests.append((pt.LIFE_SYSTEM, pt.life_diary(lf.render(episode[2], "you", name), lf.render(text, "you", name))))
         answers = model.ask(diary_requests, tokens, key(seed, "diary", step))
-        for name, answer in zip(names, answers):
+        for name, answer in zip(names, answers, strict=False):
             lives[name]["steps"][-1]["diary"] = lf.scrub(pt.field_text(answer, "diary"))[:200]
     requests = [(pt.LIFE_SYSTEM, pt.life_lessons("\n".join(row["diary"] for row in lives[name]["steps"]))) for name in names]
     answers = model.ask(requests, tokens * 2, key(seed, "lessons"))
-    for name, answer in zip(names, answers):
+    for name, answer in zip(names, answers, strict=False):
         lessons = lf.scrub(pt.field_text(answer, "lessons"))[:300]
         lives[name]["lessons"] = lessons or "I have seen good days and bad ones."
     write_atomic(path, json.dumps(lives, indent=1))
@@ -270,7 +270,7 @@ def play(seed, arm, config, model, deadline=None, mode="R3", log=print):
         requests = [(pt.system_for(world, n, config, identities, arm), pt.speak_prompt(world, n, config)) for n in people]
         answers = model.ask(requests, config["llm"]["discussion_max_tokens"], key(seed, arm, season, "talk"))
         talk = {}
-        for name, answer, request in zip(people, answers, requests):
+        for name, answer, request in zip(people, answers, requests, strict=False):
             parsed = pt.parse_json(answer)
             rows.append({"season": season, "phase": "talk", "agent": name, "raw": answer, "parse_ok": parsed is not None, **({"prompt": list(request)} if season in (1, config["game"]["defector_enters"]) else {})})
             talk[name] = {"say": pt.field_text(answer, "say")[:400], "offer": clean_offer((parsed or {}).get("offer") or pt.field_object(answer, "offer"))}
@@ -280,7 +280,7 @@ def play(seed, arm, config, model, deadline=None, mode="R3", log=print):
         requests = [(pt.system_for(world, n, config, identities, arm), pt.act_prompt(world, n, config)) for n in people]
         answers = model.ask(requests, config["llm"]["action_max_tokens"], key(seed, arm, season, "act"))
         actions, failed = {}, []
-        for name, answer, request in zip(people, answers, requests):
+        for name, answer, request in zip(people, answers, requests, strict=False):
             row = {"season": season, "phase": "act", "agent": name, "raw": answer, "attempt": 1, **({"prompt": list(request)} if season in (1, config["game"]["defector_enters"]) else {})}
             try:
                 cleaned, row["dropped"] = tidy(world, name, coerce(pt.parse_json(answer)))
@@ -292,7 +292,7 @@ def play(seed, arm, config, model, deadline=None, mode="R3", log=print):
             rows.append(row)
         if failed:
             repaired = model.ask([(s, pt.repair_prompt(u, e)) for _, (s, u), e in failed], config["llm"]["action_max_tokens"], key(seed, arm, season, "repair"))
-            for (name, _request, error), answer in zip(failed, repaired):
+            for (name, _request, error), answer in zip(failed, repaired, strict=False):
                 row = {"season": season, "phase": "act", "agent": name, "raw": answer, "attempt": 2}
                 try:
                     cleaned, row["dropped"] = tidy(world, name, coerce(pt.parse_json(answer)))
