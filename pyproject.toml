@@ -86,9 +86,14 @@ select = ["E9", "F", "B", "UP"]
 "experiments/benchmarks/*.py" = ["UP017"]  # also run on PACE in a venv whose Python isn't recorded here; datetime.UTC needs 3.11, timezone.utc works on 3.10
 
 [tool.pyright]
-include = ["core", "ops", "runtime"]
-exclude = ["**/__pycache__"]
+# The library only: experiments/ and tools/ stay unchecked, and so do tests (phase 7 moves the ones still under
+# kokopelli/ into tests/). Third-party packages that live in other venvs (cosmos3_mlx in the Cosmos venv, unrealcv in
+# simworld/.venv) are stubbed under typings/, pyright's default stubPath, so no home path goes in this file.
+include = ["kokopelli"]
+exclude = ["**/__pycache__", "**/tests"]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 venvPath = "."
 venv = ".venv"
+# The typings/ stubs have no source on purpose; without this every stubbed import is a warning.
+reportMissingModuleSource = "none"
