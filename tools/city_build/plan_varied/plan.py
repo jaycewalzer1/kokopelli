@@ -506,7 +506,6 @@ def draw(world, png):
     for p in world["paths"]:
         if p.get("polyline_m"):
             d.line([(q[0] * S_, q[1] * S_) for q in p["polyline_m"]], fill=(170, 150, 120), width=3 * S_)
-    cols = {}
     for b in world["buildings"]:
         r = b["footprint_m"]
         t = b.get("type")

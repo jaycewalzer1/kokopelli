@@ -568,10 +568,8 @@ def hedgerow_house(plot):
         boards(k, wood, line, "x", xa, xb, yy, 0, hzz, o, top=zlo_at)
     # the roof: one plane, overhanging the meadow wall, nearly reaching the ground on the hedge side
     ext_lo = 0.9
-    sl = (hzz - hz) / (hx_hi - hx_lo)
     x_lo_e = hx_lo - ext_lo * (1 if hedge_left else -1)
     x_hi_e = hx_hi + 0.5 * (1 if hedge_left else -1)
-    z_lo_e, z_hi_e = zlo_at(x_lo_e), zlo_at(x_hi_e)
     ra, rb = min(x_lo_e, x_hi_e), max(x_lo_e, x_hi_e)
     tilt_x(k, roof, ra, rb, fy - 0.5, by + 0.5, zlo_at(ra), zlo_at(rb), 0.2)
     # meadow wall: a long high clerestory under the eave and a big window seat bay at eye level
@@ -790,7 +788,6 @@ def eichler_x100(plot):
     glass, white and bold colour panels, an open interior court, a steel-framed carport, glass to the garden."""
     c = Ctx(plot)
     k, r, w, d = c.k, c.r, c.w, c.d
-    H = clamp(plot.h_max, 4.0, 5.5)
     steel = c.m("steel", "Plain", (46, 48, 52))
     roofw = c.m("roofw", "Plain", (236, 234, 228))
     panel_w = c.m("panelw", "Plain", (232, 228, 214))

@@ -901,7 +901,6 @@ def coconut_shophouse(plot):
     nf = 3 if H >= 11.0 else 2
     g = 3.6                                    # ground floor
     fh = min(3.4, (H - 1.45 - g) / (nf - 1))        # leaves >= 1.45 m for any roof
-    top = g + (nf - 1) * fh                    # top of the facade
     fy = 2.2                                   # five-foot-way depth: shopfront line
     by = D - _clamp(D * 0.18, 2.5, 4.0)        # back face
 
@@ -1038,7 +1037,6 @@ def coconut_shophouse(plot):
             # gable-end firewall (stepped) on the shared pier
             k.box(wall, ux0, 0.05, topu, ux0 + pil, by, topu + ridge * 0.6)
             vines(k, rng, ix0, ix1, -0.82, topu, 0.6, 2.4, 0.55, 180)
-            roof_top = topu + ridge
         elif kind == "deep":
             # Coconut Club: thick flat roof slab with a deep overhang, planted on topu, vines pouring off the edge
             k.box(conc, ix0 - 0.05, -1.4, topu, ix1 + 0.05, by + 0.4, topu + 0.55)
@@ -1047,7 +1045,6 @@ def coconut_shophouse(plot):
             for i in range(int((ix1 - ix0) / 1.2)):
                 shrub(k, rng, ix0 + 0.6 + i * 1.2 + rng.uniform(-0.2, 0.2), -0.9, topu + 0.65, rng.uniform(0.45, 0.7), 0.4)
             vines(k, rng, ix0, ix1, -1.42, topu + 0.5, 1.2, min(topu - 1.5, 5.5), 0.45, 180)
-            roof_top = topu + 0.7
         else:
             # flat with a stepped parapet front and a roof garden behind
             ph = _clamp(H - topu - 0.5, 0.5, 1.0)
@@ -1058,7 +1055,6 @@ def coconut_shophouse(plot):
             for i in range(int((ix1 - ix0) / 1.1)):
                 shrub(k, rng, ix0 + 0.5 + i * 1.1, rng.uniform(0.9, by * 0.5), topu + 0.1, rng.uniform(0.45, 0.8), 0.6)
             vines(k, rng, ix0, ix1, -0.06, topu + ph, 0.5, 2.2, 0.6, 180)
-            roof_top = topu + ph + 0.5
         # back: plain wall face with two windows and a little lean-to
         k.box(dark, ix0 + 0.6, by + 0.01, g + 0.6, ix0 + 1.6, by + 0.05, g + 2.2)
         k.box(lit, ix1 - 1.6, by + 0.01, 1.0, ix1 - 0.6, by + 0.05, 2.6)
@@ -1232,7 +1228,6 @@ def stilt_house(plot):
         for sgn in (-1, 1):
             k.pole(post, (mx1, by_ + sgn * 0.55, zf + rail_h), (px0, by_ + sgn * 0.55, zf2 + rail_h), 0.03, 4)
             k.pole(post, ((mx1 + px0) / 2, by_ + sgn * 0.55, -0.1), ((mx1 + px0) / 2, by_ + sgn * 0.55, (zf + zf2) / 2), 0.08, 6)
-        main_x1 = mx1
     else:
         dx0, dx1 = 1.0, W - 1.0
         cw = _clamp((dx1 - dx0) * 0.55, 5.0, 9.0)
@@ -1240,7 +1235,6 @@ def stilt_house(plot):
         side_ = rng.choice((-1, 1))
         st_x = dx0 + 0.9 if side_ > 0 else dx1 - 0.9
         pod(dx0, dy0, dx1, dy1, zf, cw, cd, side_, [("front", st_x)])
-        main_x1 = dx1
         # Isono's green cylinder: a planted water tank beside the cabin
         tx = dx0 + 1.4 if side_ > 0 else dx1 - 1.4
         ty = (dy0 + dy1) / 2

@@ -693,7 +693,6 @@ def casa_de_vidro(plot):
             x = sxa + j * run
             k.pole(dark, (x, y, fl * j / n), (x, y, fl * j / n + 0.95), 0.015, segs=4)
     k.box(stone, sxa - 1.2, sy0 - 0.3, 0, sxa, sy1 + 0.3, 0.05)            # landing pad
-    ya = sy0
     # ---- the back wing on the hill: plain render, small windows, green roof
     wy0 = by1
     if D - wy0 > 3.0:

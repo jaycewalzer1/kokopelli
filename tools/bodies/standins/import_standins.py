@@ -37,7 +37,7 @@ try:
     unreal.EditorAssetLibrary.save_directory(DEST)
     rep['final'] = {a: unreal.EditorAssetLibrary.load_asset(a).get_class().get_name()
                     for a in unreal.EditorAssetLibrary.list_assets(DEST, recursive=True)}
-except Exception as e:  # noqa: BLE001
+except Exception:  # noqa: BLE001
     import traceback
     rep['exception'] = traceback.format_exc()
 json.dump(rep, open(os.path.join(HERE, 'import_standins.json'), 'w'), indent=1)

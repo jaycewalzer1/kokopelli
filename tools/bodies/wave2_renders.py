@@ -333,7 +333,7 @@ def perf(a):
     time.sleep(2.0)
     ground = s.loc(names[0])[2] - 90
     # a free capture camera 7 m in front of the line: every person > 28 px, so max_near decides
-    close = s("vset /cameras/spawn").strip()
+    s("vset /cameras/spawn").strip()
     ncam = len(s("vget /cameras").split()) - 1
     s.cam(ncam, (bx + 280, by - 700, ground + 120, 0, 90), fov=90)
     t = time.time()

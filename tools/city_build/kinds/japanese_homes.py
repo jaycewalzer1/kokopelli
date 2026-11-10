@@ -98,7 +98,6 @@ def pine(k, rng, x, y, h=5.0, lean=22.0, toward=0.0):
     dx, dy = math.cos(math.radians(toward)), math.sin(math.radians(toward))
     off = L * math.sin(math.radians(lean))
     tz = L * math.cos(math.radians(lean))
-    tx, ty = x + dx * off, y + dy * off
     # pads: one crown pad at the top, more along the trunk stepping out
     pads = [(1.0, 0.0, 1.5), (0.62, 1.0, 1.25), (0.62, -1.0, 1.1), (0.35, 1.0, 1.0), (0.82, -0.6, 1.0)]
     for f, side, r in pads:

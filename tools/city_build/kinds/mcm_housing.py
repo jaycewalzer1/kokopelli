@@ -1072,7 +1072,7 @@ def barbican_terrace(plot):
     glass = k.mat("SolarGlass", GLASS, 400.0)   # scale 400: smooth window glass (scale 0 is the PV grid)
     lit = k.mat("Lantern", LIT)
     wood = k.mat("Timber", _mix((150, 100, 62), pal[2], 0.2))   # dark hardwood window frames
-    roofg = k.mat("GreenRoof", GREENROOF)
+    k.mat("GreenRoof", GREENROOF)   # registers the material slot, as before; this house never uses it
     water = k.mat("Water", (64, 118, 128))
     pv = k.mat("SolarGlass", PV)
     accent = k.mat("Fabric", _vivid(pal[rng.randrange(3)], 0.45, 0.85))

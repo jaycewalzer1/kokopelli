@@ -265,7 +265,7 @@ class Ctx:
         self.k.plant("Stone", "PermeableStone", (176, 150, 118), x, y, 0, 0.7 * s, 0.55 * s, 0.4 * s, r.uniform(0, 360))
 
     def cactus(self, x, y, h=1.6):
-        k, r = self.k, self.r
+        k = self.k
         c = (84, 128, 80)
         k.plant("Cylinder", "Foliage", c, x, y, 0, 0.32, 0.32, h)
         if h > 1.2:
