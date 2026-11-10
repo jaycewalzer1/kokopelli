@@ -28,5 +28,5 @@ python3 kokopelli/ops/ram_share.py hold --name NAME --gb N -- CMD     # claim me
 ```
 
 The rules for using them (priorities, stopping jobs, ports) are in [`AGENTS.md`](../../AGENTS.md). Why queue jobs failed
-before: [`docs/GPU_FAILURES.md`](../../docs/GPU_FAILURES.md). Backing up `out/`: [`docs/OUT_BACKUP.md`](../../docs/OUT_BACKUP.md)
+before: [`docs/GPU_FAILURES.md`](../../docs/GPU_FAILURES.md). Backing up `out/`: [`docs/log/fable/2026-11-09-OUT_BACKUP.md`](../../docs/log/fable/2026-11-09-OUT_BACKUP.md)
 (a proposal). Tests run in the `ops` suite of `make test-all`.
