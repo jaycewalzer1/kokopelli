@@ -4,6 +4,8 @@ SimWorld holds physical truth in the world-model loop. The loop sends it an acti
 
 **Status: this has never touched a real Unreal server.** Everything passes against a fake server I wrote, which only proves our client sends what we believe is right. One PACE job will show which beliefs hold: see [Run it on PACE](#run-it-on-pace).
 
+**Files.** `runtime/adapters/simworld.py` holds `SimWorldPhysics`: lifecycle, reading state, renders, stepping, checkpoint and restore. It re-exports everything from `simworld_config.py` (blueprint names, `SpawnSpec`, `NpcSpec`, `SimWorldConfig`). Two mixins hold the rest: `simworld_weather.py` (weather, clock, sun) and `simworld_actions.py` (the `_do_*` handlers and the movers that carry them out). Below them: `simworld_wire.py` (the socket), `simworld_commands.py` (every command string), `simworld_control.py` (the `move_to` controller), `simworld_math.py` and `simworld_bridge.py`.
+
 ## Terms
 
 | Term | Meaning |
