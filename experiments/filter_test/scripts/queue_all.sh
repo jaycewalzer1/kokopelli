@@ -13,6 +13,6 @@ nohup $GPU --name filter_sd15_dadepth --priority 21 --max-hours 1 --output out/f
   -- experiments/filter_test/.venv/bin/python experiments/filter_test/scripts/run_sd.py --depth da > $LOGS/sd15_dadepth.log 2>&1 &
 nohup $GPU --name filter_cosmos_simdepth --priority 22 --max-hours 3 --output out/filter_test/cosmos_simdepth \
   --about "Sim-to-real test 1 of 3: Cosmos3-Nano (MLX) repaints the 10 s SimWorld bridge clip from the sim's depth through world_filter.py, 26 chunks of 16 frames." \
-  -- .venv/bin/python experiments/filter_test/scripts/run_cosmos.py > $LOGS/cosmos_simdepth.log 2>&1 &
+  -- .venv/bin/python -m experiments.filter_test.scripts.run_cosmos > $LOGS/cosmos_simdepth.log 2>&1 &
 sleep 2
 python3 kokopelli/ops/gpu.py status

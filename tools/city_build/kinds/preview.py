@@ -22,7 +22,6 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT))
 from tools.city_build.kinds import Plot, all_kinds  # noqa: E402
 
 OUT = ROOT / "out" / "city_kinds"

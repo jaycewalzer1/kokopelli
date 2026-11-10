@@ -24,10 +24,8 @@ import time
 from pathlib import Path
 
 from kokopelli.life.pipeline import ledger_jobs, option, outside_jobs, process_table, read_rows, read_tickets, safely
+from kokopelli.ops.cloud import pace
 from kokopelli.settings import GPU_QUEUE_SCRIPT, PIPELINE_PATHS, ROOT
-
-sys.path.insert(0, str(ROOT))
-from kokopelli.ops.cloud import pace  # noqa: E402
 
 LEDGER_SHOWN = 30
 TAIL_BYTES = 4000

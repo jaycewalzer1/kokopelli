@@ -66,7 +66,7 @@ wmloop_wait_ready() {
     local port="$1" deadline=$((SECONDS + WMLOOP_READY_TIMEOUT_S))
     while [ "$SECONDS" -lt "$deadline" ]; do
         wmloop_server_alive || return 1
-        if "$WMLOOP_VENV/bin/python" "$WMLOOP_REPO/tools/pace/wmloop_wait_server.py" \
+        if PYTHONPATH="$WMLOOP_REPO${PYTHONPATH:+:$PYTHONPATH}" "$WMLOOP_VENV/bin/python" "$WMLOOP_REPO/tools/pace/wmloop_wait_server.py" \
                 --port "$port" --timeout 20 --quiet; then
             return 0
         fi
@@ -98,7 +98,7 @@ wmloop_start_server() {
                 echo "Server still not ready after ${WMLOOP_READY_TIMEOUT_S}s. Last log lines:" >&2
                 tail -n 30 "$log" >&2
                 # UnrealCV may have ignored --cvport and stayed on 9000. Worth saying plainly.
-                if "$WMLOOP_VENV/bin/python" "$WMLOOP_REPO/tools/pace/wmloop_wait_server.py" --port 9000 --timeout 5 --quiet; then
+                if PYTHONPATH="$WMLOOP_REPO${PYTHONPATH:+:$PYTHONPATH}" "$WMLOOP_VENV/bin/python" "$WMLOOP_REPO/tools/pace/wmloop_wait_server.py" --port 9000 --timeout 5 --quiet; then
                     echo "It IS answering on 9000, so --cvport was ignored. See 'Port' in kokopelli/loop/SIMWORLD.md." >&2
                 fi
                 wmloop_stop_server

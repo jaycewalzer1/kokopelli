@@ -11,13 +11,12 @@ STOP_SHARE of the update, averaged over the night's steps.
 import gc
 import json
 import math
-import sys
 
 import mlx.core as mx
 
 from experiments.exp1.diagnose_d2 import REBUILD_SEED, Rebuild, _flat, _log, _unflat, split_grad
 from experiments.exp1.learn import Sleeper
-from experiments.exp1.run import POLITE_GB, QWEN_WEIGHTS, ROOT
+from experiments.exp1.run import POLITE_GB, QWEN_WEIGHTS
 
 LOW_PI = 0.5
 STOP_SHARE = 0.5
@@ -78,7 +77,6 @@ def night_summary(steps):
 
 
 def main(run, out):
-    sys.path.insert(0, str(ROOT))
     from kokopelli.ops import ram_share
     guard = ram_share.Guard(f"{run.name}_pilot_check", POLITE_GB, log=_log)
     job = TemperedRebuild(run, out)

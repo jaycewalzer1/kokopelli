@@ -41,7 +41,7 @@ while time.time() - t < 600:
 PYEOF
   sleep 3
   (cd "$K" && "$PY" tools/city_build/build_city.py --port $PORT > "$OUT/build_city_maxnear$N.log" 2>&1)
-  (cd "$K" && "$PY" tools/bodies/wave2_renders.py perf --max-near $N --pid $PID --out "$OUT") || echo "perf N=$N failed"
+  (cd "$K" && "$PY" -m tools.bodies.wave2_renders perf --max-near $N --pid $PID --out "$OUT") || echo "perf N=$N failed"
   kill $PID; wait $PID 2>/dev/null
   pkill -f "CrashReport.*pid-$PID" 2>/dev/null || true
 done

@@ -68,7 +68,7 @@ if ! wmloop_start_server; then
     exit 1
 fi
 
-GATE=("$WMLOOP_VENV/bin/python" "$WMLOOP_REPO/tools/pace/wmloop_one_tick.py" --port "$WMLOOP_PORT"
+GATE=(env "PYTHONPATH=$WMLOOP_REPO${PYTHONPATH:+:$PYTHONPATH}" "$WMLOOP_VENV/bin/python" "$WMLOOP_REPO/tools/pace/wmloop_one_tick.py" --port "$WMLOOP_PORT"
       --tick-interval "$WMLOOP_TICK_INTERVAL" --resolution "$WMLOOP_RESOLUTION" --out "$WMLOOP_OUT")
 
 echo; echo "=== One real tick ==="

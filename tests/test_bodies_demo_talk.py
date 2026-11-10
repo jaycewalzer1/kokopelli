@@ -1,14 +1,12 @@
 """The bodies demo's talk rules (tools/bodies/demo_lunch.py): answer when spoken to, short lines, no repeats."""
-import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools" / "bodies"))
-import demo_lunch as D  # noqa: E402
-import demo_cut  # noqa: E402
+from tools.bodies import demo_cut  # noqa: E402
+from tools.bodies import demo_lunch as D  # noqa: E402
 
 
 def lunch(apart_m):

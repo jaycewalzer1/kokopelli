@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Write data/city/world.json: world.json with the seven residential cells re-planned as a varied village.
 
-    ~/Desktop/kokopelli/simworld/.venv/bin/python tools/city_build/plan_varied/plan.py [--png out/city_kinds/planner/plan.png]
+    ~/Desktop/kokopelli/simworld/.venv/bin/python -m tools.city_build.plan_varied.plan [--png out/city_kinds/planner/plan.png]
 
 Everything outside the seven cells (commons, green, farms, lanes, water, landscape, moss_east, the Moss-Commons
 bridge) is copied unchanged. The layout lives in LAYOUT below: one list per cell of buildings (kinds from
@@ -301,8 +301,6 @@ MURALS = {"sorrel_north": "sorrel_unite", "fern_east": "fern_habitat", "heron_we
 
 
 def kind_sizes():
-    import sys
-    sys.path.insert(0, str(ROOT))
     import importlib, pkgutil
     import tools.city_build.kinds as K
     out = {}

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """Gate script: does the SimWorld adapter's belief about the server hold on a real one?
 
-    python tools/pace/wmloop_one_tick.py --port 9000                 # one real step, seconds per stage
-    python tools/pace/wmloop_one_tick.py --port 9000 --checklist     # exercise every capability once
-    python tools/pace/wmloop_one_tick.py --fake --checklist          # same, against the fake server
+    python -m tools.pace.wmloop_one_tick --port 9000                 # one real step, seconds per stage
+    python -m tools.pace.wmloop_one_tick --port 9000 --checklist     # exercise every capability once
+    python -m tools.pace.wmloop_one_tick --fake --checklist          # same, against the fake server
 
 A check prints PASS only when it measured the thing itself. Where a person has to look at a
 picture it prints LOOK and the file. The exit code is 0 only if nothing FAILed.
@@ -21,7 +21,6 @@ from io import BytesIO
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT))
 
 from kokopelli.loop.adapters.simworld import (AGENT_ACTOR, WEATHER_ACTOR, SimWorldConfig,  # noqa: E402
                                        SimWorldPhysics)

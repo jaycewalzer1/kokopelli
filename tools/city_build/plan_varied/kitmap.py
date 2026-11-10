@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ASCII height map (world frame, 2 m cells, height in m // 2 as a hex digit) of a planned building's kit.
 
-    simworld/.venv/bin/python tools/city_build/plan_varied/kitmap.py fern_habitat [--world data/city/world.json]
+    simworld/.venv/bin/python -m tools.city_build.plan_varied.kitmap fern_habitat [--world data/city/world.json]
 """
 import json
 import math
@@ -9,10 +9,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "tools" / "city_build"))
-sys.path.insert(0, str(Path(__file__).parent))
-from check import op_bounds, plot_wd  # noqa: E402
+from tools.city_build.plan_varied.check import op_bounds, plot_wd  # noqa: E402
 
 
 def heights(b, world=None):

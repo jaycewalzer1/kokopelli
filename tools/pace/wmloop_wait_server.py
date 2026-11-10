@@ -2,9 +2,7 @@
 """Wait until UnrealCV says hello on a port. Exit 0 when ready, 1 on timeout, with the reason."""
 import argparse
 import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from kokopelli.loop.adapters.simworld_wire import SimWorldError, wait_for_server  # noqa: E402
 

@@ -19,7 +19,6 @@ from unittest import mock
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kokopelli.wm import world_transfer as wt                     # noqa: E402
 from kokopelli.wm import world_transfer_multi as wtm              # noqa: E402
 

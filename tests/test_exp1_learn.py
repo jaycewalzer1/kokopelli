@@ -140,10 +140,8 @@ class RunTest(unittest.TestCase):
                 self.assertEqual(x["pi"], y["pi"])
 
     def test_a_polite_run_gives_memory_back_and_resumes_to_the_same_life(self):
-        import sys
         from unittest import mock
         from experiments.exp1 import run as runner
-        sys.path.insert(0, str(runner.ROOT))
         from kokopelli.ops import ram_share
         # Plenty of room except right after the third night, when it runs short once.
         rooms = iter([50, 50, 50, -10] + [50] * 1000)

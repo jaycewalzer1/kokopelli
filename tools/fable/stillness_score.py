@@ -10,7 +10,7 @@ past threshold, so one odd frame doesn't count; first_frame_over is the first si
 hook's own verdict (24-frame windows, 3 bad in a row). Writes stillness.json (curves, crossings, suggested reading),
 stillness.csv and stillness.svg (curves) to --out. CPU only, reads in small batches.
 
-    python3 kokopelli/ops/memguard.py run --name fable_p3c_score --gb 2 -- .venv/bin/python tools/fable/stillness_score.py
+    python3 kokopelli/ops/memguard.py run --name fable_p3c_score --gb 2 -- .venv/bin/python -m tools.fable.stillness_score
 """
 import argparse
 import csv
@@ -21,7 +21,6 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT))
 from kokopelli.wm import video_check as vc  # noqa: E402
 
 W = "out/wm_multicontrol"

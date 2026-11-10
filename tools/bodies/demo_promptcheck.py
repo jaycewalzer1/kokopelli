@@ -1,16 +1,14 @@
 """Before the world-model demo run: replay real decision prompts from a lunch run through Qwen, with demo_lunch.py's format
 note added, and count how many replies parse and pass lunch_wm's checks (especially "say" with its words in "text").
 
-    .venv/bin/python tools/bodies/demo_promptcheck.py out/bodies/demo/runs/sim --samples 3 --out out/bodies/demo/promptcheck.json
+    .venv/bin/python -m tools.bodies.demo_promptcheck out/bodies/demo/runs/sim --samples 3 --out out/bodies/demo/promptcheck.json
 """
 import argparse
 import json
-import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))
-import demo_lunch as D  # noqa: E402
+from tools.bodies import demo_lunch as D  # noqa: E402
 
 L = D.L
 

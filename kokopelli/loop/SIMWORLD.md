@@ -246,7 +246,7 @@ The job picks a free port, starts UE with `-RenderOffScreen`, waits for the Unre
 
 ```sh
 simworld/.venv/bin/python -W ignore -m unittest discover -s kokopelli/loop/tests -t . -p 'test_simworld*.py'
-simworld/.venv/bin/python -W ignore tools/pace/wmloop_one_tick.py --fake --checklist
+simworld/.venv/bin/python -W ignore -m tools.pace.wmloop_one_tick --fake --checklist
 ```
 
 Run from the repo root. In a worktree, use the absolute path to the main checkout's `simworld/.venv`, since venvs aren't copied.

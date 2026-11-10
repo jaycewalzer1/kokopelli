@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """Wave 2 (integration) evidence: MetaHuman bodies on the SimWorld server (port 9004 only).
 
-    simworld/.venv/bin/python tools/bodies/wave2_renders.py evidence [--port 9004] [--out DIR] [--label editor]
-    simworld/.venv/bin/python tools/bodies/wave2_renders.py perf --max-near 3 [--port 9004] [--pid PID] [--out DIR]
+    simworld/.venv/bin/python -m tools.bodies.wave2_renders evidence [--port 9004] [--out DIR] [--label editor]
+    simworld/.venv/bin/python -m tools.bodies.wave2_renders perf --max-near 3 [--port 9004] [--pid PID] [--out DIR]
 
 evidence: close-up, mid and aerial renders; a first-person approach (mara's eye camera while she and iris walk
 towards each other across the near/far switch), every step with lit + seg (object_mask) + depth, so the frames
@@ -27,8 +27,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from wave1_renders import AGENT, PED, Conn  # noqa: E402
+from tools.bodies.wave1_renders import AGENT, PED, Conn  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "out" / "bodies" / "renders" / "wave2"

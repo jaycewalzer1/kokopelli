@@ -1,13 +1,12 @@
 """Source of bridge.json: the three hand-written variants, one annotated sentence at a time. Edit here, then run
-    .venv/bin/python kokopelli/wm/controls/prompts/bridge_source.py
+    .venv/bin/python -m kokopelli.wm.controls.prompts.bridge_source
 Each sentence is S(text, VIBE.md qualities, kept image ids, which part of the sim frame it matches)."""
 import json
-import sys
 from pathlib import Path
 
+from kokopelli.wm.controls.prompts import build
+
 ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT / "kokopelli" / "wm" / "controls" / "prompts"))
-import build  # noqa: E402
 
 EV = build.vibe_evidence()
 

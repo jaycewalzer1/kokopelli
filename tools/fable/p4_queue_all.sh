@@ -8,7 +8,7 @@ say() { echo "$(date '+%F %T') $*"; }
 G="python3 kokopelli/ops/gpu.py run --priority 40 --cwd $W"
 A="Cosmos3-Nano-Sim-Transfer (models/Cosmos3-Nano-Sim-Transfer, gen weights 8-bit), Variant A, 4 controls at 0.25, 448x256 (closed-loop size, lowered from 832x480), recorded Iris controls for 2 streams"
 B="Cosmos3-Nano-Sim-Transfer (models/Cosmos3-Nano-Sim-Transfer), Variant A, 4 controls at 0.25, 832x480, 150-frame bridge clip, seed 2025, same command as wmmc_a4_full_8bit"
-P="env KOKO_PROFILE=1 .venv/bin/python tools/fable/p4_profile.py"
+P="env KOKO_PROFILE=1 .venv/bin/python -m tools.fable.p4_profile"
 
 say "profile dry run"
 if $G --dry-run --name fable_P4_profile_dry --gb 12 --about "$A; ONE stream ONE frame: checks the P4-A profile script" \
