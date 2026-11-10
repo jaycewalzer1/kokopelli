@@ -7,7 +7,7 @@ from life.generator import Generator
 from life.memory import FAILED
 from life.prompts import closing_prompt, kind_of, opening_prompt
 from life.seed import rng
-from settings import LIFE_FOCUS, LIFE_LLM
+from core.settings import LIFE_FOCUS, LIFE_LLM
 
 
 class BadAnswer(ValueError):
@@ -62,7 +62,7 @@ class LLMGenerator(Generator):
         self.seed, self.rng_key, self.log_path, self.tag = seed, rng_key, log_path, tag
         if complete is None:
             # Imported here so that everything else in life/ runs without loading the model.
-            from llm_model import chat as complete
+            from core.llm_model import chat as complete
         self.complete = complete
 
     def _ask(self, write, window, system, user, parse):

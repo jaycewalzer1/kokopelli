@@ -147,6 +147,72 @@ class GpuQueue(unittest.TestCase):
         old.wait()  # reaped, so its pid is really gone and the queue moves on
         self.assertEqual(self.start("next", 1, "true").wait(timeout=20), 0)
 
+    def test_status_says_idle_and_sorts_finished_jobs_by_how_they_ended(self):
+        self.assertEqual(self.gpu("status").stdout, "idle\n")
+        ledger = self.root / "out/ops/gpu_ledger.jsonl"
+        ledger.parent.mkdir(parents=True, exist_ok=True)
+        endings = [(0, False), (0, False), (1, False), (-15, False), (-15, True), (75, False)]
+        ledger.write_text("".join(json.dumps({"event": "finished", "exit_code": code, "stopped": stopped}) + "\n"
+                                  for code, stopped in endings) + "not json\n")
+        self.assertEqual(self.gpu("status").stdout, "idle\n")
+        queue = self.root / "out/ops/queue"
+        queue.mkdir(parents=True, exist_ok=True)
+        job = subprocess.Popen(["sleep", "2"])
+        (queue / "job.json").write_text(json.dumps({"id": "job", "name": "job", "priority": 0, "pid": job.pid, "queued_at": 0, "running": True}))
+        status = self.gpu("status").stdout
+        job.kill()
+        job.wait()
+        self.assertIn("RUNNING", status)
+        self.assertEqual(status.splitlines()[-1], "finished 2 ok, 2 failed, 1 stopped, 1 yielded(75)")
+
+    def test_check_fails_a_bad_folder_or_command_in_seconds(self):
+        started = time.time()
+        self.assertEqual(self.gpu("check", "--cwd", str(self.root / "missing"), "--", "true").returncode, 1)
+        missing = self.gpu("check", "--cwd", str(self.root), "--", "env PYTHONPATH=.", "python3", "-m", "json")  # the 127 of 2026-11-05
+        self.assertEqual(missing.returncode, 1)
+        self.assertIn("command not found", missing.stderr)
+        self.assertLess(time.time() - started, 5)
+
+    def test_check_looks_up_modules_and_scripts_in_the_jobs_own_python(self):
+        (self.root / "job.py").write_text("print('hi')\n")
+        (self.root / "broken.py").write_text("def (:\n")
+        python = sys.executable
+        self.assertEqual(self.gpu("check", "--cwd", str(self.root), "--", python, "-u", "job.py").stdout, "ok\n")
+        self.assertEqual(self.gpu("check", "--cwd", str(self.root), "--", "env", "A=1", python, "-m", "json.tool").returncode, 0)
+        self.assertIn("can't find module", self.gpu("check", "--cwd", str(self.root), "--", python, "-m", "no_such_module_here").stderr)
+        self.assertIn("script not found", self.gpu("check", "--cwd", str(self.root), "--", python, "nope.py").stderr)
+        self.assertIn("doesn't compile", self.gpu("check", "--cwd", str(self.root), "--", python, "broken.py").stderr)
+        wrapped = self.gpu("check", "--cwd", str(self.root), "--", "python3", "ram_share.py", "hold", "--gb", "1", "--", python, "-m", "no_such_module_here")
+        self.assertIn("no_such_module_here", wrapped.stderr)  # the job under the ram_share wrapper is the one checked
+
+    def test_check_fails_an_output_that_cant_be_written_and_memory_that_isnt_there(self):
+        locked = self.root / "locked"
+        locked.mkdir()
+        locked.chmod(0o500)
+        refused = self.gpu("check", "--cwd", str(self.root), "--output", "locked/run", "--", "true").stderr
+        locked.chmod(0o700)
+        self.assertIn("can't be written", refused)
+        self.assertEqual(self.gpu("check", "--cwd", str(self.root), "--output", "fresh/deep/run", "--", "true").returncode, 0)
+        self.assertIn("GB free", self.gpu("check", "--gb", "100000", "--", "true").stderr)
+
+    def test_a_job_that_fails_the_check_is_never_queued(self):
+        started = time.time()
+        job = self.start("badpath", 1, ".venv/bin/no_such_python", "-m", "x")
+        self.assertEqual(job.wait(timeout=10), 2)
+        self.assertLess(time.time() - started, 5)
+        self.assertFalse((self.root / "out/ops/gpu_ledger.jsonl").exists())
+
+    def test_a_dry_run_gets_the_flag_a_time_limit_and_says_so(self):
+        flag = self.root / "flag"
+        self.assertEqual(self.start("dry", 1, "sh", "-c", f'echo "$KOKO_DRY_RUN" > {flag}', extra=("--dry-run",)).wait(timeout=20), 0)
+        self.assertEqual(flag.read_text(), "1\n")
+        queued = next(e for e in self.events() if e["event"] == "queued")
+        self.assertTrue(queued["dry_run"])
+        self.assertTrue(queued["about"].startswith("[dry run]"))
+        self.assertTrue(next(e for e in self.events() if e["event"] == "finished")["dry_run"])
+        self.assertEqual(self.start("wet", 1, "sh", "-c", f'echo "$KOKO_DRY_RUN" > {flag}').wait(timeout=20), 0)
+        self.assertEqual(flag.read_text(), "\n")
+
 
 if __name__ == "__main__":
     unittest.main()

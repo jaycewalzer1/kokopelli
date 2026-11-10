@@ -9,7 +9,7 @@ import time
 import uuid
 from pathlib import Path
 
-from settings import ROOT
+from core.settings import ROOT
 
 FOLDER = ROOT / "city" / "moodboard"
 MAX_BYTES = 20 * 1024 * 1024

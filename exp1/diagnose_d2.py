@@ -273,7 +273,7 @@ def rebuild(job, ram_share, guard):
 
 def main(run, out):
     sys.path.insert(0, str(ROOT))
-    import ram_share
+    from core import ram_share
     guard = ram_share.Guard(f"{run.name}_d2_diagnostic", POLITE_GB, log=_log)
     job = Rebuild(run, out)
     rebuild(job, ram_share, guard)

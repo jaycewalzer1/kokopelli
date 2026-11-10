@@ -9,7 +9,7 @@ from pathlib import Path
 
 from life.gpu_queue import group, newest_image, output_files, past_page, read_result, with_result, send, set_default, ticket_extras, timeline
 from life.gpu_queue import QueueError, cancel, collect, log_tail, move, parse_machine, quiet_seconds, read_device, stop, stopped
-from settings import GPU_QUEUE_SCRIPT
+from core.settings import GPU_QUEUE_SCRIPT
 
 PYTHON = "/usr/bin/python"
 GPU = "/x/ops/gpu.py run --name n --priority 10 --max-hours 2 --"

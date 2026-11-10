@@ -19,7 +19,7 @@ from pathlib import Path
 from homeostatic import watch
 from life import pipeline
 from life.pipeline import STALL_SECONDS, beats_baselines, best_validation, plural, ps_listing, python_lines, runs_module
-from settings import HOMEOSTATIC_OUT, HOMEOSTATIC_SEEDS, PIPELINE_PATHS, ROOT
+from core.settings import HOMEOSTATIC_OUT, HOMEOSTATIC_SEEDS, PIPELINE_PATHS, ROOT
 
 STATUSES = {"built": "Built", "partial": "Partly built", "unproven": "Not working yet", "planned": "Planned"}
 
@@ -80,7 +80,7 @@ NODES = [
     {"id": "cosmos", "name": "Cosmos3-Nano", "at": [2, 2], "status": "built", "kind": "model", "plan": "§06",
      "does": "The world model: renders a clip from text, from an image, or carrying on from a video.",
      "why": "Runs locally and has made clips, all from hand-written prompts so far. The loop's adapters for it are on the feat/wm-agent-loop worktree only.",
-     "files": ["world_model.py", "settings.py"], "branch_files": [".claude/worktrees/wm-agent-loop/runtime/adapters/cosmos.py", ".claude/worktrees/wm-agent-loop/runtime/adapters/cosmos_server.py"]},
+     "files": ["core/world_model.py", "core/settings.py"], "branch_files": [".claude/worktrees/wm-agent-loop/runtime/adapters/cosmos.py", ".claude/worktrees/wm-agent-loop/runtime/adapters/cosmos_server.py"]},
     {"id": "agent", "name": "The real agent", "at": [3, 2], "status": "partial", "kind": "process", "plan": "§09, §10",
      "does": "Watches the rendered frames, and returns a decision for the next 30 seconds with a short note to itself.",
      "why": "On this checkout LLMAgent still raises NotImplementedError. A Qwen agent exists on the feat/wm-agent-loop worktree only, with scripted mocks standing in so far. See Live for whether real Qwen has decided anything. It can't query its past: there's no vault or MCP.",
@@ -97,7 +97,7 @@ NODES = [
     {"id": "blend", "name": "Clips and blending", "at": [2, 3], "status": "built", "kind": "data",
      "does": "Finished clips land on disk, and blend.py crossfades clips into one video.",
      "why": "Tested and used for the continuous video. Whether blend.py itself is running isn't measured, only clips being written.",
-     "files": ["blend.py", "tests/test_continuous_video.py"]},
+     "files": ["core/blend.py", "tests/test_continuous_video.py"]},
     {"id": "dreamgym", "name": "DreamGym policy", "at": [4, 3], "status": "planned", "kind": "model", "plan": "§15",
      "does": "Named in the build notes as a starting point for the agent's exact policy.",
      "why": "Not in this repo, and nothing here uses it.",
@@ -114,7 +114,7 @@ NODES = [
     {"id": "qwen", "name": "Qwen3-VL-8B", "at": [3, 4], "status": "built", "kind": "model", "plan": "§10",
      "does": "The open-weight model. It writes the world's text and is the model being trained, and is meant to become the agent.",
      "why": "Loads and answers locally. It peaks near 20 GB, so it and Cosmos barely fit together in this Mac's 36 GB.",
-     "files": ["llm_model.py", "settings.py"]},
+     "files": ["core/llm_model.py", "core/settings.py"]},
     {"id": "judge", "name": "External LLM judge", "at": [4, 4], "status": "planned", "kind": "model", "plan": "§10",
      "does": "Would score the agent's internal state from outside, as an LLM.",
      "why": "No code. The simulator below stands in, on purpose: its numbers can't be flattered, so reward hacking against a judge is still untested.",
@@ -167,8 +167,8 @@ NODES = [
      "files": ["AGENTS.md"]},
     {"id": "queue", "name": "GPU queue", "at": [2, 7], "status": "built", "kind": "process",
      "does": "Gives model jobs one turn at a time, in priority order, since two at once can run this Mac out of memory. Keeps a ledger of every job.",
-     "why": "Only on the feat/ops worktree, not merged. See Live for what has really had a turn. It waits for model jobs started outside it, and runs on this Mac only.",
-     "files": [], "branch_files": [".claude/worktrees/ops/ops/gpu.py", ".claude/worktrees/ops/ops/status.py"]},
+     "why": "Merged into this checkout under ops/. See Live for what has really had a turn. It waits for model jobs started outside it, and runs on this Mac only.",
+     "files": ["ops/gpu.py", "ops/status.py"]},
     {"id": "evals", "name": "Benchmarks", "at": [3, 7], "status": "partial", "kind": "process", "plan": "§14",
      "does": "Decision instruments, starting with Holt-Laury and lottery problems, run across arms under a pre-registration, with mock and real results kept apart.",
      "why": "Only on the feat/evals worktree, not merged, with uncommitted changes. Its tests pass on a mock backend. See Live for real results and whether the pre-registration is locked. It's a different thing from the homeostatic benchmark above.",

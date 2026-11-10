@@ -1,0 +1,170 @@
+# Project metadata, the main .venv's pinned dependencies, and lint settings.
+# The three Python environments and why they stay separate: docs/ENVIRONMENTS.md.
+
+[project]
+name = "kokopelli"
+version = "0.0.0"
+description = "Simulated people in a painted city: life generator, agents, world-model loop."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "mlx-vlm==0.7.11",
+    "opencv-python==5.0.0.93",
+]
+
+[tool.uv]
+# Not an installable package: modules run from the repo root with `python -m`.
+package = false
+# MLX only runs on Apple silicon, and this repo only runs on this Mac.
+environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'"]
+# Transitive versions held to what the main .venv had on 2026-11-09, so a fresh
+# `uv sync` rebuilds the environment the tests passed on. Drop a line to let it float.
+constraint-dependencies = [
+    "click==8.5.0",
+    "datasets==5.1.0",
+    "fastapi==0.162.0",
+    "filelock==4.2.7",
+    "fsspec==2026.7.0",
+    "miniaudio==1.71",
+    "mlx-audio==0.6.4",
+    "pandas==3.1.0",
+    "pyarrow==26.0.0",
+    "pydantic==2.14.2",
+    "pydantic-core==2.50.2",
+    "regex==2026.9.29",
+    "sentencepiece==0.2.2",
+    "transformers==5.22.1",
+    "typer==0.27.3",
+    "typing-inspection==0.4.4",
+    "xxhash==4.0.2",
+]
+
+[tool.ruff]
+target-version = "py312"
+extend-exclude = [
+    "simworld",
+    "wm_multicontrol/upstream",
+    "mac_server",
+    "out",
+    "models",
+    ".venv",
+    ".claude",
+]
+
+[tool.ruff.per-file-target-version]
+# These run under simworld/.venv, which is Python 3.10.
+"runtime/adapters/simworld*.py" = "py310"
+"runtime/tests/test_simworld*.py" = "py310"
+"city/ue/build_city.py" = "py310"
+
+[tool.ruff.lint]
+# Syntax errors, pyflakes, bugbear, pyupgrade. No formatter and no repo-wide autofix:
+# existing findings are baselined below, per file, so new code is held to the rules.
+select = ["E9", "F", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# BASELINE (generated 2026-11-09, P2-D): existing findings, not fixed in this pass.
+# Remove a code from a file once its findings there are fixed. Counts: docs/fable_log/P2-D.md.
+"benchmarks/before_after.py" = ["B905"]
+"benchmarks/core.py" = ["B905"]
+"benchmarks/freeze.py" = ["UP017"]
+"benchmarks/holt_laury/__init__.py" = ["B905"]
+"benchmarks/prereg.py" = ["UP017"]
+"benchmarks/run.py" = ["B007", "B905", "UP017"]
+"benchmarks/stats.py" = ["B905"]
+"city/agents/live.py" = ["B007", "B905"]
+"city/agents/live_wm.py" = ["F401"]
+"city/bodies/client.py" = ["UP007"]
+"city/bodies/demo_cut.py" = ["B905"]
+"city/bodies/demo_lunch.py" = ["B905"]
+"city/bodies/metahuman/looks.py" = ["F401", "UP038"]
+"city/bodies/metahuman/make_bodies.py" = ["B008", "B905"]
+"city/bodies/metahuman/render_bodies.py" = ["F401"]
+"city/bodies/standins/import_standins.py" = ["F841"]
+"city/bodies/standins/make_groom_usda.py" = ["B007", "UP031"]
+"city/bodies/wave1_renders.py" = ["UP031"]
+"city/bodies/wave2_renders.py" = ["F841", "UP031"]
+"city/bodies/write_parts.py" = ["F401"]
+"city/realism/replay_bridge.py" = ["UP038"]
+"city/source_arena.py" = ["B905"]
+"city/ue/build_city.py" = ["B007", "B905"]
+"city/ue/kinds/california_modern.py" = ["B007", "B905", "F401", "F841"]
+"city/ue/kinds/glass_houses.py" = ["B007", "B905", "F841"]
+"city/ue/kinds/handmade.py" = ["B007", "B905", "F401", "F841"]
+"city/ue/kinds/japanese_homes.py" = ["B007", "B905", "F841"]
+"city/ue/kinds/mcm_housing.py" = ["B007", "B023", "B905", "F841"]
+"city/ue/kinds/norcal_modern.py" = ["B007", "F401", "F841"]
+"city/ue/kinds/park.py" = ["B007"]
+"city/ue/kinds/tropical_modern.py" = ["B007", "F821"]
+"city/ue/plan_varied/check.py" = ["B905"]
+"city/ue/plan_varied/kitmap.py" = ["UP031"]
+"city/ue/plan_varied/plan.py" = ["F401", "F841"]
+"city/ue/plan_varied/tile.py" = ["B905"]
+"core/world_filter.py" = ["B905"]
+"core/world_multicontrol_base.py" = ["B905"]
+"core/world_stream.py" = ["B905"]
+"core/world_transfer.py" = ["B023", "B905", "F821"]
+"core/world_transfer_multi.py" = ["B905"]
+"exp1/diagnose_d2.py" = ["B023", "F401", "F821"]
+"exp1/guardrails.py" = ["B905"]
+"exp1/homeostasis.py" = ["B023", "B905"]
+"exp1/learn.py" = ["B023"]
+"exp1/policy.py" = ["B905"]
+"exp1/run.py" = ["B905", "UP038"]
+"exp1/smoke.py" = ["B905"]
+"exp1/tabular_check.py" = ["B905"]
+"filter_test/scripts/capture.py" = ["B905", "F401"]
+"filter_test/scripts/head.py" = ["B905"]
+"filter_test/scripts/preview_videos.py" = ["B905"]
+"homeostatic/grpo.py" = ["B905"]
+"homeostatic/world.py" = ["B905"]
+"life/city.py" = ["B905"]
+"life/llm_generator.py" = ["UP038"]
+"life/overnight.py" = ["B904", "F401"]
+"life/report.py" = ["B905"]
+"life/scenario.py" = ["B905"]
+"life/scenario_night.py" = ["B007", "B904", "F401"]
+"life/windows.py" = ["B905"]
+"mind/change_check.py" = ["F401"]
+"mind/check.py" = ["B905"]
+"runtime/actions.py" = ["UP007"]
+"runtime/adapters/life_db.py" = ["F401"]
+"runtime/adapters/simworld.py" = ["UP007", "UP038"]
+"runtime/adapters/simworld_actions.py" = ["UP007"]
+"runtime/adapters/simworld_config.py" = ["UP007"]
+"runtime/adapters/simworld_control.py" = ["UP007", "UP035"]
+"runtime/adapters/simworld_math.py" = ["UP007"]
+"runtime/adapters/simworld_weather.py" = ["UP007"]
+"runtime/adapters/simworld_wire.py" = ["UP007", "UP035"]
+"runtime/interfaces.py" = ["B027"]
+"runtime/leak_guard.py" = ["UP038"]
+"runtime/memory.py" = ["F401"]
+"runtime/physics.py" = ["UP007", "UP035", "UP037"]
+"runtime/tests/fake_unrealcv.py" = ["UP007"]
+"runtime/tests/test_life_context.py" = ["F401"]
+"runtime/tests/test_simworld_actions.py" = ["B904"]
+"runtime/tests/test_simworld_adapter.py" = ["B904"]
+"runtime/tests/test_simworld_contract.py" = ["B023", "B904"]
+"runtime/tests/test_simworld_gate.py" = ["B904"]
+"runtime/tests/test_simworld_recovery.py" = ["B904", "B905", "F401"]
+"scripts/pace/wmloop_one_tick.py" = ["B905", "F401"]
+"tests/test_city_lunch.py" = ["B905", "F401"]
+"tests/test_continuous_video.py" = ["F401"]
+"tests/test_exp1.py" = ["B905"]
+"tests/test_exp1_learn.py" = ["B905"]
+"tests/test_gpu_keeper.py" = ["F401"]
+"tests/test_homeostatic_benchmark.py" = ["B905"]
+"tests/test_homeostatic_grpo.py" = ["B023", "B905"]
+"tests/test_homeostatic_world.py" = ["B905"]
+"tests/test_life_memory.py" = ["F401"]
+"tests/test_life_pipeline.py" = ["UP031"]
+"tests/test_life_scenario.py" = ["F401"]
+"tests/test_life_windows.py" = ["B905"]
+"tests/test_wm_multicontrol_b.py" = ["B905"]
+
+[tool.pyright]
+include = ["core", "ops", "runtime"]
+exclude = ["**/__pycache__"]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"

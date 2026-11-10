@@ -1,10 +1,12 @@
-"""Check a finished run's video against its log, and rebuild it if asked. Exits non-zero if anything is wrong."""
+"""Check a finished run's video against its log, and rebuild it if asked. Exits non-zero if anything is wrong.
+The picture itself (mosaic) is judged by core/video_check.py, the same check that stops a live run."""
 import argparse
 import subprocess
 import sys
 from pathlib import Path
 
-from blend import FPS, probe
+from core import video_check
+from core.blend import FPS, probe
 from runtime import replay
 from runtime.frames import file_hash
 from runtime.stitch import expected_frames, stitch
@@ -56,6 +58,11 @@ def check(run_dir, expect_seconds=None, rebuild=False):
     facts = {"ticks": len(summary["ticks"]), "clips": len(chunks), "size": f"{width}x{height}", "frames": frames, "seconds": round(seconds, 1),
              "scene_cuts": scene_cuts(final), "reanchors": summary["run"]["totals"]["reanchors"],
              "black_stretches": black_stretches(final), "frozen_stretches": frozen_stretches(final)}
+    # Mosaic only: a runtime run has no blur control to judge drift against. A fact, not a problem: the mock world
+    # model paints a grid picture, which reads as mosaic by design (core/video_check.py).
+    failure, wins = video_check.check_file(final, fps=FPS)
+    facts["mosaic_max"] = max((w["mosaic"] for w in wins), default=None)
+    facts["mosaic_from_s"] = failure["t"] if failure else None
     return problems, facts
 
 

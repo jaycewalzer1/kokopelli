@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from settings import WORLD_MODEL_RUNNER, WORLD_MODEL_WEIGHTS  # noqa: E402
+from core.settings import WORLD_MODEL_RUNNER, WORLD_MODEL_WEIGHTS  # noqa: E402
 
 CONTROL = ROOT / "out" / "filter_test" / "controls" / "cosmos_simdepth.mp4"
 OUT = ROOT / "out" / "filter_test" / "cosmos_simdepth"

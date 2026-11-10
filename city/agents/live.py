@@ -202,7 +202,7 @@ class CosmosVision:
         self.k = 0
 
     def see(self, frame, prompt_hint):
-        import llm_model
+        from core import llm_model
         from runtime.frames import read_clip, save_rgb
         llm_model.unload()
         self.k += 1
@@ -396,7 +396,7 @@ class Life:
                 f"Your notes so far:\n{notes}\n\n{ACTIONS}")
 
     def decide(self, state, frame):
-        import llm_model
+        from core import llm_model
         if self.args.weights:
             llm_model.LLM_MODEL_WEIGHTS = Path(self.args.weights)
         prompt = self.prompt(state)

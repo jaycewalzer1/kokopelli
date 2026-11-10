@@ -2,7 +2,7 @@
 import re
 
 from life.windows import LEVELS, depth, stage_at
-from settings import LIFE_MEMORY
+from core.settings import LIFE_MEMORY
 
 FAILED = "[failed]"
 GIST_END = re.compile(r"(?<=[.!?])\s")

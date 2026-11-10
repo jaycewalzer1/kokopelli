@@ -1,14 +1,19 @@
 """These call the real model, using the smallest clip it accepts."""
+import os
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from blend import probe
-from settings import WORLD_MODEL, WORLD_MODEL_WEIGHTS
-from world_model import continue_video, image_to_video, text_to_video
+from core.blend import probe
+from core.settings import WORLD_MODEL, WORLD_MODEL_WEIGHTS
+from core.world_model import continue_video, image_to_video, text_to_video
 
 SMALL = {"size": "256x256", "frames": 8, "steps": 4, "seed": 7}
+
+# Loading Cosmos3-Nano (peak 17.3 GB) in the default run made tests/ peak at 18.3 GB, and five runs at once crashed the Mac.
+# These are model jobs: run them through ops/gpu.py with RUN_MODEL_TESTS=1 (command in docs/fable_log/P1-M.md).
+needs_model = unittest.skipUnless(os.environ.get("RUN_MODEL_TESTS"), "loads Cosmos3-Nano (peak 17.3 GB); set RUN_MODEL_TESTS=1 and queue it")
 
 
 class WorldModelTest(unittest.TestCase):
@@ -21,10 +26,12 @@ class WorldModelTest(unittest.TestCase):
         self.assertEqual(WORLD_MODEL, "nvidia/Cosmos3-Nano")
         self.assertTrue(WORLD_MODEL_WEIGHTS.is_dir())
 
+    @needs_model
     def test_text_to_video(self):
         output = text_to_video("A boat on a calm lake.", self.dir / "text.mp4", **SMALL)
         self.assertEqual(probe(output), (256, 256, 8))
 
+    @needs_model
     def test_image_to_video(self):
         image = self.dir / "start.png"
         subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "testsrc=s=256x256",
@@ -32,6 +39,7 @@ class WorldModelTest(unittest.TestCase):
         output = image_to_video("The picture slowly drifts.", image, self.dir / "image.mp4", **SMALL)
         self.assertEqual(probe(output), (256, 256, 8))
 
+    @needs_model
     def test_continue_video(self):
         video = self.dir / "start.mp4"
         subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "testsrc=s=256x256:r=24",
@@ -39,6 +47,7 @@ class WorldModelTest(unittest.TestCase):
         output = continue_video("The picture slowly drifts.", video, self.dir / "next.mp4", **SMALL)
         self.assertEqual(probe(output), (256, 256, 8))
 
+    @needs_model
     def test_failure_reports_the_reason(self):
         with self.assertRaisesRegex(RuntimeError, "multiple of 4"):
             text_to_video("A boat.", self.dir / "bad.mp4", frames=7)

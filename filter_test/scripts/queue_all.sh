@@ -2,7 +2,7 @@
 # Put the three Mac filter runs on the GPU queue. Each waits for its turn; the SD runs are minutes, Cosmos about an hour.
 #   bash filter_test/scripts/queue_all.sh
 cd "$(dirname "$0")/../.." || exit 1
-GPU="python3 .claude/worktrees/ops/ops/gpu.py run --cwd $PWD --give-up-hours 48"
+GPU="python3 ops/gpu.py run --cwd $PWD --give-up-hours 48"
 LOGS=out/filter_test/logs
 mkdir -p $LOGS
 nohup $GPU --name filter_sd15_simdepth --priority 20 --max-hours 1 --output out/filter_test/sd15_simdepth \
@@ -15,4 +15,4 @@ nohup $GPU --name filter_cosmos_simdepth --priority 22 --max-hours 3 --output ou
   --about "Sim-to-real test 1 of 3: Cosmos3-Nano (MLX) repaints the 10 s SimWorld bridge clip from the sim's depth through world_filter.py, 26 chunks of 16 frames." \
   -- .venv/bin/python filter_test/scripts/run_cosmos.py > $LOGS/cosmos_simdepth.log 2>&1 &
 sleep 2
-python3 .claude/worktrees/ops/ops/gpu.py status
+python3 ops/gpu.py status

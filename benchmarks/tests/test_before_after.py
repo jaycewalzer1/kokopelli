@@ -217,7 +217,7 @@ class WeightsSettingOnATinyModel(Temp):
         self.assertEqual(first, self.backend.generate_batch([GenRequest("Hello there", seed=7, **sampled)])[0].text)
 
     def test_base_arm_points_back_at_base_and_close_restores(self):
-        import llm_model
+        from core import llm_model
         self.backend.prepare_arm(Arm(name="x", model="m", weights=str(self.a)), 0)
         self.assertEqual(llm_model.LLM_MODEL_WEIGHTS, self.a)
         self.backend.prepare_arm(Arm(name="base", model="m"), 0)

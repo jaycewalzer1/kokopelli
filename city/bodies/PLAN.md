@@ -94,7 +94,7 @@ The user ruled out 8 full MetaHumans at once (memory). Each person has a **near 
 
 - Editor work on **port 9004** only, under `python ram_share.py claim --name bodies_9004 --gb 10 --pid <PID>`; never
   9001, 9003 or `mac_server/Packaged/`. Minimize the window (Metal present leak, see `mac_server` notes).
-- Model jobs only through `.claude/worktrees/ops/ops/gpu.py run ... --about ... --output ...`.
+- Model jobs only through `ops/gpu.py run ... --about ... --output ...`.
 - Don't edit files other sessions own (AGENTS.md); write a handoff note instead.
 - Every output folder gets a JSON sidecar naming models/assets used.
 - Results and decisions go in `city/bodies/LOG.md` (dated, short).

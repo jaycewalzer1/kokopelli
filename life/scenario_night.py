@@ -41,9 +41,9 @@ from life.seed import rng
 from life.store import Store
 from life.pipeline import process_table, read_tickets
 from life.windows import children, depth, life_window
-from settings import GPU_QUEUE_SCRIPT, LIFE_FOCUS, PIPELINE_PATHS, ROOT, SCENARIO_NIGHT, SCENARIO_OUT, STAGED_JOBS
+from core.settings import GPU_QUEUE_SCRIPT, LIFE_FOCUS, PIPELINE_PATHS, ROOT, SCENARIO_NIGHT, SCENARIO_OUT, STAGED_JOBS
 
-import ram_share
+from core import ram_share
 
 MAX_CRASHES = 5
 YIELDED = 75  # gpu.py and the GPU page read this exit code as "out of time, can resume"
@@ -401,7 +401,7 @@ def phase_life(folder, state):
         if state.get("mock"):
             complete = Polite(mock_complete, None, state.get("priority"))
         else:
-            import llm_model  # loaded only for a real run
+            from core import llm_model  # loaded only for a real run
             guard = ram_share.Guard("scenario_qwen", SCENARIO_NIGHT["qwen_gb"], unload=llm_model.unload, log=lambda line: print(line, flush=True))
             complete = Polite(llm_model.chat, guard, state.get("priority"))
         seed, key = store.public_seed(run_id), store.rng_key(run_id)
@@ -477,7 +477,7 @@ def phase_clips(folder, state):
     if not SCENARIO_NIGHT["clips"]:
         return
     if not state.get("mock"):
-        import llm_model
+        from core import llm_model
         llm_model.unload()
     rows = [json.loads(line) for line in (folder / "trajectory.jsonl").read_text().splitlines() if line.strip()]
     clips = folder / "clips"
@@ -497,7 +497,7 @@ def phase_clips(folder, state):
         if state.get("mock"):
             output.write_bytes(b"")
         else:
-            from world_model import text_to_video
+            from core.world_model import text_to_video
             settings = SCENARIO_NIGHT["clip"]
             text_to_video(prompt, output, size=settings["size"], frames=settings["frames"], steps=settings["steps"], seed=row["day"] * 10 + int(row["decision"][1]))
         print(f"{time.strftime('%H:%M:%S')} clip {output.name} {time.monotonic() - started:.0f}s", flush=True)

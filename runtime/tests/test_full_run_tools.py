@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
-from blend import probe
+from core.blend import probe
 from runtime import check_video, compare, plan, preflight, replay
 from runtime.config import Config
 from runtime.frames import write_clip
@@ -195,7 +195,7 @@ class ConditioningSizeTest(unittest.TestCase):
             return output
 
         fake = types.SimpleNamespace(_generate=fake_generate)
-        with mock.patch.dict(system.modules, {"world_model": fake}):
+        with mock.patch.dict(system.modules, {"core.world_model": fake}):
             CosmosWorldModel("256x256", 20).render_chunk(ChunkRequest("p", cond, None, str(place / "out.mp4"), 1, 0, 16, 7))
         self.assertEqual(seen["clip"].shape, (5, 256, 256, 3))
         self.assertEqual(seen["cond_frames"], "5")

@@ -440,7 +440,7 @@ def report():
     lines += [f"- Dev panel: {'up' if panel == 200 else 'DOWN'} at http://127.0.0.1:8765 (architecture tab at `/architecture`)",
               f"- Claude terminal sessions: {info['claude_sessions']}",
               f"- Machine: {info['available_gb']} of {info['total_gb']} GB free or reclaimable, {info['swap_gb']} GB swap, {info['disk_free_gb']} GB disk, on {info['power']}",
-              "- Live queue: `python3 .claude/worktrees/ops/ops/gpu.py status`"]
+              "- Live queue: `python3 ops/gpu.py status`"]
 
     lines += ["", "## Tests", ""]
     if tests:

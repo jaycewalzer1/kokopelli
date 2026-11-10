@@ -131,7 +131,7 @@ class RunTest(unittest.TestCase):
         from unittest import mock
         from exp1 import run as runner
         sys.path.insert(0, str(runner.ROOT))
-        import ram_share
+        from core import ram_share
         # Plenty of room except right after the third night, when it runs short once.
         rooms = iter([50, 50, 50, -10] + [50] * 1000)
         with tempfile.TemporaryDirectory() as whole, tempfile.TemporaryDirectory() as politely, \

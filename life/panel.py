@@ -18,7 +18,7 @@ from life.engine import Budget, Engine
 from life.seed import LifeSeed
 from life.store import OrderError, Store
 from life.windows import age_at, children, find, hub_at, life_window, stage_at
-from settings import (LIFE_BUDGET, LIFE_DB, LIFE_DEFAULT_SEED, LIFE_DEMO_DB, LIFE_DEMO_WRITES, LIFE_DISPLAY_HUBS,
+from core.settings import (LIFE_BUDGET, LIFE_DB, LIFE_DEFAULT_SEED, LIFE_DEMO_DB, LIFE_DEMO_WRITES, LIFE_DISPLAY_HUBS,
                       LIFE_WARN_SIMULATED_DAYS, ROOT)
 
 STATIC = Path(__file__).with_name("static")
@@ -494,7 +494,7 @@ def reset_demo():
 def restart_when_code_changes():
     """Run the panel again after an edit to its Python. Static files need no restart; an open page reloads itself."""
     def files():
-        return {path: path.stat().st_mtime for path in [*ROOT.glob("life/*.py"), ROOT / "homeostatic" / "watch.py", ROOT / "settings.py"]}
+        return {path: path.stat().st_mtime for path in [*ROOT.glob("life/*.py"), ROOT / "homeostatic" / "watch.py", ROOT / "core" / "settings.py"]}
     seen = files()
     while files() == seen:
         time.sleep(0.5)

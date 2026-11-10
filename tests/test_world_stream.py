@@ -16,7 +16,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import world_stream  # noqa: E402
+from core import world_stream  # noqa: E402
 
 H, W = 16, 32
 

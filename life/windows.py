@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import lru_cache
 
-from settings import LIFE_DEPTH_BY_SALIENCE, LIFE_DISPLAY_HUBS, LIFE_STAGES
+from core.settings import LIFE_DEPTH_BY_SALIENCE, LIFE_DISPLAY_HUBS, LIFE_STAGES
 
 LEVELS = ("life", "year", "season", "month", "week", "day", "hour", "min15", "min5", "min1", "sec30")
 SEASONS = {12: "Winter", 1: "Winter", 2: "Winter", 3: "Spring", 4: "Spring", 5: "Spring",

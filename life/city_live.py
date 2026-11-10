@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from settings import ROOT
+from core.settings import ROOT
 
 RUNS = ROOT / "out" / "city_agents"
 RUN_ID = re.compile(r"^\d{8}-\d{6}$")

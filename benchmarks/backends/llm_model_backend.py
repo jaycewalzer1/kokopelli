@@ -34,8 +34,8 @@ class LLMModelBackend(Backend):
         if str(REPO) not in sys.path:
             sys.path.insert(0, str(REPO))
         import mlx.core as mx
-        import llm_model
-        from settings import LLM_MODEL_WEIGHTS
+        from core import llm_model
+        from core.settings import LLM_MODEL_WEIGHTS
         self.mx, self.llm_model, self.weights = mx, llm_model, Path(LLM_MODEL_WEIGHTS)
         self.current = self.weights
         if not (self.weights / "config.json").exists():

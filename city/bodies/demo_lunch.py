@@ -330,7 +330,7 @@ def chunked_stream_class():
     wmbodies_demo's first step that peaked at 42.7 GB and swapped 26 GB; 48-frame pieces still peaked at 24.6 GB. The
     smoke test's 6-latent push peaked at 18.9 GB. Painting is identical; only the decode is split (one mild seam per chunk, as measured by the smoke test)."""
     import numpy as np
-    from world_stream_multi import MultiWorldStream
+    from core.world_stream_multi import MultiWorldStream
 
     class ChunkedWorldStream(MultiWorldStream):
         CHUNK = 24   # frames, 6 latents: 48 still peaked at 24.6 GB and swapped next to SimWorld (6.5 GB)

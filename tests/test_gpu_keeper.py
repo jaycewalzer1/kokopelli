@@ -118,6 +118,14 @@ class Queue(unittest.TestCase):
             process.wait(30)
         self.assertLess(self.events("urgent", "started")[0]["at"], self.events("late", "started")[0]["at"])
 
+    def test_a_signal_the_queue_did_not_send_is_named_in_the_ledger(self):
+        self.queue("killed", "sh", "-c", "kill -TERM 0; sleep 5").wait(20)   # the whole group, like a hand pkill
+        finished = self.events("killed", "finished")[0]
+        self.assertEqual((finished["exit_code"], finished["outside_signal"], finished["stopped"]), (-15, "SIGTERM", False))
+        self.assertIn("didn't send", Path(finished["log"]).read_text())
+        self.queue("fine", "sh", "-c", "exit 3").wait(20)
+        self.assertNotIn("outside_signal", self.events("fine", "finished")[0])
+
 
 class OutsideJobs(unittest.TestCase):
     def setUp(self):
@@ -149,6 +157,45 @@ class OutsideJobs(unittest.TestCase):
         self.assertEqual(self.gpu.machine_summary([{"job_gb": 1.0}, {"job_gb": 3.0}]), {"peak_job_gb": 3.0})
         summary = self.gpu.machine_summary([{"swap_gb": 1.0, "gpu_busy": 0.5, "watts": 10, "gpu_temp": 60}, {"swap_gb": 4.0, "gpu_busy": 1.0, "watts": 20, "gpu_temp": 70}])
         self.assertEqual((summary["peak_swap_gb"], summary["swap_grew_gb"], summary["gpu_busy_mean"], summary["watts_mean"], summary["gpu_temp_max"]), (4.0, 3.0, 0.75, 15.0, 70.0))
+
+
+class Preflight(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location("gpu_under_test", SCRIPT)
+        self.gpu = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.gpu)
+
+    def test_wrappers_and_env_are_peeled_off(self):
+        command = ["python3", "ram_share.py", "hold", "--name", "x", "--gb", "24", "--", "env", "PYTHONPATH=/a", "B=2", "/v/bin/python", "-u", "-m", "core.x"]
+        self.assertEqual(self.gpu.unwrap(command), (["/v/bin/python", "-u", "-m", "core.x"], {"PYTHONPATH": "/a", "B": "2"}))
+        self.assertEqual(self.gpu.unwrap(["city/run.sh", "--", "x"]), (["city/run.sh", "--", "x"], {}))
+
+    def test_the_python_target_skips_interpreter_flags(self):
+        self.assertEqual(self.gpu.python_target(["python", "-I", "-X", "dev", "-m", "a.b", "--flag"]), (["-I", "-X", "dev"], "-m", "a.b"))
+        self.assertEqual(self.gpu.python_target(["python", "-u", "run.py", "-m", "x"]), (["-u"], "script", "run.py"))
+        self.assertIsNone(self.gpu.python_target(["python", "-c", "print(1)"]))
+
+
+class WorldModelDryRun(unittest.TestCase):
+    """KOKO_DRY_RUN in the two world-model scripts, without a model: the argument rewrite and the fake worker."""
+
+    def test_the_transfer_dry_run_is_one_latent_beside_the_real_output(self):
+        from core import world_transfer_multi as wtm
+        args = wtm.parser().parse_args(["a street", "--control", "blur=b.mp4", "--output", "out/x/film.mp4", "--frames", "121",
+                                        "--extra", '{"run": "r1"}', "--dry-run"])
+        args = wtm.dry_run_args(args)
+        self.assertEqual((args.output, args.frames), ("out/x/film.dryrun.mp4", 1))
+        self.assertEqual(json.loads(args.extra), {"run": "r1", "dry_run": "dry run, 1 chunk", "dry_run_of": "out/x/film.mp4"})
+        self.assertFalse(wtm.parser().parse_args(["p", "--control", "blur=b", "--output", "o.mp4"]).dry_run)
+
+    def test_the_stream_dry_run_paints_one_frame_and_labels_it(self):
+        with tempfile.TemporaryDirectory() as folder:
+            done = subprocess.run([sys.executable, "-m", "core.world_stream_multi", "--dry-run", "--fake", "--out", folder],
+                                  cwd=Path(__file__).resolve().parent.parent, capture_output=True, text=True, timeout=60)
+            self.assertEqual(done.returncode, 0, done.stderr[-500:])
+            sidecar = json.loads((Path(folder) / "dry_run.json").read_text())
+        self.assertEqual((sidecar["dry_run"], sidecar["frames_out"], sidecar["fake"]), ("dry run, 1 chunk", 1, True))
+        self.assertEqual(sidecar["weights"], {"blur": 0.25, "seg": 0.25, "depth": 0.25, "edge": 0.25})
 
 
 if __name__ == "__main__":

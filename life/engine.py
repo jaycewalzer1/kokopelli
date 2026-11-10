@@ -7,7 +7,7 @@ from life.generator import MockGenerator
 from life.memory import consolidate, recall
 from life.resolver import Resolver
 from life.windows import age_at, children, depth, depth_limit_for, find, life_window, stage_at
-from settings import LIFE_BUDGET
+from core.settings import LIFE_BUDGET
 
 
 class BudgetExceeded(Exception):

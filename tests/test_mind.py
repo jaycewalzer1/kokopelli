@@ -444,9 +444,9 @@ class WeightsTest(unittest.TestCase):
 
     @needs_runtime
     def test_a_tiny_fused_folder_loads_and_answers_through_the_measured_agent(self):
-        import llm_model
+        from core import llm_model
         from homeostatic.export import write_full_weights
-        from settings import LLM_MODEL_WEIGHTS
+        from core.settings import LLM_MODEL_WEIGHTS
         from tests.test_homeostatic_grpo import tiny_model
 
         folder = Path(tempfile.mkdtemp(prefix="mind_")) / "fused"

@@ -19,7 +19,7 @@ from mlx_vlm.utils import load_processor
 from homeostatic.benchmark import planner_policy, run_episode
 from homeostatic.grpo import Actor, branch_return, make_homeostatic_task, score_actions, targets, training_args, visit
 from homeostatic.world import done, homeostatic_reward, start, step
-from settings import HOMEOSTATIC_TRAIN, HOMEOSTATIC_WORLD as WORLD, LLM_MODEL_WEIGHTS
+from core.settings import HOMEOSTATIC_TRAIN, HOMEOSTATIC_WORLD as WORLD, LLM_MODEL_WEIGHTS
 
 
 def tiny_model():

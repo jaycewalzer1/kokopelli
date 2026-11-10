@@ -145,7 +145,7 @@ class EngineTest(EngineTestCase):
                 "s = Store(pathlib.Path(tempfile.mkdtemp()) / 'l.db');"
                 "r = s.create_run(LifeSeed('t', datetime.date(1990, 3, 14)));"
                 "[Engine(s, r).step() for _ in range(5)];"
-                "assert not {'llm_model', 'mlx', 'mlx_vlm'} & set(sys.modules)")
+                "assert not {'llm_model', 'core.llm_model', 'mlx', 'mlx_vlm'} & set(sys.modules)")
         subprocess.run([sys.executable, "-c", code], check=True)
 
 

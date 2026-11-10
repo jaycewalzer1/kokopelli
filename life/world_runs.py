@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 from life import pipeline
-from settings import PIPELINE_PATHS, ROOT
+from core.settings import PIPELINE_PATHS, ROOT
 
 COSMOS_OUTPUTS = Path.home() / "cosmos3" / "outputs"
 OUT = ROOT / "out"

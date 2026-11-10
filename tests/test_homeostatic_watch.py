@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from homeostatic.watch import baselines, collapsed, describe_run, held_out_results, list_runs, read_rows, trainers
-from settings import ROOT
+from core.settings import ROOT
 
 
 def write_run(out, name, iterations=3, finished=False):

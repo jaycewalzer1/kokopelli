@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from blend import FPS, probe
+from core.blend import FPS, probe
 
 NEAR_CM = 50.0
 FAR_CM = 10000.0

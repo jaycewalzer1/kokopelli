@@ -1,7 +1,7 @@
 """Turns an action into consequences with seeded randomness."""
 from life.seed import rng
 from life.windows import depth
-from settings import LIFE_ESCALATION_ODDS
+from core.settings import LIFE_ESCALATION_ODDS
 
 SKILLS = ["language", "motor", "social", "reasoning"]
 

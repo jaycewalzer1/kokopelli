@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "city" / "agents"))
 
 import lunch_wm as lw  # noqa: E402
-from world_stream_multi import MultiWorldStream, SharedWeights, stream_class  # noqa: E402
+from core.world_stream_multi import MultiWorldStream, SharedWeights, stream_class  # noqa: E402
 
 W, H = 64, 32
 STEP_S, FPS = 2.0, 4

@@ -5,7 +5,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from settings import HOMEOSTATIC_OUT, HOMEOSTATIC_TRAIN, ROOT
+from core.settings import HOMEOSTATIC_OUT, HOMEOSTATIC_TRAIN, ROOT
 
 RECENT_GROUPS = 12
 
