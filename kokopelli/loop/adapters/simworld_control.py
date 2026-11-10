@@ -6,7 +6,7 @@ blocks until arrival (local_planner.py:146) and only sleeps inside the loop. Not
 tick a paused game, so it would wait forever. Here the stepping loop calls update() instead.
 """
 from dataclasses import asdict, dataclass
-from typing import Callable
+from collections.abc import Callable
 
 from kokopelli.loop.adapters.simworld_math import angle_delta, distance_2d_cm, heading_to
 from kokopelli.loop.physics import Pose, Vec3

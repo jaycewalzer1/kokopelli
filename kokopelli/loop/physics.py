@@ -8,7 +8,8 @@ from __future__ import annotations
 import abc
 import json
 from pathlib import Path
-from typing import Annotated, Any, Literal, Mapping
+from typing import Annotated, Any, Literal
+from collections.abc import Mapping
 
 from pydantic import (BaseModel, ConfigDict, Field, TypeAdapter, ValidationInfo,
                       field_validator, model_validator)
