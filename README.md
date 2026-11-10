@@ -98,9 +98,9 @@ uv pip install --python .venv/bin/python -r requirements.txt
 ## Use
 
 ```python
-from blend import blend
-from llm_model import ask, unload
-from world_model import text_to_video
+from core.blend import blend
+from core.llm_model import ask, unload
+from core.world_model import text_to_video
 
 prompt = ask("Write a one-sentence video prompt about a lake at dawn.")
 unload()
