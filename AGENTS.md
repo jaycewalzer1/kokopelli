@@ -42,3 +42,14 @@ Standing rules first, then one line per live area. Status, results and dates go 
 | Experiment 1 homeostatic RL | `exp1/`, `tests/test_exp1.py`, `docs/homeostatic_rl_map.md` | `exp1_` |
 | Two agents at lunch | `city/agents/lunch_wm.py`, `run_wm_lunch.sh`, `world_stream_multi.py` | `wmlunch_`, 9001, `ram_share.py hold --name wmlunch_agents --gb 24` |
 | Realistic bodies | `city/bodies/`, `mac_server/Config/Bodies.json`, body code in `SWCharacterBase`/`SWHumanoid`/`SWPedestrian`/`SWSettings` | `bodies_`, 9004 only, claim `bodies_9004`; log `city/bodies/LOG.md` |
+
+## Memory rules (36 GB Mac)
+
+Five full test runs at once (18 GB each) ran the Mac out of memory and swap on 2026-11-09 and it panicked. Since then:
+
+- Run tests with `make test-all` (it claims 20 GB and waits its turn), or one module with `python3 ops/memguard.py run --name <what> --gb 2 -- .venv/bin/python -m unittest tests.test_x`. Never run `unittest` or `pytest` bare.
+- Anything else heavy (whole-repo linters, `uv`, `npx`, builds) also goes through `ops/memguard.py run` with its peak in `--gb`. Model jobs go through `ops/gpu.py run --gb`.
+- Exit 75 from the guard means memory ran short. Wait and run it again later; don't retry in a loop and don't start a second copy.
+- Don't put a heavy command in the background and then start another. At most two guarded commands run at once.
+- `python3 ops/memguard.py status` prints memory, swap and who holds a claim. The overnight watchdog is `ops/memguard.py watch`.
+- Measured peaks: `tests` 18.3 GB, `runtime` 0.7, `simworld` 0.3, `ops` 0.1, `benchmarks` 0.7.
