@@ -12,7 +12,6 @@ The dry run validates the schema and resolves every slot against the wardrobe ca
 """
 import argparse
 import json
-import os
 import re
 import sys
 from pathlib import Path

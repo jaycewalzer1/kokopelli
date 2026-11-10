@@ -5,7 +5,7 @@ import subprocess
 import sys
 import time
 import traceback
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 
 from kokopelli.life.engine import Budget, Engine

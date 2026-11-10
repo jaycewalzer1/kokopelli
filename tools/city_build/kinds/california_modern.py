@@ -11,7 +11,7 @@ Every kind is deterministic from plot.seed and takes its accent colours from plo
 import colorsys
 import math
 
-from .kit import Kit, WHITE, OFFWHITE, CONCRETE, DARK_STEEL, GLASS, TERRAZZO, TEAK, LEAF, FLOWER
+from .kit import Kit, WHITE, DARK_STEEL, GLASS, TERRAZZO, TEAK, LEAF, FLOWER
 
 LAMP = (255, 190, 112)
 DIM = (138, 108, 78)

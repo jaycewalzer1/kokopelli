@@ -17,7 +17,6 @@ import sys
 import tempfile
 import time
 import traceback
-from io import BytesIO
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]

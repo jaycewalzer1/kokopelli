@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "kokopelli" / "agents"))
-import live  # noqa: E402  (sets up the runtime worktree's path and the unrealcv client, the same way the city agent does)
+import live  # noqa: E402, F401  (imported for its side effect: sets up the runtime worktree's path and the unrealcv client, the same way the city agent does)
 from navmap import NavMap  # noqa: E402
 from head import Head  # noqa: E402
 from kokopelli.loop.adapters.simworld import AGENT_ACTOR, SimWorldConfig, SimWorldPhysics  # noqa: E402

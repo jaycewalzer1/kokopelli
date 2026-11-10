@@ -6,7 +6,6 @@ try:
 except ImportError:
     raise unittest.SkipTest("needs unrealcv; run with simworld/.venv")
 
-import tempfile
 import time
 import unittest
 from pathlib import Path

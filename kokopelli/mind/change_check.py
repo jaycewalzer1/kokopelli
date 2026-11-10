@@ -18,7 +18,7 @@ from collections import Counter
 from pathlib import Path
 
 from kokopelli.mind.check import Ask
-from kokopelli.mind.feeling import CHANGE, MAX_CHANGE_CHARS, appraisal_prompt, parse_appraisal, parse_change, settle
+from kokopelli.mind.feeling import CHANGE, appraisal_prompt, parse_appraisal, parse_change, settle
 from kokopelli.mind.run import measured_qwen
 
 KOKOPELLI = Path(__file__).resolve().parents[2]

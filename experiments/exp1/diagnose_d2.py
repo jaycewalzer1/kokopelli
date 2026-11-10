@@ -24,7 +24,6 @@ import time
 
 import mlx.core as mx
 import mlx.nn as nn
-import mlx.optimizers as optim
 from mlx.utils import tree_flatten, tree_map, tree_unflatten
 
 from experiments.exp1 import observe

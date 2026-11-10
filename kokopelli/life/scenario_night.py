@@ -20,7 +20,6 @@ saved, so the next turn picks up where this one stopped.
 """
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys

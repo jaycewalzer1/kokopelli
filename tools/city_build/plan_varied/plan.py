@@ -494,7 +494,7 @@ def build_world():
 
 
 def draw(world, png):
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw
     S_ = 3
     im = Image.new("RGB", (600 * S_, 600 * S_), (196, 214, 170))
     d = ImageDraw.Draw(im)

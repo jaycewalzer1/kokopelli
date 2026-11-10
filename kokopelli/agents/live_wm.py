@@ -132,7 +132,6 @@ class WorldModelLife(Life):
 
     def perceive(self, captures):
         """Paint the new captures, add them to the films, delete the raw captures, return the newest painted frame."""
-        import numpy as np
         t0 = time.time()
         controls, rgb = self.controls_for(captures)
         t_ctl = time.time() - t0

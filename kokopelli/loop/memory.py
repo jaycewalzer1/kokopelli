@@ -7,7 +7,6 @@ import re
 import subprocess
 import sys
 import threading
-import time
 from pathlib import Path
 
 GB = 1024 ** 3

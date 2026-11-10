@@ -12,8 +12,8 @@ from california_modern.Ctx so both families look like one city.
 """
 import math
 
-from .california_modern import Ctx, clamp, lerp, mix, vivid, tilt_x, LAMP, JACARANDA, MAPLE
-from .kit import WHITE, DARK_STEEL, LEAF, FLOWER
+from .california_modern import Ctx, clamp, lerp, mix, vivid, tilt_x, JACARANDA, MAPLE
+from .kit import LEAF, FLOWER
 
 REDWOOD = (146, 96, 66)          # oiled redwood siding
 WEATHERED = (122, 110, 98)       # Sea Ranch silvered redwood

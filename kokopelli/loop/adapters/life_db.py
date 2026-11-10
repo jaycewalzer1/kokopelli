@@ -1,13 +1,11 @@
 """The real life tree as run context. A run works from its own copy, so the shared database is never opened for writing."""
-import json
-import re
 import sqlite3
 from pathlib import Path
 
 from kokopelli.life.store import Store, apply_event, empty_state
 from kokopelli.life.windows import depth
 from kokopelli.loop.interfaces import ContextDB
-from kokopelli.loop.leak_guard import drop_future, is_future
+from kokopelli.loop.leak_guard import drop_future
 
 # The tree's verbs, grouped by the sim action they most resemble. Only used to score autonomy.
 VERB_TO_ACTION = {

@@ -16,7 +16,6 @@ Writes out/bodies/write_parts.json (what changed, and notes).
 """
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 

@@ -13,7 +13,7 @@ flowers in the green. Everything is a little old: moss on ledges, weathered timb
 """
 import math
 
-from .kit import Kit, LEAF, FLOWER, WHITE, TEAK
+from .kit import Kit, LEAF, FLOWER, TEAK
 
 # ---- shared colours (sRGB) ----------------------------------------------------------------------------------------
 BAMBOO = (206, 172, 104)
