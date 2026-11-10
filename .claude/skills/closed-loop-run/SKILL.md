@@ -32,7 +32,7 @@ The script starts the server minimized only if 9001 is free (and stops only a se
 
 Other `lunch_wm.py` flags: `--fps 24 --step-s 10 --window 24 --sink 1 --seed 2025 --clock 12:20 --meet kettle_cafe --first-start fern_common --second-start fern_bakery --no-npcs`. The bodies demo wrapper is `tools/bodies/run_demo_lunch.sh` with the same flags plus `--deadline HH:MM`.
 
-Stop with `gpu.py stop --name $NAME`, never `pkill` a model process. Dry test without GPU or server: `python3 kokopelli/ops/memguard.py run --name lunch-test --gb 2 -- .venv/bin/python -m unittest tests.test_city_lunch`.
+Stop with `gpu.py stop --name $NAME`, never `pkill` a model process. Dry test without GPU or server: `python3 kokopelli/ops/memguard.py run --name lunch-test --gb 2 -- .venv/bin/python -m unittest tests.agents.test_city_lunch`.
 
 ## Outputs
 

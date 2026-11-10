@@ -12,7 +12,7 @@ loop, positions, the 4 SDE steps, seeding) is world_transfer.py's, imported, nev
   3. the clean R_f goes through the same weighted path, and its K/V are cached once and shared by every branch.
 
 With one control at weight 1 this computes exactly what world_transfer.run computes: the same ops in the same order, and
-multiplying by 1.0 is exact in bf16. tests/test_wm_multicontrol_a.py checks this bit for bit on a tiny fake model.
+multiplying by 1.0 is exact in bf16. tests/wm/test_wm_multicontrol_a.py checks this bit for bit on a tiny fake model.
 Deviations are listed in experiments/wm_multicontrol/NOTES.md ("Variant A").
 
 Call `transfer_video_multi(...)` from any Python. It runs this file in the cosmos3-mlx venv under a ram_share hold and

@@ -56,7 +56,7 @@ I did not create `kokopelli/loop/interfaces.py`, `kokopelli/loop/loop.py`, `koko
 
 ```make
 test-simworld:
-	simworld/.venv/bin/python -W ignore -m unittest discover -s kokopelli/loop/tests -t . -p 'test_simworld*.py'
+	simworld/.venv/bin/python -W ignore -m unittest discover -s tests/loop -t . -p 'test_simworld*.py'
 ```
 
 ## Proposed: `README.md`

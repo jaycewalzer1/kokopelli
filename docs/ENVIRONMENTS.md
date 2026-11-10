@@ -5,7 +5,7 @@ Kokopelli uses three Python environments. Each one exists because a part of the 
 | Environment | Python | Holds | Used by |
 |---|---|---|---|
 | `.venv` (repo root) | 3.12 | `mlx-vlm` 0.7.11 (Qwen3-VL), `opencv-python`, MLX 0.32.4; 73 packages, all pinned in `uv.lock` | the panel (`make panel`), city agents, `kokopelli/life/`, `kokopelli/mind/`, `kokopelli/loop/` (not the SimWorld files), `tests/`, `kokopelli/ops/`, `experiments/benchmarks/`, `make test-all` |
-| `simworld/.venv` | 3.10 | the `simworld` package (editable), `unrealcv` 1.3.2, `torch` 2.14.1, `numpy` 2.2.6; 86 packages | `kokopelli/loop/adapters/simworld*.py`, `kokopelli/loop/tests/test_simworld*.py` (fake UnrealCV server), `tools/city_build/build_city.py`, sim capture scripts |
+| `simworld/.venv` | 3.10 | the `simworld` package (editable), `unrealcv` 1.3.2, `torch` 2.14.1, `numpy` 2.2.6; 86 packages | `kokopelli/loop/adapters/simworld*.py`, `tests/loop/test_simworld*.py` (fake UnrealCV server), `tools/city_build/build_city.py`, sim capture scripts |
 | `~/cosmos3/cosmos3-mlx/.venv` (outside the repo) | 3.12 | the `cosmos3_mlx` port (editable), MLX 0.32.4, `numpy` 2.5.4 | Cosmos3 Sim-Transfer painting: `kokopelli/wm/world_transfer*.py`, `kokopelli/wm/world_stream*.py`, `kokopelli/wm/world_filter.py`, run under `kokopelli/ops/ram_share.py hold` (see `docs/SIM_TRANSFER_MLX.md`) |
 
 The `kokopelli` package itself (`pyproject.toml`, hatchling build) is installed editable with `--no-deps` in `.venv` and in the

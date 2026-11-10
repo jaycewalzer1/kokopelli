@@ -7,7 +7,7 @@ Standing rules first, then one line per live area. Status, results and dates go 
 - `kokopelli/` is the library, one package: `wm/` (world-model runners, video helpers, `controls/`), `loop/` (the agent loop, was `runtime/`), `mind/`, `agents/` (was `city/agents/`), `life/` (generator, store, panel), `ops/` (queue, memory guard, `ram_share`, `cloud/`), `settings.py`.
 - `experiments/` holds `commons/`, `benchmarks/`, `exp1/`, `homeostatic/`, `filter_test/`, `wm_multicontrol/`. `tools/` holds hand-run scripts (`city_build/`, `bodies/`, `realism/`, `moodboard/`, `fable/`, `pace/`, `reorg/`). `data/` holds tracked inputs (`city/world.json`) and the moodboard pictures. `vendor/` is third-party code.
 - Launch with `python -m kokopelli.<package>.<module>` from the repo root. `ops/gpu.py` and `ops/memguard.py` at the root are stand-ins for `kokopelli/ops/`. What moved where: `tools/reorg/migrate.py`; log: `docs/log/reorg/PROGRESS.md`.
-- Every package under `kokopelli/` and every experiment under `experiments/` has a `README.md` (what it is or asked, how to run it, where results go); the top `README.md` maps the rest. Tests: `tests/`, plus `kokopelli/loop/tests`, `kokopelli/ops/tests` and `experiments/*/tests` until phase 7 of the reorganization moves them.
+- Every package under `kokopelli/` and every experiment under `experiments/` has a `README.md` (what it is or asked, how to run it, where results go); the top `README.md` maps the rest. Tests: `tests/` (mirrors `kokopelli/`), plus each experiment's own `experiments/*/tests` and `mac_server/tests`.
 - Notes: a note that spans packages goes in `docs/`; one about a single area stays beside its code. A finished brief, handoff or work log moves to `docs/log/<area>/` with its date in the name (`docs/log/fable/2026-11-09-P2-D.md`), unless code or a report cites it where it is.
 
 ## Rules
@@ -30,7 +30,7 @@ Standing rules first, then one line per live area. Status, results and dates go 
 | Area | Owns | Prefix, port, notes |
 |---|---|---|
 | World-model agent loop | `kokopelli/loop/` (not the SimWorld files) | `wmloop_`; asks go in `kokopelli/loop/HANDOFF.md` |
-| SimWorld adapter | `kokopelli/loop/physics.py`, `kokopelli/loop/adapters/simworld*`, `kokopelli/loop/tests/test_simworld*`, `kokopelli/loop/SIMWORLD.md` | fake UnrealCV server in tests; reads `simworld/` only |
+| SimWorld adapter | `kokopelli/loop/physics.py`, `kokopelli/loop/adapters/simworld*`, `tests/loop/test_simworld*`, `kokopelli/loop/SIMWORLD.md` | fake UnrealCV server in tests; reads `simworld/` only |
 | Benchmarks | `experiments/benchmarks/`, `tools/pace/evals/` | `evals_`, queue p40, turns of 30 min or less; `experiments/benchmarks/PREREG.md` |
 | Queue, ops, morning report | `kokopelli/ops/`, `out/ops/` | report `out/ops/MORNING.md`; job logs `out/ops/job_logs/` |
 | GPU queue page | `kokopelli/life/gpu_queue.py`, `kokopelli/life/static/queue.*` | panel `/queue`; changes go through `gpu.py` commands |
@@ -55,9 +55,10 @@ Standing rules first, then one line per live area. Status, results and dates go 
 
 Five full test runs at once (18 GB each) ran the Mac out of memory and swap on 2026-11-09 and it panicked. Since then:
 
-- Run tests with `make test-all` (it claims its memory and waits its turn), or one module with `python3 kokopelli/ops/memguard.py run --name <what> --gb 2 -- .venv/bin/python -m unittest tests.test_x`. Never run `unittest` or `pytest` bare.
+- Run tests with `make test-all` (it claims its memory and waits its turn). It runs the tree with pytest: `.venv` with `-m "not py310"` (`main`, then `experiments` for benchmarks and commons in their own process), `simworld/.venv` with `-m py310`, one summary line each; `MAC=1` adds mac_server. For some files or tests, pass them to the same script: `tools/fable/test_all.sh tests/ops` or `tools/fable/test_all.sh tests/life/test_life_store.py`. Never run `unittest` or `pytest` bare.
+- Markers (`conftest.py`): `model` tests load Qwen or Cosmos and are skipped unless `RUN_MODEL_TESTS` is set; `slow` ones unless `RUN_LONG_TESTS` is set. Only set either for a job queued through `kokopelli/ops/gpu.py`.
 - Anything else heavy (whole-repo linters, `uv`, `npx`, builds) also goes through `kokopelli/ops/memguard.py run` with its peak in `--gb`. Model jobs go through `kokopelli/ops/gpu.py run --gb`.
 - Exit 75 from the guard means memory ran short. Wait and run it again later; don't retry in a loop and don't start a second copy.
 - Don't put a heavy command in the background and then start another. At most two guarded commands run at once.
 - `python3 kokopelli/ops/memguard.py status` prints memory, swap and who holds a claim. The overnight watchdog is `kokopelli/ops/memguard.py watch`.
-- Measured peaks: `tests` 1.3 GB (18.3 before P1-M; the real-model tests behind `RUN_MODEL_TESTS=1` peak at 17.3), `runtime` 0.7, `simworld` 0.3, `ops` 0.1, `benchmarks` 0.7.
+- Measured peaks: the whole `make test-all` 1.5 GB (2026-11-10; the `main` run is the largest; the real-model tests behind `RUN_MODEL_TESTS=1` peak at 17.3), `experiments` alone 0.7.

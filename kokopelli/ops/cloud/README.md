@@ -50,4 +50,4 @@ A PACE job doesn't take a turn on the Mac, so it never holds up the local line.
 
 - Panel: the dot next to the Mac/PACE switch turns green when PACE is set up and connected.
 - Terminal: `python3 -c "from cloud.pace import connection_state; print(connection_state())"` from the repo root.
-- Tests use a fake Slurm and never connect: `.venv/bin/python -m unittest tests.test_cloud_pace`.
+- Tests use a fake Slurm and never connect: `.venv/bin/python -m unittest tests.ops.test_cloud_pace`.

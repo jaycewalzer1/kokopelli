@@ -245,7 +245,7 @@ The job picks a free port, starts UE with `-RenderOffScreen`, waits for the Unre
 ## Test it here
 
 ```sh
-simworld/.venv/bin/python -W ignore -m unittest discover -s kokopelli/loop/tests -t . -p 'test_simworld*.py'
+simworld/.venv/bin/python -W ignore -m unittest discover -s tests/loop -t . -p 'test_simworld*.py'
 simworld/.venv/bin/python -W ignore -m tools.pace.wmloop_one_tick --fake --checklist
 ```
 
@@ -260,7 +260,7 @@ Latest results on the Mac, 2026-11-05:
 | Root `.venv`, Python 3.12, pure tests only | 35 tests, all passed |
 | Gate checklist on the fake | 31 pass, 0 fail, 3 to look at |
 
-**The fake server** (`kokopelli/loop/tests/fake_unrealcv.py`) speaks the real framing and binds only to 127.0.0.1. The commands it accepts are its `routes()` table, each citing the client line that sends it. Reply formats are inferred from how the client parses them, and its physics is invented. It deliberately models the worst plausible cases: a stop doesn't cancel a turn, and a camera rotation sticks.
+**The fake server** (`tests/loop/fake_unrealcv.py`) speaks the real framing and binds only to 127.0.0.1. The commands it accepts are its `routes()` table, each citing the client line that sends it. Reply formats are inferred from how the client parses them, and its physics is invented. It deliberately models the worst plausible cases: a stop doesn't cancel a turn, and a camera rotation sticks.
 
 ## Decisions for the owner
 

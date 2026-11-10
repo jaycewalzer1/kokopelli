@@ -85,7 +85,7 @@ def metrics(events, step_s=STEP_S):
 
 def bench_world(nav, folder, cast):
     import numpy as np  # noqa: F401  (test_city_lunch needs it importable)
-    from tests import test_city_lunch as tcl
+    from tests.agents import test_city_lunch as tcl
     from kokopelli.agents.live_wm import REACH_M
 
     class BenchWorld(tcl.FakeWorld):
@@ -142,7 +142,7 @@ class ParrotBrain:
         self.n = Counter()
 
     def ask(self, prompt, image):
-        from tests import test_city_lunch as tcl
+        from tests.agents import test_city_lunch as tcl
         name = re.match(r"You are (\w+)", prompt).group(1)
         other = "Iris" if name == "Mara" else "Mara"
         self.n[name] += 1
@@ -220,7 +220,7 @@ def run(argv=None):
     if a.brain == "qwen":
         brain = SeededQwen(a.weights, a.seed)
     elif a.brain == "scripted":
-        from tests import test_golden_lunch as tg
+        from tests.agents import test_golden_lunch as tg
         brain = tg.GoldenBrain()
     else:
         brain = ParrotBrain()

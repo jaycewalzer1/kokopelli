@@ -94,6 +94,6 @@ On SimWorld the null-agent comparison doesn't run yet, because replays drift by 
 ## Tests
 
 ```sh
-.venv/bin/python -W ignore -m unittest discover -s kokopelli/loop/tests -t . -p 'test_[!s]*.py'    # everything but SimWorld
-simworld/.venv/bin/python -W ignore -m unittest discover -s kokopelli/loop/tests -t . -p 'test_simworld*.py'   # those need unrealcv
+.venv/bin/python -W ignore -m unittest discover -s tests/loop -t . -p 'test_[!s]*.py'    # everything but SimWorld
+simworld/.venv/bin/python -W ignore -m unittest discover -s tests/loop -t . -p 'test_simworld*.py'   # those need unrealcv
 ```
