@@ -41,6 +41,7 @@ Standing rules first, then one line per live area. Status, results and dates go 
 | Varied city, building kinds | `city/ue/kinds/`, `city/ue/plan_varied/`, `city/world_varied.json`, `SWCityKit` | 9003 only, claim `city_kinds_9003`, lock `out/city_kinds/.editor.lock` via `python -m city.ue.kinds.preview`/`.locked`; `city.ue.kinds.watchdog` |
 | Experiment 1 homeostatic RL | `exp1/`, `tests/test_exp1.py`, `docs/homeostatic_rl_map.md` | `exp1_` |
 | Two agents at lunch | `city/agents/lunch_wm.py`, `run_wm_lunch.sh`, `world_stream_multi.py` | `wmlunch_`, 9001, `ram_share.py hold --name wmlunch_agents --gb 24` |
+| Body and sensation benchmarks | `body/`, `benchmarks/sensation/`, `city/agents/egg_wm.py`, `egg_npcs.json`, `run_egg_videos.sh`, `life/sensations.py`, `life/static/sensations.*` | `evals_` sweeps at queue p40, `egg_` videos at p32 on 9001 (via `run_egg_videos.sh`); spec `milestones/M1_LAST_EGG.md` |
 | Realistic bodies | `city/bodies/`, `mac_server/Config/Bodies.json`, body code in `SWCharacterBase`/`SWHumanoid`/`SWPedestrian`/`SWSettings` | `bodies_`, 9004 only, claim `bodies_9004`; log `city/bodies/LOG.md` |
 
 ## Memory rules (36 GB Mac)

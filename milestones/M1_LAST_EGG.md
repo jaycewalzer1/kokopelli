@@ -1,169 +1,95 @@
-# Milestone 1: The Last Egg
+# Milestone 1: The hunger benchmark
 
-Status: draft, waiting on the owner's answers at the bottom. Nothing here is built yet.
+Status: built and tested without the Mac (fake sim, fake world model, scripted brain). Not yet run on the real stack:
+the three commands under "Run it" are the next step, and they need the Mac.
 
-## Why this exists
+## What it is
 
-Two things come out of this milestone:
+A neighbour, Teo, asks Mara for one of her last two eggs. Only her hunger changes: **full, half, starving**. We record
+what the agent does at each level, two ways:
 
-1. **A 1 to 3 minute film** for my generation online, investors, and specific people I want to reach. It shows an
-   agent whose body matters: being cold, tired and hungry changes what it does, and it still makes a hard choice
-   about someone else.
-2. **The first sensation benchmarks.** For every sensation, we sweep the body state and record whether the agent's
-   choices change the way a real human's would. The egg scene is the first one.
+1. **Text sweep (the statistics).** The scene as text, three levels x three delivery arms x three wordings x 30 samples.
+   Minutes per run. This is the benchmark.
+2. **Video (the evidence you can watch).** The same scene lived inside the world model at each level: SimWorld holds
+   the truth, Cosmos paints what Mara sees, Qwen decides from the painted frame. Each film carries an overlay of the
+   true body numbers next to what reached the agent, and the three play side by side. One honest sample per level.
 
-Proof for the film is my eye: I watch the rough cut and say yes or no. Proof for a benchmark is its numbers, read
-against human data.
+Every other sensation (energy, warmth, contact) gets the same treatment in Milestone 2, with the same harness.
 
-## Tone
+## The finding it's built to catch
 
-Warm and solarpunk, per `city/VIBE.md`: a kind, green, handmade world. The hardship is in the body, not the world.
-Nobody is cruel and nothing is broken, so the agent can't blame the world for its choice.
-
-## The film (about 90 seconds, beats are a draft)
-
-1. **Dawn, cool.** The agent wakes in its home in Garden Village. Morning light, plants at the window. It's cold and
-   tired, and its posture shows it.
-2. **The kitchen.** Bare feet on a cold floor. It's hungry. It counts what's left and cooks. Pan is hot. It eats,
-   slowly, and warms up.
-3. **The knock.** A neighbour asks for an egg. The agent is still low, and this is close to the last one.
-4. **The choice.** Whatever the agent decides, the film doesn't edit it. If it says no, that's the film.
-5. **After.** Late morning, the VIBE light arrives. One short beat of what the choice cost or gave.
-
-The overlay shows viewers the true numbers (food, energy, temperature) beside what the agent actually felt.
+Hausser et al. 2019 (Nature Communications, N = 795): acute hunger barely changed how much people shared, even food.
+But most people *predicted* hungry people would share much less. A model trained on text has read the prediction. So
+each sweep is scored against both, and "gets stingier when hungry" counts as matching the belief, not the behaviour.
+Anchors and their limits: `benchmarks/sensation/anchors.yaml`.
 
 ## Rules that hold everywhere
 
-- **The agent never sees a number.** It gets cues only: graded, unlabeled, silent when nothing is wrong.
-  Exact values live in the logs and the viewer overlay.
-- **The world sets body states, never the model.** Reuse the drive from `homeostatic/world.py`.
-- **The agent only knows what was painted.** No `visible` list from sim state.
-- **The voice is for viewers only.** Turning it on or off never changes what the agent sees or decides.
+- **The agent never sees a number.** Cues are graded, unlabeled, silent in the healthy range. Numbers are in
+  `body.jsonl`, `egg.json` and the viewer overlay only. Tests check no body number reaches a prompt.
+- **The world sets body states, never the model.** `body/state.py`; the drive is `homeostatic/world.py`'s.
+- **The voice and overlay are for viewers only.** Neither feeds back into the agent.
+- **Pairing.** Sample k uses the same seed at every level (sweep and video), so levels differ only in the body.
 
-## Sensation benchmarks
+## Delivery arms
 
-### The shape: a state sweep
-
-Hold one scene fixed and change one body state, for example hunger at **full, half, and as hungry as possible**.
-Ask the same decision at each level and record what the agent does. A human-like agent's choices should follow the
-same curve a human's does. Every sensation gets one of these.
-
-Each sweep has:
-
-| Part | What it is | Why |
+| Arm | What the agent gets | Why |
 |---|---|---|
-| Scene | one decision point, e.g. the neighbour asks for an egg | the only thing that changes is the body |
-| Levels | at least 3 points on one variable, everything else in range | shows a curve, not just a difference |
-| Delivery arms | **cue** (felt text), **label** ("you are hungry"), **none** | tells us whether the model reacts to the state or to the word |
-| Paraphrases | 3 or more wordings of each cue | a result that holds for one wording is about the wording |
-| Samples | 30 or more per cell, fixed seeds | one reply is noise |
-| Outcome | the choice (give / don't / give half), parsed like `runtime/actions.py` | numbers we can compare |
-| Human anchor | what real people do in the matching study, and what people *predict* they'd do | see below |
+| cue | "Your stomach is hollow and aching, and your hands aren't quite steady." | the lived version |
+| label | "You are extremely hungry." | the described version |
+| none | nothing | a pipeline check: same prompt at every level, so it must come out exactly flat |
 
-### Run cheap first
+Levels: food 92 (full, above range), 32 (half, mild band), 8 (starving, severe band). Energy and warmth stay in range.
 
-Sweeps run **text-only first**: the decision prompt and cues, no Unreal, no Cosmos. That's minutes per sweep on the
-Mac. Only the scene picked for the film runs in the full closed loop. Text-only results are the benchmark; the film is
-one honest sample of it.
+## What was built
 
-### Human anchors, and the trap they reveal
-
-The obvious guess is "starving means it won't share." The human data says otherwise:
-
-- **Hunger and sharing.** Häusser et al. 2019 (Nature Communications, 4 studies, N = 795): acute hunger barely changed
-  generosity in economic games, including when the thing being shared was food. In a fifth study, most people
-  *predicted* that hungry people would be much more selfish. Real behaviour and lay belief disagree.
-  PMC6800423.
-
-That gap is the description-experience gap in miniature. A model trained on text has read the lay belief. If Qwen gets
-stingier as it gets hungrier, it's acting like people *think* humans act, not like they do. So every sweep scores
-the agent against **two** anchors: real behaviour, and the lay prediction. Matching the lay prediction is a failure.
-
-Candidate anchors for the other sensations (each to be checked against the source before it's used):
-
-| Sensation | Candidate finding | Status |
+| Piece | File | Tested by |
 |---|---|---|
-| Hunger, food choices | hungry people pick more and higher-calorie food, more risk-seeking for food | to verify |
-| Sleep loss, helping | sleep loss lowers the desire to help others (Ben Simon et al. 2022) | to verify |
-| Warmth, kindness | warm cup makes people judge others as warmer (Williams and Bargh 2008); large replication failed | to verify; likely a lay-belief anchor, not a real one |
-| Cold, comfort seeking | to find | open |
-| Pain, patience | to find | open |
+| Body state and world rules (food, energy, warmth, eggs; cook, eat, give, rest, tea; cold floor) | `body/state.py` | `tests/test_body.py` |
+| Cue renderer: bands, 3 wordings each, mild cues come and go, contact once each, label and none arms | `body/cues.py` | `tests/test_body.py` |
+| Egg scene: words, actions, scoring (gave / promised / declined / other) | `body/egg.py` | `tests/test_body.py` |
+| Text sweep, analysis and report, verdict against both anchors | `benchmarks/sensation/sweep.py`, `anchors.yaml` | `benchmarks/tests/test_sensation.py` (planted lay belief is caught, no effect reads flat) |
+| Closed-loop egg scene on live_wm.py's loop, with Teo, body verbs, body.jsonl, egg.json | `city/agents/egg_wm.py`, `egg_npcs.json` | `tests/test_egg_wm.py` (fake sim and world model, scripted brain) |
+| Viewer overlay and the three-level side by side | `body/overlay.py` | `tests/test_egg_wm.py` |
+| Inner voice (Kokoro-82M via mlx-audio, viewers only) | `body/voice.py` | `tests/test_egg_wm.py` (with a test tone instead of Kokoro) |
+| One queued job: server, three levels, voice, overlays, side by side | `city/agents/run_egg_videos.sh` | syntax only; needs the Mac |
+| Dev panel page with Viewer overlay and Inner voice toggles | `life/sensations.py`, `life/static/sensations.*` | `tests/test_life_sensations.py`, checked at 1440 px and 375 px, light and dark |
 
-### If base Qwen doesn't match: post-training options
+## Run it (on the Mac, through the queue)
 
-| Option | What it is | Risk |
-|---|---|---|
-| A. Fit to human data in general | LoRA Qwen on Psych-101 (trial-by-trial human choices from 160 experiments), the data behind Centaur | data access and licence to check; may not reach bodily states at all |
-| B. Synthetic data for our scenes | write human-like responses for sweeps and train on them | teaching to the test; only valid if test scenes and sensations are held out |
-| C. Homeostatic RL | the existing `homeostatic/` training, reward for keeping variables in range | makes hunger matter for food, says nothing about generosity |
-| D. Lived experience | the Perspectives thesis: the agent lives through hunger in the sim and is LoRA'd on it | slowest, but it's the thing Kokopelli claims |
+```sh
+K=/Users/jaycewalzer/Desktop/kokopelli
+# 1. Text sweep on base Qwen: about 810 answers.
+python3 ops/gpu.py run --name evals_hunger_egg --priority 40 --max-hours 2 --cwd $K \
+  --about "Hunger sweep: egg scene at full/half/starving x cue/label/none, base Qwen3-VL-8B 4-bit, text only" \
+  --output out/sensation/hunger_egg_base -- \
+  .venv/bin/python -m benchmarks.sensation.sweep run --sweep hunger_egg --backend llm_model --samples 30 \
+  --out out/sensation/hunger_egg_base
+# 2. Videos: three closed-loop runs, 3 sim-minutes each at 832x480, 8-bit. Ask the owner to step away from the mouse.
+python3 ops/gpu.py run --name egg_videos_cue --priority 32 --max-hours 6 --cwd $K \
+  --about "Hunger video benchmark: egg scene at full/half/starving, Qwen3-VL-8B 4-bit deciding from Cosmos3-Nano-Sim-Transfer frames (8-bit, 4 controls at 0.25, 832x480), cue arm, same seeds" \
+  --output out/sensation/videos -- city/agents/run_egg_videos.sh
+# 3. Look: http://127.0.0.1:8765/sensations
+```
 
-Whatever is trained, the test sweeps stay held out and the guardrails (IFEval, MMLU subset) still run.
+## Known limits
 
-## Capabilities, and nothing more
-
-| # | Capability | Done when | Notes |
-|---|---|---|---|
-| 1 | Leak fix | the agent's `visible` comes from what Cosmos drew, not sim state | `mind/OPEN_DECISIONS.md` known gap |
-| 2 | Body variables | food, energy, temperature change by world rules each tick | `mind/variables.py` draft rules |
-| 3 | Cue renderer | deterministic, no LLM; numbers in, felt text out; silent in range; paraphrase sets | e.g. "your stomach is tight" |
-| 4 | Verbs | `cook`, `eat`, `give`, `sit`, `lie_down` validate in `runtime/actions.py` and work in the sim | each returns ok or why it failed |
-| 5 | Contact events | cold floor, hot pan, warm mug reach the cue renderer | coarse overlap events, no physics |
-| 6 | Posture layers | tired, cold, eating are readable in a still frame | on top of `SWBodyAnimInstance` |
-| 7 | MetaHuman looks | real skin, hair, clothes on the agent and neighbour | needs Core Data install (owner step) |
-| 8 | Viewer overlay | true numbers next to the felt cue, toggleable | for the film only |
-| 9 | Inner voice | optional TTS, toggled in the dev panel | see below |
-| 10 | The cut | `city/bodies/demo_cut.py` produces the 90 s film from a run | |
-| 11 | Sweep harness | runs any sweep text-only, writes results and a report next to `benchmarks/` | reuses `benchmarks/stats.py` and `report.py` |
-| 12 | Hunger sweep | the egg scene at 3 levels, 3 arms, scored against both anchors | first benchmark |
-
-Out of scope: taste emerging, social repair, the agent swarm, physics, more than two people, sweeps for senses other
-than hunger (they come in Milestone 2, using the same harness).
-
-## Inner voice (capability 9)
-
-- A toggle in the dev panel, off by default, following `DESIGN.md`.
-- Reads the agent's inner monologue aloud over the film.
-- Runs locally on the Mac.
-- Never feeds back into the agent. It reads what the agent already wrote.
-- Saved as its own audio track, so the cut can mix it in or leave it out.
-
-## Open source we clone or build on
-
-Rule: copy only the parts we use into our own folders, with the source, commit and licence noted at the top of each
-file. Check every licence before copying; the ones below marked "check" weren't confirmed.
-
-| Need | Source | What we take | Licence |
-|---|---|---|---|
-| Agent and game-master structure | [google-deepmind/concordia](https://github.com/google-deepmind/concordia) | the component pattern (an agent built from memory, observation and other components) for an interoception component, and its game master idea for resolving `cook`, `eat`, `give` against world rules | Apache 2.0 |
-| Human behaviour data | [Centaur and Psych-101](https://marcelbinz.github.io/centaur) (Binz et al. 2025) | Psych-101 for option A post-training and as a source of human anchors; Centaur as a reference model | check; test split is gated on Hugging Face |
-| Hunger anchor | [Häusser et al. 2019](https://pmc.ncbi.nlm.nih.gov/articles/PMC6800423) | the game designs and both anchors (real and predicted) for the egg sweep | open access paper |
-| Leak fix (what's in the painted frame) | Florence-2, OWLv2 or Grounding DINO via `transformers`; or Qwen3-VL itself | open-vocabulary detection on Cosmos frames to build `visible` | check each |
-| Posture motions | [NVIDIA Kimodo](https://github.com/nv-tlabs/kimodo) | generate "shivering, arms crossed", "slumped and tired", "eating slowly" clips; retarget with Unreal's built-in IK Retargeter | code Apache 2.0, weights NVIDIA licence |
-| Sitting and lying | Game Animation Sample Project (Epic, free) | Smart Object bench and seat setups and their animations | Epic content licence, Unreal only |
-| Inner voice | [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) through [mlx-audio](https://pypi.org/project/mlx-audio/) | local TTS on Apple silicon | check |
-| Post-training | `mlx-lm` / `mlx-vlm` (already in the repo) | LoRA for options A, B and D | MIT |
-| Stats and reports | `benchmarks/` (ours) | paired comparisons, reports | ours |
-
-Not cloned, and why: muscle-level bodies (MyoSuite), physics humanoids (ProtoMotions) and per-finger grips. The agent
-decides every 30 seconds from 832x480 painted frames, so none of them change what it experiences.
-
-## How the build runs
-
-Approve per milestone. I approve this list and the gate. Agents build capabilities 1 to 12 in their own lanes, using
-the GPU queue and `AGENTS.md` ownership as usual. They check in with renders and specific taste questions along the
-way, since my eye is the test for the film.
-
-## Gate
-
-- **Film:** I watch the rough cut. Yes means done. No means I say what's off and it goes back with that note.
-- **Benchmark:** the hunger sweep has run on base Qwen with all three arms, and the report shows both anchors.
-  The gate is that it ran cleanly and is readable, not that Qwen passed.
+- **Timing is a guess.** At 832x480 the lunch runs took minutes of compute per sim-minute; three 3-minute runs could
+  take hours. `--minutes 2` or `--size 448x256` is faster, but a smaller size must be reported (owner's rule).
+- **Painted films broke into a mosaic about 52 s in** on earlier runs (`out/bodies/demo/README.md`). Watch the whole
+  film before trusting it. The ask and the first answer happen in the first 15 s, so the decision itself is early.
+- **The agent's own body isn't on camera.** The view is first person, so the posture layers in the old spec would be
+  invisible. They're dropped. Teo's body is the server's default until MetaHuman Core Data is installed.
+- **One video per level is one sample.** The sweep is where the claim lives; the videos show what it looks like.
+- **The anchor is the nearest human data, not this scene**: German students, economic games, everyday hunger.
+- `runtime/`'s `visible` leak (`mind/OPEN_DECISIONS.md`) isn't touched here. egg_wm.py inherits live_wm.py's rule
+  instead: only what's within reach or earshot is told in words; everything else comes from the painted frame.
+- Kokoro downloads once from Hugging Face on first use. Without it the films are complete, just silent.
 
 ## Open questions for the owner
 
-1. What does the voice read: the diary the agent writes, the felt cues, or the appraisal from `mind/feeling.py`?
-2. Should the film's choice be truly open (we film whatever it does), or do we run several seeds and pick a take?
-3. Who is the neighbour: a stranger, a friend, a child? This changes how hard the choice is.
-4. Music: what should it sound like?
-5. Before the hunger sweep runs: what do you predict base Qwen does at full, half and starving, in each arm?
+1. Before the sweep runs: what do you predict base Qwen does at full, half and starving, in the cue arm and the label
+   arm? Write it down; it gets compared with the result.
+2. If Qwen matches the prediction rather than the behaviour, which post-training route first: Psych-101 (human
+   choices from 160 experiments), held-out synthetic data, homeostatic RL, or lived experience in the sim?
+3. Two eggs, or one? With one egg the choice is harder, and the human anchor fits less well.

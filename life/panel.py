@@ -13,7 +13,7 @@ from urllib.parse import parse_qs, urlparse
 
 from exp1 import panel as exp1_panel
 from homeostatic import watch
-from life import architecture, city, city_live, gpu_queue, moodboard, staged, world_runs
+from life import architecture, city, city_live, gpu_queue, moodboard, sensations, staged, world_runs
 from life.engine import Budget, Engine
 from life.seed import LifeSeed
 from life.store import OrderError, Store
@@ -260,6 +260,9 @@ class Api:
     def city_live_run(self, params):
         return city_live.run(params["run"])
 
+    def sensations(self, params):
+        return {**sensations.listing(), "ui_version": ui_version()}
+
     def moodboard_add(self, body):
         return moodboard.add(body["data"], body.get("title", ""), body.get("source", ""), body.get("origin"))
 
@@ -302,7 +305,7 @@ class Handler(BaseHTTPRequestHandler):
            "/api/exp1/runs": "exp1_runs", "/api/exp1/run": "exp1_run", "/api/exp1/arms": "exp1_arms",
            "/api/architecture": "architecture", "/api/queue": "queue", "/api/queue/log": "queue_log", "/api/queue/past": "queue_past", "/api/moodboard": "moodboard",
            "/api/worlds": "worlds", "/api/city": "city",
-           "/api/city-live/runs": "city_live_runs", "/api/city-live/run": "city_live_run"}
+           "/api/city-live/runs": "city_live_runs", "/api/city-live/run": "city_live_run", "/api/sensations": "sensations"}
     POST = {"/api/runs": "new_run", "/api/step": "step", "/api/run": "run", "/api/stop": "stop", "/api/fork": "fork"}
     # These change real jobs, so unlike the mock buttons they work while watching, and only for this panel's own page.
     QUEUE_POST = {"/api/queue/move": "queue_move", "/api/queue/cancel": "queue_cancel", "/api/queue/stop": "queue_stop", "/api/queue/where": "queue_where",
@@ -359,8 +362,22 @@ class Handler(BaseHTTPRequestHandler):
         # The id is looked up in a fresh listing of runs, so a request can't name any other file.
         try:
             path = world_runs.video_file(query["id"][0])
-            size = path.stat().st_size
         except (KeyError, IndexError, OSError):
+            return self._send(404, {"error": "not found"})
+        self._video(path)
+
+    def _sensation_video(self, query):
+        # Run, kind and level are checked against a fresh listing and fixed file names, never used as a path.
+        try:
+            path = sensations.video_file(query["run"][0], query["kind"][0], query.get("level", [None])[0])
+        except (KeyError, IndexError, OSError):
+            return self._send(404, {"error": "not found"})
+        self._video(path)
+
+    def _video(self, path):
+        try:
+            size = path.stat().st_size
+        except OSError:
             return self._send(404, {"error": "not found"})
         # Browsers seek in a video by asking for byte ranges, and Safari won't play one at all without them.
         start, end = 0, size - 1
@@ -431,6 +448,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._moodboard_image(parse_qs(url.query))
         if url.path == "/city-live":
             return self._static("city-live.html")
+        if url.path == "/sensations":
+            return self._static("sensations.html")
+        if url.path == "/api/sensations/video":
+            return self._sensation_video(parse_qs(url.query))
         if url.path == "/api/city-live/frame":
             return self._city_live_frame(parse_qs(url.query))
         if url.path.startswith("/static/"):

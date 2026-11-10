@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sensations</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="/static/design.css">
+<link rel="stylesheet" href="/static/panel.css">
+<link rel="stylesheet" href="/static/sensations.css">
+</head>
+<body>
+<nav class="sidebar" aria-label="Views">
+  <div class="wordmark">Kokopelli</div>
+  <a href="/">Life generator</a>
+  <a href="/training">Homeostatic training</a>
+  <a href="/architecture">System architecture</a>
+  <a href="/queue">GPU queue</a>
+  <a href="/worlds">Model runs</a>
+  <a href="/moodboard">City moodboard</a>
+  <a href="/city-live">Watch the agent</a>
+  <a href="/sensations" aria-current="page">Sensations</a>
+</nav>
+<div class="view">
+<header>
+  <div class="brand">Sensations</div>
+  <div id="status-line" role="status"><i></i><span id="status-text">Loading</span></div>
+</header>
+<main class="sens">
+  <section class="intro" aria-label="Summary">
+    <p class="eyebrow">Hunger benchmark</p>
+    <p class="headline">Does the body change the choice?</p>
+    <p class="meta">A neighbour asks for one of Mara's last two eggs. Only her hunger changes: full, half, starving. People
+      share about the same when hungry, but most predict they wouldn't. Which one does the agent match?</p>
+  </section>
+
+  <section aria-labelledby="videos-title">
+    <div class="eyebrow ruled section-head"><span id="videos-title">Videos, decided from painted frames</span>
+      <label class="pick">Run <select id="video-run"></select></label></div>
+    <div class="toggles" role="group" aria-label="What the videos show">
+      <button type="button" id="toggle-overlay" aria-pressed="true">Viewer overlay</button>
+      <button type="button" id="toggle-voice" aria-pressed="false">Inner voice</button>
+      <span class="meta" id="toggle-note"></span>
+    </div>
+    <div id="triptych"></div>
+    <div class="levels" id="levels"></div>
+  </section>
+
+  <section aria-labelledby="sweeps-title">
+    <p class="eyebrow ruled" id="sweeps-title">Text sweeps, the statistics</p>
+    <div id="sweeps"></div>
+  </section>
+</main>
+</div>
+<script type="module" src="/static/sensations.js"></script>
+</body>
+</html>

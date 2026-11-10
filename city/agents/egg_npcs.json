@@ -1,0 +1,25 @@
+{
+ "about": "The egg scene's one resident (city/agents/egg_wm.py). Teo waits at the Fern Common House kitchen door; what he says about the egg comes from body/egg.py, these lines cover everything else.",
+ "npcs": [
+  {
+   "id": "teo",
+   "body": "kai",
+   "name": "Teo",
+   "role": "your neighbour from two doors down",
+   "stay_at": "fern_common",
+   "greeting": [
+    "Morning, Mara!"
+   ],
+   "topics": {
+    "market|square|ten": "The market's not open till ten, I checked on my way over.",
+    "breakfast|cook|cooking": "Just eggs and toast. Nothing fancy, the kids are still asleep.",
+    "bread|bakery": "I'm heading to Rise later. I can grab you a loaf."
+   },
+   "fallback": [
+    "Mm, yeah.",
+    "Ha, fair.",
+    "Sure, sure."
+   ]
+  }
+ ]
+}
