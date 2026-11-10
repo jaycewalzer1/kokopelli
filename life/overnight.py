@@ -14,7 +14,7 @@ from life.panel import seed_from
 from life.report import write_report
 from life.store import Store
 from life.windows import _birthday, children, life_window
-from settings import LIFE_TRIAL, LIFE_TRIAL_SEEDS, ROOT
+from core.settings import LIFE_TRIAL, LIFE_TRIAL_SEEDS, ROOT
 
 OUT = ROOT / "out" / "overnight"
 NO_CALL_LIMIT = 10 ** 9

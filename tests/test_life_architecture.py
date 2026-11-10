@@ -90,7 +90,7 @@ class CatalogTest(unittest.TestCase):
     def test_the_claims_most_likely_to_go_stale_still_hold(self):
         with self.assertRaises(NotImplementedError):
             LLMAgent().choose({})
-        python_files = [*ROOT.glob("*.py"), *ROOT.glob("life/*.py"), *ROOT.glob("homeostatic/*.py")]
+        python_files = [*ROOT.glob("*.py"), *ROOT.glob("core/*.py"), *ROOT.glob("life/*.py"), *ROOT.glob("homeostatic/*.py")]
         python_files = [path for path in python_files if path.name != "architecture.py"]
         source = "\n".join(path.read_text() for path in python_files)
         self.assertNotIn("import simworld", source)

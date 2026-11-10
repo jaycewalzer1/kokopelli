@@ -11,7 +11,7 @@ import sys
 import time
 from pathlib import Path
 
-from settings import GPU_QUEUE_SCRIPT, STAGED_JOBS
+from core.settings import GPU_QUEUE_SCRIPT, STAGED_JOBS
 
 FIELDS = ("name", "priority", "max_hours", "cwd", "about", "outputs", "command")
 LAUNCH_CHECK_SECONDS = 1.0

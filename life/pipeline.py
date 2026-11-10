@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 
 from homeostatic import watch
-from settings import HOMEOSTATIC_OUT, PIPELINE_PATHS
+from core.settings import HOMEOSTATIC_OUT, PIPELINE_PATHS
 
 # A process that has written nothing for this long isn't called moving, even while it's alive.
 STALL_SECONDS = 15 * 60

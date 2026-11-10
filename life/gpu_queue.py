@@ -24,7 +24,7 @@ import time
 from pathlib import Path
 
 from life.pipeline import ledger_jobs, option, outside_jobs, process_table, read_rows, read_tickets, safely
-from settings import GPU_QUEUE_SCRIPT, PIPELINE_PATHS, ROOT
+from core.settings import GPU_QUEUE_SCRIPT, PIPELINE_PATHS, ROOT
 
 sys.path.insert(0, str(ROOT))
 from cloud import pace  # noqa: E402

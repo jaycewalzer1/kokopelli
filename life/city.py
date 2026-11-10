@@ -3,7 +3,7 @@ A check never changes the world. It lists what looks inconsistent, for a person 
 import json
 from pathlib import Path
 
-from settings import ROOT
+from core.settings import ROOT
 
 WORLD = ROOT / "city" / "world.json"
 # The narrowest lane two people walking and one bike can pass in.
