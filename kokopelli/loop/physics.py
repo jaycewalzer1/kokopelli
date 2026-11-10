@@ -149,7 +149,7 @@ class PhysicalState(_Model):
         return self.model_dump_json()
 
     @classmethod
-    def from_json(cls, text: str) -> "PhysicalState":
+    def from_json(cls, text: str) -> PhysicalState:
         return cls.model_validate_json(text)
 
     def to_prompt_text(self) -> str:
@@ -290,7 +290,7 @@ class SimCheckpoint(_Model):
         return path
 
     @classmethod
-    def load(cls, path: str | Path) -> "SimCheckpoint":
+    def load(cls, path: str | Path) -> SimCheckpoint:
         return cls.model_validate_json(Path(path).read_text())
 
 
