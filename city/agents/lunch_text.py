@@ -88,9 +88,13 @@ def people(args, nav):
     args.meet_name = meet
     sit_m = MARA_SITUATION.replace("The Kettle (kettle_cafe)", f"{meet} ({args.meet})")
     sit_i = IRIS_SITUATION.replace("The Kettle (kettle_cafe)", f"{meet} ({args.meet})")
-    args.first = {"id": "mara", "name": "Mara", "who": live.DEFAULT_WHO, "situation": sit_m,
+    who_m, who_i = live.DEFAULT_WHO, IRIS_WHO
+    if getattr(args, "life", None):   # --life (lunch_life.py): add each person's generated past under the persona
+        from lunch_life import with_past
+        who_m, who_i = with_past(who_m, args.life, "mara"), with_past(who_i, args.life, "iris")
+    args.first = {"id": "mara", "name": "Mara", "who": who_m, "situation": sit_m,
                   "start_note": "You just stepped out of the Fern Common House."}
-    args.second = {"id": "iris", "name": "Iris", "who": IRIS_WHO, "situation": sit_i,
+    args.second = {"id": "iris", "name": "Iris", "who": who_i, "situation": sit_i,
                    "start_note": "You just stepped out of Rise Bakery with a loaf under your arm."}
 
 

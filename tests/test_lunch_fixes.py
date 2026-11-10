@@ -42,6 +42,23 @@ class HelpersTest(unittest.TestCase):
         self.assertIn(lt.LOOKS["ana"], p["mara"])
         self.assertIn(lt.LOOKS["ana"], p["iris"])
 
+    def test_life_switch_adds_the_generated_past_under_the_persona(self):
+        import lunch_life
+        tmp = Path(tempfile.mkdtemp(prefix="test_lunch_life_"))
+        try:
+            db = tmp / "life.db"
+            lunch_life.generate(db, mock=True)
+            nav = lw.NavMap()
+            off, on = lw.build_args([]), lw.build_args(["--life", str(db)])
+            lw.people(off, nav)
+            lw.people(on, nav)
+            self.assertNotIn("Where you come from", off.first["who"])
+            self.assertTrue(on.first["who"].startswith(off.first["who"]))
+            self.assertIn("Where you come from", on.second["who"])
+            self.assertLessEqual(len(on.first["who"]) - len(off.first["who"]), lunch_life.PAST_CHARS + 2)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
     def test_parse_fixes(self):
         self.assertEqual(fx.parse_fixes("all"), set(fx.FIXES))
         self.assertEqual(fx.parse_fixes("memory, loops"), {"memory", "loops"})

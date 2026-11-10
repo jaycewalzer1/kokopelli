@@ -478,6 +478,7 @@ def build_args(argv=None):
     ap.add_argument("--out", help="run folder (default out/city_agents/<stamp>_lunch)")
     ap.add_argument("--fixes", default="", help=f"behavior fixes, comma-separated, off by default: {','.join(fx.FIXES)} or all "
                                                 "(city/agents/lunch_fixes.py)")
+    ap.add_argument("--life", help="a lunch_life.py database: each person also knows their generated past (off by default)")
     ap.add_argument("--view-prompts", action="store_true",
                     help="one world-model prompt per view for Fern Court, each person described the same in both (lunch_text.py)")
     ap.add_argument("--decide-on-change", action="store_true",
