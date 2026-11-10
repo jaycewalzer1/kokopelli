@@ -191,3 +191,30 @@ the phases that don't move files are deferred.
 - **PACE:** the cluster checkout must be updated before the next job. Scripts are now `tools/pace/...`
   (`tools/pace/evals/` for benchmarks), modules are `kokopelli.loop.*` and `experiments.benchmarks.*`.
 - **Not pushed.**
+
+## Phase 9: documents (merge 3773f0b, 2026-11-10)
+
+Run by a subagent in its own worktree (branch `reorg/9-docs`), in parallel with phases 3, 7 and 8 at the owner's request.
+Merged first because it finished first.
+
+- Package READMEs in `kokopelli/{wm,mind,agents,life,ops}` (loop already had one) and one per experiment.
+- Dated fable logs, briefs and handoffs moved to `docs/log/<area>/<date>-<name>.md` with every reference updated.
+  Files cited by code or reports stayed (`experiments/benchmarks/HANDOFF.md`, `experiments/homeostatic/HANDOFF.md`,
+  `tools/bodies/PLAN.md`, `kokopelli/loop/HANDOFF.md`, `kokopelli/ops/plans/COST_AND_LIFE_PLAN.md`, `docs/exp1_*`).
+- `docs/`, the top README, AGENTS.md (Memory rules untouched) and the skills rewritten for the new layout.
+- Architecture table lists loop/benchmark files at their paths in this checkout instead of in the old worktrees.
+- Tracked Markdown outside docs/log, simworld, mac_server, vendor: 75 -> 59, each linked from a README.
+- Checks on main after the merge: tests 600 (10 skipped, 2 expected failures), runtime 100, simworld 197, ops 35,
+  benchmarks 198 (1 skipped), commons 62; peak 1.2 GB. Smoke 96 / 29 / 10 ok, 0 failures. ruff 0.11.4 clean.
+
+Left alone, on purpose:
+- `PIPELINE_PATHS` in settings, `kokopelli/life/pipeline.py`, `kokopelli/ops/status.py`, `kokopelli/agents/live.py:31`
+  and `kokopelli/mind/change_check.py:25` still read the old worktrees. Repointing them is a behavior change.
+- The old worktrees hold untracked data found nowhere else: `wm-agent-loop/runs/` (161 MB, 15 agent-loop runs read
+  by the Pipeline and Model runs views and `change_check.py`), `agent-a2d4c0a770bb9b339/benchmarks/results/` (2.4 MB
+  noise-check results the benchmarks HANDOFF cites), `commons/runs/commons/` (about 10 MB of raw game logs).
+  Do not remove those worktrees before that data is copied somewhere the code reads.
+
+Found, not fixed by phase 9 (fast-pass path bugs):
+- `experiments/wm_multicontrol/run_a.sh` sets `K=$(dirname $0)/..`, now `experiments/`, not the repo root.
+- `experiments/filter_test/scripts/queue_all.sh` changes to `$(dirname $0)/../..`, also `experiments/`.
