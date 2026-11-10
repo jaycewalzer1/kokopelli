@@ -37,8 +37,12 @@ HINTS = ("blur", "seg", "depth", "edge")
 class MultiWorldStream:
     """Agent-side handle to one worker holding many streams. Each call is one JSON line to the worker and one back."""
 
-    def __init__(self, out_dir=None, quantize=None, fake=False):
+    def __init__(self, out_dir=None, quantize=None, fake=False, check=None):
         self.dir = Path(out_dir or tempfile.mkdtemp(prefix="world_stream_multi_"))
+        # Video check on every push (core/video_check.py): "stop" raises after 3 bad pushes in a row, "warn" only
+        # records them in check.json, "off" skips it. The fake painter is not a painting, so it is off there by default.
+        self.check = os.environ.get("KOKO_VIDEO_CHECK") or check or ("off" if fake else "stop")
+        self.checks = {}
         self.dir.mkdir(parents=True, exist_ok=True)
         self.k = 0
         self.fake = fake
@@ -86,10 +90,25 @@ class MultiWorldStream:
                 Path(p).unlink(missing_ok=True)
         self.last[stream] = reply
         if not reply["frames"]:
-            return np.zeros((0,) + controls[next(iter(controls))].shape[1:], np.uint8)
-        out = np.load(reply["out"])
-        Path(reply["out"]).unlink(missing_ok=True)
+            out = np.zeros((0,) + controls[next(iter(controls))].shape[1:], np.uint8)
+        else:
+            out = np.load(reply["out"])
+            Path(reply["out"]).unlink(missing_ok=True)
+        self._check(stream, out, controls.get("blur"))
         return out
+
+    def _check(self, stream, painted, blur):
+        """Judge this push for mosaic and drift against the blur control; record every stream in check.json."""
+        if self.check == "off":
+            return
+        from core.video_check import RunCheck
+        rc = self.checks.setdefault(stream, RunCheck(None, stream))
+        rc.feed(painted, blur)
+        record = {name: c.record() for name, c in self.checks.items()}
+        (self.dir / "check.json").write_text(json.dumps({"mode": self.check, "failed": any(r["failed"] for r in record.values()),
+                                                         "streams": record}, indent=1))
+        if rc.failed and self.check == "stop":
+            raise RuntimeError(f"video check failed for {stream}: {rc.reason}; see {self.dir / 'check.json'}")
 
     def release(self):
         return self._call(cmd="release")
