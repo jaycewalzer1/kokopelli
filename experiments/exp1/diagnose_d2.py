@@ -145,7 +145,7 @@ def attributed_step(sleeper, rows, probe):
     mx.eval(denom)
 
     def effect(tree):
-        return sum(float((df[k] * (-lr * (1 - b1) * clip * tree[k] / denom[k])).sum()) for k in df)
+        return sum(float((df[k] * (-lr * (1 - b1) * clip * tree[k] / denom[k])).sum()) for k in df)  # noqa: F821 -- pyflakes sees the later `del denom`; this is only called before it
 
     momentum = sum(float((df[k] * (-lr * b1 * state[f"{k}.m"] / denom[k])).sum()) for k in df)
     transitions = [{"day": row["day"], "decision": row["decision"], "choice": row["choice"], "outcome": row["outcome_label"], "advantage": row["advantage"],

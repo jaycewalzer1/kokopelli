@@ -51,7 +51,7 @@ def shares_step(sleeper, rows):
     mx.eval(denom)
 
     def against_net(tree):
-        return sum(float((clip * total[k] / denom[k] * (clip * tree[k] / denom[k])).sum()) for k in total)
+        return sum(float((clip * total[k] / denom[k] * (clip * tree[k] / denom[k])).sum()) for k in total)  # noqa: F821 -- pyflakes sees the later `del total, denom`; this is only called before it
 
     net = against_net(total) or 1.0
     transitions = [{"day": row["day"], "decision": row["decision"], "choice": row["choice"], "outcome": row["outcome_label"], "advantage": row["advantage"],

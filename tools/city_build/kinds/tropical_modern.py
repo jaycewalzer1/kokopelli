@@ -299,7 +299,7 @@ def frangipani(k, rng, S, x, y, z, h=4.2):
     fork = (x + rng.uniform(-0.2, 0.2), y + rng.uniform(-0.2, 0.2), z + h * 0.38)
     k.pole(S["bark"], base, fork, 0.13, segs=7)
     for i in range(4):
-        a = rng.uniform(0, 6.283) if i == 0 else a + rng.uniform(1.2, 2.0)
+        a = rng.uniform(0, 6.283) if i == 0 else a + rng.uniform(1.2, 2.0)  # noqa: F821 -- `a` is set on i == 0 and carried to the next pass
         mid = (fork[0] + math.cos(a) * h * 0.22, fork[1] + math.sin(a) * h * 0.22, fork[2] + h * 0.3)
         k.pole(S["bark"], fork, mid, 0.08, segs=6)
         for j in range(2):

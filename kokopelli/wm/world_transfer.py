@@ -422,7 +422,7 @@ def run(args):
         tf = time.time()
         t_pos = float(len(ids) + MARGIN) + f * stride
         cos, sin = rope.tables(mx.stack([mx.full(hh.shape, t_pos), hh, ww]))
-        layers = lambda entries: [[text_kv[i]] + [e[i] for e in entries] for i in range(36)]
+        layers = lambda entries: [[text_kv[i]] + [e[i] for e in entries] for i in range(36)]  # noqa: F821 -- pyflakes sees the later `del text_kv`; only called inside the loop, before it
         # 1. clean control C_f -> cache
         tokens_c = patchify(lat_c[:, f:f + 1].astype(mx.bfloat16))
         _, kv = gen(tokens_c, cos, sin, layers(history.view(False)), store=True)
