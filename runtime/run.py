@@ -44,7 +44,7 @@ def make_world_model(config):
 
 def negative_prompt():
     """What the model README sends with every request, if the weights are here to read it from."""
-    from settings import WORLD_MODEL_WEIGHTS
+    from core.settings import WORLD_MODEL_WEIGHTS
     path = WORLD_MODEL_WEIGHTS / "assets" / "negative_prompt.json"
     return json.dumps(json.loads(path.read_text())) if path.exists() else None
 

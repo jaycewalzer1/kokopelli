@@ -155,7 +155,7 @@ class QwenBrain:
         self.weights = Path(weights)
 
     def ask(self, prompt, image):
-        import llm_model
+        from core import llm_model
         llm_model.LLM_MODEL_WEIGHTS = self.weights
         try:
             raw = llm_model.ask(prompt, [image], max_tokens=300, temperature=0.4)
@@ -170,7 +170,7 @@ class QwenBrain:
         return raw
 
     def unload(self):
-        import llm_model
+        from core import llm_model
         llm_model.unload()
 
 

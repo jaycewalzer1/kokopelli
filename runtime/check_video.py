@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from blend import FPS, probe
+from core.blend import FPS, probe
 from runtime import replay
 from runtime.frames import file_hash
 from runtime.stitch import expected_frames, stitch

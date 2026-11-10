@@ -85,7 +85,7 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--ticks", type=int, nargs="*", help="only these ticks; default is all of them")
     args = parser.parse_args()
-    from llm_model import ask
+    from core.llm_model import ask
 
     rows = probe(args.run, lambda prompt, images, temperature: ask(prompt, images, max_tokens=300, temperature=temperature), args.ticks)
     summary = {"tally": tally(rows), "rows": rows}

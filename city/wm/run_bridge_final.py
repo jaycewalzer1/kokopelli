@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from world_transfer import transfer_video  # noqa: E402
+from core.world_transfer import transfer_video  # noqa: E402
 
 MODEL = "Cosmos3-Nano-Sim-Transfer"
 CONTROL = ROOT / "out/city_wm/bridge/controls/832x480/blur_v2_high.mp4"

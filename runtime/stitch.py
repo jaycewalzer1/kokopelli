@@ -3,7 +3,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from blend import blend
+from core.blend import blend
 
 BATCH = 20
 

@@ -13,7 +13,7 @@ class CosmosWorldModel(WorldModel):
         self.extra = ("--quantize", str(quantize)) if quantize else ()
 
     def render_chunk(self, request):
-        from world_model import _generate  # Imported here so mock runs don't need the runner installed.
+        from core.world_model import _generate  # Imported here so mock runs don't need the runner installed.
 
         settings = (self.size, request.frames, self.steps, request.seed)
         if not request.cond:

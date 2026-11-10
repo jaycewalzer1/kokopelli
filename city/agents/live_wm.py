@@ -39,7 +39,7 @@ ROOT = live.ROOT
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "city" / "wm"))
 import controls as ctl  # noqa: E402  (city/wm/controls.py)
-from world_stream import WorldStream  # noqa: E402
+from core.world_stream import WorldStream  # noqa: E402
 
 
 class VideoRateSim(live.SimWorldPhysics):
@@ -136,7 +136,7 @@ class WorldModelLife(Life):
         t0 = time.time()
         controls, rgb = self.controls_for(captures)
         t_ctl = time.time() - t0
-        import llm_model
+        from core import llm_model
         llm_model.unload()               # Qwen out of the way while the world model paints
         painted = self.wm.push(controls)
         self.film.add(painted)

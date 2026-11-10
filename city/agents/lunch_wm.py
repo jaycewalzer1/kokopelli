@@ -453,7 +453,7 @@ def make_world(args, nav, cast):
 
 
 def main(argv=None):
-    from world_stream_multi import MultiWorldStream
+    from core.world_stream_multi import MultiWorldStream
     args = build_args(argv)
     nav = NavMap()
     people(args, nav)

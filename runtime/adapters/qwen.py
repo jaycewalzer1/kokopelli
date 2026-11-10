@@ -20,7 +20,7 @@ class MlxQwenAgent(AgentPolicy):
         self.weights = weights
 
     def decide(self, agent_input):
-        import llm_model  # Imported here because mlx only exists on Apple silicon.
+        from core import llm_model  # Imported here because mlx only exists on Apple silicon.
         if self.weights:
             llm_model.LLM_MODEL_WEIGHTS = self.weights
         ask = llm_model.ask
@@ -28,7 +28,7 @@ class MlxQwenAgent(AgentPolicy):
 
     def release(self):
         # On 36 GB, Qwen and Cosmos can't be loaded together. See README.md.
-        from llm_model import unload
+        from core.llm_model import unload
         unload()
 
 
