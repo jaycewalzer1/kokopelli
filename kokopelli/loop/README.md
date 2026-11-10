@@ -59,8 +59,8 @@ On SimWorld the null-agent comparison doesn't run yet, because replays drift by 
 | `interfaces.py` | `PhysicsSim`, `WorldModel`, `AgentPolicy`, `ContextDB`, `EventLog` |
 | `loop.py` | One tick, in order |
 | `run.py` | The CLI |
+| `run_mind.py`, `mind_check.py`, `mind_change_check.py` | The loop run with `kokopelli.mind`'s `FeelingAgent`, and the checks that read those runs |
 | `prompt_builder.py`, `leak_guard.py` | Both prompts, and what keeps the future out of them |
-| `actions.py` | The action schema and how replies get validated |
 | `drift.py` | The drift score and the re-anchor rule |
 | `event_log.py`, `replay.py` | The append-only log, and rebuilding a run from it |
 | `checkpoint.py` | What a resume needs |

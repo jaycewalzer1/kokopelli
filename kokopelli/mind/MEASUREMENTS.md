@@ -26,7 +26,7 @@ At 60 ticks, Qwen costs about 15 minutes with a decision every fourth tick, or a
 | Decision points | 2 of 8: first look, and "been a while" |
 | Decisions | `look_at` Ana, both times |
 
-- **The flat-reply bug didn't appear here, but it isn't gone.** Every reply in this run was nested correctly, but `wmloop_real_20` got flat replies again from a prompt with a nested example, on most of its first 8 ticks. So the example doesn't prevent them, and the fallback in `kokopelli/loop/actions.py` is needed.
+- **The flat-reply bug didn't appear here, but it isn't gone.** Every reply in this run was nested correctly, but `wmloop_real_20` got flat replies again from a prompt with a nested example, on most of its first 8 ticks. So the example doesn't prevent them, and the fallback in `kokopelli/mind/actions.py` is needed.
 - **The feeling test had nothing to react to.** Frames are labelled diagrams where a few dots drift, and the sim says everything is always in view. So "what's in view changed" never fired, and only the four-tick rule did.
 - **The repeated feeling has two possible causes.** Qwen may be responding to frames that barely change, or copying its own last lines, which it sees in the prompt. This run can't separate them. Telling them apart needs frames where something really happens.
 - **It misread its situation.** The prompt says "Ana said to be home before dark". Qwen's diary took that to mean Ana is the one coming home, and said she wasn't there, while she was in view and it was looking at her.

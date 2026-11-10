@@ -41,7 +41,7 @@ Run from a checkout that has `kokopelli/loop/`, through the queue, using the com
 
 ## Known gaps
 
-- **Reply format:** the adapter trains on replying with one action word to `experiments/homeostatic/world.py`'s prompt. The loop asks for a JSON decision with different actions (`kokopelli/loop/actions.py`). Training could damage that, which is what the smoke run is for. No adapter has been through it yet.
+- **Reply format:** the adapter trains on replying with one action word to `experiments/homeostatic/world.py`'s prompt. The loop asks for a JSON decision with different actions (`kokopelli/mind/actions.py`). Training could damage that, which is what the smoke run is for. No adapter has been through it yet.
 - **Transfer:** nothing shows that keeping four numbers in range changes how the model acts in the loop, where it never sees them. The loop has no such variables to reward, and `kokopelli/mind/` feelings are deliberately never a score. Training on the loop itself would need a decision on that, and the Perspectives notes' external judge.
 - **The worktree's copy:** `.claude/worktrees/wm-agent-loop` holds a snapshot of `experiments/homeostatic/` and `kokopelli/life/` that can lag this checkout. The handoff only uses paths, so it doesn't depend on that copy.
 - **Real weights:** fusing is tested on a tiny model, including that outputs match before and after. It hasn't yet run on real Qwen, because no run has passed the gate.

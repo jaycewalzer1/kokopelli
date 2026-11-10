@@ -1,4 +1,4 @@
-- 2026-11-07 (C) `tools/bodies/client.py`: SetBody/GetBody helper (dress, get_body, tiers). It parses ok/error/fallback and near/far/fallback tiers, and never raises.
+- 2026-11-07 (C) `tools/bodies/client.py` (now `kokopelli/agents/bodies_client.py`): SetBody/GetBody helper (dress, get_body, tiers). It parses ok/error/fallback and near/far/fallback tiers, and never raises.
 - 2026-11-07 (C) npcs.json `body` fields: ana=resident_a, tomas=resident_b, wen=resident_c, priya=resident_d, kai=resident_a. The resident ids are assumed, and no child body is planned.
 - 2026-11-07 (C) live.py: `--body` (default mara), SetBody after spawn, `body`/`body_warning` events, per-step `tiers` rows, a warning on fallback, and run.json with the model and bodies.
 - 2026-11-07 (C) tests/test_city_bodies.py: 28 tests, 2 skipped until mac_server/Config/Bodies.json exists. HANDOFF.md (now `docs/log/bodies/2026-11-07-HANDOFF.md`) written for the lunch, adapter and live_wm owners.
