@@ -35,6 +35,45 @@ WARM = 3
 PROFILE = os.environ.get("KOKO_PROFILE") == "1"
 
 
+SHM_OUT = "shm"   # a push's `out` when the client wants the painted frames back in shared memory (KOKO_WM_SHM=1)
+
+
+def _untrack(shm):
+    """Python 3.12's resource tracker claims every segment a process opens and destroys it when that process exits.
+    The client owns these segments (it unlinks them), so the worker must not hold a claim."""
+    from multiprocessing import resource_tracker
+    resource_tracker.unregister(shm._name, "shared_memory")
+
+
+def read_frames(spec):
+    """A push's control frames, uint8 [n, H, W, 3]: an .npy path, or {"shm": name, "shape": [...]} (KOKO_WM_SHM=1)."""
+    import numpy as np
+    if isinstance(spec, str):
+        return np.load(spec)
+    from multiprocessing import shared_memory
+    shm = shared_memory.SharedMemory(name=spec["shm"])
+    _untrack(shm)
+    try:
+        return np.ndarray(spec["shape"], np.uint8, buffer=shm.buf).copy()
+    finally:
+        shm.close()
+
+
+def write_frames(frames, out):
+    """Painted frames for the client: saved to the .npy path `out`, or put in a new shared-memory segment when `out` is
+    SHM_OUT. Returns what the reply's "out" should say."""
+    import numpy as np
+    if out != SHM_OUT:
+        np.save(out, frames)
+        return out
+    from multiprocessing import shared_memory
+    shm = shared_memory.SharedMemory(create=True, size=max(1, frames.nbytes))
+    _untrack(shm)
+    np.ndarray(frames.shape, np.uint8, buffer=shm.buf)[:] = frames
+    shm.close()
+    return {"shm": shm.name, "shape": list(frames.shape)}
+
+
 class Stages:
     """Seconds per named stage, summed over repeats. A no-op unless KOKO_PROFILE=1."""
 
@@ -256,12 +295,11 @@ class Worker:
         return (frames * 255).round().clip(0, 255).astype(np.uint8)
 
     def push(self, controls, out):
-        import numpy as np
         mx = self.mx
         self.stages = stage = Stages(mx)
         t0 = time.time()
-        with stage("npy_read_controls"):
-            new = {h: np.load(controls[h]) for h in self.hints}
+        with stage("read_controls"):
+            new = {h: read_frames(controls[h]) for h in self.hints}
         if any(v.shape[1:3] != (self.height, self.width) for v in new.values()):
             raise ValueError(f"controls must be {self.width}x{self.height}")
         with stage("encode"):
@@ -283,8 +321,8 @@ class Worker:
         t2 = time.time()
         with stage("decode"):
             frames = self._decode(painted)
-        with stage("npy_write_frames"):
-            np.save(out, frames)
+        with stage("write_frames"):
+            out = write_frames(frames, out)
         self.frames_out += len(frames)
         return {"frames": len(frames), "out": out, "latents": self.n_painted, "frames_out": self.frames_out,
                 "encode_s": round(t_enc, 1), "paint_s": round(t_paint, 1), "decode_s": round(time.time() - t2, 1),

@@ -5,7 +5,7 @@ weights (as the loop does while Qwen thinks), a 16-frame push each, then one 160
 size of a real closed-loop push). Controls are recorded, not live: Iris's 448x256 controls from the 2026-11-08 bodies demo
 feed both streams, with different seeds. Writes <out>/profile.json and prints a table.
 
-    env KOKO_PROFILE=1 .venv/bin/python scripts/fable/p4_profile.py --out out/fable/P4/profile [--fake] [--long 160]
+    env KOKO_PROFILE=1 .venv/bin/python scripts/fable/p4_profile.py --out out/fable/P4/profile [--fake] [--long 160] [--shm]
 """
 import argparse
 import json
@@ -37,6 +37,7 @@ def main():
     p.add_argument("--quantize", type=int, default=8)
     p.add_argument("--short", type=int, default=16)
     p.add_argument("--long", type=int, default=160, help="0 skips the long push")
+    p.add_argument("--shm", action="store_true", help="P4-B1: frames in shared memory instead of .npy files")
     p.add_argument("--fake", action="store_true", help="stand-in worker, no model (checks this script only)")
     a = p.parse_args()
     if os.environ.get("KOKO_PROFILE") != "1":
@@ -52,7 +53,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     rows = []
     started = time.perf_counter()
-    wm = MultiWorldStream(out_dir=out / "wm", quantize=a.quantize, fake=a.fake)
+    wm = MultiWorldStream(out_dir=out / "wm", quantize=a.quantize, fake=a.fake, shm=a.shm)
     try:
         streams = ["mara"] if dry else ["mara", "iris"]
         for i, s in enumerate(streams):
@@ -88,7 +89,7 @@ def main():
             "model": "fake (no model)" if a.fake else "Cosmos3-Nano-Sim-Transfer (models/Cosmos3-Nano-Sim-Transfer)",
             "variant": "A", "weights": {k: 0.25 for k in HINTS}, "quantize": a.quantize, "size": a.size,
             "lowered": f"size {a.size} (closed-loop size of the 2026-11-08 run), not 832x480",
-            "controls": str(CONTROLS) + " (recorded, both streams)", "dry_run": dry,
+            "controls": str(CONTROLS) + " (recorded, both streams)", "dry_run": dry, "shm": a.shm,
             "controls_read_s": round(read_s, 2), "seconds": round(time.perf_counter() - started, 1),
             "hello": wm.hello, "pushes": rows}
     (out / "profile.json").write_text(json.dumps(side, indent=1))

@@ -40,8 +40,11 @@ DRY_RUN = os.environ.get("KOKO_DRY_RUN") == "1"
 class MultiWorldStream:
     """Agent-side handle to one worker holding many streams. Each call is one JSON line to the worker and one back."""
 
-    def __init__(self, out_dir=None, quantize=None, fake=False, check=None):
+    def __init__(self, out_dir=None, quantize=None, fake=False, check=None, shm=None):
         self.dir = Path(out_dir or tempfile.mkdtemp(prefix="world_stream_multi_"))
+        # KOKO_WM_SHM=1 (or shm=True): hand frames to and from the worker in shared memory instead of .npy files. Off by
+        # default; docs/fable_log/P4.md has the measured difference.
+        self.shm = os.environ.get("KOKO_WM_SHM") == "1" if shm is None else shm
         # Video check on every push (core/video_check.py): "stop" raises after 3 bad pushes in a row, "warn" only
         # records them in check.json, "off" skips it. The fake painter is not a painting, so it is off there by default.
         # Real runs warn by default: the calibration margin is thin (best good window 1.004, worst bad 1.01) and the check would
@@ -84,25 +87,42 @@ class MultiWorldStream:
         uint8 [m, H, W, 3]; m can lag n by up to 3 frames (a latent is painted once its 4 frames have arrived)."""
         import numpy as np
 
-        from core.world_stream import PROFILE, Stages
+        from core.world_stream import PROFILE, SHM_OUT, Stages
         stage = Stages()
         self.k += 1
-        paths = {}
-        with stage("client_npy_write_controls"):
-            for hint, frames in controls.items():
-                paths[hint] = str(self.dir / f"in_{stream}_{self.k:05d}_{hint}.npy")
-                np.save(paths[hint], np.ascontiguousarray(frames, np.uint8))
+        specs, segments = {}, []
         try:
+            with stage("client_write_controls"):
+                for hint, frames in controls.items():
+                    frames = np.ascontiguousarray(frames, np.uint8)
+                    if self.shm:
+                        from multiprocessing import shared_memory
+                        segments.append(shared_memory.SharedMemory(create=True, size=max(1, frames.nbytes)))
+                        np.ndarray(frames.shape, np.uint8, buffer=segments[-1].buf)[:] = frames
+                        specs[hint] = {"shm": segments[-1].name, "shape": list(frames.shape)}
+                    else:
+                        specs[hint] = str(self.dir / f"in_{stream}_{self.k:05d}_{hint}.npy")
+                        np.save(specs[hint], frames)
             with stage("client_call"):
-                reply = self._call(cmd="push", stream=stream, controls=paths,
-                                   out=str(self.dir / f"out_{stream}_{self.k:05d}.npy"))
+                reply = self._call(cmd="push", stream=stream, controls=specs,
+                                   out=SHM_OUT if self.shm else str(self.dir / f"out_{stream}_{self.k:05d}.npy"))
         finally:
-            for p in paths.values():
-                Path(p).unlink(missing_ok=True)
+            for spec in specs.values():
+                if isinstance(spec, str):
+                    Path(spec).unlink(missing_ok=True)
+            for segment in segments:
+                segment.close()
+                segment.unlink()
         self.last[stream] = reply
-        with stage("client_npy_read_frames"):
+        with stage("client_read_frames"):
             if not reply["frames"]:
                 out = np.zeros((0,) + controls[next(iter(controls))].shape[1:], np.uint8)
+            elif isinstance(reply["out"], dict):
+                from multiprocessing import shared_memory
+                segment = shared_memory.SharedMemory(name=reply["out"]["shm"])
+                out = np.ndarray(reply["out"]["shape"], np.uint8, buffer=segment.buf).copy()
+                segment.close()
+                segment.unlink()
             else:
                 out = np.load(reply["out"])
                 Path(reply["out"]).unlink(missing_ok=True)
@@ -201,8 +221,10 @@ class FakeStream:
 
     def push(self, controls, out):
         import numpy as np
+
+        from core.world_stream import read_frames, write_frames
         self.gen = self.shared.get()
-        new = {h: np.load(p) for h, p in controls.items()}
+        new = {h: read_frames(p) for h, p in controls.items()}
         if any(v.shape[1:3] != (self.height, self.width) for v in new.values()):
             raise ValueError(f"controls must be {self.width}x{self.height}")
         if not hasattr(self, "pending"):
@@ -214,7 +236,7 @@ class FakeStream:
         frames, self.pending = self.pending[:ready], self.pending[ready:]
         self.frames_out += len(frames)
         if len(frames):
-            np.save(out, frames)
+            out = write_frames(frames, out)
         return {"frames": len(frames), "out": out, "frames_out": self.frames_out, "latents": 1 + (self.frames_out - 1) // 4,
                 "s_per_latent": 0.0, "peak_gb": 0.0}
 
