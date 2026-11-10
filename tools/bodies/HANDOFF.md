@@ -1,6 +1,6 @@
 # Bodies handoff (wave 1 C, Python side, 2026-11-07)
 
-The shared helper is `tools/bodies/client.py`. It never raises on a server problem: an old server without
+The shared helper is `kokopelli/agents/bodies_client.py`. It never raises on a server problem: an old server without
 `SetBody`, a missing asset or a lost link come back as `BodyResult(ok=False, error=..., supported=...)`.
 Tests: `tests/test_city_bodies.py`.
 
@@ -23,7 +23,7 @@ The suggested one-line change is in `SimWorldPair.reset` (lunch_wm.py:298). The 
         return self._frames([cap])
 ```
 
-You'd also need the import `from city.bodies.client import dress`. Then log
+You'd also need the import `from kokopelli.agents.bodies_client import dress`. Then log
 `{a: r.as_dict() for a, r in self.bodies.items()}` in `events.jsonl` and in `run.json` (`write_sidecar`), so the run
 records which body each person got. If `dress` replies `ok: false`, the run should only warn, never stop. Without
 this change, Mara and Iris still get bodies, because the server picks by actor name from `mac_server/Config/Bodies.json`
