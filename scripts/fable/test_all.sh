@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run every test suite, one summary line each; a failing suite also prints its failing tests.
-# Usage: scripts/fable/test_all.sh [suite ...]   (default: tests runtime simworld ops benchmarks)
+# Usage: scripts/fable/test_all.sh [suite ...]   (default: tests runtime simworld ops benchmarks commons)
 #   MAC=1      also run mac_server (starts a mock server on port 9000, so one checkout at a time).
 #              Its 29 known baseline failures are reported but don't fail the run.
 #   VERBOSE=1  print each suite's full output with -v.
@@ -9,7 +9,7 @@ cd "$(dirname "$0")/../.." || exit 2
 # The tests suite peaked near 18 GB while it loaded real models, and five copies at once crashed the Mac on 2026-11-09. So the whole run takes one
 # memory claim and waits its turn: python3 ops/memguard.py status shows who holds it.
 [ -n "$MEMGUARD" ] || exec python3 ops/memguard.py run --name test_all --gb "${TEST_GB:-2}" -- bash "$0" "$@"
-want=${*:-tests runtime simworld ops benchmarks}
+want=${*:-tests runtime simworld ops benchmarks commons}
 [ "${MAC:-0}" = 1 ] && case " $want " in *" mac_server "*) ;; *) want="$want mac_server" ;; esac
 MAC_KNOWN_FAILURES=29
 v=; [ "${VERBOSE:-0}" = 1 ] && v=-v
@@ -44,5 +44,7 @@ one runtime .venv/bin/python -W ignore -m unittest discover $v -s runtime/tests 
 one simworld simworld/.venv/bin/python -W ignore -m unittest discover $v -s runtime/tests -t . -p 'test_simworld*.py'
 one ops .venv/bin/python -W ignore -m unittest discover $v -s ops/tests -t .
 one benchmarks .venv/bin/python -W ignore -m unittest discover $v -s benchmarks/tests -t .
+# The commons experiment tests are written for pytest, which only the SimWorld venv has (see docs/REORG_PLAN.md, phase 7).
+one commons simworld/.venv/bin/python -m pytest ${v:--q} -p no:cacheprovider experiments/commons/tests
 one mac_server sh -c "cd mac_server && SIMCV_START_MOCK=1 ../simworld/.venv/bin/python -m pytest ${v:--q} -p no:cacheprovider tests"
 exit $failed

@@ -1,6 +1,6 @@
 # Reorganization plan
 
-Written 2026-11-10. Nothing here is started. It continues from the cleanup pass logged in `docs/fable_log/`.
+Written 2026-11-10, updated the same day with the owner's decisions. No phase is started; the one precondition (merging the open branches) is done. It continues from the cleanup pass logged in `docs/fable_log/`.
 
 ## Goal
 
@@ -14,9 +14,9 @@ No behavior changes. Every phase is a move, a rename or a config change, and end
 |---|---|
 | Root stand-in files left from the `core/` move | 12 files, 93 lines |
 | Files that launch a root file by path (`python world_transfer_multi.py ...`) | 30 |
-| `sys.path.insert` calls | 70, in 54 files |
+| `sys.path.insert` calls | 73, in 57 files |
 | `city/` | 58 Python files, 19,427 lines. `city/ue` alone is 12,025 |
-| Test locations | `tests` 42 files, `runtime/tests` 19, `benchmarks/tests` 6, `ops/tests` 2, `mac_server/tests` 2 |
+| Test locations | `tests` 42 files, `runtime/tests` 19, `benchmarks/tests` 6, `ops/tests` 2, `experiments/commons/tests` 2, `mac_server/tests` 2 |
 | Interpreters | `.venv` (3.12), `simworld/.venv` (3.10), `~/cosmos3/cosmos3-mlx/.venv` |
 | Ruff findings ignored as a baseline | 292, in 96 files |
 | Pyright errors on `core` and `ops` | 67 |
@@ -39,7 +39,7 @@ kokopelli/              the library, one importable package, installed editable 
   life/                 today's life/ (generator, store, panel)
   ops/                  today's ops/ and cloud/ (queue, memguard, ram_share, status)
   settings.py
-experiments/            exp1/, homeostatic/, filter_test/, wm_multicontrol/ (without upstream/)
+experiments/            commons/ (already here), exp1/, homeostatic/, filter_test/, wm_multicontrol/ (without upstream/)
 benchmarks/             stays where it is: it's a harness in ongoing use, not a finished experiment
 tools/                  hand-run scripts: moodboard sourcing, body asset generators, capture tools, scripts/fable, scripts/pace
 data/                   city/world.json and other tracked inputs
@@ -61,7 +61,7 @@ Two things from my first sketch that I'd now leave alone:
 2. **The architecture page checks file paths.** `life/architecture.py` holds a table of files per node and `tests.test_life_architecture` fails when one is missing. Every move updates that table in the same commit.
 3. **The panel watches files.** `life/panel.py` restarts on changes to a list of paths. Moves update the list.
 4. **Jobs written to disk.** `out/staged/` and run scripts under `out/` hold commands with paths. Do path-changing phases with the GPU queue idle, and regenerate staged jobs afterwards.
-5. **Unmerged worktrees.** `commons` (16 commits), `exp1` (1) and `wm-agent-loop` (1) are ahead of main. Renames will conflict with them. Merge or retire them before phase 4.
+5. **Open branches.** Done on 2026-11-10: `exp/commons-homeostasis` (16 commits), `feat/exp1-homeostatic-rl` (1) and `feat/wm-agent-loop` (1) are merged into main, so no branch is ahead of it. Keep it that way: no other branch stays open across a renaming phase.
 6. **The cluster copy.** `scripts/pace/` runs on PACE from its own checkout. Path changes there need the cluster checkout updated at the same time.
 7. **Memory rules** from `AGENTS.md`: tests through `make test-all`, heavy commands through `ops/memguard.py`.
 8. **One phase per branch**, merged with `--no-ff`, so a phase can be undone by reverting one merge commit.
@@ -88,8 +88,8 @@ Effort figures are my estimates, not measurements.
 ### Phase 2: stop launching by path, delete the root stand-ins (1 day)
 
 - Change the 30 launching files to the commands or to `python -m`. The list comes from `git grep -E "(ram_share|world_transfer|world_stream|world_filter|world_model)\.py"`. The heaviest: `life/architecture.py`, `wm_multicontrol/run_a.sh`, `filter_test/scripts/run_cosmos.py`, `core/world_transfer*.py`, `ops/gpu.py`.
-- Remove the 70 `sys.path.insert` calls, one package at a time, running that package's tests after each.
-- Delete the 12 root files. Move the PDF to `docs/` and delete the empty `runs/`.
+- Remove the 73 `sys.path.insert` calls, one package at a time, running that package's tests after each.
+- Delete the 12 root files. Move the PDF to `docs/`. `runs/commons/` holds the commons experiment's tracked results and moves with it in phase 6.
 - Regenerate `out/staged/` jobs.
 - Acceptance: `ls *.py` at the root is empty; smoke script passes in all three venvs; `git grep sys.path.insert` returns only `simworld/`, `mac_server/` and vendored code; one real queue dry run passes (about a minute of GPU).
 - Risk: a script on disk outside git that still calls a root file. Mitigation: `grep -rl` over `out/staged` and `out/ops` before deleting, and keep the tag.
@@ -101,7 +101,7 @@ Effort figures are my estimates, not measurements.
 - `runtime/adapters/life_db.py` importing `life` is a legitimate adapter. Record it as an allowed edge.
 - Add `import-linter` with three contracts: the library never imports `experiments`, `benchmarks`, `tools` or `tests`; the layer order `wm` → `mind` → `loop` → `agents`; `ops` imports nothing from the rest.
 - Acceptance: `lint-imports` passes in `pre-commit`; tests unchanged.
-- Decision needed first: see "Owner decisions", item 1.
+- Decided: the wall is hard. An exception needs a line in the contract's allow-list with its reason.
 
 ### Phase 4: one namespace (2 days, the largest change)
 
@@ -128,17 +128,18 @@ Effort figures are my estimates, not measurements.
 
 ### Phase 6: experiments and tools (half a day)
 
-- Move `exp1/`, `homeostatic/` (minus `watch.py`), `filter_test/` and `wm_multicontrol/` into `experiments/`. Move `wm_multicontrol/upstream/` to `vendor/`.
+- Move `exp1/`, `homeostatic/` (minus `watch.py`), `filter_test/` and `wm_multicontrol/` into `experiments/`, beside `commons/`. Move `runs/commons/` to `experiments/commons/results/` and update the paths its report cites. Move `wm_multicontrol/upstream/` to `vendor/`.
 - Move `scripts/fable/` and `scripts/pace/` into `tools/`. `test_all.sh` goes away in phase 7.
 - Each experiment keeps one `README.md`: what it asked, how to rerun it, where the results are.
 - Acceptance: tests unchanged; the import contracts from phase 3 pass with the new paths.
 
 ### Phase 7: one test tree (1 day)
 
-- Move `runtime/tests`, `ops/tests` and `benchmarks/tests` under `tests/`, mirroring the package layout. `mac_server/tests` stays with the Unreal project.
+- Move `runtime/tests`, `ops/tests` and `benchmarks/tests` under `tests/`, mirroring the package layout. `mac_server/tests` stays with the Unreal project, and each experiment keeps its own `tests/` folder.
+- Add `pytest` to the main environment. Today only the SimWorld venv has it, which is why the commons tests run there.
 - Switch the runner to `pytest` with markers: `model` (loads Qwen or Cosmos, replaces `RUN_MODEL_TESTS`), `py310` (must run in the SimWorld venv), `unreal` (needs a server), `slow`.
 - `make test-all` becomes two guarded `pytest` runs, one per interpreter. It can't be one process: the SimWorld tests need Python 3.10.
-- Acceptance: the same 1,129 tests are collected as today (599 + 100 + 197 + 35 + 198); the same ones are skipped; the run still peaks under 2 GB.
+- Acceptance: the same 1,192 tests are collected as today (600 + 100 + 197 + 35 + 198 + 62 commons); the same ones are skipped; the run still peaks under 2 GB.
 - Risk: `unittest` discovery and `pytest` collection differ on a few patterns (test classes without the `Test` prefix, module-level skips). Compare collected test IDs before deleting the old runner.
 
 ### Phase 8: tighten the linters (2 to 3 days, can be spread out)
@@ -168,7 +169,7 @@ Effort figures are my estimates, not measurements.
 | 1 Installable | 0 | 0.5 day | nothing |
 | 2 No path launches | 1 | 1 day | nothing |
 | 3 Layering | 2 | 1 day | nothing |
-| 4 One namespace | 3, worktrees merged | 2 days | nothing |
+| 4 One namespace | 3 | 2 days | nothing |
 | 5 Split `city/` | 4 | 2 days | 6 |
 | 6 Experiments, tools | 4 | 0.5 day | 5 |
 | 7 One test tree | 5, 6 | 1 day | nothing |
@@ -184,11 +185,15 @@ About 11 to 12 working days end to end. Phases 0 to 2 are the cheap, high-value 
 - Only phase 2's dry run needs the GPU, for about a minute.
 - A rough token guess from the cleanup pass, where 12 packages ran overnight: phases 4, 5 and 8 are each as large as two or three of those packages. Check `/usage` after phase 2 and scale from there.
 
-## Owner decisions
+## Decisions (owner, 2026-11-10)
 
-1. **How hard is the wall between library and experiments?** The plan assumes a hard one, enforced by `import-linter`, with an explicit allow-list for exceptions. The softer choice is folders only: skip the contracts in phase 3 and accept that the structure will erode.
-2. **Phase 4 at all?** It is the riskiest phase and its payoff is naming. Stopping after phase 3 leaves `core/`, `runtime/`, `life/` and `ops/` as top-level packages, which works.
-3. **What happens to `commons`, `exp1` and `wm-agent-loop`** before the renames: merge, rebase later, or retire.
-4. **Push to GitHub.** CI in phase 8 needs it, and the plan is safer with an off-machine copy before phase 4.
-5. **`benchmarks/`**: stays top-level in this plan. Say if you'd rather it sit under `experiments/`.
-6. **The duplicate world file.** Phase 5 keeps `world.json` and removes `world_varied.json`.
+1. **Hard wall** between library and experiments, enforced by `import-linter` with an allow-list.
+2. **Phase 4 is in.** Everything moves under one `kokopelli/` package.
+3. **Open branches merged before starting.** Done; see constraint 5.
+4. **Pushed to GitHub** on 2026-11-10, so there is an off-machine copy before any renaming and CI can be added in phase 8.
+5. **World file:** keep the current city. `city/world.json` and `city/world_varied.json` are byte-identical on main and both hold the updated, varied city (the original was replaced on 2026-11-09). Phase 5 keeps `world.json`, removes the duplicate and points its five readers at the kept file.
+
+Still open:
+
+- **`benchmarks/`** stays top-level in this plan. Say if you'd rather it sit under `experiments/`.
+- **`exp1/diagnose_pilot.py`** has four undefined-name lint findings (line 54) that came in with the merge and are baselined, not checked. Look at them in phase 8 before trusting that script.
