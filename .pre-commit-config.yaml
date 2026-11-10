@@ -1,0 +1,41 @@
+# Checks only: nothing here reformats code. Existing findings are baselined
+# (ruff in pyproject.toml, biome in biome.json, shellcheck below), so new code
+# meets the rules without a repo-wide rewrite. Counts: docs/fable_log/P2-D.md.
+#
+#   uvx pre-commit install              # once, runs on every commit
+#   uvx pre-commit run --all-files      # whole repo; wrap in ops/memguard.py run
+exclude: ^(simworld/|wm_multicontrol/upstream/|mac_server/Binaries/|\.venv/|out/|models/)
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.4
+    hooks:
+      - id: ruff
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        exclude: &sh_baseline ^(city/agents/run_wm_life\.sh|city/agents/run_wm_lunch\.sh|city/bodies/metahuman/run_editor_gui\.sh|city/bodies/perf_maxnear\.sh|city/bodies/run_demo_lunch\.sh|city/bodies/serve_9004\.sh|filter_test/scripts/queue_all\.sh|mac_server/scripts/relaunch\.sh|scripts/pace/simworld_server\.sh|scripts/pace/wmloop_gate\.sbatch|scripts/pace/wmloop_run\.sbatch|wm_multicontrol/run_a\.sh)$
+      - id: shellcheck
+        name: shellcheck (baselined scripts)
+        # Codes these scripts had on 2026-11-09. Fix a script, then move it to the strict hook.
+        args: [-e, "SC1091,SC2012,SC2034,SC2086,SC2102,SC2153,SC2164,SC2206,SC2329"]
+        files: *sh_baseline
+
+  - repo: local
+    hooks:
+      - id: biome
+        name: biome lint (life/static)
+        language: system
+        entry: npx -y @biomejs/biome@2.6.6 lint --no-errors-on-unmatched
+        files: ^life/static/.*\.js$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+        # These files lacked a final newline on 2026-11-09; the fixer would rewrite them.
+        exclude: ^(city/bodies/standins/import_standins\.json|life/static/inspector\.js|mac_server/SimWorld\.uproject|mac_server/Tools/look/realism_means\.json)$

@@ -88,9 +88,10 @@ The GPU queue view is that queue on its own page: who has the GPU, how long they
 
 Needs `uv`, `ffmpeg`, and the Cosmos3 MLX port installed in `~/cosmos3/cosmos3-mlx`.
 
+Dependencies are pinned in `pyproject.toml` and `uv.lock`. The three Python environments and why each exists are in `docs/ENVIRONMENTS.md`.
+
 ```sh
-uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python -r requirements.txt
+uv sync
 .venv/bin/hf download Qwen/Qwen3-VL-8B-Instruct --local-dir models/Qwen3-VL-8B-Instruct
 .venv/bin/hf download nvidia/Cosmos3-Nano --local-dir models/Cosmos3-Nano
 ```
