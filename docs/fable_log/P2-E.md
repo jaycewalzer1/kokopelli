@@ -25,3 +25,8 @@
 - Whether the report should treat `bodies/demo/runs/<id>` as runs (20.2 G sits under one cited entry).
 - Backup option A, B or C, buying the hardware or creating the account, and the schedule. `ops/out_backup_exclude.txt` and the script are a follow-up.
 - Who writes `run.json`. This belongs with the phase 3 run-manifest item.
+
+## make test-all
+The first attempt never ran: it waited the whole 10 minutes for memory (about 7 GB of room, 20 GB needed), then hit my background time limit. The second attempt passed, rc=0, after a 172 s wait for memory, 388 s run, peak 18.4 GB:
+tests 550 OK (skip 4, xfail 2); runtime 100 OK; simworld 197 OK; ops 26 OK; benchmarks 198 OK (skip 1).
+This package changes no imported code, so these numbers show nothing broke. They don't measure anything this package changed.
