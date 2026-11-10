@@ -68,10 +68,10 @@ main,sw help    kokopelli.loop.preflight
 main,sw help    kokopelli.loop.probe_decisions
 main,sw help    kokopelli.loop.run
 main,sw help    kokopelli.loop.viewer
-# --- mind (namespace package, launched with -m) ---
-main    help    kokopelli.mind.change_check
-main    help    kokopelli.mind.check
-main    help    kokopelli.mind.run
+# --- mind launchers (in loop: they wire the mind into the loop) ---
+main    help    kokopelli.loop.mind_change_check
+main    help    kokopelli.loop.mind_check
+main    help    kokopelli.loop.run_mind
 # --- homeostatic ---
 main    help    experiments.homeostatic.evaluate
 main    help    experiments.homeostatic.experiment

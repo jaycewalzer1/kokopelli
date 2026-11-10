@@ -1,16 +1,16 @@
 """What mocks can't show: do a real model's feelings follow events, and does a feeling change the next action?
 
-    python -m kokopelli.mind.check out/mind/qwen_8          # reads the run, no model needed
-    python -m kokopelli.mind.check out/mind/qwen_8 --flip   # asks the model again; go through the GPU queue
+    python -m kokopelli.loop.mind_check out/mind/qwen_8          # reads the run, no model needed
+    python -m kokopelli.loop.mind_check out/mind/qwen_8 --flip   # asks the model again; go through the GPU queue
 
 The flip test is the one that can show cause. It re-asks each real decision with the same prompt and frames at
 temperature 0, changing only the latest feeling. "content" against "calm" is the placebo: a near-synonym should change
 little, so any effect only counts if "terrified" against "calm" changes more actions than the placebo does.
 
 For a trained model, run these on a base run, so every model answers identical moments:
-    python -m kokopelli.mind.check out/mind/base --replay                          # should reproduce the run; the noise floor
-    python -m kokopelli.mind.check out/mind/base --replay --flip --weights <run>/fused
-    python -m kokopelli.mind.check out/mind/base --compare out/mind/adapter        # two separate runs on the same seed
+    python -m kokopelli.loop.mind_check out/mind/base --replay                          # should reproduce the run; the noise floor
+    python -m kokopelli.loop.mind_check out/mind/base --replay --flip --weights <run>/fused
+    python -m kokopelli.loop.mind_check out/mind/base --compare out/mind/adapter        # two separate runs on the same seed
 
 Replay shows whether replies stay valid and whether behaviour moved. It can't show whether it moved in a healthier
 direction, because the loop has no variables to keep in range. See "Known gaps" in experiments/homeostatic/HANDOFF.md.
@@ -172,7 +172,7 @@ def main():
     report = {"weights": args.weights, "stats": stats(args.folder)}
     name = "mind_check"
     if args.flip or args.replay:
-        from kokopelli.mind.run import measured_qwen
+        from kokopelli.loop.run_mind import measured_qwen
         inner = measured_qwen(args.weights)
         if args.flip:
             report["flip"], name = flip(args.folder, inner), f"mind_flip_{label}"

@@ -4,15 +4,15 @@ import unittest
 from dataclasses import dataclass
 from pathlib import Path
 
-from kokopelli.mind.check import flip, stats, verdict
+from kokopelli.loop.mind_check import flip, stats, verdict
 from kokopelli.mind.feeling import (APPRAISE, BIG_NOTE, CHANGE, FeelingAgent, decision_point, inner_context, parse_appraisal, parse_change, read_rows, settle,
                           timeline)
 
 try:
     from kokopelli.loop.config import Config
     from kokopelli.loop.run import run
-    from kokopelli.mind.check import compare, replay
-    from kokopelli.mind.run import MockMind, check_weights, measured_qwen, summarize
+    from kokopelli.loop.mind_check import compare, replay
+    from kokopelli.loop.run_mind import MockMind, check_weights, measured_qwen, summarize
 except ImportError:
     Config = None
 

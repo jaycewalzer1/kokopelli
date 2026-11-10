@@ -150,8 +150,8 @@ def model_job(parts):
         return target
     if runs_module(parts, "kokopelli.loop.run") and ((option(parts, "--wm") or "mock") != "mock" or (option(parts, "--agent") or "mock") != "mock"):
         return "kokopelli.loop.run"
-    if runs_module(parts, "kokopelli.mind.run") and (option(parts, "--agent") or "mock") != "mock":
-        return "kokopelli.mind.run"
+    if runs_module(parts, "kokopelli.loop.run_mind") and (option(parts, "--agent") or "mock") != "mock":
+        return "kokopelli.loop.run_mind"
     if runs_module(parts, "experiments.benchmarks.run") and (option(parts, "--backend") or "mock") != "mock":
         return "experiments.benchmarks.run"
     return None
@@ -320,7 +320,7 @@ def agent_section(paths, table, now):
 
 
 def mind_section(paths, table, now):
-    runs = loop_runs(paths["mind"], table, now, "kokopelli.mind.run")
+    runs = loop_runs(paths["mind"], table, now, "kokopelli.loop.run_mind")
     for run in runs:
         folder = Path(paths["mind"]) / run["name"]
         rows = read_rows(folder / "feelings.jsonl")

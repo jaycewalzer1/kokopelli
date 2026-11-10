@@ -231,7 +231,7 @@ class MindTest(unittest.TestCase):
         env = {**os.environ, "PYTHONPATH": f".:{main_checkout}"}
         out = folder() / "mind"
         code = (f"import sys; sys.path[:0] = ['.', {main_checkout!r}]\n"
-                "from kokopelli.mind.feeling import FeelingAgent\nfrom kokopelli.mind.run import MockMind\n"
+                "from kokopelli.mind.feeling import FeelingAgent\nfrom kokopelli.loop.run_mind import MockMind\n"
                 "from pathlib import Path\nfrom kokopelli.loop.config import Config\nfrom kokopelli.loop.run import run\n"
                 f"out = Path({str(out)!r})\nagent = FeelingAgent(MockMind(7), out / 'feelings.jsonl')\n"
                 "s = run(Config(ticks=3, counterfactual=False), out, agent=agent)\nprint(s['run']['totals']['ticks'])\n")

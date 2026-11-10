@@ -1,6 +1,6 @@
 """Does real Qwen notice real changes, ignore non-changes, and stop copying its history once it's told what changed?
 
-    PYTHONPATH=.claude/worktrees/wm-agent-loop:. .venv/bin/python -m kokopelli.mind.change_check    # go through the GPU queue
+    PYTHONPATH=.claude/worktrees/wm-agent-loop:. .venv/bin/python -m kokopelli.loop.mind_change_check    # go through the GPU queue
 
 Each moment has a known answer, so this doesn't depend on a scene where something happens to occur:
     same:  one frame repeated. Nothing changed, by construction.
@@ -17,9 +17,9 @@ import subprocess
 from collections import Counter
 from pathlib import Path
 
-from kokopelli.mind.check import Ask
+from kokopelli.loop.mind_check import Ask
 from kokopelli.mind.feeling import CHANGE, MAX_CHANGE_CHARS, appraisal_prompt, parse_appraisal, parse_change, settle
-from kokopelli.mind.run import measured_qwen
+from kokopelli.loop.run_mind import measured_qwen
 
 KOKOPELLI = Path(__file__).resolve().parents[2]
 REAL = KOKOPELLI / ".claude/worktrees/wm-agent-loop/runs/wmloop_real_20"

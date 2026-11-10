@@ -45,7 +45,7 @@ class PaceTest(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.log = self.root / "job.log"
         self.updates = []
-        self.ticket = {"id": "1-2", "name": "mind_x", "cwd": str(self.root / "kokopelli"), "pace_command": "python -m kokopelli.mind.run --cuda", "pull": ["out/mind/x"]}
+        self.ticket = {"id": "1-2", "name": "mind_x", "cwd": str(self.root / "kokopelli"), "pace_command": "python -m kokopelli.loop.run_mind --cuda", "pull": ["out/mind/x"]}
 
     def run_with(self, remote, config=CONFIG):
         return run_job(self.ticket, self.log, self.updates.append, config=config, remote=remote, sleep=lambda _: None)
@@ -73,7 +73,7 @@ class PaceTest(unittest.TestCase):
         self.assertEqual(self.run_with(remote), 0)
         self.assertEqual(remote.copied[0], ("up", self.ticket["cwd"], "~/scratch/k/kokopelli"))
         self.assertIn(("down", "~/scratch/k/kokopelli/out/mind/x", str(Path(self.ticket["cwd"]) / "out/mind/x")), remote.copied)
-        self.assertIn("python -m kokopelli.mind.run --cuda", next(script for script in remote.scripts if "sbatch" in script))
+        self.assertIn("python -m kokopelli.loop.run_mind --cuda", next(script for script in remote.scripts if "sbatch" in script))
         self.assertEqual([update["state"] for update in self.updates], ["COPYING", "PENDING", "PENDING", "RUNNING", "COMPLETED", "COMPLETED"])
         self.assertEqual(self.updates[-1]["job"], "12345")
         self.assertIn("Slurm job 12345", self.log.read_text())

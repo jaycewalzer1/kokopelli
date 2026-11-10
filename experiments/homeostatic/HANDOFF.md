@@ -26,7 +26,7 @@ Run from a checkout that has `kokopelli/loop/`, through the queue, using the com
 2. **`agent_loop.half_hour_this_mac`:** the 60 ticks on the mock sim. Cosmos makes this take days here, so it's only the fallback.
 3. **The real half hour** uses `--backend real` on PACE, where SimWorld and a Cosmos server run. There the agent is a server (`--agent-url`) and `--agent-weights` is ignored, so serve `fused/` with vLLM instead. Nothing has been submitted; that's for the user.
 
-`mind.run` builds its own Qwen agent and has no weights option yet, so the feel-then-decide agent can't use a trained model until that's added.
+`kokopelli.loop.run_mind` builds its own Qwen agent and has no weights option yet, so the feel-then-decide agent can't use a trained model until that's added.
 
 `--low-memory` won't use these weights in 4 bits. It only sets a default, so these full-size weights win. A 4-bit version would need its own conversion.
 

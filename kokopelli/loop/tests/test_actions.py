@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from kokopelli.loop.actions import InvalidDecision, parse_decision, was_reshaped
+from kokopelli.mind.actions import InvalidDecision, parse_decision, was_reshaped
 from kokopelli.loop.config import Config
 from kokopelli.loop.mocks.agent import ScriptedAgent
 from kokopelli.loop.replay import load, summarize

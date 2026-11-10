@@ -34,7 +34,7 @@ TAIL_BYTES = 4000
 PRIORITY_RANGE = range(0, 1000)
 STOP_SECONDS = 5
 # gpu.py's own pattern for model jobs doesn't match these, so it will start a job beside one of them.
-QUEUE_BLIND = {"kokopelli.mind.run", "experiments.benchmarks.run"}
+QUEUE_BLIND = {"kokopelli.loop.run_mind", "experiments.benchmarks.run"}
 TIMELINE_HOURS = 12
 HISTORY = deque(maxlen=400)  # about 20 minutes of readings at the page's 3 second poll, kept while the panel runs
 HISTORY_GAP = 2.5

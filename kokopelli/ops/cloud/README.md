@@ -10,8 +10,8 @@ The Mac runs Cosmos and Qwen with MLX, which only works on Apple chips. PACE has
 
 ```
 python3 kokopelli/ops/gpu.py run --name mind_x --priority 45 --cwd ~/Desktop/kokopelli \
-  --pace-command "python -m kokopelli.mind.run --agent qwen --ticks 90 --out out/mind/x" --pull out/mind/x \
-  -- .venv/bin/python -m kokopelli.mind.run --agent qwen --ticks 90 --out out/mind/x
+  --pace-command "python -m kokopelli.loop.run_mind --agent qwen --ticks 90 --out out/mind/x" --pull out/mind/x \
+  -- .venv/bin/python -m kokopelli.loop.run_mind --agent qwen --ticks 90 --out out/mind/x
 ```
 
 A job with no `--pace-command` always stays on the Mac, and the panel greys out its PACE switch. No job in this repo has a CUDA version yet, so writing one, such as Qwen through `transformers`, is the next step before PACE does real work.
