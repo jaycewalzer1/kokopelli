@@ -16,6 +16,10 @@ equal priorities go in arrival order. Standard library only, plus macmon (Homebr
 Once a job has its turn, a small keeper process owns it. If the `run` that queued it is killed or its terminal closes, the
 job carries on and the queue still counts it, so nothing else can start beside it. To end one on purpose:
     python3 ops/gpu.py stop --name x               # SIGTERM to the job's whole process group, SIGKILL after 30 s
+Before queueing, `run` checks the job can start at all (folder, executable, module or script, outputs), so a bad path
+fails in seconds instead of after a wait for its turn. `gpu.py check [--cwd D] [--output O] [--gb N] -- CMD` runs the same
+check alone, plus free memory. `run --dry-run` runs the command with KOKO_DRY_RUN=1, which the world-model scripts take to
+mean: paint one latent, label the sidecar a dry run, exit 0 (half an hour's limit unless --max-hours says otherwise).
 `--gb N` holds a job until ram_share.py says N GB is free. `status` says why each job is waiting and how long a running job's
 log has been quiet. A Python process over 8 GB that no ticket owns counts as an outside model job, whatever its name.
 
@@ -52,6 +56,7 @@ ABOUT_LIMIT = 400
 POLL_SECONDS = float(os.environ.get("KOKOPELLI_GPU_POLL", 15))
 GRACE_SECONDS = float(os.environ.get("KOKOPELLI_GPU_GRACE", 30))    # from SIGTERM to SIGKILL when a job is stopped
 SAMPLE_SECONDS = float(os.environ.get("KOKOPELLI_GPU_SAMPLE", 15))  # how often the keeper reads the machine during a job
+DRY_RUN_HOURS = 0.5                                                 # a dry run's time limit unless --max-hours says otherwise
 HEAVY_PYTHON_GB = 8                                                 # no small script is this big, and every model load is
 
 # Model jobs started without this wrapper still count as using the GPU.
@@ -261,6 +266,122 @@ def run_on_pace(ticket, path, args, queued_at):
     return code
 
 
+CHECK_TIMEOUT = 20                                 # seconds for the job's interpreter to look up its module
+PYTHON = re.compile(r"[Pp]ython[\d.]*$")
+PYTHON_VALUE_FLAGS = {"-W", "-X", "-Q"}            # interpreter flags that take the next word as their value
+WRAPPERS = ("ram_share.py", "memguard.py")         # `python3 X.py hold/run ... -- CMD`: the job is CMD
+
+
+def unwrap(command):
+    """The command a job really runs and the environment `env` gives it, under any `env K=V` and ram_share/memguard wrappers."""
+    words, env = list(command), {}
+    for _ in range(8):
+        if words and Path(words[0]).name == "env":
+            words = words[1:]
+            while words and "=" in words[0] and not words[0].startswith("-"):
+                key, value = words.pop(0).split("=", 1)
+                env[key] = value
+            continue
+        if len(words) > 1 and PYTHON.match(Path(words[0]).name) and Path(words[1]).name in WRAPPERS and "--" in words:
+            words = words[words.index("--") + 1:]
+            continue
+        break
+    return words, env
+
+
+def resolve(word, cwd, env):
+    """Where an executable lives, as the keeper would find it, or None."""
+    if "/" in word:
+        path = Path(cwd, word) if cwd else Path(word)
+        return str(path) if path.is_file() and os.access(path, os.X_OK) else None
+    return shutil.which(word, path=env.get("PATH", os.environ.get("PATH")))
+
+
+def python_target(words):
+    """(flags, "-m" or "script", module or path) for a Python command line, or None if it runs `-c` code or nothing."""
+    flags, i = [], 1
+    while i < len(words) and words[i].startswith("-") and words[i] not in ("-m", "-c", "-"):
+        width = 2 if words[i] in PYTHON_VALUE_FLAGS else 1
+        flags += words[i:i + width]
+        i += width
+    if i >= len(words) or words[i] in ("-c", "-"):
+        return None
+    if words[i] == "-m":
+        return (flags, "-m", words[i + 1]) if i + 1 < len(words) else None
+    return flags, "script", words[i]
+
+
+LOOKUP = ("import importlib.util, sys\n"
+          "try:\n    found = importlib.util.find_spec(sys.argv[1]) is not None\n"
+          "except Exception:\n    found = False\n"
+          "sys.exit(0 if found else 1)")
+COMPILES = "import sys; compile(open(sys.argv[1], 'rb').read(), sys.argv[1], 'exec')"
+
+
+def preflight(command, cwd=None, outputs=(), gb=0, memory=True):
+    """What would make this job fail before it does any work, as a list of problems; empty if none were found.
+    Checks that the folder exists, the executable resolves, a Python job's module or script is there (in the job's own
+    interpreter, so a 3.10 venv is checked as 3.10), each output's folder is writable and, with memory, that gb is free.
+    Nothing here imports the job's code: a module is only looked up, a script only compiled."""
+    problems = []
+    if cwd and not Path(cwd).is_dir():
+        return [f"--cwd {cwd} doesn't exist"]
+    words, env = unwrap(command)
+    if not words:
+        return ["no command to run"]
+    executable = resolve(words[0], cwd, env)
+    if not executable:
+        problems.append(f"command not found: {words[0]!r}" + (f" (from {cwd})" if cwd else ""))
+    elif PYTHON.match(Path(words[0]).name):
+        target = python_target(words)
+        job_env = {**os.environ, **env}
+        if target and target[1] == "-m":
+            isolated = [f for f in target[0] if f in ("-I", "-E", "-s", "-S")]
+            try:
+                found = subprocess.run([executable, *isolated, "-c", LOOKUP, target[2]], cwd=cwd or None, env=job_env,
+                                       capture_output=True, timeout=CHECK_TIMEOUT).returncode == 0
+            except subprocess.TimeoutExpired:
+                found = True   # a slow package import isn't a missing module; the job may still be fine
+            except OSError:
+                found = False
+            if not found:
+                problems.append(f"{executable} can't find module {target[2]!r}" + (f" from {cwd}" if cwd else ""))
+        elif target:
+            script = Path(cwd or ".", target[2])
+            if not script.is_file():
+                problems.append(f"script not found: {script}")
+            else:
+                try:
+                    done = subprocess.run([executable, "-c", COMPILES, str(script)], env=job_env, capture_output=True, text=True,
+                                          timeout=CHECK_TIMEOUT)
+                except (OSError, subprocess.SubprocessError):
+                    done = None
+                if done and done.returncode:
+                    problems.append(f"{script} doesn't compile under {executable}: {done.stderr.strip().splitlines()[-1:]}")
+    for output in outputs:
+        folder = Path(output)
+        while not folder.exists() and folder != folder.parent:
+            folder = folder.parent
+        if not os.access(folder, os.W_OK):
+            problems.append(f"output {output} can't be written: {folder} isn't writable")
+    if memory and gb:
+        short = memory_short(gb)
+        if short:
+            problems.append(short)
+    return problems
+
+
+def check(args):
+    """`gpu.py check`: the pre-flight on its own, without queueing. Exit 0 if the job looks runnable, 1 if not."""
+    outputs = [str(Path(args.cwd or os.getcwd(), output).resolve()) for output in args.output]
+    problems = preflight(args.command, args.cwd, outputs, args.gb)
+    for problem in problems:
+        print(f"FAILED: {problem}", file=sys.stderr)
+    if not problems:
+        print("ok")
+    return 1 if problems else 0
+
+
 def run(args):
     for folder in (QUEUE, LOGS):
         folder.mkdir(parents=True, exist_ok=True)
@@ -276,15 +397,26 @@ def run(args):
         print(f"{args.name} wasn't queued: give at least one --output, the file or folder it writes, so the GPU tab can show it.", file=sys.stderr)
         return 2
     outputs = [str(Path(args.cwd or os.getcwd(), output).resolve()) for output in args.output]
+    problems = [] if args.no_check else preflight(args.command, args.cwd, outputs, memory=False)  # --gb waits in line instead
+    if problems:
+        for problem in problems:
+            print(f"{args.name} wasn't queued: {problem}. (gpu.py check runs this alone; --no-check skips it.)", file=sys.stderr)
+        return 2
+    env = {}
+    if args.dry_run:
+        env["KOKO_DRY_RUN"] = "1"            # the job's own code decides how small a dry run is
+        about = f"[dry run] {about}"[:ABOUT_LIMIT]
+        args.max_hours = args.max_hours or DRY_RUN_HOURS
     now = time.time()
     ticket_id = f"{int(now * 1000)}-{os.getpid()}"
     ticket = {"id": ticket_id, "name": args.name, "priority": args.priority, "pid": os.getpid(),
               "queued_at": now, "cwd": args.cwd, "command": args.command, "running": False,
-              "where": chosen, "pace_command": args.pace_command, "pull": args.pull, "about": about, "outputs": outputs, "gb": args.gb}
+              "where": chosen, "pace_command": args.pace_command, "pull": args.pull, "about": about, "outputs": outputs, "gb": args.gb,
+              **({"env": env, "dry_run": True} if env else {})}
     path = QUEUE / f"{ticket_id}.json"
     write_ticket(path, ticket)
     log_event(event="queued", id=ticket_id, name=args.name, priority=args.priority, command=args.command, cwd=args.cwd, where=chosen,
-              about=about, outputs=outputs)
+              about=about, outputs=outputs, **({"dry_run": True} if env else {}))
     deadline = now + args.give_up_hours * 3600 if args.give_up_hours else None
     handed_over = False
     try:
@@ -370,7 +502,7 @@ def keep(args):
     samples, next_sample, ending_since, timed_out = [], 0.0, None, False
     with log_path.open("w") as log:
         process = subprocess.Popen(["caffeinate", "-is", *ticket["command"]], cwd=ticket.get("cwd") or None, stdin=subprocess.DEVNULL,
-                                   stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                                   stdout=log, stderr=subprocess.STDOUT, start_new_session=True, env={**os.environ, **ticket.get("env", {})})
 
     def signal_job(number):
         try:
@@ -399,11 +531,18 @@ def keep(args):
             samples.append(sample)
             with metrics.open("a") as out:
                 out.write(json.dumps(sample) + "\n")
+    # A signal the queue didn't send (7 of the 15 failures up to 2026-11-08 were a SIGTERM from outside): name it, so the
+    # ledger tells it apart from a crash. The usual senders are a hand `kill`/`pkill` and the system's out-of-memory killer.
+    outside = signal.Signals(-code).name if code < 0 and not stop_asked and not timed_out and -code in signal.valid_signals() else None
+    if outside:
+        with log_path.open("a") as log:
+            log.write(f"\n[gpu.py] the job ended on {outside}, which the queue didn't send. Use gpu.py stop to end a job.\n")
     if timed_out:
         code = 124
     peak_gb = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss / 2**30
     log_event(event="finished", id=args.id, name=ticket["name"], exit_code=code, timed_out=timed_out, stopped=bool(stop_asked),
-              seconds=time.time() - started, peak_rss_gb=round(peak_gb, 2), log=args.log, where="local", **machine_summary(samples))
+              seconds=time.time() - started, peak_rss_gb=round(peak_gb, 2), log=args.log, where="local", **machine_summary(samples),
+              **({"outside_signal": outside} if outside else {}), **({"dry_run": True} if ticket.get("dry_run") else {}))
     path.unlink(missing_ok=True)
     summarize_later(args.id)
     return code
@@ -530,8 +669,16 @@ def main():
     run_parser.add_argument("--pull", action="append", default=[], help="a path, relative to --cwd, to copy back from PACE afterwards")
     run_parser.add_argument("--about", help="required: a sentence or two on what the experiment does and why, shown in the GPU tab")
     run_parser.add_argument("--output", action="append", default=[], help="required, repeatable: a file or folder it writes, relative to --cwd")
+    run_parser.add_argument("--dry-run", action="store_true", help="run it with KOKO_DRY_RUN=1: the job paints one latent and exits")
+    run_parser.add_argument("--no-check", action="store_true", help="queue it without the pre-flight (gpu.py check)")
     run_parser.add_argument("command", nargs="+")
     run_parser.set_defaults(handler=run)
+    check_parser = commands.add_parser("check", help="pre-flight a job without queueing it: folder, executable, module, outputs, memory")
+    check_parser.add_argument("--cwd")
+    check_parser.add_argument("--output", action="append", default=[])
+    check_parser.add_argument("--gb", type=float, default=0)
+    check_parser.add_argument("command", nargs="+")
+    check_parser.set_defaults(handler=check)
     commands.add_parser("status").set_defaults(handler=status)
     keep_parser = commands.add_parser("keep", help=argparse.SUPPRESS)
     keep_parser.add_argument("--id", required=True)
