@@ -20,8 +20,8 @@ from unittest import mock
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import world_transfer as wt                     # noqa: E402
-import world_transfer_multi as wtm              # noqa: E402
+from core import world_transfer as wt                     # noqa: E402
+from core import world_transfer_multi as wtm              # noqa: E402
 
 D, MLP, TIME = 64, 32, 32          # hidden, MLP and time-embedding widths of the fake
 W, H, FRAMES = 48, 32, 13          # canvas -> latent 2x3 (odd width exercises the patch padding), 4 latent frames

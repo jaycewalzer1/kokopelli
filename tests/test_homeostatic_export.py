@@ -11,7 +11,7 @@ from mlx_vlm.trainer.common.utils import save_trainable_weights
 from mlx_vlm.trainer.peft.utils import apply_lora_layers, get_peft_model
 
 from homeostatic.export import NotBetter, arm_config, best_validation, export, fuse_into, gate, sha256, write_full_weights
-from settings import ROOT
+from core.settings import ROOT
 from tests.test_homeostatic_grpo import tiny_model
 
 REFERENCE = {"base": {"mean_drive": 29.4}, "idle": {"mean_drive": 25.2}}

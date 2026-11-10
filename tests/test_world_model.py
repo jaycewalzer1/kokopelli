@@ -5,9 +5,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from blend import probe
-from settings import WORLD_MODEL, WORLD_MODEL_WEIGHTS
-from world_model import continue_video, image_to_video, text_to_video
+from core.blend import probe
+from core.settings import WORLD_MODEL, WORLD_MODEL_WEIGHTS
+from core.world_model import continue_video, image_to_video, text_to_video
 
 SMALL = {"size": "256x256", "frames": 8, "steps": 4, "seed": 7}
 

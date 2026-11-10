@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from llm_model import ask, load_llm, unload
-from settings import LLM_MODEL, LLM_MODEL_WEIGHTS
+from core.llm_model import ask, load_llm, unload
+from core.settings import LLM_MODEL, LLM_MODEL_WEIGHTS
 
 # Loading Qwen3-VL-8B (peak 16.5 GB) in the default run made tests/ peak at 18.3 GB, and five runs at once crashed the Mac.
 # These are model jobs: run them through ops/gpu.py with RUN_MODEL_TESTS=1 (command in docs/fable_log/P1-M.md).

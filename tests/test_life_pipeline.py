@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 from life.pipeline import collect, signals, video_path
-from settings import PIPELINE_PATHS, ROOT
+from core.settings import PIPELINE_PATHS, ROOT
 
 PYTHON = "/usr/bin/python"
 GPU = "/x/ops/gpu.py run --name n --priority 10 --"

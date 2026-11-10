@@ -4,7 +4,7 @@ from dataclasses import replace
 
 from homeostatic.world import (discounted, done, drive, deviation, homeostatic_reward, maximize_reward, parse_action,
                                start, step, system_prompt, user_prompt)
-from settings import HOMEOSTATIC_WORLD as WORLD
+from core.settings import HOMEOSTATIC_WORLD as WORLD
 
 
 def state_at(values, low=40, high=60):

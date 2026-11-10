@@ -15,7 +15,7 @@ from life.panel import make_server
 from life.seed import LifeSeed
 from life.store import Store
 from life.windows import children, find, life_window
-from settings import LIFE_LLM
+from core.settings import LIFE_LLM
 
 BIRTH = date(1990, 3, 14)
 SEED = LifeSeed("test", BIRTH, place="Atlanta", family=({"name": "Ana", "relationship": "mother"},), rng_seed=7, hidden_target="CANARY")
