@@ -43,6 +43,7 @@ import live  # noqa: E402  (borrows unrealcv, puts the wm-agent-loop worktree on
 from live import Cast, parse_reply, rough, bearing, compass  # noqa: E402,F401
 from live_wm import BLUR_DOWNUP, FAR_CM, NEAR_CM, REACH_M, Film  # noqa: E402,F401
 from navmap import NavMap  # noqa: E402
+import lunch_fixes as fx  # noqa: E402
 
 ROOT = live.ROOT
 sys.path.insert(0, str(ROOT))
@@ -99,6 +100,9 @@ class Lunch(LunchWords, LunchRecord):
         self.palette = ctl.Palette()
         self.sim_t, self.step_no, self.running = 0.0, 0, True
         self.wm_info = {}
+        self.fixes = set(getattr(args, "fixes", None) or ())
+        self.on_change = bool(getattr(args, "decide_on_change", False))
+        self.lines = []   # (speaker id, text) for every line said, in order
 
     # --- perception
     def perceive(self, frames):
@@ -151,6 +155,26 @@ class Lunch(LunchWords, LunchRecord):
             raise ValueError(f"unknown person or place {act.get('target')!r}")
         if t not in ("go_to", "approach", "say", "look_at", "pick_up", "put_down", "wait"):
             raise ValueError(f"unknown action type {t!r}")
+        if t == "pick_up" and "loops" in self.fixes:
+            me = self.world.bodies()[mind.id].xy
+            for oid, xy, held in self.world.objects():
+                if oid != act["object"]:
+                    continue
+                if held:
+                    who = "you are" if held == mind.id else f"{self.minds[held].name if held in self.minds else held} is"
+                    raise ValueError(f"{oid} can't be picked up: {who} already holding it")
+                if math.dist(me, xy) > REACH_M:
+                    raise ValueError(f"{oid} is {rough(math.dist(me, xy))} away, out of reach; approach it first")
+
+    def check_repeat(self, mind, act):
+        mine = [t for k, t in self.lines if k == mind.id]
+        theirs = [t for k, t in self.lines if k != mind.id]
+        hit = fx.repeated(act["text"], mine, theirs)
+        if hit:
+            whose, line = hit
+            said = "you just said" if whose == "you" else "you just heard"
+            raise ValueError(f"{said} almost exactly that (\"{line[:120]}\"). Don't repeat it: say something new that "
+                             f"answers or moves the conversation on, or choose another action")
 
     def decide(self, mind):
         prompt = self.prompt(mind)
@@ -164,6 +188,8 @@ class Lunch(LunchWords, LunchRecord):
             try:
                 thought, act, diary = parse_reply(raw)
                 self.check(mind, act)
+                if "repeats" in self.fixes and act.get("type") == "say":
+                    self.check_repeat(mind, act)
                 self.log("decision", mind=mind.id, prompt=prompt, raw=raw, seconds=round(time.time() - t, 1), frame=mind.seen)
                 return thought, act, diary
             except Exception as e:
@@ -177,10 +203,16 @@ class Lunch(LunchWords, LunchRecord):
         me = bodies[mind.id].xy
         self.say(f"> **{mind.name}:** {text}")
         self.log("says", mind=mind.id, text=text)
+        self.lines.append((mind.id, text))
+        clock = self.world.clock[:5]
+        if "memory" in self.fixes:
+            mind.talk.append(f"[{clock}] you: \"{text}\"")
         listeners = []
         other = self.minds[mind.other]
         if math.dist(me, bodies[other.id].xy) <= HEAR_M:
             other.heard.append(f"{mind.name} ({mind.id}): \"{text}\"")
+            if "memory" in self.fixes:
+                other.talk.append(f"[{clock}] {mind.name}: \"{text}\"")
             other.pending, other.awaiting = "heard", None
             listeners.append(other.id)
             if other.id not in decided and other.id not in queue:
@@ -199,6 +231,8 @@ class Lunch(LunchWords, LunchRecord):
                 for m in self.minds.values():   # an NPC's answer is heard by everyone near the NPC
                     if math.dist(bodies[m.id].xy, xy) <= HEAR_M:
                         m.heard.append(f"{pname} ({pid}): \"{line}\"")
+                        if "memory" in self.fixes:
+                            m.talk.append(f"[{clock}] {pname}: \"{line}\"")
                         m.pending = m.pending or "heard"
         self.log("heard_by", mind=mind.id, listeners=listeners)
         if not listeners:
@@ -244,8 +278,13 @@ class Lunch(LunchWords, LunchRecord):
             return self.next_leg(mind), None
         mind.route, mind.approaching = [], None
         if t == "approach":
-            mind.approaching = act["target"]
             person = act["target"] == mind.other or (self.cast and act["target"] in self.cast.people)
+            if person and "loops" in self.fixes:
+                xy = self.world.bodies()[mind.other].xy if act["target"] == mind.other else dict(self.world.npcs()).get(act["target"])
+                if xy and math.dist(me, xy) <= live.CHASE_M + 0.5:
+                    name = self.minds[mind.other].name if act["target"] == mind.other else self.cast.people[act["target"]]["name"]
+                    return self.face_other(mind) or {"type": "wait"}, f"You're already right next to {name}."
+            mind.approaching = act["target"]
             return {"type": "move_to", "target_id": act["target"], "arrival_radius_cm": (live.CHASE_M if person else 1.0) * 100}, None
         if t == "look_at":
             target = act["target"]
@@ -319,7 +358,15 @@ class Lunch(LunchWords, LunchRecord):
                 mind.last, mind.pending = f"{self.minds[mind.other].name} hasn't answered you.", mind.pending or "no answer"
 
     def wants_to_decide(self, mind):
-        return bool(mind.pending) or (mind.idle and mind.awaiting is None)
+        if not self.on_change:
+            return bool(mind.pending) or (mind.idle and mind.awaiting is None)
+        # --decide-on-change: speech, an arrival, a meeting or a problem set `pending`; otherwise an idle mind decides
+        # only when what it sees changed, or after QUIET_STEPS quiet steps
+        if mind.pending:
+            return True
+        if not mind.idle or mind.awaiting is not None:
+            return False
+        return mind.quiet >= fx.QUIET_STEPS or fx.frame_diff(mind.seen, mind.decided_frame) > fx.FRAME_CHANGE
 
     def order(self):
         """Whoever has something to answer goes first; otherwise alternate who starts."""
@@ -343,10 +390,11 @@ class Lunch(LunchWords, LunchRecord):
             decided.add(k)
             thought, act, diary = self.decide(mind)
             mind.decisions += 1
+            mind.decided_frame, mind.quiet = mind.seen, 0
             n = mind.decisions
             if mind.seen:
                 shutil.copy(mind.seen, self.out / "frames" / k / f"{self.step_no:04d}.png")
-            if diary:
+            if diary and not ("memory" in self.fixes and fx.restates(diary, mind.diary)):
                 mind.diary.append(f"[{clock}] {diary}")
             mind.last_thought, mind.last_action = thought, act
             self.say(f"\n### {clock[:5]} — step {self.step_no} — {mind.name}"
@@ -365,6 +413,7 @@ class Lunch(LunchWords, LunchRecord):
         for k, mind in self.minds.items():
             if k not in actions:
                 actions[k] = self.continuation(mind)
+                mind.quiet += mind.idle
         self.log("sim_actions", actions=actions)
         t = time.time()
         outcomes, frames = self.world.step(actions)
@@ -427,7 +476,15 @@ def build_args(argv=None):
     ap.add_argument("--wm-prompt", default=WM_PROMPT)
     ap.add_argument("--fake-wm", action="store_true", help="no world model: the 'painting' is a blend of the controls")
     ap.add_argument("--out", help="run folder (default out/city_agents/<stamp>_lunch)")
+    ap.add_argument("--fixes", default="", help=f"behavior fixes, comma-separated, off by default: {','.join(fx.FIXES)} or all "
+                                                "(city/agents/lunch_fixes.py)")
+    ap.add_argument("--decide-on-change", action="store_true",
+                    help="idle minds decide only when their painted frame changes (or after a few quiet steps)")
     args = ap.parse_args(argv)
+    try:
+        args.fixes = sorted(fx.parse_fixes(args.fixes))
+    except ValueError as e:
+        ap.error(str(e))
     args.steps = max(1, int(round(args.minutes * 60 / args.step_s)))
     if abs(args.step_s * args.fps - round(args.step_s * args.fps)) > 1e-9:
         ap.error("--step-s times --fps must be a whole number of frames")

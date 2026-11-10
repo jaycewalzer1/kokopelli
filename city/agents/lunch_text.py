@@ -15,6 +15,7 @@ for _p in (ROOT, ROOT / "city" / "wm"):
         sys.path.insert(0, str(_p))
 from live import Cast, bearing, compass, rough  # noqa: E402
 from live_wm import REACH_M  # noqa: E402
+from lunch_fixes import TALK_SHOWN  # noqa: E402
 
 HEAR_M = live.HEAR_M
 
@@ -123,7 +124,12 @@ class LunchWords:
         heard = "\n".join(mind.heard) if mind.heard else "(nothing)"
         notes = "\n".join(f"- {d}" for d in mind.diary[-8:]) or "(none yet)"
         recent = "\n".join(f"- {r}" for r in mind.recent[-6:]) or "(nothing yet)"
+        talk = ""
+        if "memory" in getattr(self, "fixes", ()):   # lunch_fixes.py: otherwise an answer is gone one step after it's heard
+            shown = mind.talk[-TALK_SHOWN:]
+            talk = ("The conversation so far (oldest first; don't ask again what was already answered):\n"
+                    + ("\n".join(f"- {t}" for t in shown) if shown else "- (nothing said yet)") + "\n")
         return (f"{mind.who}\n\nSituation: {mind.situation}\n\n"
                 f"The image is what you see right now, through your own eyes.\n\n{self.describe(mind)}\n\n"
-                f"What you did and said recently:\n{recent}\nWhat just happened: {mind.last}\nWhat you heard:\n{heard}\n\n"
+                f"{talk}What you did and said recently:\n{recent}\nWhat just happened: {mind.last}\nWhat you heard:\n{heard}\n\n"
                 f"Your notes so far:\n{notes}\n\n{live.ACTIONS}{FORMAT_NOTE}")

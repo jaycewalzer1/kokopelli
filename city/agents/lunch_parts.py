@@ -142,6 +142,9 @@ class Mind:
     last_thought: str = ""
     last_action: dict = None
     decisions: int = 0
+    talk: list = field(default_factory=list)    # --fixes memory: every line said near this mind, both voices
+    decided_frame: str = None   # --decide-on-change: the frame this mind last decided from
+    quiet: int = 0              # --decide-on-change: steps idle without a decision
 
     @property
     def idle(self):
@@ -298,6 +301,8 @@ class LunchRecord:
                 "agents": {k: {"name": m.name, "who": m.who, "situation": m.situation, "decisions": m.decisions}
                            for k, m in self.minds.items()},
                 "finished": final, "steps_done": self.steps_done,
+                "switches": {"fixes": list(getattr(a, "fixes", None) or []), "decide_on_change": bool(getattr(a, "decide_on_change", False)),
+                             "view_prompts": bool(getattr(a, "view_prompts", False)), "life": getattr(a, "life", None)},
                 "films": {"side_by_side": "film/side_by_side.mp4", **{k: f"film/{k}.mp4" for k in self.minds}}}
         from core.manifest import manifest   # commit, dirty, weight hashes: see core/manifest.py
         fake_wm, fake_brain = meta["fake_world_model"], not isinstance(getattr(self, "brain", None), QwenBrain)
