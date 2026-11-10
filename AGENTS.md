@@ -53,9 +53,10 @@ Standing rules first, then one line per live area. Status, results and dates go 
 
 Five full test runs at once (18 GB each) ran the Mac out of memory and swap on 2026-11-09 and it panicked. Since then:
 
-- Run tests with `make test-all` (it claims its memory and waits its turn), or one module with `python3 kokopelli/ops/memguard.py run --name <what> --gb 2 -- .venv/bin/python -m unittest tests.test_x`. Never run `unittest` or `pytest` bare.
+- Run tests with `make test-all` (it claims its memory and waits its turn). It runs the tree with pytest: `.venv` with `-m "not py310"` (`main`, then `experiments` for benchmarks and commons in their own process), `simworld/.venv` with `-m py310`, one summary line each; `MAC=1` adds mac_server. For some files or tests, pass them to the same script: `tools/fable/test_all.sh tests/ops` or `tools/fable/test_all.sh tests/life/test_life_store.py`. Never run `unittest` or `pytest` bare.
+- Markers (`conftest.py`): `model` tests load Qwen or Cosmos and are skipped unless `RUN_MODEL_TESTS` is set; `slow` ones unless `RUN_LONG_TESTS` is set. Only set either for a job queued through `kokopelli/ops/gpu.py`.
 - Anything else heavy (whole-repo linters, `uv`, `npx`, builds) also goes through `kokopelli/ops/memguard.py run` with its peak in `--gb`. Model jobs go through `kokopelli/ops/gpu.py run --gb`.
 - Exit 75 from the guard means memory ran short. Wait and run it again later; don't retry in a loop and don't start a second copy.
 - Don't put a heavy command in the background and then start another. At most two guarded commands run at once.
 - `python3 kokopelli/ops/memguard.py status` prints memory, swap and who holds a claim. The overnight watchdog is `kokopelli/ops/memguard.py watch`.
-- Measured peaks: `tests` 1.3 GB (18.3 before P1-M; the real-model tests behind `RUN_MODEL_TESTS=1` peak at 17.3), `runtime` 0.7, `simworld` 0.3, `ops` 0.1, `benchmarks` 0.7.
+- Measured peaks: the whole `make test-all` 1.5 GB (2026-11-10; the `main` run is the largest; the real-model tests behind `RUN_MODEL_TESTS=1` peak at 17.3), `experiments` alone 0.7.
