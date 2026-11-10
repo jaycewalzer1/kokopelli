@@ -461,7 +461,7 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
         """
         viewmode, fmt = VIEWMODES[modality]
         data = self.wire.request(c.render(self.camera_id, viewmode, fmt), timeout=self.config.render_timeout_s)
-        if not isinstance(data, (bytes, bytearray)):
+        if not isinstance(data, bytes | bytearray):
             raise CommandError(f"expected {fmt} bytes for {modality}, got {str(data)[:200]!r}")
         stats = None
         if fmt == "png":

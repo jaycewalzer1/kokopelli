@@ -49,7 +49,7 @@ def _write_json(path, value):
 def _plain(value):
     if isinstance(value, np.ndarray):
         return value.tolist()
-    if isinstance(value, (np.floating, np.integer)):
+    if isinstance(value, np.floating | np.integer):
         return value.item()
     raise TypeError(type(value))
 
