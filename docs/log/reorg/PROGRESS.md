@@ -218,3 +218,25 @@ Left alone, on purpose:
 Found, not fixed by phase 9 (fast-pass path bugs):
 - `experiments/wm_multicontrol/run_a.sh` sets `K=$(dirname $0)/..`, now `experiments/`, not the repo root.
 - `experiments/filter_test/scripts/queue_all.sh` changes to `$(dirname $0)/../..`, also `experiments/`.
+
+## Phase 3: import wall (merge e439dc7, 2026-11-10)
+
+Subagent in its own worktree (branch `reorg/3-import-wall`). Merged cleanly onto main after phase 9; f3b50d8 then
+pointed phase 9's new READMEs and two notes at the files phase 3 moved.
+
+- `mind` no longer imports `loop`: `mind/run.py`, `check.py`, `change_check.py` are now `loop/run_mind.py`,
+  `loop/mind_check.py`, `loop/mind_change_check.py`; `loop/actions.py` is now `mind/actions.py`. Launch with
+  `python -m kokopelli.loop.run_mind` (the panel no longer recognises a process started as `-m kokopelli.mind.run`).
+- `wm/video_check.py` no longer imports `loop.drift`: the pixel distances are in `wm/pixel_distance.py`, re-exported by drift.
+- `agents/live.py` imported `tools.bodies.client`: now `kokopelli/agents/bodies_client.py`. `agents/lunch_bench.py`
+  imported test fixtures: now `tools/fable/lunch_bench.py`.
+- `sys.path.insert` removed from the library, experiments, tests and tools, except where it is on purpose: the stdlib
+  ops scripts the system python3 runs by path (rule 9), `test_simworld_contract.py` (vendored simworld first),
+  `experiments/commons` (flat experiment run from its folder), Unreal Editor scripts in `tools/bodies/metahuman/`,
+  `tools/city_build/build_city.py` (launched with `-I`), the smoke runner.
+- import-linter 2.16 (dev group; `uv.lock` added grimp and import-linter only), three contracts in pyproject: the library
+  never imports experiments/tools/tests (allowed: `life.panel -> experiments.exp1.panel`); layers agents > life > loop >
+  mind > wm (allowed: `loop.adapters.life_db -> life`, and its test); `kokopelli.ops` imports nothing else from kokopelli.
+  `lint-imports` runs in pre-commit. Graph after: `docs/log/imports-after-phase3.txt`, 0 wrong-way edges outside the allow-list.
+- Checks on main after the merge: tests 600 (10 skipped, 2 expected failures), runtime 100, simworld 197, ops 35,
+  benchmarks 198 (1 skipped), commons 62; peak 1.3 GB. Smoke 96 / 29 / 10, 0 failures. ruff clean. lint-imports 3 kept.
