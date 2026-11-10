@@ -76,3 +76,16 @@ These `branch_files` point into worktrees that no longer hold the code, and thei
 | 90-92 | SimWorld: "adapter on feat/wm-simworld and feat/wm-agent-loop worktrees" | `.../wm-agent-loop/runtime/adapters/simworld{,_bridge}.py`, `runtime/SIMWORLD.md`, `scripts/pace/wmloop_gate.sbatch` |
 | 95 | mind: "needs runtime/ from the agent loop worktree" | (text only) |
 | 175 | benchmarks: old worktree `agent-a2d4c0a770bb9b339` | `.../benchmarks/run.py`, `PREREG.md`, `holt_laury/items.jsonl` |
+
+## Decision, 2026-11-10 (owner delegated the call)
+
+**No code deleted.** All 13 zero-hit files are hand-run tools between 24 and 92 lines, last changed between 5 and 8 November, in areas that are still live:
+
+- Moodboard sourcing (`city/source_commons.py`, `city/source_tiktok.py`): the moodboard is in use and these are how images get onto it.
+- Bodies checks and asset generators (`metahuman/fade_test.py`, `inspect_materials.py`, `standins/make_groom_usda.py`, `make_helmet.py`): the only record of how the stand-in assets were made and how the body fade is checked.
+- Capture and control tools (`city/realism/replay_bridge.py`, `city/wm/plaza_clip.py`, `city/wm/blur_variants.py`, `filter_test/scripts/preview_videos.py`, `city/ue/plan_varied/kitmap.py`): each is run by hand from its docstring, which is why no file names them.
+- Benchmark helpers (`benchmarks/report_screenshots.py`, `benchmarks/tests/fake_openai_server.py`): the first runs DESIGN.md's section 8 check, the second tests the eval harness without a model.
+
+"Nothing imports it" is not evidence that nothing uses it when the user is a person at a terminal. Together they are about 730 lines, so removing them would save nothing measurable. Revisit one only when its area is retired.
+
+**Removed instead** (fully merged into main, clean, referenced by nothing): worktrees `.claude/worktrees/ops` and `.claude/worktrees/integrate`, and branches `feat/ops`, `integrate/all-sessions`, `wip/main-overnight`, `add-simworld`, `worktree-agent-a2d4c0a770bb9b339`, `worktree-agent-aa5f839d86d587545`. Kept: the `agent-a2d4…` and `agent-aa5f…` worktrees, because `core/settings.py`, `life/architecture.py` and `ops/status.py` still point at them, and the three worktrees with unmerged commits (`commons`, `exp1`, `wm-agent-loop`).
