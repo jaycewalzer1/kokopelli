@@ -1,15 +1,18 @@
 """Package-to-package import graph of the repo, from the source alone (standard library ast).
 
-    python3 tools/reorg/import_graph.py                 # print the table
-    python3 tools/reorg/import_graph.py > docs/log/imports-before.txt
+    python3 tools/reorg/import_graph.py                          # print the table
+    python3 tools/reorg/import_graph.py > docs/log/imports-after-phase3.txt
 
-A "package" is the first folder under the repo root (life, mind, runtime, ...); files at the root
-are grouped as "(root)". Each import of a repo module counts once per importing file, so an edge
-`life -> homeostatic  3` means three files in life/ import something from homeostatic/. Imports
-inside functions count too. Root stand-ins (`import settings`, `import world_transfer`, ...) are
-resolved to the package they alias, using their own `import core.x` line, and listed separately.
-Bare sibling imports (`import lunch_wm` after a sys.path.insert) are resolved against the
-importing file's own folder. Vendored and generated trees are left out.
+A "package" is a subpackage of the library (kokopelli.wm, kokopelli.loop, ...; kokopelli/settings.py is
+kokopelli.settings), an experiment (experiments.exp1, ...), or the first folder under the repo root for everything
+else (tools, tests, ...). Each import of a repo module counts once per importing file, so an edge
+`kokopelli.life -> experiments.exp1  1` means one file in kokopelli/life/ imports something from experiments/exp1/.
+Imports inside functions count too, and `from kokopelli import settings` lands in kokopelli.settings. Bare sibling
+imports (`import lunch_wm` after a sys.path.insert) are resolved against the importing file's own folder. Vendored and
+generated trees are left out.
+
+The last section lists the edges that go the wrong way under the import contracts in pyproject.toml
+([tool.importlinter]), including the allowed ones; `lint-imports` is the check that enforces them.
 """
 from __future__ import annotations
 
@@ -20,8 +23,11 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-EXCLUDE = ("simworld/", "mac_server/", "wm_multicontrol/upstream/", ".claude/")
+EXCLUDE = ("simworld/", "mac_server/", "vendor/", ".claude/")
 ROOT_PKG = "(root)"
+TWO_LEVEL = ("kokopelli", "experiments")   # packages split one level further
+LAYERS = ["kokopelli.wm", "kokopelli.mind", "kokopelli.loop", "kokopelli.agents"]   # low to high
+LIBRARY_ONLY = ("experiments", "tools", "tests")                                   # the library never imports these
 
 
 def tracked_py() -> list[Path]:
@@ -30,57 +36,62 @@ def tracked_py() -> list[Path]:
 
 
 def package_of(rel: Path) -> str:
-    return rel.parts[0] if len(rel.parts) > 1 else ROOT_PKG
+    """Package of a file, from its path relative to the root."""
+    parts = rel.parts
+    if len(parts) == 1:
+        return ROOT_PKG
+    if parts[0] in TWO_LEVEL:
+        second = parts[1] if len(parts) > 2 else Path(parts[1]).stem
+        return parts[0] if second == "__init__" else f"{parts[0]}.{second}"
+    return parts[0]
 
 
-def root_aliases(files: list[Path]) -> dict[str, str]:
-    """Root stand-in module name -> the package it aliases (read from its `import core.x` / run_module line)."""
-    aliases = {}
-    for f in files:
-        if f.parent != ROOT:
-            continue
-        for node in ast.walk(ast.parse(f.read_text(), str(f))):
-            if isinstance(node, ast.Import):
-                for a in node.names:
-                    if "." in a.name and (ROOT / a.name.split(".")[0]).is_dir():
-                        aliases[f.stem] = a.name.split(".")[0]
-    return aliases
-
-
-def imported_names(tree: ast.AST) -> list[tuple[str, int]]:
-    """(module name, relative level) for every import statement."""
+def imported_modules(tree: ast.AST, rel: Path) -> list[str]:
+    """Dotted module names for every import statement; relative imports made absolute, `from a import b` as a.b."""
     names = []
+    here = list(rel.with_suffix("").parts)
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
-            names += [(a.name, 0) for a in node.names]
+            names += [a.name for a in node.names]
         elif isinstance(node, ast.ImportFrom):
-            names.append((node.module or "", node.level))
+            if node.level:
+                module = ".".join(here[:-node.level] + ([node.module] if node.module else []))
+            else:
+                module = node.module or ""
+            names += [f"{module}.{a.name}" for a in node.names]
     return names
 
 
-def resolve(name: str, level: int, rel: Path, top_dirs: set[str], root_mods: set[str]) -> str | None:
+def resolve(name: str, rel: Path, top_dirs: set[str]) -> str | None:
     """Package a module name lands in, or None when it is not repo code."""
-    if level:                              # relative import: same package
-        return package_of(rel)
-    head = name.split(".")[0]
-    if head in top_dirs:
-        return head
-    if head in root_mods:
-        return ROOT_PKG                    # resolved further through the alias table
-    sibling = ROOT / rel.parent / f"{head}.py"
-    if rel.parent != Path(".") and (sibling.exists() or (ROOT / rel.parent / head).is_dir()):
+    parts = name.split(".")
+    if parts[0] in top_dirs:
+        if parts[0] in TWO_LEVEL and len(parts) > 1:
+            # `from kokopelli import settings` names kokopelli.settings; a name that is neither folder nor module stays at the top
+            if (ROOT / parts[0] / parts[1]).is_dir() or (ROOT / parts[0] / f"{parts[1]}.py").exists():
+                return f"{parts[0]}.{parts[1]}"
+        return parts[0]
+    if rel.parent != Path(".") and ((ROOT / rel.parent / f"{parts[0]}.py").exists() or (ROOT / rel.parent / parts[0]).is_dir()):
         return package_of(rel)             # bare sibling import after a sys.path.insert
+    return None
+
+
+def wrong_way(src: str, dst: str) -> str | None:
+    """Why an edge breaks a contract, or None."""
+    if src.startswith("kokopelli") and dst.split(".")[0] in LIBRARY_ONLY:
+        return "library imports outside the library"
+    if src == "kokopelli.ops" and dst.startswith("kokopelli") and dst != "kokopelli.ops":
+        return "ops imports the rest of the library"
+    if src in LAYERS and dst in LAYERS and LAYERS.index(dst) > LAYERS.index(src):
+        return "lower layer imports a higher one"
     return None
 
 
 def main() -> int:
     files = tracked_py()
     top_dirs = {p.relative_to(ROOT).parts[0] for p in files if len(p.relative_to(ROOT).parts) > 1}
-    root_mods = {p.stem for p in files if p.parent == ROOT}
-    aliases = root_aliases(files)
 
     edges: Counter[tuple[str, str]] = Counter()
-    via_alias: Counter[tuple[str, str, str]] = Counter()
     examples: dict[tuple[str, str], list[str]] = defaultdict(list)
     for f in files:
         rel = f.relative_to(ROOT)
@@ -91,12 +102,8 @@ def main() -> int:
             print(f"# skipped {rel}: {e}", file=sys.stderr)
             continue
         seen: set[str] = set()
-        for name, level in imported_names(tree):
-            dst = resolve(name, level, rel, top_dirs, root_mods)
-            head = name.split(".")[0]
-            if dst == ROOT_PKG and not level and head in aliases and src_pkg != ROOT_PKG:
-                via_alias[(src_pkg, head, aliases[head])] += 1
-                dst = aliases[head]
+        for name in imported_modules(tree, rel):
+            dst = resolve(name, rel, top_dirs)
             if dst is None or dst == src_pkg or dst in seen:
                 continue
             seen.add(dst)
@@ -104,12 +111,13 @@ def main() -> int:
             if len(examples[(src_pkg, dst)]) < 3:
                 examples[(src_pkg, dst)].append(str(rel))
 
+    width = max(len(p) for e in edges for p in e) + 1
     print("# Package-to-package imports (tools/reorg/import_graph.py)")
-    print("# count = files in the source package that import the target package (root stand-ins resolved)")
+    print("# count = files in the source package that import the target package")
     print()
-    print(f"{'from':<14} {'to':<14} {'files':>5}  examples")
+    print(f"{'from':<{width}} {'to':<{width}} {'files':>5}  examples")
     for (a, b), n in sorted(edges.items()):
-        print(f"{a:<14} {b:<14} {n:>5}  {', '.join(examples[(a, b)])}")
+        print(f"{a:<{width}} {b:<{width}} {n:>5}  {', '.join(examples[(a, b)])}")
 
     print()
     print("# Cycles (both directions present)")
@@ -120,9 +128,12 @@ def main() -> int:
         print("(none)")
 
     print()
-    print("# Imports through root stand-ins (package, stand-in, real package): import statements")
-    for (a, mod, real), n in sorted(via_alias.items()):
-        print(f"{a:<14} {mod:<26} -> {real:<10} {n:>4}")
+    print(f"# Wrong-way edges (layers low to high: {' -> '.join(LAYERS)}); allowed ones are listed in pyproject.toml")
+    bad = [(a, b, why) for (a, b) in sorted(edges) if (why := wrong_way(a, b))]
+    for a, b, why in bad:
+        print(f"{a} -> {b}   {why}: {', '.join(examples[(a, b)])}")
+    if not bad:
+        print("(none)")
 
     print()
     print(f"# {len(files)} files scanned; excluded: {', '.join(EXCLUDE)}")
