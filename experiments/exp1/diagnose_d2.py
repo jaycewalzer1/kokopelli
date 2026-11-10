@@ -94,7 +94,7 @@ def odds_grad(policy, probe):
         c = float(dscores[k])
         if c == 0.0:
             continue
-        grad = tree_map(lambda g: g * c, _option_grads(policy, probe, k))
+        grad = tree_map(lambda g, c=c: g * c, _option_grads(policy, probe, k))
         total = grad if total is None else tree_map(lambda a, b: a + b, total, grad)
         mx.eval(total)
     return _flat(total)
@@ -114,8 +114,8 @@ def split_grad(sleeper, row, scale):
         if a == 0.0 and b == 0.0:
             continue
         grad = _option_grads(policy, row, k)
-        pg_part = tree_map(lambda g: g * a, grad)
-        kl_part = tree_map(lambda g: g * b, grad)
+        pg_part = tree_map(lambda g, a=a: g * a, grad)
+        kl_part = tree_map(lambda g, b=b: g * b, grad)
         g_pg = pg_part if g_pg is None else tree_map(lambda x, y: x + y, g_pg, pg_part)
         g_kl = kl_part if g_kl is None else tree_map(lambda x, y: x + y, g_kl, kl_part)
         mx.eval(g_pg, g_kl)

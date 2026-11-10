@@ -68,7 +68,7 @@ class ActorTest(unittest.TestCase):
             row = self.actor.row(start(seed))
             prompt = row["inputs"]["input_ids"]
             tokens = iter(forced + [0])  # generation samples one token past the last one it yields
-            sampler = lambda logits: mx.array([next(tokens)])
+            sampler = lambda logits, tokens=tokens: mx.array([next(tokens)])
             stream = generate_step(prompt[None, :], self.model, None, mx.ones_like(prompt)[None, :], max_tokens=len(forced), sampler=sampler)
             generated = []
             for (token, logprobs), expected in zip(stream, forced):
@@ -187,7 +187,7 @@ class TrainingTest(unittest.TestCase):
     def test_each_group_is_reported_with_its_real_scores_under_every_reward(self):
         for reward in ("homeostatic", "shuffled", "maximize"):
             reported = []
-            self.train(reward, iters=1, on_group=lambda *group: reported.append(group))
+            self.train(reward, iters=1, on_group=lambda *group, reported=reported: reported.append(group))
             state, actions, scores, chosen = reported[0]
             self.assertEqual(actions, list(WORLD["actions"]))
             self.assertEqual(len(scores), len(actions))

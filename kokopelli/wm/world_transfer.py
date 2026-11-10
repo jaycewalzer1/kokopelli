@@ -197,7 +197,7 @@ def text_cache(arrays, ids, rope):
     cache = []
     for i in range(36):
         p = f"layers.{i}."
-        g = lambda n: arrays[p + n].astype(mx.bfloat16)
+        g = lambda n, p=p: arrays[p + n].astype(mx.bfloat16)
         x = mx.fast.rms_norm(h, g("input_layernorm.weight"), EPS)
         q = mx.fast.rms_norm((x @ g("self_attn.to_q.weight").T).reshape(1, L, 32, 128), g("self_attn.norm_q.weight"), EPS)
         k = mx.fast.rms_norm((x @ g("self_attn.to_k.weight").T).reshape(1, L, 8, 128), g("self_attn.norm_k.weight"), EPS)

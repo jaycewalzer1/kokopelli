@@ -585,7 +585,7 @@ def habitat67(plot):
         above = levels[lvl + 1] if lvl + 1 < NL else []
         same = levels[lvl]
 
-        def face_free(fx0, fy0, fx1, fy1):
+        def face_free(fx0, fy0, fx1, fy1, r=r, same=same):
             probe = (fx0, fy0, fx1, fy1)
             return not any(o is not r and _ov(probe, o) > 0.05 for o in same)
 
