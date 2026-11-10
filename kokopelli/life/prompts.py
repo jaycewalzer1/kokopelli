@@ -77,7 +77,7 @@ def _known(state):
     # Money and skills are left out while the resolver only moves them at random.
     people = [f"{name} ({person['relationship']})" for name, person in sorted(state["people"].items())
               if not PLACEHOLDER_NAME.match(name)]
-    return "\n".join(line for line in (state["place"] and f"Lives in {state['place']}", people and f"People: {', '.join(people)}") if line)
+    return "\n".join(line for line in (state["place"] and f"Lives in {state['place']}", people and f"People: {', '.join(people)}") if line)  # pyright: ignore[reportCallIssue, reportArgumentType]  # `if line` drops the falsy ones
 
 
 def _memory(memory):

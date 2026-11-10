@@ -9,6 +9,7 @@ import webbrowser
 from datetime import date
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from experiments.exp1 import panel as exp1_panel
@@ -297,6 +298,7 @@ class Api:
 
 
 class Handler(BaseHTTPRequestHandler):
+    server: Any   # the ThreadingHTTPServer from make_server(), with db, watching and runners set on it
     GET = {"/api/runs": "runs", "/api/status": "status", "/api/feed": "feed", "/api/calendar": "calendar",
            "/api/node": "node", "/api/defaults": "defaults", "/api/training/runs": "training_runs", "/api/training/run": "training_run",
            "/api/exp1/runs": "exp1_runs", "/api/exp1/run": "exp1_run", "/api/exp1/arms": "exp1_arms",
@@ -341,7 +343,7 @@ class Handler(BaseHTTPRequestHandler):
     def _queue_output(self, query):
         # The file is found again from the job's own outputs, so a request names a job and a number, never a path.
         try:
-            path, content_type = gpu_queue.output_file(query["id"][0], int(query["n"][0]))
+            path, content_type = gpu_queue.output_file(query["id"][0], int(query["n"][0]))  # pyright: ignore[reportGeneralTypeIssues]  # None raises TypeError, caught below
             size = path.stat().st_size
         except (KeyError, IndexError, TypeError, ValueError, OSError):
             return self._send(404, {"error": "not found"})
@@ -464,7 +466,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def make_server(db=LIFE_DB, port=8765, watching=False):
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    server: Any = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     server.db = db
     server.watching = watching
     server.runners = Runners(db)

@@ -212,7 +212,7 @@ def calibrate(samples=10000, seed=0):
 
     by_option = {decision: {option.id: [] for option in DECISIONS[decision]} for decision in DECISIONS}
     for _ in range(samples):
-        for decision, (choice, value) in day().items():
+        for decision, (choice, value) in day().items():  # pyright: ignore[reportOptionalMemberAccess]  # None only for a forced path
             by_option[decision][choice].append(value)
     decisions = {}
     for decision, values in by_option.items():
@@ -228,7 +228,7 @@ def calibrate(samples=10000, seed=0):
         if totals:  # a path that can never be offered, like walking and then taking the front gap, is left out
             paths[f"{d1}>{d2}>{d3}"] = round(statistics.mean(totals), 4)
     median = statistics.median(paths.values())
-    best = max(paths, key=paths.get)
+    best = max(paths, key=paths.__getitem__)
     dominant = paths[best] > median * 1.05 if median > 0 else paths[best] > median + 0.05 * abs(median)
     return {"decisions": decisions, "median_path_return": round(median, 4), "best_path": best, "best_path_return": paths[best],
             "dominant_path": dominant, "paths": paths, "passes": all(row["within_5_percent"] for row in decisions.values()) and not dominant}

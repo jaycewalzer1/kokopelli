@@ -130,7 +130,7 @@ def human(kb):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])  # pyright: ignore[reportOptionalMemberAccess]  # the module has a docstring
     parser.add_argument("--root", default=str(REPO / "out"), help="the out/ directory to report on (default: this repo's)")
     parser.add_argument("--min-mb", type=float, default=50, help="list runs at least this big (default 50; 0 lists all)")
     args = parser.parse_args(argv)

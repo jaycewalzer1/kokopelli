@@ -1,6 +1,7 @@
 """Weather, clock and sun for SimWorldPhysics, as a mixin. Split out of simworld.py."""
 import json
 import re
+from typing import TYPE_CHECKING
 
 from kokopelli.loop.adapters import simworld_commands as c
 from kokopelli.loop.adapters.simworld_config import WEATHER_ACTOR
@@ -8,10 +9,24 @@ from kokopelli.loop.adapters.simworld_math import parse_clock, sun_pitch_from_el
 from kokopelli.loop.adapters.simworld_wire import CommandError, SimWorldError
 from kokopelli.loop.physics import TimeOfDay, Weather
 
+if TYPE_CHECKING:
+    from kokopelli.loop.adapters.simworld_config import SimWorldConfig
+    from kokopelli.loop.adapters.simworld_wire import Wire
+
 
 class WeatherMixin:
     """Needs self.config, self.wire, self.weather_available, self.start_s, self.sun_max, self.fog,
     self.atmosphere, self.initial_weather, self.warnings and self.sim_time_s from SimWorldPhysics."""
+
+    if TYPE_CHECKING:   # what SimWorldPhysics provides, declared for the type checker only
+        wire: Wire
+        config: SimWorldConfig
+        weather_available: bool
+        sun_max: float
+        warnings: list[str]
+
+        @property
+        def sim_time_s(self) -> float: ...
 
     def _apply_weather_settings(self) -> None:
         if not self.weather_available:

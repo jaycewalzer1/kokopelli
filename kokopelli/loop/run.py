@@ -55,7 +55,7 @@ def make_agent(config, out=None):
         return agent
     # The feeling loop from kokopelli/mind/. It wraps any agent and keeps its own record, which survives a resume.
     from kokopelli.mind.feeling import FeelingAgent
-    return FeelingAgent(agent, Path(out) / "feelings.jsonl")
+    return FeelingAgent(agent, Path(out) / "feelings.jsonl")  # pyright: ignore[reportArgumentType]  # run() always passes out
 
 
 def _inner_agent(config):

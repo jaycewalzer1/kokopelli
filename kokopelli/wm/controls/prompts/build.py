@@ -114,7 +114,7 @@ def describe_place(world, pid, seen=None):
         bits.append("built of " + physical(e["materials"]).replace(" + ", " and ").replace(", ", " and "))
     if e.get("palette") and tuple(e["palette"]) not in seen:
         seen.add(tuple(e["palette"]))
-        bits.append("finished in " + ", ".join(PHYSICAL.get(p, p) for p in e["palette"]))
+        bits.append("finished in " + ", ".join(PHYSICAL.get(p, p) for p in e["palette"]))  # pyright: ignore[reportCallIssue, reportArgumentType]  # palette names are strings
     if e.get("roof"):
         bits.append("with " + physical(e["roof"]).replace(", ", ", "))
     if e.get("features"):

@@ -3,7 +3,7 @@ import gc
 from functools import lru_cache
 
 import mlx.core as mx
-from mlx_vlm import generate, load
+from mlx_vlm import generate, load  # pyright: ignore[reportPrivateImportUsage]  # mlx_vlm doesn't declare its re-exports
 from mlx_vlm.prompt_utils import apply_chat_template
 
 from kokopelli.settings import LLM_MODEL_WEIGHTS
@@ -19,7 +19,7 @@ def ask(prompt, images=(), max_tokens=512, temperature=0.0):
     model, processor = load_llm()
     images = [str(image) for image in images]
     formatted = apply_chat_template(processor, model.config, prompt, num_images=len(images))
-    result = generate(model, processor, formatted, image=images or None,
+    result = generate(model, processor, formatted, image=images or None,  # pyright: ignore[reportArgumentType]  # mlx_vlm's annotations are narrower than what it accepts
                       max_tokens=max_tokens, temperature=temperature)
     return result.text.strip()
 
@@ -31,7 +31,7 @@ def chat(system, user, max_tokens=512, temperature=0.7, seed=None):
         mx.random.seed(seed)
     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     formatted = apply_chat_template(processor, model.config, messages)
-    return generate(model, processor, formatted, max_tokens=max_tokens, temperature=temperature)
+    return generate(model, processor, formatted, max_tokens=max_tokens, temperature=temperature)  # pyright: ignore[reportArgumentType]  # mlx_vlm's annotations are narrower than what it accepts
 
 
 def unload():

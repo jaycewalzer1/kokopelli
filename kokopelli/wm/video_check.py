@@ -159,14 +159,14 @@ def read_frames(path, size=None, crop=None, batch=16):
     one = w * h * 3
     try:
         while True:
-            raw = proc.stdout.read(one * batch)
+            raw = proc.stdout.read(one * batch)  # pyright: ignore[reportOptionalMemberAccess]  # stdout=PIPE
             n = len(raw) // one
             if n:
                 yield np.frombuffer(raw[:n * one], np.uint8).reshape(n, h, w, 3)
             if n < batch:
                 break
     finally:
-        proc.stdout.close()
+        proc.stdout.close()  # pyright: ignore[reportOptionalMemberAccess]  # stdout=PIPE
         proc.kill()
         proc.wait()
 
@@ -253,7 +253,7 @@ def old_drift(painted, control, crop=None, every=WINDOW):
 
     from kokopelli.loop.drift import LAYOUT_WEIGHT, SMALL, appearance_distance, layout_distance
     w, h = (int(n) for n in crop.split(":")[:2]) if crop else probe_size(painted)
-    small = lambda x: np.asarray(Image.fromarray(x).convert("L").resize(SMALL, Image.BILINEAR), np.float64)  # noqa: E731
+    small = lambda x: np.asarray(Image.fromarray(x).convert("L").resize(SMALL, Image.BILINEAR), np.float64)  # noqa: E731  # pyright: ignore[reportAttributeAccessIssue]  # Pillow keeps Image.BILINEAR
     out, i = [], 0
     for a, b in zip(read_frames(painted, crop=crop), read_frames(control, size=(w, h)), strict=False):
         for k in range(min(len(a), len(b))):

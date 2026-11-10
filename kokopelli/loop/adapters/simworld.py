@@ -12,7 +12,7 @@ import time
 import hashlib
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 import numpy as np
 
@@ -79,7 +79,7 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
 
     def _new_world(self) -> None:
         self.agent_speed = self.config.agent_speed_cm_s
-        self.posture = "standing"
+        self.posture: Literal["standing", "sitting", "on_scooter", "in_vehicle"] = "standing"
         self.held: str | None = None
         self.riding: str | None = None
         self.vehicle: str | None = None
@@ -377,6 +377,7 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
 
     def _read_camera(self) -> CameraState:
         cam = self.camera_id
+        assert cam is not None  # set by reset() before any read
         location = self._read_camera_location(cam)
         # The docstring at unrealcv.py:921 says yaw first, but :969, ue_detail.rst:69 and the
         # library's own decoder say pitch first. The gate script checks this on a real server.
@@ -480,8 +481,8 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / f"t{offset_s:04.0f}_{modality}.{fmt}"
         path.write_bytes(data)
-        return RenderFile(modality=modality, path=str(path), sha256=hashlib.sha256(data).hexdigest(),
-                          num_bytes=len(data), format=fmt, width=int(width), height=int(height), depth_stats=stats)
+        return RenderFile(modality=cast(Any, modality), path=str(path), sha256=hashlib.sha256(data).hexdigest(),
+                          num_bytes=len(data), format=cast(Any, fmt), width=int(width), height=int(height), depth_stats=stats)
 
     def _capture(self, offset_s: float, timing: StageTiming) -> Capture:
         start = time.perf_counter()
@@ -507,11 +508,13 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
             self.wire.request(c.set_camera_rotation(self.camera_id, self._camera_base_pitch, round(yaw, 4), 0), resend=False)
 
     def _gaze_point(self) -> Vec3:
+        assert self.gaze is not None  # only called while a gaze is set
         if self.gaze.get("target_id"):
             return self._read_location(self._actor_for(self.gaze["target_id"]))
         return Vec3(**self.gaze["position"])
 
     def _aim_camera(self) -> None:
+        assert self.camera_id is not None  # set by reset() before any aim
         camera = self._read_camera_location(self.camera_id)
         yaw, pitch = heading_to(camera, self._gaze_point())
         self.wire.request(c.set_camera_rotation(self.camera_id, round(pitch, 4), round(yaw, 4), 0), resend=False)

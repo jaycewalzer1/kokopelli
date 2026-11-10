@@ -32,7 +32,7 @@ class CondFrame:
 class ChunkRequest:
     prompt: str
     cond: list
-    target: Capture
+    target: Capture | None
     output: str
     tick: int
     chunk: int

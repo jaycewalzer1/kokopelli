@@ -2,6 +2,7 @@
 import math
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:   # imported through lunch_wm, which set up the path already, this is a no-op
@@ -31,9 +32,10 @@ class TwoBodySim(SimWorldPhysics):
     Not supported for the friend: checkpoint/restore, sitting, scooters, vehicles, gestures."""
 
     def __init__(self, config, friend_id="friend", friend_position=(0.0, 0.0, 200.0), friend_yaw=0.0):
-        self.friend_id, self.friend_position, self.friend_yaw = friend_id, tuple(friend_position), friend_yaw
-        self.friend_camera_id = None
-        self.friend_action = None
+        self.friend_id, self.friend_yaw = friend_id, friend_yaw
+        self.friend_position = cast(tuple[float, float, float], tuple(friend_position))
+        self.friend_camera_id: int | None = None
+        self.friend_action: dict[str, Any] | None = None
         self.friend_task = self.friend_last = None
         self.friend_held = None
         self.friend_captures, self.friend_result = [], {}
@@ -187,7 +189,7 @@ class TwoBodySim(SimWorldPhysics):
         mover = self.friend_last or self.friend_task
         phase = mover.phase if mover else None
         if self._friend_type in ("move_to", "continue") and mover:
-            status = {"arrived": "completed", "blocked": "failed"}.get(phase, "in_progress")
+            status = {"arrived": "completed", "blocked": "failed"}.get(cast(str, phase), "in_progress")  # mover is set here, so phase is too
             detail = f"move_to {phase}, {mover.last_distance_cm or 0:.0f}cm from the goal"
         self.friend_result = {"status": status, "detail": detail, "phase": phase}
         return outcome

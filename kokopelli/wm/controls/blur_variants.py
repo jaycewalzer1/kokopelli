@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import cv2
 import numpy as np
@@ -64,7 +65,7 @@ def main():
         for name in VARIANTS:
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-framerate", str(FPS), "-i", str(Path(tmp) / name / "%04d.png"),
                             "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "10", str(out / f"blur_{name}.mp4")], check=True)
-        frames = [cv2.imread(str(Path(tmp) / n / "0100.png")) for n in VARIANTS]
+        frames: list[Any] = [cv2.imread(str(Path(tmp) / n / "0100.png")) for n in VARIANTS]
         cv2.imwrite(str(out / "blur_variants_f100.png"), np.hstack(frames))
     (out / "blur_variants.json").write_text(json.dumps({
         "source": args.clip, "frames": args.frames, "size": args.size, "fps": FPS,

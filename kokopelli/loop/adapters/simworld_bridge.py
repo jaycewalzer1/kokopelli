@@ -73,6 +73,7 @@ class SimWorldSim(PhysicsSim):
         return SimStep(describe_state(first.state, start_time), [to_capture(first)], visible_ids(first.state))
 
     def step(self, action, tick, render=True):
+        assert self.physics is not None  # set by reset()
         try:
             result, rejected = self.physics.step(to_sim_action(action)), None
         except ValidationError as error:
@@ -86,9 +87,11 @@ class SimWorldSim(PhysicsSim):
                        result.timing.model_dump(mode="json"))
 
     def get_state(self):
+        assert self.physics is not None  # set by reset()
         return self.physics.get_state().model_dump(mode="json")
 
     def restore_state(self, state):
+        assert self.physics is not None  # set by reset()
         return self.physics.restore_state(SimCheckpoint.model_validate(state))
 
     def close(self):

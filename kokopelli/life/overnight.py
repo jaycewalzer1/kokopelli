@@ -112,6 +112,7 @@ def supervise(folder):
         while True:
             child = subprocess.Popen([sys.executable, "-u", "-m", "kokopelli.life.overnight", "--worker", str(folder)],
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=ROOT)
+            assert child.stdout is not None  # stdout=PIPE
             for line in child.stdout:
                 print(line, end="", flush=True)
                 log.write(line)

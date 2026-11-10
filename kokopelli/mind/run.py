@@ -49,7 +49,7 @@ def measured_qwen(weights=None):
 
         def decide(self, agent_input):
             from kokopelli.wm import llm_model
-            from mlx_vlm import generate
+            from mlx_vlm import generate  # pyright: ignore[reportPrivateImportUsage]  # mlx_vlm doesn't declare its re-exports
             from mlx_vlm.prompt_utils import apply_chat_template
             if self.weights:
                 llm_model.LLM_MODEL_WEIGHTS = self.weights
@@ -58,7 +58,7 @@ def measured_qwen(weights=None):
             load_seconds = time.perf_counter() - clock
             images = [str(image) for image in agent_input.images]
             formatted = apply_chat_template(processor, model.config, _with_retry_note(agent_input), num_images=len(images))
-            result = generate(model, processor, formatted, image=images or None, max_tokens=MAX_TOKENS, temperature=0.0)
+            result = generate(model, processor, formatted, image=images or None, max_tokens=MAX_TOKENS, temperature=0.0)  # pyright: ignore[reportArgumentType]  # mlx_vlm's annotations are narrower than what it accepts
             self.last_usage = {"load_seconds": round(load_seconds, 3), "prompt_tokens": result.prompt_tokens,
                                "generation_tokens": result.generation_tokens, "prompt_tps": round(result.prompt_tps, 2),
                                "generation_tps": round(result.generation_tps, 2), "peak_memory_gb": round(result.peak_memory, 2),

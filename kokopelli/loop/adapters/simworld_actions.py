@@ -4,13 +4,18 @@ Split out of simworld.py. SimWorldPhysics lists this mixin before PhysicsSim, an
 kokopelli/agents/lunch_wm.py:TwoBodySim still override these methods by name.
 """
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from kokopelli.loop.adapters import simworld_commands as c
 from kokopelli.loop.adapters.simworld_config import AGENT_ACTOR, NEW_HUMANOID_PREFIX, NpcSpec
 from kokopelli.loop.adapters.simworld_control import Mover, MoverIO
 from kokopelli.loop.adapters.simworld_math import angle_delta, distance_cm, hearing, heading_to
 from kokopelli.loop.physics import ACTION_CATALOG, INTERACT_BY_KIND, ActionOutcome, SpeechEvent, TaskStatus
+
+if TYPE_CHECKING:
+    from kokopelli.loop.adapters.simworld_config import SimWorldConfig, SpawnSpec
+    from kokopelli.loop.adapters.simworld_wire import Wire
+    from kokopelli.loop.physics import Pose, Vec3
 
 # Actions that do not interrupt whatever the agent is already doing.
 NON_PREEMPTING = {"continue", "speak", "set_speed"}
@@ -19,6 +24,31 @@ NON_PREEMPTING = {"continue", "speak", "set_speed"}
 class ActionsMixin:
     """Needs the wire, state fields and readers (_read_location, _read_pose, _actor_for, _objects,
     _find_agent_camera, _gaze_point, _task_status) from SimWorldPhysics."""
+
+    if TYPE_CHECKING:   # what SimWorldPhysics provides, declared for the type checker only
+        wire: Wire
+        config: SimWorldConfig
+        held: str | None
+        vehicle: str | None
+        npc_movers: dict[str, Mover]
+        npc_specs: list[NpcSpec]
+        npc_waypoint: dict[str, int]
+        specs: dict[str, SpawnSpec]
+        targets: dict[str, str]
+        tick_count: int
+        _speech: list[SpeechEvent]
+
+        @property
+        def sim_time_s(self) -> float: ...
+        @property
+        def _agent_actor(self) -> str: ...
+        def _read_location(self, actor: str) -> Vec3: ...
+        def _read_pose(self, actor: str) -> Pose: ...
+        def _actor_for(self, target_id: str) -> str: ...
+        def _objects(self) -> list[str]: ...
+        def _find_agent_camera(self) -> int: ...
+        def _gaze_point(self) -> Vec3: ...
+        def _task_status(self) -> TaskStatus | None: ...
 
     ###################################################
     # Actions

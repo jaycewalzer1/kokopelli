@@ -170,7 +170,7 @@ def shard_arrays(model_dir):
     import mlx.core as mx
     out = {}
     for shard in sorted((Path(model_dir) / "transformer").glob("*.safetensors")):
-        out.update(mx.load(str(shard)))   # lazy: nothing is read until an array is evaluated
+        out.update(mx.load(str(shard)))  # pyright: ignore[reportCallIssue, reportArgumentType]  # a .safetensors load is a dict; lazy: nothing is read until an array is evaluated
     return out
 
 
@@ -209,7 +209,8 @@ def text_cache(arrays, ids, rope):
             o = mx.fast.scaled_dot_product_attention(q, k, v, scale=128 ** -0.5, mask=mask)
             h = h + o.transpose(0, 2, 1, 3).reshape(1, L, 4096) @ g("self_attn.to_out.weight").T
             x = mx.fast.rms_norm(h, g("post_attention_layernorm.weight"), EPS)
-            h = h + (mx.fast.silu if hasattr(mx.fast, "silu") else (lambda a: a * mx.sigmoid(a)))(
+            h = h + (mx.fast.silu if hasattr(mx.fast, "silu")  # pyright: ignore[reportAttributeAccessIssue]  # guarded by hasattr
+                      else (lambda a: a * mx.sigmoid(a)))(
                 x @ g("mlp.gate_proj.weight").T) * (x @ g("mlp.up_proj.weight").T) @ g("mlp.down_proj.weight").T
         mx.eval(h, k, v)
     return cache

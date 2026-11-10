@@ -17,9 +17,9 @@ ALIGN_DEGREES = 5.0  # local_planner.py:270
 @dataclass
 class MoverIO:
     """How a mover drives its actor. Agents and NPCs use different blueprint functions."""
-    forward: Callable[[], None]
-    stop: Callable[[], None]
-    turn: Callable[[float, str], None]
+    forward: Callable[[], object]   # return value ignored
+    stop: Callable[[], object]
+    turn: Callable[[float, str], object]
 
 
 @dataclass

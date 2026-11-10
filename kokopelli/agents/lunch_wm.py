@@ -35,6 +35,7 @@ import shutil
 import sys
 import time
 from datetime import datetime
+from typing import Any
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -76,7 +77,7 @@ class Lunch(LunchWords, LunchRecord):
     def __init__(self, args, world, wm, brain, out=None, nav=None, cast=None):
         self.args, self.world, self.wm, self.brain = args, world, wm, brain
         self.nav = nav or NavMap()
-        self.cast = cast
+        self.cast: Any = cast
         self.size = tuple(int(n) for n in args.size.split("x"))
         self.out = Path(out or ROOT / "out" / "city_agents" / (datetime.now().strftime("%Y%m%d-%H%M%S") + "_lunch"))
         self.out.mkdir(parents=True, exist_ok=True)

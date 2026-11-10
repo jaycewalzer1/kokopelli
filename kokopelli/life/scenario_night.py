@@ -135,6 +135,7 @@ class Scenario:
         if decision == "D1":
             return scenario.start_of_day(self.seed_key, morning)
         before = self.record(morning, "D1" if decision == "D2" else "D2")
+        assert before is not None  # the earlier decision is recorded first
         return scenario.relax(before["state_after"])
 
     def cosmetic(self, morning):
@@ -524,6 +525,7 @@ def supervise(folder):
         while True:
             child = subprocess.Popen([sys.executable, "-u", "-m", "kokopelli.life.scenario_night", "--worker", str(folder)],
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=ROOT)
+            assert child.stdout is not None  # stdout=PIPE
             for line in child.stdout:
                 print(line, end="", flush=True)
                 log.write(line)

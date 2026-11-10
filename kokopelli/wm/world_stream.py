@@ -23,6 +23,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from typing import Any
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -112,6 +113,7 @@ class WorldStream:
                                raw_prompt=raw_prompt)
 
     def _call(self, **msg):
+        assert self.proc.stdin is not None and self.proc.stdout is not None  # both are PIPE
         self.proc.stdin.write(json.dumps(msg) + "\n")
         self.proc.stdin.flush()
         line = self.proc.stdout.readline()
@@ -182,10 +184,10 @@ class Worker:
         self.text_kv = wt.text_cache(arrays, ids, self.rope)
         del arrays
         mx.clear_cache()
-        self.gen = None
+        self.gen: Any = None
         self.history = wm.MultiHistory(len(self.hints), window, sink)
         self.frames_in = 0                       # control frames received
-        self.tail = {h: None for h in self.hints}  # recent control frames kept for encoder warm-up
+        self.tail: dict[str, Any] = {h: None for h in self.hints}  # recent control frames kept for encoder warm-up
         self.tail_start = 0                      # global index of tail[0]
         self.lat_c = {h: [] for h in self.hints}  # control latents not yet painted (per hint, list of [1,1,h,w,48])
         self.painted = []                        # recent target latents kept for decoder warm-up

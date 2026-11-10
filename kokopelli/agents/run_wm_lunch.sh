@@ -11,12 +11,12 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PORT="${PORT:-9001}"
-cd "$ROOT"
+cd "$ROOT" || exit
 
 started=""
 if ! lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1; then
 	echo "starting SimWorld (minimized) on $PORT"
-	MINIMIZED=1 NOMOUSE=1 CVPORT="$PORT" mac_server/scripts/run.sh packaged >/tmp/wmlunch_server_$PORT.log 2>&1 &
+	MINIMIZED=1 NOMOUSE=1 CVPORT="$PORT" mac_server/scripts/run.sh packaged >"/tmp/wmlunch_server_$PORT.log" 2>&1 &
 	started=$!
 	for _ in $(seq 1 180); do
 		lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1 && break

@@ -41,6 +41,7 @@ def _borrow_unrealcv():
     sys.modules.setdefault("docker", types.ModuleType("docker"))  # only its Docker launcher uses it; we never launch
     pkg = next((ROOT / "simworld" / ".venv" / "lib").glob("python*/site-packages/unrealcv"))
     spec = importlib.util.spec_from_file_location("unrealcv", pkg / "__init__.py", submodule_search_locations=[str(pkg)])
+    assert spec is not None and spec.loader is not None  # a file location always gives both
     module = importlib.util.module_from_spec(spec)
     sys.modules["unrealcv"] = module
     spec.loader.exec_module(module)
@@ -272,6 +273,7 @@ class Life:
         """Ask the server to put each person in their body: the agent in --body, residents in npcs.json's "body".
         A body is a nicety: an old server without SetBody, or a missing asset, is a warning in events.jsonl and the
         run goes on with whatever the server gave the actor (its Bodies.json mapping, or the placeholder)."""
+        assert self.cfg.npcs is not None  # always set by this script's config
         who = {AGENT_ACTOR: "agent", **{spec.actor_name: spec.id for spec in self.cfg.npcs}}
         wants = {AGENT_ACTOR: self.agent_body,
                  **{spec.actor_name: self.cast.people[spec.id].get("body") for spec in self.cfg.npcs}}
@@ -290,6 +292,7 @@ class Life:
         the world model, so it has to be findable afterwards. Stops asking once the server never reports a tier."""
         if not self.watch_tiers:
             return
+        assert self.cfg.npcs is not None  # always set by this script's config
         who = {AGENT_ACTOR: "agent", **{spec.actor_name: spec.id for spec in self.cfg.npcs}}
         now = {who[actor]: tier for actor, tier in bodies.tiers(sim.wire, who).items()}
         if not any(now.values()):
@@ -495,6 +498,7 @@ class Life:
     def halt(self, sim):
         """Stop everyone before the adapter un-pauses the game. Otherwise residents keep walking in a straight
         line forever, leave the map and fall, and the far-out actors crashed UE 5.8's scene culling (~25 min later)."""
+        assert self.cfg.npcs is not None  # always set by this script's config
         for spec in self.cfg.npcs:
             try:
                 sim.wire.request(f"vbp {spec.actor_name} StopPedestrian", resend=False)

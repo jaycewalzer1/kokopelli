@@ -31,7 +31,7 @@ def resized(frame, size):
     width, height = (int(n) for n in size.split("x"))
     if frame.shape[:2] == (height, width):
         return frame
-    return np.asarray(Image.fromarray(frame).resize((width, height), Image.LANCZOS))
+    return np.asarray(Image.fromarray(frame).resize((width, height), Image.Resampling.LANCZOS))
 
 
 def control_frame(path, size):

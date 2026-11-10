@@ -140,6 +140,7 @@ class Wire:
                 return
             except SimWorldError as e:
                 error = e
+        assert error is not None  # the loop runs at least once and only gets here after a failed attempt
         raise type(error)(f"gave up after {self.reconnect_attempts + 1} attempts. Last error: {error}") from error
 
     def _connect_once(self) -> None:
@@ -188,6 +189,7 @@ class Wire:
             raise ConnectionError("not connected")
         self.commands_sent += 1
         self.seen.add(NUMBER.sub("0", command))  # one entry per kind of command, not per coordinate
+        assert self.client is not None  # checked by self.connected above
         response = self.client.request(command, timeout=timeout)
         if response is None:
             raise ConnectionError("connection closed before the reply")
@@ -225,6 +227,7 @@ class Wire:
             raise ConnectionLostError(f"not connected, could not send {command!r}")
         self.commands_sent += 1
         self.seen.add(NUMBER.sub("0", command))
+        assert self.client is not None  # checked by self.connected above
         try:
             self.client.request(command, -1)
         except (ConnectionError, OSError) as e:

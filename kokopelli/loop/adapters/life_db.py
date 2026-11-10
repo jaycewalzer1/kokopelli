@@ -1,5 +1,6 @@
 """The real life tree as run context. A run works from its own copy, so the shared database is never opened for writing."""
 import sqlite3
+from typing import cast
 from pathlib import Path
 
 from kokopelli.life.store import Store, apply_event, empty_state
@@ -49,7 +50,7 @@ class LifeContext(ContextDB):
     def _active(self, now):
         rows = self.store.conn.execute(
             "SELECT node_id FROM openings WHERE run_id = ? AND start_t <= ? AND end_t > ?", (self.run_id, now, now)).fetchall()
-        nodes = [self.store.node(self.run_id, row[0]) for row in rows]
+        nodes = [cast(dict, self.store.node(self.run_id, row[0])) for row in rows]  # listed in openings, so it exists
         return sorted(nodes, key=lambda node: depth(node["level"]))
 
     def context_at(self, now):

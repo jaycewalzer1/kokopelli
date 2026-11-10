@@ -28,6 +28,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = Path.home() / "cosmos3" / "cosmos3-mlx"
@@ -64,6 +65,7 @@ class MultiWorldStream:
         self.hello = self._call(cmd="hello", quantize=quantize)
 
     def _call(self, **msg):
+        assert self.proc.stdin is not None and self.proc.stdout is not None  # both are PIPE
         self.proc.stdin.write(json.dumps(msg) + "\n")
         self.proc.stdin.flush()
         line = self.proc.stdout.readline()
@@ -245,7 +247,7 @@ class MultiWorker:
     def __init__(self, fake=False):
         self.fake = fake
         self.streams = {}
-        self.shared = None
+        self.shared: Any = None
         self.quantize = None
 
     def hello(self, quantize=None):

@@ -146,7 +146,7 @@ class Painter:
                 velocity = velocity * (1 - keep)
             latents = scheduler.step(velocity, step_time, latents)
             if keep is not None:  # The solver looks at past steps, so pin these exactly rather than trust a zero velocity.
-                latents = keep * pin + (1 - keep) * latents
+                latents = keep * pin + (1 - keep) * latents  # pyright: ignore[reportOperatorIssue]  # pin is set together with keep
             mx.eval(latents)
 
         del cond_cache, uncond_cache

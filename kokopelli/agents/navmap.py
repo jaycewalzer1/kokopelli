@@ -11,6 +11,7 @@ import heapq
 import json
 import math
 from pathlib import Path
+from typing import Any
 
 WORLD = Path(__file__).resolve().parents[2] / "data" / "city" / "world.json"
 CELL_M = 2.0
@@ -117,6 +118,7 @@ class NavMap:
         steps = [(1, 0, 1.0), (-1, 0, 1.0), (0, 1, 1.0), (0, -1, 1.0),
                  (1, 1, 1.414), (1, -1, 1.414), (-1, 1, 1.414), (-1, -1, 1.414)]
         frontier = [(0.0, s)]
+        came: dict[tuple[int, int], Any]   # cell -> the cell it was reached from, None at the start
         came, cost = {s: None}, {s: 0.0}
         while frontier:
             _, cur = heapq.heappop(frontier)

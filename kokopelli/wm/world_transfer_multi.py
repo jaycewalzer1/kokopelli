@@ -145,7 +145,7 @@ class MultiGenerator(wt.Generator):
                 part = w * mx.fast.scaled_dot_product_attention(q, mx.concatenate(ks, axis=2),
                                                                 mx.concatenate(vs, axis=2), scale=128 ** -0.5)
                 o = part if o is None else o + part
-            h = h + layer["o"](o.transpose(0, 2, 1, 3).reshape(1, N, 4096))
+            h = h + layer["o"](o.transpose(0, 2, 1, 3).reshape(1, N, 4096))  # pyright: ignore[reportOptionalMemberAccess]  # weights is never empty
             x = mx.fast.rms_norm(h, layer["ln2"], wt.EPS)
             a = layer["gate"](x)
             h = h + layer["down"](a * mx.sigmoid(a) * layer["up"](x))
@@ -205,7 +205,7 @@ def causal_loop(gen, lat_cs, weights, text_kv, n_text, rope, sigmas, seed, windo
     return out
 
 
-def parse_pairs(pairs, flag, cast=str):
+def parse_pairs(pairs, flag, cast: type = str):
     out = {}
     for pair in pairs or []:
         hint, sep, value = pair.partition("=")

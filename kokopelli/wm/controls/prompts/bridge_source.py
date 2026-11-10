@@ -4,6 +4,7 @@ Each sentence is S(text, VIBE.md qualities, kept image ids, which part of the si
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT / "kokopelli" / "wm" / "controls" / "prompts"))
@@ -167,7 +168,7 @@ def to_caption(v, size=(832, 480), duration="10s", fps=30):
                                 "images": p["images"], "geometry": p["geometry"]})
         return join(parts)
 
-    cap = {"subjects": []}
+    cap: dict[str, Any] = {"subjects": []}
     for i, s in enumerate(v["subjects"]):
         cap["subjects"].append({"description": take(f"subjects[{i}].description", s["description"]),
                                 "appearance_details": take(f"subjects[{i}].appearance_details", s["appearance_details"]),
