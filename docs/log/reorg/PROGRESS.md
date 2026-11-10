@@ -114,3 +114,79 @@ It also shows two cycles and two edges the plan does not name:
   jaycewalzer-d6 does a fast pass in this checkout: phase 1, then phases 2, 4, 5 and 6 as one move,
   one `ruff format` commit, and the hook and watchdog steps. Phases 3, 7, 8 and 9 are deferred
   until the owner assigns them.
+
+## Fast pass: phases 1, 2, 4, 5 and 6 in one move (session jaycewalzer-d6, 2026-11-10)
+
+Branch `reorg/fast-pass` from main at `c5d8116`. The owner asked for the moves to land quickly so feature work can start;
+the phases that don't move files are deferred.
+
+### What changed
+
+- **Layout.** `kokopelli/` is now the one library package: `wm/` (was `core/`, plus `controls/` from `city/wm/`),
+  `ops/` (was `ops/`, with `cloud/` inside it and `ram_share.py`), `mind/`, `loop/` (was `runtime/`), `life/`
+  (plus `watch.py` from `homeostatic/`), `agents/` (was `city/agents/`), `settings.py`.
+  `experiments/` gained `benchmarks/`, `exp1/`, `homeostatic/`, `filter_test/`, `wm_multicontrol/`, and
+  `commons/results/` (was `runs/commons/`). `tools/` gained `city_build/` (was `city/ue/`), `bodies/`, `realism/`,
+  `moodboard/`, `fable/`, `pace/`. `data/city/world.json` and `data/moodboard/` (untracked pictures) are the inputs.
+  `vendor/wm_multicontrol_upstream/` is the vendored code. The exact table is `MOVES` in `tools/reorg/migrate.py`.
+- **Root.** The 12 stand-in `.py` files are deleted. `ops/gpu.py` and `ops/memguard.py` remain as two-line stand-ins
+  (the Bash hook's fallback, old habits, scripts under `out/`). The PDF is `docs/Kokopelli_Perspectives.pdf`.
+- **Imports and launches.** Rewritten by `migrate.py rewrite` (rerunnable, now a no-op), plus hand fixes for paths a
+  file computes from its own location, path joins, code held in strings, and benchmark class names in
+  `experiments/benchmarks/configs/instruments.yaml`. Launches of root files became `-m kokopelli.wm.<module>`; the
+  transfer runners now get the repo on `PYTHONPATH` as well as the Cosmos runner.
+- **Installable (phase 1).** `pyproject.toml` has a hatchling build, `packages = ["kokopelli"]`, and commands
+  `koko-gpu`, `koko-ram`, `koko-memguard`, `koko-panel`, `koko-video-check`, `koko-transfer`, `koko-transfer-multi`,
+  `koko-filter`. Installed editable with `--no-deps` in `.venv` and the Cosmos venv. `uv.lock` changed by one line
+  (the project is `editable`, not `virtual`); no pinned version moved.
+- **World file.** `city/world.json` moved byte for byte (sha1 `09e1459296a9`); `world_varied.json` (identical) removed
+  and its readers point at the kept file. `plan.py` writes a fresh plan to `data/city/world_varied.json`, never over
+  the kept city. `check.py -q` prints the same output before and after.
+- **Outside the repo.** `~/.claude/settings.json` hook now tries `kokopelli/ops/memguard.py`, then `ops/memguard.py`
+  (backup `settings.json.bak-20261110-reorg`); both refuse a bare unittest command.
+
+### Checks
+
+- `make test-all`: tests 600 (10 skipped, 2 expected failures), runtime 100, simworld 197, ops 35, benchmarks 198
+  (1 skipped), commons 62. Same as the phase 0 baseline. Peak 1.2 GB, 426 s.
+- Smoke: main 96 ok, sw 29 ok, cos 10 ok, 0 failures, 1 skip. Phase 0 had 104/30/17; the difference is exactly the
+  entries for the deleted root stand-ins.
+- `uvx ruff@0.11.4 check .`: clean.
+- MAC=1: see the line added below when it has run.
+
+### Not done, on purpose
+
+- **No `ruff format` commit.** It would rewrite 301 files (about 18,000 lines even at a 160 line length) and flatten
+  the hand-aligned comments the code is written with. `pyproject.toml` also says "No formatter" on purpose. Left for the
+  owner to decide; it is one command.
+- **No editable install in `simworld/.venv`.** `requires-python` is 3.12 and that venv is 3.10. Nothing needs it while
+  jobs run from the repo root; the smoke check passes there.
+- **Tests stay with their packages** (`kokopelli/loop/tests`, `kokopelli/ops/tests`, `experiments/benchmarks/tests`)
+  until phase 7; `unittest` discovery can't split one tree across two interpreters.
+- **Old-name aliases** (`core`, `runtime`, `life`, ...) were not created: no branch is ahead of main, so nothing needs them.
+- **No `koko-stream` commands:** the stream modules have no `main()` and adding one is a code change.
+- **Watchdog not restarted.** The restart was refused by the permission system. The watchdog started before the move
+  is still running with the old code in memory and works. After a reboot start it with
+  `nohup python3 -m kokopelli.ops.memguard watch >/dev/null 2>&1 &` from the repo root.
+
+### Left over for later phases
+
+- `sys.path.insert` calls were kept and re-pointed, not removed (phase 2's second half). `kokopelli/agents/` and
+  `kokopelli/wm/controls/` still import their siblings by bare name through those path edits.
+- Phase 3 (import wall; `mind` and `loop` still import each other; `life/panel.py` imports `experiments.exp1.panel`;
+  `wm/video_check.py` imports `loop.drift`), phase 7 (one pytest tree), phase 8 (lint burn-down, pyright), phase 9 (docs).
+- `docs/` was not rewritten: files there still use the old paths, including `docs/REORG_PLAN.md`, `docs/ENVIRONMENTS.md`
+  and `docs/OUT_LAYOUT.md`. Markdown outside `docs/` was path-rewritten mechanically and may read oddly in places.
+- `kokopelli/life/pipeline.py`, `kokopelli/ops/status.py` and `WORKTREES` in settings read the five old worktrees, which
+  still have the old layout. Left alone until those worktrees are retired (phase 9).
+- `experiments/commons/overnight.sh` points at the old `commons` worktree. `tools/fable/p4_c_bits.sh` line 16 searches
+  the ledger for the old `world_transfer_multi.py` argument, which only old jobs have.
+- `out/staged/started/` holds one finished job from 2026-11-05 that names `-m life.scenario_night`. History; untouched.
+- `~/.kokopelli/fable/worker.sh` and its briefs name the old paths and `integration/fable`. Stale; not ours to edit.
+
+### Owed
+
+- **GPU:** one real queue dry run of the transfer path (about a minute). Nothing in this pass loaded a model.
+- **PACE:** the cluster checkout must be updated before the next job. Scripts are now `tools/pace/...`
+  (`tools/pace/evals/` for benchmarks), modules are `kokopelli.loop.*` and `experiments.benchmarks.*`.
+- **Not pushed.**
