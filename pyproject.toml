@@ -86,7 +86,6 @@ select = ["E9", "F", "B", "UP"]
 # BASELINE (generated 2026-11-09, P2-D): existing findings, not fixed in this pass.
 # Remove a code from a file once its findings there are fixed. Counts: docs/fable_log/P2-D.md.
 # Added 2026-11-10 when the commons and exp1 branches were merged, same rule: baselined, not fixed.
-"kokopelli/loop/interfaces.py" = ["B027"]
 
 [tool.pyright]
 include = ["core", "ops", "runtime"]
