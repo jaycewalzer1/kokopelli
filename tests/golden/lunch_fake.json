@@ -1,0 +1,1283 @@
+{
+ "about": "tests/test_golden_lunch.py: fake world, GoldenBrain, fake world model, seed 2025; timing fields removed",
+ "events": [
+  {
+   "t": 0.0,
+   "step": 0,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 1,
+   "frames_out": 1,
+   "latents": 1,
+   "weight_loads": 1
+  },
+  {
+   "t": 0.0,
+   "step": 0,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 1,
+   "frames_out": 1,
+   "latents": 1,
+   "weight_loads": 1
+  },
+  {
+   "t": 0.0,
+   "step": 0,
+   "kind": "decision",
+   "mind": "mara",
+   "prompt": "You are Mara, 34, a textile designer at Loom & Thread. You live in Fern Court. You're warm, a bit chatty, and you notice plants and light.\n\nSituation: It's Saturday, just before half past twelve. Yesterday you and your neighbour Iris agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and catch up. You haven't really talked in two weeks: you want to hear how her bees are doing, and to tell her that Loom & Thread asked you to design the banners for the harvest fair. Iris is 41, a beekeeper, about your height, usually in a canvas jacket.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at Fern Common House, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- nobody\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- fern_common: Fern Common House (common house), right here east\n- kettle_cafe: The Kettle (cafe), about 90 m north\n- fern_bakery: Rise Bakery (bakery), about 90 m north\n- clinic: Moss Clinic (health), about 150 m north-east\n- birch_common: Birch Common House (common house), about 150 m south\n- moss_common: Moss Common House (common house), about 150 m east\n- loom_thread: Loom & Thread (fashion studio), about 200 m east\n- willow_school: Willow School (K-8) (school), about 200 m south-east\n- food_forest: West Food Forest (farm), about 200 m south-west\n- daycare: Little Roots (childcare), about 250 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 250 m south\n- clover_works: Clover Works (fab lab), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- village_green: Village Green (park), about 300 m south-east\n\nWhat you did and said recently:\n(nothing yet)\nWhat just happened: You just stepped out of the Fern Common House.\nWhat you heard:\n(nothing)\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"Is that her?\", \"action\": {\"type\": \"say\", \"text\": \"Iris? Is that you?\"}}",
+   "frame": "<run>/frames/mara/seen_0001.png"
+  },
+  {
+   "t": 0.0,
+   "step": 0,
+   "kind": "act",
+   "mind": "mara",
+   "action": {
+    "type": "say",
+    "text": "Iris? Is that you?"
+   },
+   "reason": "start",
+   "n": 1
+  },
+  {
+   "t": 0.0,
+   "step": 0,
+   "kind": "says",
+   "mind": "mara",
+   "text": "Iris? Is that you?"
+  },
+  {
+   "t": 0.0,
+   "step": 0,
+   "kind": "heard_by",
+   "mind": "mara",
+   "listeners": []
+  },
+  {
+   "t": 0.0,
+   "step": 0,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at Rise Bakery, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- nobody\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- fern_bakery: Rise Bakery (bakery), right here east\n- kettle_cafe: The Kettle (cafe), about 60 m west\n- clinic: Moss Clinic (health), about 90 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- moss_common: Moss Common House (common house), about 150 m east\n- daycare: Little Roots (childcare), about 200 m east\n- loom_thread: Loom & Thread (fashion studio), about 200 m south-east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- birch_common: Birch Common House (common house), about 250 m south\n- market_hall: Market Hall (market), about 250 m east\n- food_forest: West Food Forest (farm), about 300 m south-west\n- library: Lantern Library (library), about 300 m south-east\n- observatory: Rooftop Observatory (science), about 300 m south-east\n- chess_garden: Chess Garden (games), about 300 m east\n\nWhat you did and said recently:\n(nothing yet)\nWhat just happened: You just stepped out of Rise Bakery with a loaf under your arm.\nWhat you heard:\n(nothing)\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"lunch\", \"action\": {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}}",
+   "frame": "<run>/frames/iris/seen_0001.png"
+  },
+  {
+   "t": 0.0,
+   "step": 0,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "go_to",
+    "place": "kettle_cafe"
+   },
+   "reason": "start",
+   "n": 1
+  },
+  {
+   "t": 0.0,
+   "step": 0,
+   "kind": "sim_actions",
+   "actions": {
+    "mara": {
+     "type": "continue"
+    },
+    "iris": {
+     "type": "move_to",
+     "position": {
+      "x": 8900.0,
+      "y": 3700.0,
+      "z": 100
+     },
+     "arrival_radius_cm": 120
+    }
+   }
+  },
+  {
+   "t": 2.0,
+   "step": 0,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 3,
+   "weight_loads": 2
+  },
+  {
+   "t": 2.0,
+   "step": 0,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 3,
+   "weight_loads": 2
+  },
+  {
+   "t": 2.0,
+   "step": 0,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    119.0,
+    123.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 2.0,
+   "step": 0,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": "arrived"
+  },
+  {
+   "t": 2.0,
+   "step": 1,
+   "kind": "decision",
+   "mind": "mara",
+   "prompt": "You are Mara, 34, a textile designer at Loom & Thread. You live in Fern Court. You're warm, a bit chatty, and you notice plants and light.\n\nSituation: It's Saturday, just before half past twelve. Yesterday you and your neighbour Iris agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and catch up. You haven't really talked in two weeks: you want to hear how her bees are doing, and to tell her that Loom & Thread asked you to design the banners for the harvest fair. Iris is 41, a beekeeper, about your height, usually in a canvas jacket.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at Fern Common House, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- nobody\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- fern_common: Fern Common House (common house), right here east\n- kettle_cafe: The Kettle (cafe), about 90 m north\n- fern_bakery: Rise Bakery (bakery), about 90 m north\n- clinic: Moss Clinic (health), about 150 m north-east\n- birch_common: Birch Common House (common house), about 150 m south\n- moss_common: Moss Common House (common house), about 150 m east\n- loom_thread: Loom & Thread (fashion studio), about 200 m east\n- willow_school: Willow School (K-8) (school), about 200 m south-east\n- food_forest: West Food Forest (farm), about 200 m south-west\n- daycare: Little Roots (childcare), about 250 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 250 m south\n- clover_works: Clover Works (fab lab), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- village_green: Village Green (park), about 300 m south-east\n\nWhat you did and said recently:\n- [12:20] you said \"Iris? Is that you?\"\nWhat just happened: You said \"Iris? Is that you?\", but nobody was close enough to hear.\nWhat you heard:\n(nothing)\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"lunch\", \"action\": {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}}",
+   "frame": "<run>/frames/mara/seen_0002.png"
+  },
+  {
+   "t": 2.0,
+   "step": 1,
+   "kind": "act",
+   "mind": "mara",
+   "action": {
+    "type": "go_to",
+    "place": "kettle_cafe"
+   },
+   "reason": null,
+   "n": 2
+  },
+  {
+   "t": 2.0,
+   "step": 1,
+   "kind": "sim_actions",
+   "actions": {
+    "mara": {
+     "type": "move_to",
+     "position": {
+      "x": 7100.0,
+      "y": 12500.0,
+      "z": 100
+     },
+     "arrival_radius_cm": 120
+    },
+    "iris": {
+     "type": "move_to",
+     "position": {
+      "x": 8900.0,
+      "y": 3700.0,
+      "z": 100
+     },
+     "arrival_radius_cm": 120
+    }
+   }
+  },
+  {
+   "t": 4.0,
+   "step": 1,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 5,
+   "weight_loads": 3
+  },
+  {
+   "t": 4.0,
+   "step": 1,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 5,
+   "weight_loads": 3
+  },
+  {
+   "t": 4.0,
+   "step": 1,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    71.6,
+    124.98
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": "arrived"
+  },
+  {
+   "t": 4.0,
+   "step": 1,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": "arrived"
+  },
+  {
+   "t": 4.0,
+   "step": 2,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- nobody\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here west\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}\nWhat just happened: You arrived at The Kettle.\nWhat you heard:\n(nothing)\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"wait for her\", \"action\": {\"type\": \"wait\"}}",
+   "frame": "<run>/frames/iris/seen_0003.png"
+  },
+  {
+   "t": 4.0,
+   "step": 2,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "wait"
+   },
+   "reason": "arrived",
+   "n": 2
+  },
+  {
+   "t": 4.0,
+   "step": 2,
+   "kind": "sim_actions",
+   "actions": {
+    "iris": {
+     "type": "wait"
+    },
+    "mara": {
+     "type": "move_to",
+     "position": {
+      "x": 6900.0,
+      "y": 10500.0,
+      "z": 100
+     },
+     "arrival_radius_cm": 120
+    }
+   }
+  },
+  {
+   "t": 6.0,
+   "step": 2,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 7,
+   "weight_loads": 4
+  },
+  {
+   "t": 6.0,
+   "step": 2,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 7,
+   "weight_loads": 4
+  },
+  {
+   "t": 6.0,
+   "step": 2,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    69.08,
+    105.59
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": "arrived"
+  },
+  {
+   "t": 6.0,
+   "step": 2,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 6.0,
+   "step": 3,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- nobody\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here west\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}\n- [12:20] {\"type\": \"wait\"}\nWhat just happened: You arrived at The Kettle.\nWhat you heard:\n(nothing)\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"wait for her\", \"action\": {\"type\": \"wait\"}}",
+   "frame": "<run>/frames/iris/seen_0004.png"
+  },
+  {
+   "t": 6.0,
+   "step": 3,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "wait"
+   },
+   "reason": null,
+   "n": 3
+  },
+  {
+   "t": 6.0,
+   "step": 3,
+   "kind": "sim_actions",
+   "actions": {
+    "iris": {
+     "type": "wait"
+    },
+    "mara": {
+     "type": "move_to",
+     "position": {
+      "x": 4700.0,
+      "y": 10100.0,
+      "z": 100
+     },
+     "arrival_radius_cm": 120
+    }
+   }
+  },
+  {
+   "t": 8.0,
+   "step": 3,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 9,
+   "weight_loads": 5
+  },
+  {
+   "t": 8.0,
+   "step": 3,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 9,
+   "weight_loads": 5
+  },
+  {
+   "t": 8.0,
+   "step": 3,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    47.59,
+    101.12
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": "arrived"
+  },
+  {
+   "t": 8.0,
+   "step": 3,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 8.0,
+   "step": 4,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- nobody\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here west\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\nWhat just happened: You arrived at The Kettle.\nWhat you heard:\n(nothing)\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"wait for her\", \"action\": {\"type\": \"wait\"}}",
+   "frame": "<run>/frames/iris/seen_0005.png"
+  },
+  {
+   "t": 8.0,
+   "step": 4,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "wait"
+   },
+   "reason": null,
+   "n": 4
+  },
+  {
+   "t": 8.0,
+   "step": 4,
+   "kind": "sim_actions",
+   "actions": {
+    "iris": {
+     "type": "wait"
+    },
+    "mara": {
+     "type": "move_to",
+     "position": {
+      "x": 4700.0,
+      "y": 3700.0,
+      "z": 100
+     },
+     "arrival_radius_cm": 120
+    }
+   }
+  },
+  {
+   "t": 10.0,
+   "step": 4,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 11,
+   "weight_loads": 6
+  },
+  {
+   "t": 10.0,
+   "step": 4,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 11,
+   "weight_loads": 6
+  },
+  {
+   "t": 10.0,
+   "step": 4,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    47.04,
+    41.12
+   ],
+   "status": "in_progress",
+   "detail": "",
+   "phase": "walking"
+  },
+  {
+   "t": 10.0,
+   "step": 4,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 10.0,
+   "step": 5,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- nobody\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here west\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\nWhat just happened: You arrived at The Kettle.\nWhat you heard:\n(nothing)\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"wait for her\", \"action\": {\"type\": \"wait\"}}",
+   "frame": "<run>/frames/iris/seen_0006.png"
+  },
+  {
+   "t": 10.0,
+   "step": 5,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "wait"
+   },
+   "reason": null,
+   "n": 5
+  },
+  {
+   "t": 10.0,
+   "step": 5,
+   "kind": "sim_actions",
+   "actions": {
+    "iris": {
+     "type": "wait"
+    },
+    "mara": {
+     "type": "continue"
+    }
+   }
+  },
+  {
+   "t": 12.0,
+   "step": 5,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 13,
+   "weight_loads": 7
+  },
+  {
+   "t": 12.0,
+   "step": 5,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 13,
+   "weight_loads": 7
+  },
+  {
+   "t": 12.0,
+   "step": 5,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    47.01,
+    37.6
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": "arrived"
+  },
+  {
+   "t": 12.0,
+   "step": 5,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 12.0,
+   "step": 6,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- nobody\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here west\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\nWhat just happened: You arrived at The Kettle.\nWhat you heard:\n(nothing)\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"wait for her\", \"action\": {\"type\": \"wait\"}}",
+   "frame": "<run>/frames/iris/seen_0007.png"
+  },
+  {
+   "t": 12.0,
+   "step": 6,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "wait"
+   },
+   "reason": null,
+   "n": 6
+  },
+  {
+   "t": 12.0,
+   "step": 6,
+   "kind": "sim_actions",
+   "actions": {
+    "iris": {
+     "type": "wait"
+    },
+    "mara": {
+     "type": "move_to",
+     "position": {
+      "x": 8900.0,
+      "y": 3700.0,
+      "z": 100
+     },
+     "arrival_radius_cm": 120
+    }
+   }
+  },
+  {
+   "t": 14.0,
+   "step": 6,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 15,
+   "weight_loads": 8
+  },
+  {
+   "t": 14.0,
+   "step": 6,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 15,
+   "weight_loads": 8
+  },
+  {
+   "t": 14.0,
+   "step": 6,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    88.4,
+    37.01
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": "arrived"
+  },
+  {
+   "t": 14.0,
+   "step": 6,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 14.0,
+   "step": 7,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- mara: Mara, your neighbour, right here behind you\nMara is here with you now (right here), out in the open: talk to her directly, she hears everything you say.\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here west\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\nWhat just happened: Mara is right next to you now.\nWhat you heard:\n(nothing)\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"there she is\", \"action\": {\"type\": \"say\", \"text\": \"Iris opens\"}}",
+   "frame": "<run>/frames/iris/seen_0008.png"
+  },
+  {
+   "t": 14.0,
+   "step": 7,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "say",
+    "text": "Iris opens"
+   },
+   "reason": "met",
+   "n": 7
+  },
+  {
+   "t": 14.0,
+   "step": 7,
+   "kind": "says",
+   "mind": "iris",
+   "text": "Iris opens"
+  },
+  {
+   "t": 14.0,
+   "step": 7,
+   "kind": "heard_by",
+   "mind": "iris",
+   "listeners": [
+    "mara"
+   ]
+  },
+  {
+   "t": 14.0,
+   "step": 7,
+   "kind": "decision",
+   "mind": "mara",
+   "prompt": "You are Mara, 34, a textile designer at Loom & Thread. You live in Fern Court. You're warm, a bit chatty, and you notice plants and light.\n\nSituation: It's Saturday, just before half past twelve. Yesterday you and your neighbour Iris agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and catch up. You haven't really talked in two weeks: you want to hear how her bees are doing, and to tell her that Loom & Thread asked you to design the banners for the harvest fair. Iris is 41, a beekeeper, about your height, usually in a canvas jacket.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nYou are walking to The Kettle, right here to go.\nWho is right next to you (close enough to talk):\n- iris: Iris, your neighbour, right here ahead\nIris is here with you now (right here), out in the open: talk to her directly, she hears everything you say.\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here east\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] you said \"Iris? Is that you?\"\n- [12:20] {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}\nWhat just happened: Iris is right next to you now.\nWhat you heard:\nIris (iris): \"Iris opens\"\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"answer\", \"action\": {\"type\": \"say\", \"text\": \"Mara line 1\"}}",
+   "frame": "<run>/frames/mara/seen_0008.png"
+  },
+  {
+   "t": 14.0,
+   "step": 7,
+   "kind": "act",
+   "mind": "mara",
+   "action": {
+    "type": "say",
+    "text": "Mara line 1"
+   },
+   "reason": "heard",
+   "n": 3
+  },
+  {
+   "t": 14.0,
+   "step": 7,
+   "kind": "says",
+   "mind": "mara",
+   "text": "Mara line 1"
+  },
+  {
+   "t": 14.0,
+   "step": 7,
+   "kind": "heard_by",
+   "mind": "mara",
+   "listeners": [
+    "iris"
+   ]
+  },
+  {
+   "t": 14.0,
+   "step": 7,
+   "kind": "sim_actions",
+   "actions": {
+    "iris": {
+     "type": "look_at",
+     "target_id": "mara"
+    },
+    "mara": {
+     "type": "move_to",
+     "position": {
+      "x": 8900.0,
+      "y": 3700.0,
+      "z": 100
+     },
+     "arrival_radius_cm": 120
+    }
+   }
+  },
+  {
+   "t": 16.0,
+   "step": 7,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 17,
+   "weight_loads": 9
+  },
+  {
+   "t": 16.0,
+   "step": 7,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 17,
+   "weight_loads": 9
+  },
+  {
+   "t": 16.0,
+   "step": 7,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    88.4,
+    37.01
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": "arrived"
+  },
+  {
+   "t": 16.0,
+   "step": 7,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 16.0,
+   "step": 8,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- mara: Mara, your neighbour, right here ahead\nMara is here with you now (right here), out in the open: talk to her directly, she hears everything you say.\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here west\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] you said \"Iris opens\"\nWhat just happened: You said: \"Iris opens\"\nWhat you heard:\nMara (mara): \"Mara line 1\"\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"answer\", \"action\": {\"type\": \"say\", \"text\": \"Iris line 2\"}}",
+   "frame": "<run>/frames/iris/seen_0009.png"
+  },
+  {
+   "t": 16.0,
+   "step": 8,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "say",
+    "text": "Iris line 2"
+   },
+   "reason": "heard",
+   "n": 8
+  },
+  {
+   "t": 16.0,
+   "step": 8,
+   "kind": "says",
+   "mind": "iris",
+   "text": "Iris line 2"
+  },
+  {
+   "t": 16.0,
+   "step": 8,
+   "kind": "heard_by",
+   "mind": "iris",
+   "listeners": [
+    "mara"
+   ]
+  },
+  {
+   "t": 16.0,
+   "step": 8,
+   "kind": "decision",
+   "mind": "mara",
+   "prompt": "You are Mara, 34, a textile designer at Loom & Thread. You live in Fern Court. You're warm, a bit chatty, and you notice plants and light.\n\nSituation: It's Saturday, just before half past twelve. Yesterday you and your neighbour Iris agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and catch up. You haven't really talked in two weeks: you want to hear how her bees are doing, and to tell her that Loom & Thread asked you to design the banners for the harvest fair. Iris is 41, a beekeeper, about your height, usually in a canvas jacket.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- iris: Iris, your neighbour, right here ahead\nIris is here with you now (right here), out in the open: talk to her directly, she hears everything you say.\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here east\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] you said \"Iris? Is that you?\"\n- [12:20] {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}\n- [12:20] you said \"Mara line 1\"\nWhat just happened: You arrived at The Kettle.\nWhat you heard:\nIris (iris): \"Iris line 2\"\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"answer\", \"action\": {\"type\": \"say\", \"text\": \"Mara line 2\"}}",
+   "frame": "<run>/frames/mara/seen_0009.png"
+  },
+  {
+   "t": 16.0,
+   "step": 8,
+   "kind": "act",
+   "mind": "mara",
+   "action": {
+    "type": "say",
+    "text": "Mara line 2"
+   },
+   "reason": "heard",
+   "n": 4
+  },
+  {
+   "t": 16.0,
+   "step": 8,
+   "kind": "says",
+   "mind": "mara",
+   "text": "Mara line 2"
+  },
+  {
+   "t": 16.0,
+   "step": 8,
+   "kind": "heard_by",
+   "mind": "mara",
+   "listeners": [
+    "iris"
+   ]
+  },
+  {
+   "t": 16.0,
+   "step": 8,
+   "kind": "sim_actions",
+   "actions": {
+    "iris": {
+     "type": "look_at",
+     "target_id": "mara"
+    },
+    "mara": {
+     "type": "look_at",
+     "target_id": "iris"
+    }
+   }
+  },
+  {
+   "t": 18.0,
+   "step": 8,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 19,
+   "weight_loads": 10
+  },
+  {
+   "t": 18.0,
+   "step": 8,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 19,
+   "weight_loads": 10
+  },
+  {
+   "t": 18.0,
+   "step": 8,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    88.4,
+    37.01
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 18.0,
+   "step": 8,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 18.0,
+   "step": 9,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- mara: Mara, your neighbour, right here ahead\nMara is here with you now (right here), out in the open: talk to her directly, she hears everything you say.\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here west\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] you said \"Iris opens\"\n- [12:20] you said \"Iris line 2\"\nWhat just happened: You said: \"Iris line 2\"\nWhat you heard:\nMara (mara): \"Mara line 2\"\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"not now\", \"action\": {\"type\": \"wait\"}}",
+   "frame": "<run>/frames/iris/seen_0010.png"
+  },
+  {
+   "t": 18.0,
+   "step": 9,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "wait"
+   },
+   "reason": "heard",
+   "n": 9
+  },
+  {
+   "t": 18.0,
+   "step": 9,
+   "kind": "sim_actions",
+   "actions": {
+    "iris": {
+     "type": "look_at",
+     "target_id": "mara"
+    },
+    "mara": {
+     "type": "look_at",
+     "target_id": "iris"
+    }
+   }
+  },
+  {
+   "t": 20.0,
+   "step": 9,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 21,
+   "weight_loads": 11
+  },
+  {
+   "t": 20.0,
+   "step": 9,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 21,
+   "weight_loads": 11
+  },
+  {
+   "t": 20.0,
+   "step": 9,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    88.4,
+    37.01
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 20.0,
+   "step": 9,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 20.0,
+   "step": 10,
+   "kind": "decision",
+   "mind": "mara",
+   "prompt": "You are Mara, 34, a textile designer at Loom & Thread. You live in Fern Court. You're warm, a bit chatty, and you notice plants and light.\n\nSituation: It's Saturday, just before half past twelve. Yesterday you and your neighbour Iris agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and catch up. You haven't really talked in two weeks: you want to hear how her bees are doing, and to tell her that Loom & Thread asked you to design the banners for the harvest fair. Iris is 41, a beekeeper, about your height, usually in a canvas jacket.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- iris: Iris, your neighbour, right here ahead\nIris is here with you now (right here), out in the open: talk to her directly, she hears everything you say.\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here east\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] you said \"Iris? Is that you?\"\n- [12:20] {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}\n- [12:20] you said \"Mara line 1\"\n- [12:20] you said \"Mara line 2\"\nWhat just happened: Iris hasn't answered you.\nWhat you heard:\n(nothing)\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"did she hear me?\", \"action\": {\"type\": \"say\", \"text\": \"Iris, did you hear me?\"}}",
+   "frame": "<run>/frames/mara/seen_0011.png"
+  },
+  {
+   "t": 20.0,
+   "step": 10,
+   "kind": "act",
+   "mind": "mara",
+   "action": {
+    "type": "say",
+    "text": "Iris, did you hear me?"
+   },
+   "reason": "no answer",
+   "n": 5
+  },
+  {
+   "t": 20.0,
+   "step": 10,
+   "kind": "says",
+   "mind": "mara",
+   "text": "Iris, did you hear me?"
+  },
+  {
+   "t": 20.0,
+   "step": 10,
+   "kind": "heard_by",
+   "mind": "mara",
+   "listeners": [
+    "iris"
+   ]
+  },
+  {
+   "t": 20.0,
+   "step": 10,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- mara: Mara, your neighbour, right here ahead\nMara is here with you now (right here), out in the open: talk to her directly, she hears everything you say.\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here west\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] you said \"Iris opens\"\n- [12:20] you said \"Iris line 2\"\n- [12:20] {\"type\": \"wait\"}\nWhat just happened: You said: \"Iris line 2\"\nWhat you heard:\nMara (mara): \"Iris, did you hear me?\"\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"answer\", \"action\": {\"type\": \"say\", \"text\": \"Iris line 3\"}}",
+   "frame": "<run>/frames/iris/seen_0011.png"
+  },
+  {
+   "t": 20.0,
+   "step": 10,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "say",
+    "text": "Iris line 3"
+   },
+   "reason": "heard",
+   "n": 10
+  },
+  {
+   "t": 20.0,
+   "step": 10,
+   "kind": "says",
+   "mind": "iris",
+   "text": "Iris line 3"
+  },
+  {
+   "t": 20.0,
+   "step": 10,
+   "kind": "heard_by",
+   "mind": "iris",
+   "listeners": [
+    "mara"
+   ]
+  },
+  {
+   "t": 20.0,
+   "step": 10,
+   "kind": "sim_actions",
+   "actions": {
+    "mara": {
+     "type": "look_at",
+     "target_id": "iris"
+    },
+    "iris": {
+     "type": "look_at",
+     "target_id": "mara"
+    }
+   }
+  },
+  {
+   "t": 22.0,
+   "step": 10,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 23,
+   "weight_loads": 12
+  },
+  {
+   "t": 22.0,
+   "step": 10,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 23,
+   "weight_loads": 12
+  },
+  {
+   "t": 22.0,
+   "step": 10,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    88.4,
+    37.01
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 22.0,
+   "step": 10,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 22.0,
+   "step": 11,
+   "kind": "decision",
+   "mind": "mara",
+   "prompt": "You are Mara, 34, a textile designer at Loom & Thread. You live in Fern Court. You're warm, a bit chatty, and you notice plants and light.\n\nSituation: It's Saturday, just before half past twelve. Yesterday you and your neighbour Iris agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and catch up. You haven't really talked in two weeks: you want to hear how her bees are doing, and to tell her that Loom & Thread asked you to design the banners for the harvest fair. Iris is 41, a beekeeper, about your height, usually in a canvas jacket.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- iris: Iris, your neighbour, right here ahead\nIris is here with you now (right here), out in the open: talk to her directly, she hears everything you say.\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here east\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] you said \"Iris? Is that you?\"\n- [12:20] {\"type\": \"go_to\", \"place\": \"kettle_cafe\"}\n- [12:20] you said \"Mara line 1\"\n- [12:20] you said \"Mara line 2\"\n- [12:20] you said \"Iris, did you hear me?\"\nWhat just happened: You said: \"Iris, did you hear me?\"\nWhat you heard:\nIris (iris): \"Iris line 3\"\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"answer\", \"action\": {\"type\": \"say\", \"text\": \"Mara line 3\"}}",
+   "frame": "<run>/frames/mara/seen_0012.png"
+  },
+  {
+   "t": 22.0,
+   "step": 11,
+   "kind": "act",
+   "mind": "mara",
+   "action": {
+    "type": "say",
+    "text": "Mara line 3"
+   },
+   "reason": "heard",
+   "n": 6
+  },
+  {
+   "t": 22.0,
+   "step": 11,
+   "kind": "says",
+   "mind": "mara",
+   "text": "Mara line 3"
+  },
+  {
+   "t": 22.0,
+   "step": 11,
+   "kind": "heard_by",
+   "mind": "mara",
+   "listeners": [
+    "iris"
+   ]
+  },
+  {
+   "t": 22.0,
+   "step": 11,
+   "kind": "decision",
+   "mind": "iris",
+   "prompt": "You are Iris, 41, a beekeeper who keeps the hives on the Fern Court roofs and fixes bikes at Clover Works two days a week. You live in Fern Court, two doors from Mara. You're dry-humoured and practical, and you notice weather, insects and anything with a broken spoke.\n\nSituation: It's Saturday, just before half past twelve. You just came out of Rise Bakery with a loaf for the weekend. Yesterday you and your neighbour Mara agreed to meet at The Kettle (kettle_cafe) for lunch today, get something to eat together, then sit and talk. You have news: one of your hives swarmed on Thursday and you caught the swarm in the Fern Court plum tree. Mara is 34, a textile designer, warm and chatty.\n\nThe image is what you see right now, through your own eyes.\n\nTime: 12:20.\nYou are at The Kettle, standing, carrying nothing.\nWho is right next to you (close enough to talk):\n- mara: Mara, your neighbour, right here ahead\nMara is here with you now (right here), out in the open: talk to her directly, she hears everything you say.\nAnyone or anything farther away, you only know from what you see in the picture.\nPlaces you know in the village (nearest first):\n- kettle_cafe: The Kettle (cafe), right here west\n- fern_bakery: Rise Bakery (bakery), about 60 m east\n- fern_common: Fern Common House (common house), about 90 m south\n- clinic: Moss Clinic (health), about 150 m east\n- moss_common: Moss Common House (common house), about 200 m east\n- birch_common: Birch Common House (common house), about 250 m south\n- loom_thread: Loom & Thread (fashion studio), about 250 m south-east\n- daycare: Little Roots (childcare), about 250 m east\n- willow_school: Willow School (K-8) (school), about 250 m south-east\n- food_forest: West Food Forest (farm), about 250 m south\n- market_hall: Market Hall (market), about 300 m east\n- slow_kitchen: Slow Kitchen (community kitchen), about 350 m south\n- clover_works: Clover Works (fab lab), about 350 m south\n- library: Lantern Library (library), about 350 m south-east\n\nWhat you did and said recently:\n- [12:20] {\"type\": \"wait\"}\n- [12:20] {\"type\": \"wait\"}\n- [12:20] you said \"Iris opens\"\n- [12:20] you said \"Iris line 2\"\n- [12:20] {\"type\": \"wait\"}\n- [12:20] you said \"Iris line 3\"\nWhat just happened: You said: \"Iris line 3\"\nWhat you heard:\nMara (mara): \"Mara line 3\"\n\nYour notes so far:\n(none yet)\n\nReply with ONE JSON object and nothing else:\n{\"thought\": \"<one sentence: what you notice and why you choose this>\", \"action\": <action>, \"diary\": \"<optional short note to your future self>\"}\n<action> is one of:\n{\"type\": \"go_to\", \"place\": \"<place id from the list>\"}       walk there along the streets\n{\"type\": \"approach\", \"target\": \"<person id or object id>\"}    walk right up to someone or something you can see\n{\"type\": \"say\", \"text\": \"<what you say out loud>\"}            people within 10 m hear you\n{\"type\": \"look_at\", \"target\": \"<person id or place id>\"}\n{\"type\": \"pick_up\", \"object\": \"<object id>\"}                  must be within 3 m\n{\"type\": \"put_down\"}\n{\"type\": \"wait\"}                                              stay and let time pass\nAlways write \"action\" as an object with its fields inside it. To speak, put your exact words in \"text\": {\"type\": \"say\", \"text\": \"Iris! There you are.\"}. The diary is a private note, nobody hears it.",
+   "raw": "{\"thought\": \"answer\", \"action\": {\"type\": \"say\", \"text\": \"Iris line 4\"}}",
+   "frame": "<run>/frames/iris/seen_0012.png"
+  },
+  {
+   "t": 22.0,
+   "step": 11,
+   "kind": "act",
+   "mind": "iris",
+   "action": {
+    "type": "say",
+    "text": "Iris line 4"
+   },
+   "reason": "heard",
+   "n": 11
+  },
+  {
+   "t": 22.0,
+   "step": 11,
+   "kind": "says",
+   "mind": "iris",
+   "text": "Iris line 4"
+  },
+  {
+   "t": 22.0,
+   "step": 11,
+   "kind": "heard_by",
+   "mind": "iris",
+   "listeners": [
+    "mara"
+   ]
+  },
+  {
+   "t": 22.0,
+   "step": 11,
+   "kind": "sim_actions",
+   "actions": {
+    "mara": {
+     "type": "look_at",
+     "target_id": "iris"
+    },
+    "iris": {
+     "type": "look_at",
+     "target_id": "mara"
+    }
+   }
+  },
+  {
+   "t": 24.0,
+   "step": 11,
+   "kind": "painted",
+   "mind": "mara",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 25,
+   "weight_loads": 13
+  },
+  {
+   "t": 24.0,
+   "step": 11,
+   "kind": "painted",
+   "mind": "iris",
+   "frames_in": 8,
+   "frames_out": 8,
+   "latents": 25,
+   "weight_loads": 13
+  },
+  {
+   "t": 24.0,
+   "step": 11,
+   "kind": "outcome",
+   "mind": "mara",
+   "at": [
+    88.4,
+    37.01
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  },
+  {
+   "t": 24.0,
+   "step": 11,
+   "kind": "outcome",
+   "mind": "iris",
+   "at": [
+    89.6,
+    37.0
+   ],
+   "status": "completed",
+   "detail": "",
+   "phase": null
+  }
+ ]
+}
