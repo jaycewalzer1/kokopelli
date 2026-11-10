@@ -68,6 +68,12 @@ On SimWorld the null-agent comparison doesn't run yet, because replays drift by 
 | `viewer.py`, `static/` | The replay page |
 | `mocks/`, `adapters/` | The stand-ins and the real backends |
 
+## Notes in this folder
+
+- [`THIRTY_MIN.md`](THIRTY_MIN.md): the gates to the real 30-minute run, in order, and which have passed.
+- [`SIMWORLD.md`](SIMWORLD.md): the SimWorld adapter, its contract with the server, and the first-run steps.
+- [`HANDOFF.md`](HANDOFF.md): proposed changes outside this folder (2026-11-05), none applied. Asks for this area go here (`AGENTS.md`).
+
 ## How a tick goes
 
 1. The sim applies the last action and advances 30 seconds, capturing at +15 and +30.
