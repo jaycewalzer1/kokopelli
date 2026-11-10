@@ -83,7 +83,7 @@ select = ["E9", "F", "B", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
 # BASELINE (generated 2026-11-09, P2-D): existing findings, not fixed in this pass.
-# Remove a code from a file once its findings there are fixed. Counts: docs/fable_log/P2-D.md.
+# Remove a code from a file once its findings there are fixed. Counts: docs/log/fable/2026-11-09-P2-D.md.
 # Added 2026-11-10 when the commons and exp1 branches were merged, same rule: baselined, not fixed.
 "experiments/exp1/diagnose_pilot.py" = ["F821"]  # closure over names deleted later in the function; check by hand
 "experiments/commons/analyze.py" = ["B905", "F541"]
