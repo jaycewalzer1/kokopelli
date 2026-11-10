@@ -83,6 +83,7 @@ wmloop_start_server() {
     for kind in "${kinds[@]}"; do
         for attempt in 1 2 3; do
             WMLOOP_PORT="$(wmloop_pick_port)"
+            # shellcheck disable=SC2153  # WMLOOP_OUT is set by env.sh, which the caller sources
             log="$WMLOOP_OUT/ue_${kind}_attempt${attempt}.log"
             wmloop_launch "$kind" "$WMLOOP_PORT" "$log"
             if [ "${WMLOOP_DRY_RUN:-0}" = "1" ]; then

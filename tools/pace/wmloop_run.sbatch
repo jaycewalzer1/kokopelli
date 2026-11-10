@@ -86,6 +86,7 @@ if [ -z "$(wmloop_find_launcher)" ]; then
 fi
 
 COSMOS_PID=""; QWEN_PID=""
+# shellcheck disable=SC2329  # run by the EXIT trap below
 stop_everything() {
     [ -n "$COSMOS_PID" ] && kill "$COSMOS_PID" 2>/dev/null
     [ -n "$QWEN_PID" ] && kill "$QWEN_PID" 2>/dev/null

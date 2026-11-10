@@ -5,7 +5,7 @@ DEADLINE="$1"
 SEEDS="${2:-0-9}"
 MAIN=/Users/jaycewalzer/Desktop/kokopelli
 HERE="$MAIN/.claude/worktrees/commons/experiments/commons"
-RUNS="$MAIN/.claude/worktrees/commons/runs/commons"
+# Its results land in $MAIN/.claude/worktrees/commons/runs/commons.
 cd "$HERE" || exit 1
 "$MAIN/simworld/.venv/bin/python" audit.py > /dev/null
 for attempt in 1 2 3 4 5 6; do

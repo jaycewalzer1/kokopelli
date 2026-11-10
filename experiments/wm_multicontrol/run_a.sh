@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2086  # $COMMON holds several arguments and must split into words, so it stays unquoted
 # Variant A short runs (832x480, 17 frames, seed 2025, bridge "b_light" prompt). Run only inside the GPU queue:
 #   gpu.py run --name wmmc_<run> ... -- sh experiments/wm_multicontrol/run_a.sh <a1|a2|a3>
 # a1 runs core.world_transfer (blur alone, the baseline) and core.world_transfer_multi (blur at weight 1), saves both latents

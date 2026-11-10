@@ -8,7 +8,9 @@
 set -uo pipefail
 K=~/Desktop/kokopelli
 MODE="${1:-packaged}"; shift || true
-NS=("${@:-3 5 8}"); NS=(${NS[@]})
+NS=("${@:-3 5 8}")
+# shellcheck disable=SC2206  # "3 5 8" (or "$@") is split into one entry per number on purpose
+NS=(${NS[@]})
 PORT=9004
 OUT="$K/out/bodies/renders/wave2"
 PY="$K/simworld/.venv/bin/python"
@@ -19,7 +21,7 @@ for N in "${NS[@]}"; do
   J="$OUT/Bodies_maxnear$N.json"
   "$PY" -c "import json,sys;d=json.load(open('$K/mac_server/Config/Bodies.json'));d['max_near']=$N;json.dump(d,open('$J','w'),indent=1)"
   LOG="$OUT/server_maxnear$N.log"
-  ARGS=(-windowed -ResX=1280 -ResY=720 -cvport=$PORT -log -ABSLOG="$LOG" -nosplash -swminimized
+  ARGS=(-windowed -ResX=1280 -ResY=720 "-cvport=$PORT" -log -ABSLOG="$LOG" -nosplash -swminimized
         "-ini:Engine:[SystemSettings]:r.SceneCulling.Async.Update=0" -bodies="$J")
   if [[ "$MODE" == packaged ]]; then
     EXE="$K/mac_server/Packaged_bodies/SimWorld.app/Contents/MacOS/SimWorld"
@@ -41,7 +43,7 @@ while time.time() - t < 600:
 PYEOF
   sleep 3
   (cd "$K" && "$PY" tools/city_build/build_city.py --port $PORT > "$OUT/build_city_maxnear$N.log" 2>&1)
-  (cd "$K" && "$PY" tools/bodies/wave2_renders.py perf --max-near $N --pid $PID --out "$OUT") || echo "perf N=$N failed"
+  (cd "$K" && "$PY" tools/bodies/wave2_renders.py perf --max-near "$N" --pid "$PID" --out "$OUT") || echo "perf N=$N failed"
   kill $PID; wait $PID 2>/dev/null
   pkill -f "CrashReport.*pid-$PID" 2>/dev/null || true
 done

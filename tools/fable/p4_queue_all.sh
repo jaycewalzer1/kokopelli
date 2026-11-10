@@ -1,9 +1,11 @@
 #!/bin/sh
+# $G and $P hold command lines that must split into words where they are used, so they stay unquoted.
+# shellcheck disable=SC2086
 # All P4 GPU jobs, one at a time, detached from any shell limit:
 #   nohup sh tools/fable/p4_queue_all.sh > out/fable/P4/queue_all.txt 2>&1 &
 # Order: profile dry run, profile (P4-A), 8-bit bridge baseline and 4-bit bridge (P4-C), shared-memory profile (P4-B1).
 set -u
-W=$(cd "$(dirname "$0")/../.." && pwd); cd "$W"
+W=$(cd "$(dirname "$0")/../.." && pwd); cd "$W" || exit
 say() { echo "$(date '+%F %T') $*"; }
 G="python3 kokopelli/ops/gpu.py run --priority 40 --cwd $W"
 A="Cosmos3-Nano-Sim-Transfer (models/Cosmos3-Nano-Sim-Transfer, gen weights 8-bit), Variant A, 4 controls at 0.25, 448x256 (closed-loop size, lowered from 832x480), recorded Iris controls for 2 streams"

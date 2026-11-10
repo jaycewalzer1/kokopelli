@@ -23,6 +23,6 @@ fi
 PID=$!
 echo $PID > "$PIDF"
 (cd "$K" && .venv/bin/python kokopelli/ops/ram_share.py claim --name bodies_9004 --gb 10 --pid $PID >/dev/null)
-for i in $(seq 1 200); do lsof -nP -iTCP:9004 -sTCP:LISTEN >/dev/null 2>&1 && break; kill -0 $PID 2>/dev/null || { echo "server died" >&2; exit 1; }; sleep 3; done
+for _ in $(seq 1 200); do lsof -nP -iTCP:9004 -sTCP:LISTEN >/dev/null 2>&1 && break; kill -0 $PID 2>/dev/null || { echo "server died" >&2; exit 1; }; sleep 3; done
 sleep 5
 echo $PID
