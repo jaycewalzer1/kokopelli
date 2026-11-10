@@ -1,0 +1,50 @@
+# Package-to-package imports (tools/reorg/import_graph.py)
+# count = files in the source package that import the target package
+
+from                     to                       files  examples
+experiments.benchmarks   kokopelli.settings           1  experiments/benchmarks/backends/llm_model_backend.py
+experiments.benchmarks   kokopelli.wm                 2  experiments/benchmarks/backends/llm_model_backend.py, experiments/benchmarks/tests/test_before_after.py
+experiments.exp1         kokopelli.life               8  experiments/exp1/balance.py, experiments/exp1/baselines.py, experiments/exp1/homeostasis.py
+experiments.exp1         kokopelli.ops                3  experiments/exp1/diagnose_d2.py, experiments/exp1/diagnose_pilot.py, experiments/exp1/run.py
+experiments.filter_test  kokopelli.agents             1  experiments/filter_test/scripts/capture.py
+experiments.filter_test  kokopelli.loop               1  experiments/filter_test/scripts/capture.py
+experiments.filter_test  kokopelli.settings           1  experiments/filter_test/scripts/run_cosmos.py
+experiments.homeostatic  kokopelli.life               1  experiments/homeostatic/export.py
+experiments.homeostatic  kokopelli.settings           8  experiments/homeostatic/benchmark.py, experiments/homeostatic/evaluate.py, experiments/homeostatic/experiment.py
+kokopelli.agents         kokopelli.life               1  kokopelli/agents/lunch_life.py
+kokopelli.agents         kokopelli.loop               4  kokopelli/agents/live.py, kokopelli/agents/lunch_parts.py, kokopelli/agents/lunch_sim.py
+kokopelli.agents         kokopelli.wm                 4  kokopelli/agents/live.py, kokopelli/agents/live_wm.py, kokopelli/agents/lunch_parts.py
+kokopelli.life           experiments.exp1             1  kokopelli/life/panel.py
+kokopelli.life           kokopelli.ops                2  kokopelli/life/gpu_queue.py, kokopelli/life/scenario_night.py
+kokopelli.life           kokopelli.settings          17  kokopelli/life/architecture.py, kokopelli/life/city.py, kokopelli/life/city_live.py
+kokopelli.life           kokopelli.wm                 2  kokopelli/life/llm_generator.py, kokopelli/life/scenario_night.py
+kokopelli.loop           kokopelli.life               2  kokopelli/loop/adapters/life_db.py, kokopelli/loop/tests/test_life_context.py
+kokopelli.loop           kokopelli.mind               8  kokopelli/loop/loop.py, kokopelli/loop/mind_change_check.py, kokopelli/loop/mind_check.py
+kokopelli.loop           kokopelli.settings           1  kokopelli/loop/run.py
+kokopelli.loop           kokopelli.wm                 9  kokopelli/loop/adapters/cosmos.py, kokopelli/loop/adapters/qwen.py, kokopelli/loop/check_video.py
+kokopelli.wm             kokopelli.settings           2  kokopelli/wm/llm_model.py, kokopelli/wm/world_model.py
+tests                    experiments.exp1             2  tests/test_exp1.py, tests/test_exp1_learn.py
+tests                    experiments.homeostatic      5  tests/test_homeostatic_benchmark.py, tests/test_homeostatic_export.py, tests/test_homeostatic_grpo.py
+tests                    kokopelli.agents             3  tests/test_city_bodies.py, tests/test_city_lunch.py, tests/test_lunch_fixes.py
+tests                    kokopelli.life              17  tests/test_bodies_demo_runs.py, tests/test_exp1.py, tests/test_homeostatic_watch.py
+tests                    kokopelli.loop               3  tests/test_city_bodies.py, tests/test_city_lunch.py, tests/test_mind.py
+tests                    kokopelli.mind               1  tests/test_mind.py
+tests                    kokopelli.ops                3  tests/test_cloud_pace.py, tests/test_exp1_learn.py, tests/test_life_scenario.py
+tests                    kokopelli.settings          13  tests/test_continuous_video.py, tests/test_homeostatic_benchmark.py, tests/test_homeostatic_export.py
+tests                    kokopelli.wm                14  tests/test_blend.py, tests/test_city_lunch.py, tests/test_continuous_video.py
+tests                    tools                        3  tests/test_bodies_demo_talk.py, tests/test_city_bodies_looks.py, tests/test_lunch_fixes.py
+tools                    kokopelli.agents             2  tools/bodies/demo_lunch.py, tools/fable/lunch_bench.py
+tools                    kokopelli.loop               2  tools/pace/wmloop_one_tick.py, tools/pace/wmloop_wait_server.py
+tools                    kokopelli.wm                 6  tools/bodies/demo_lunch.py, tools/fable/lunch_bench.py, tools/fable/p4_c_compare.py
+tools                    tests                        1  tools/fable/lunch_bench.py
+
+# Cycles (both directions present)
+experiments.exp1 <-> kokopelli.life   (experiments.exp1 -> kokopelli.life: 8, kokopelli.life -> experiments.exp1: 1)
+tests <-> tools   (tests -> tools: 3, tools -> tests: 1)
+
+# Wrong-way edges (layers low to high: kokopelli.wm -> kokopelli.mind -> kokopelli.loop -> kokopelli.life -> kokopelli.agents); allowed ones are listed in pyproject.toml
+kokopelli.life -> experiments.exp1   library imports outside the library: kokopelli/life/panel.py   ALLOWED: the dev panel's Experiment 1 page (kokopelli.life.panel)
+kokopelli.loop -> kokopelli.life   lower layer imports a higher one: kokopelli/loop/adapters/life_db.py, kokopelli/loop/tests/test_life_context.py   ALLOWED: the life_db adapter and its test
+# 0 wrong-way edge(s) outside the allow-list
+
+# 319 files scanned; excluded: simworld/, mac_server/, vendor/, .claude/

@@ -26,8 +26,11 @@ ROOT = Path(__file__).resolve().parents[2]
 EXCLUDE = ("simworld/", "mac_server/", "vendor/", ".claude/")
 ROOT_PKG = "(root)"
 TWO_LEVEL = ("kokopelli", "experiments")   # packages split one level further
-LAYERS = ["kokopelli.wm", "kokopelli.mind", "kokopelli.loop", "kokopelli.agents"]   # low to high
+LAYERS = ["kokopelli.wm", "kokopelli.mind", "kokopelli.loop", "kokopelli.life", "kokopelli.agents"]   # low to high
 LIBRARY_ONLY = ("experiments", "tools", "tests")                                   # the library never imports these
+# Package edges that ignore_imports in pyproject.toml allows (for named modules only; lint-imports checks those).
+ALLOWED = {("kokopelli.life", "experiments.exp1"): "the dev panel's Experiment 1 page (kokopelli.life.panel)",
+           ("kokopelli.loop", "kokopelli.life"): "the life_db adapter and its test"}
 
 
 def tracked_py() -> list[Path]:
@@ -131,9 +134,12 @@ def main() -> int:
     print(f"# Wrong-way edges (layers low to high: {' -> '.join(LAYERS)}); allowed ones are listed in pyproject.toml")
     bad = [(a, b, why) for (a, b) in sorted(edges) if (why := wrong_way(a, b))]
     for a, b, why in bad:
-        print(f"{a} -> {b}   {why}: {', '.join(examples[(a, b)])}")
+        allowed = f"   ALLOWED: {ALLOWED[(a, b)]}" if (a, b) in ALLOWED else ""
+        print(f"{a} -> {b}   {why}: {', '.join(examples[(a, b)])}{allowed}")
     if not bad:
         print("(none)")
+    outside = [(a, b) for a, b, _ in bad if (a, b) not in ALLOWED]
+    print(f"# {len(outside)} wrong-way edge(s) outside the allow-list")
 
     print()
     print(f"# {len(files)} files scanned; excluded: {', '.join(EXCLUDE)}")
