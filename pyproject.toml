@@ -11,6 +11,10 @@ dependencies = [
     "opencv-python==5.0.0.93",
 ]
 
+[dependency-groups]
+# Test runner for the main .venv (the SimWorld venv has the same version). Installed with `uv pip install`, never `uv sync`.
+dev = ["pytest==9.2.0"]
+
 [project.scripts]
 # The same entry points as `python -m <module>`. The transfer and filter commands only run in the Cosmos venv.
 koko-gpu = "kokopelli.ops.gpu:main"
