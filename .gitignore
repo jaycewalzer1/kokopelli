@@ -5,6 +5,20 @@ models/
 .venv/
 .DS_Store
 
+# Worktree symlinks to the main checkout's assets. No trailing slash, so a symlink matches as well as a directory.
+/.venv
+/out
+/models
+/simworld/.venv
+
+# Claude Code state and worktrees; only the shared skills are tracked
+.claude/*
+!.claude/skills/
+
+# Packaged Unreal server builds
+/mac_server/Packaged
+/mac_server/Packaged_*
+
 # PACE account settings (see cloud/README.md)
 cloud/pace.json
 
