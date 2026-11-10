@@ -86,13 +86,7 @@ select = ["E9", "F", "B", "UP"]
 # BASELINE (generated 2026-11-09, P2-D): existing findings, not fixed in this pass.
 # Remove a code from a file once its findings there are fixed. Counts: docs/fable_log/P2-D.md.
 # Added 2026-11-10 when the commons and exp1 branches were merged, same rule: baselined, not fixed.
-"experiments/commons/prompts.py" = ["UP031"]
-"experiments/commons/run.py" = ["UP031"]
 "tools/bodies/metahuman/make_bodies.py" = ["B008"]
-"tools/bodies/standins/make_groom_usda.py" = ["UP031"]
-"tools/bodies/wave1_renders.py" = ["UP031"]
-"tools/bodies/wave2_renders.py" = ["UP031"]
-"tools/city_build/plan_varied/kitmap.py" = ["UP031"]
 "kokopelli/life/overnight.py" = ["B904"]
 "kokopelli/life/scenario_night.py" = ["B904"]
 "kokopelli/loop/interfaces.py" = ["B027"]
@@ -101,7 +95,6 @@ select = ["E9", "F", "B", "UP"]
 "kokopelli/loop/tests/test_simworld_contract.py" = ["B904"]
 "kokopelli/loop/tests/test_simworld_gate.py" = ["B904"]
 "kokopelli/loop/tests/test_simworld_recovery.py" = ["B904"]
-"tests/test_life_pipeline.py" = ["UP031"]
 
 [tool.pyright]
 include = ["core", "ops", "runtime"]

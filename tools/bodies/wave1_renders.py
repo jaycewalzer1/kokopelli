@@ -185,8 +185,8 @@ def main():
 
     # perf: aerial overview (render_views.py) with 0 / 2 / 8 people in view, GPU ms from CITY_manager frame stats
     perf = {"method": "camera 0 at aerial_overview (300,820,330 m, pitch -32, yaw 270, fov 75); window minimized, so "
-                      "frames render only the captures: %d lit 1280x720 captures back to back; gpu_ms = "
-                      "CITY_manager GetFrameStats average over those frames; capture_ms = wall time per capture" % a.perf_captures}
+                      f"frames render only the captures: {a.perf_captures} lit 1280x720 captures back to back; gpu_ms = "
+                      "CITY_manager GetFrameStats average over those frames; capture_ms = wall time per capture"}
     have_manager = "CITY_manager" in c("vget /objects").split()
     c(f"vset /object/{A}/destroy"); c(f"vset /object/{R}/destroy"); c("vset /action/clean_garbage")
     people = []

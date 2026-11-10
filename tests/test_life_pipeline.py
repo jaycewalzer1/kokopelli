@@ -297,7 +297,7 @@ class PipelineTest(unittest.TestCase):
         (self.paths["ops"] / "queue").mkdir()
         (self.paths["ops"] / "queue" / "bad.json").write_text('{"pid": 1, "queued_at": "soon", "priority": "high"}\n')
         (self.paths["ops"] / "queue" / "bad2.json").write_text('{"pid": 1, "queued_at": 1, "priority": 2}\n')
-        taken = self.collect("1 0 %s %s true\n" % (PYTHON, GPU))
+        taken = self.collect(f"1 0 {PYTHON} {GPU} true\n")
         self.assertIn("goal", taken)
         self.assertIn("error", taken["gpu"])
         self.assertEqual(taken["gpu"]["tickets"], [])

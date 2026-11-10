@@ -178,7 +178,7 @@ def field_text(reply, field):
         return re.split(r'\s*\{"', parsed[field])[0]
     if parsed and field in parsed:
         return ""
-    match = re.search(r'"%s"\s*:\s*"?(.*)' % field, reply, re.S)
+    match = re.search(rf'"{field}"\s*:\s*"?(.*)', reply, re.S)
     if not match:
         return "" if reply.lstrip().startswith("{") else reply.strip()
     return re.split(r'\s*\n|"\s*[,}]|\s*\{"', match.group(1).strip())[0].rstrip('"').replace('\\"', '"')
@@ -186,7 +186,7 @@ def field_text(reply, field):
 
 def field_object(reply, field):
     """A flat object field from a reply whose JSON as a whole would not parse, or None."""
-    match = re.search(r'"%s"\s*:\s*(\{[^{}]*\}?)' % field, reply)
+    match = re.search(rf'"{field}"\s*:\s*(\{{[^{{}}]*\}}?)', reply)
     if not match:
         return None
     text = match.group(1)

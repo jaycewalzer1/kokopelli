@@ -54,7 +54,7 @@ def main():
         H = heights(b)
         print(f"{bid} {b['arch']} {b['footprint_m']} front {b['front']}: rows = y from {b['footprint_m'][1]} (2 m), digit = height // 2 m (h = 17.5 -> 8)")
         for j, row in enumerate(H):
-            print(f"{b['footprint_m'][1] + 2 * j:5.0f} " + "".join("%x" % min(15, int(h // 2)) if h > 0.3 else "." for h in row))
+            print(f"{b['footprint_m'][1] + 2 * j:5.0f} " + "".join(f"{min(15, int(h // 2)):x}" if h > 0.3 else "." for h in row))
 
 
 if __name__ == "__main__":

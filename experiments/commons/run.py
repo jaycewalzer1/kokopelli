@@ -72,7 +72,7 @@ class FakeModel:
         out = []
         for _, user in requests:
             if '"choice"' in user:
-                out.append('{"choice": "%s"}' % random.Random(key(user, seed)).choice("AB"))
+                out.append(f'{{"choice": "{random.Random(key(user, seed)).choice("AB")}"}}')
             elif '"diary"' in user:
                 out.append('{"diary": "I keep thinking about that day."}')
             elif '"lessons"' in user:

@@ -18,7 +18,7 @@ for _i in range(400):
         L = 8.0 * t
         pts.append((root[0] + n[0] * L * 0.6, root[1] + n[1] * L * 0.6, root[2] + n[2] * L * 0.3 - 6.0 * t * t))
 out = Path(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).with_name('standin_hair.usda'))
-fmt = lambda p: '(%.3f, %.3f, %.3f)' % p
+fmt = lambda p: '({:.3f}, {:.3f}, {:.3f})'.format(*p)
 out.write_text(f'''#usda 1.0
 (
     defaultPrim = "StandinHair"

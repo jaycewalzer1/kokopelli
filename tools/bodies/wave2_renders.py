@@ -126,7 +126,7 @@ def evidence(a):
         print(name, got)
 
     people = [A, B] + [f"GEN_BP_Pedestrian_W2_{i}" for i in range(6)]
-    clear(s, people + ["GEN_BP_Pedestrian_Perf%d" % i for i in range(8)])
+    clear(s, people + [f"GEN_BP_Pedestrian_Perf{i}" for i in range(8)])
     s("vset /action/tick_intervel 0")
     s("vset /action/game/resume")
     s(f"vset /objects/spawn_bp_asset {AGENT} {A}")
@@ -271,7 +271,7 @@ def contact_sheet(out, approach, switch_step):
     rows_fp = []
     crop = (416 - 52 + 8, 240 - 30 + 10, 416 + 52 + 8, 240 + 30 + 10)  # iris, 4x zoom of the frame centre
     for r in pick:
-        lab = f"{r['frame']} {r['dist_m']}m {r['iris_tier']}{' fade %.2f' % r['fade'] if r['fading'] else ''} (4x crop)"
+        lab = f"{r['frame']} {r['dist_m']}m {r['iris_tier']}{' fade {:.2f}'.format(r['fade']) if r['fading'] else ''} (4x crop)"
         rows_fp.append([(out / f"{r['frame']}.png", lab, crop), (out / f"{r['frame']}_seg.png", "seg (4x crop)", crop),
                         (out / f"{r['frame']}_depth.png", "depth (4x crop)", crop)])
     if pick:
@@ -417,12 +417,12 @@ def perf(a):
     res["peak_rss_gb"] = round(peak.get("rss_gb", 0), 2)
     res["pid"] = a.pid
     res["method"] = ("8 residents (7 MetaHumans + ana twice) lined up 80 cm apart; a spawned camera 7 m away makes all "
-                     "want near, max_near caps it. GPU: CITY_manager GetFrameStats gpu_ms, median over %d interleaved "
-                     "rounds of %d back-to-back 1280x720 lit captures from camera 0 with the 8 people shown vs hidden "
+                     f"want near, max_near caps it. GPU: CITY_manager GetFrameStats gpu_ms, median over {a.rounds} interleaved "
+                     f"rounds of {a.captures} back-to-back 1280x720 lit captures from camera 0 with the 8 people shown vs hidden "
                      "(aerial_overview 300,820,330 m pitch -32; street = the line-up view 7 m away); window minimized. "
                      "gpu_busy_pct = IOAccelerator Device Utilization sampled before/after (other jobs on the GPU). "
                      "Memory: `vmmap --summary` physical footprint and its peak for the server process (includes Metal/unified "
-                     "allocations, which ps RSS misses), launched fresh for this max_near" % (a.rounds, a.captures))
+                     "allocations, which ps RSS misses), launched fresh for this max_near")
     res["assets"] = ASSETS
     res["core_data_installed"] = core_data_installed()
     res["made"] = datetime.now().isoformat(timespec="seconds")
