@@ -12,7 +12,7 @@ from pathlib import Path
 
 from homeostatic.evaluate import SIMPLE
 from homeostatic.report import write_report
-from settings import HOMEOSTATIC_OUT, HOMEOSTATIC_TRAIN
+from core.settings import HOMEOSTATIC_OUT, HOMEOSTATIC_TRAIN
 
 SPLITS = ["train", "ood"]
 MAX_CRASHES = 5

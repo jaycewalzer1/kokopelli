@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 
 from homeostatic.watch import baselines, read_rows
-from settings import HOMEOSTATIC_ADAPTERS, HOMEOSTATIC_OUT, LLM_MODEL, LLM_MODEL_WEIGHTS, ROOT
+from core.settings import HOMEOSTATIC_ADAPTERS, HOMEOSTATIC_OUT, LLM_MODEL, LLM_MODEL_WEIGHTS, ROOT
 
 MAX_INVALID = 0.05
 

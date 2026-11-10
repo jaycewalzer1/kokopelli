@@ -25,7 +25,7 @@ from mlx_vlm.trainer.vlm.grpo.trainer import generate_grpo, make_task
 from mlx_vlm.trainer.vlm.sft.runtime import forward_vlm_logits
 
 from homeostatic.world import REWARDS, discounted, done, start, step, system_prompt, user_prompt
-from settings import HOMEOSTATIC_TRAIN, HOMEOSTATIC_WORLD
+from core.settings import HOMEOSTATIC_TRAIN, HOMEOSTATIC_WORLD
 
 # Reward kinds to train with. Shuffled is the null control: same scores, assigned to the wrong actions.
 REWARD_KINDS = [*REWARDS, "shuffled"]

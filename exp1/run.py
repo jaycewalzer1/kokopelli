@@ -279,7 +279,7 @@ def polite(make, folder):
     Returns the Run, model loaded, with its life finished."""
     import gc
     sys.path.insert(0, str(ROOT))
-    import ram_share
+    from core import ram_share
 
     def log(message):
         print(message, flush=True)

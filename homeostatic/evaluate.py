@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 from homeostatic.benchmark import constant_policy, planner_policy, random_policy, run_benchmark, summarize
-from settings import HOMEOSTATIC_SEEDS, LLM_MODEL_WEIGHTS
+from core.settings import HOMEOSTATIC_SEEDS, LLM_MODEL_WEIGHTS
 
 SIMPLE = {"random": random_policy, "idle": lambda: constant_policy("idle"), "greedy": lambda: planner_policy(1),
           "planner": lambda: planner_policy(4)}

@@ -8,7 +8,7 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 
-from settings import HOMEOSTATIC_WORLD
+from core.settings import HOMEOSTATIC_WORLD
 
 
 @dataclass(frozen=True)

@@ -4,7 +4,7 @@ import itertools
 import numpy as np
 
 from homeostatic.world import deviation, discounted, done, drive, homeostatic_reward, parse_action, start, step
-from settings import HOMEOSTATIC_TRAIN, HOMEOSTATIC_WORLD
+from core.settings import HOMEOSTATIC_TRAIN, HOMEOSTATIC_WORLD
 
 METRICS = ["mean_drive", "in_range", "above", "below", "deaths", "idle_when_healthy", "invalid", "discounted_return"]
 

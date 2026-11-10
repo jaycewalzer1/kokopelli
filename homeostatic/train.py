@@ -16,7 +16,7 @@ from mlx_vlm.trainer.peft.utils import apply_lora_layers, get_peft_model
 
 from homeostatic.benchmark import run_benchmark, summarize
 from homeostatic.grpo import REWARD_KINDS, Actor, make_homeostatic_task, training_args
-from settings import HOMEOSTATIC_SEEDS, HOMEOSTATIC_TRAIN, LLM_MODEL_WEIGHTS
+from core.settings import HOMEOSTATIC_SEEDS, HOMEOSTATIC_TRAIN, LLM_MODEL_WEIGHTS
 
 
 class Checkpoints(TrainingCallback):

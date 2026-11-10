@@ -48,7 +48,7 @@ def measured_qwen(weights=None):
         last_usage = None
 
         def decide(self, agent_input):
-            import llm_model
+            from core import llm_model
             from mlx_vlm import generate
             from mlx_vlm.prompt_utils import apply_chat_template
             if self.weights:

@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from homeostatic.benchmark import paired_difference
-from settings import HOMEOSTATIC_OUT
+from core.settings import HOMEOSTATIC_OUT
 
 COLUMNS = [("mean_drive", "mean drive"), ("in_range", "all in range"), ("above", "any above"), ("below", "any below"), ("deaths", "died"),
            ("idle_when_healthy", "idle if healthy"), ("invalid", "invalid"), ("discounted_return", "return")]
