@@ -17,7 +17,9 @@ class GpuQueue(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.env = {**os.environ, "KOKOPELLI_ROOT": str(self.root), "KOKOPELLI_CODE": str(CODE),
                     "KOKOPELLI_PACE_CONFIG": str(self.root / "no_pace.json"),  # never a real PACE account in a test
-                    "KOKOPELLI_GPU_IGNORE_OUTSIDE": "1", "KOKOPELLI_SUMMARIZE": "0", "KOKOPELLI_GPU_POLL": "0.1"}
+                    "KOKOPELLI_GPU_IGNORE_OUTSIDE": "1", "KOKOPELLI_SUMMARIZE": "0", "KOKOPELLI_GPU_POLL": "0.1",
+                    # the real machine's heat and power never reach a test; the guard tests give fakes
+                    "KOKOPELLI_MACMON": str(self.root / "no_macmon"), "KOKOPELLI_PMSET": str(self.root / "no_pmset")}
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -212,6 +214,85 @@ class GpuQueue(unittest.TestCase):
         self.assertTrue(next(e for e in self.events() if e["event"] == "finished")["dry_run"])
         self.assertEqual(self.start("wet", 1, "sh", "-c", f'echo "$KOKO_DRY_RUN" > {flag}').wait(timeout=20), 0)
         self.assertEqual(flag.read_text(), "\n")
+
+
+class Guards(GpuQueue):
+    """P4-E: heat hold, --gb from the last good run, power warning in status."""
+
+    tests = ("test_a_hot_gpu_holds_a_new_job_until_it_cools", "test_gb_defaults_to_the_last_good_runs_peak",
+             "test_status_warns_on_battery_or_low_power_mode")
+
+    def fake(self, name, text):
+        path = self.root / name
+        (self.root / f"{name}.txt").write_text(text)
+        path.write_text(f"#!/bin/sh\n[ \"$2\" = batt ] && cat {self.root}/{name}.batt.txt 2>/dev/null && exit 0\n"
+                        f"cat {self.root}/{name}.txt\n")
+        path.chmod(0o755)
+        self.env[f"KOKOPELLI_{name.upper()}"] = str(path)
+
+    def macmon(self, temp):
+        self.fake("macmon", json.dumps({"gpu_active_ratio": 0.0, "all_power": 5.0, "temp": {"gpu_temp_avg": temp},
+                                        "memory": {"ram_usage": 0, "swap_usage": 0}}))
+
+    def ticket(self, pid):
+        for _ in range(100):
+            for path in (self.root / "out/ops/queue").glob("*.json"):
+                ticket = json.loads(path.read_text())
+                if ticket["pid"] == pid and ticket.get("waiting_for"):
+                    return ticket
+            time.sleep(0.05)
+        self.fail("no waiting ticket")
+
+    def call(self, expr):
+        code = f"import sys; sys.path.insert(0, {str(GPU.parent)!r}); import gpu; print(repr({expr}))"
+        return subprocess.run([sys.executable, "-c", code], env=self.env, capture_output=True, text=True, check=True).stdout.strip()
+
+    def test_a_hot_gpu_holds_a_new_job_until_it_cools(self):
+        self.macmon(97.2)
+        marker = self.root / "ran"
+        job = self.start("hot", 1, "touch", str(marker), extra=("--gb", "0"))
+        self.assertEqual(self.ticket(job.pid)["waiting_for"], "GPU at 97 C, waits below 95 C")
+        self.assertFalse(marker.exists())
+        self.macmon(80)
+        self.assertEqual(job.wait(timeout=20), 0)
+        self.assertTrue(marker.exists())
+
+    def test_gb_defaults_to_the_last_good_runs_peak(self):
+        ledger = self.root / "out/ops/gpu_ledger.jsonl"
+        ledger.parent.mkdir(parents=True, exist_ok=True)
+        rows = [{"name": "paint", "exit_code": 0, "peak_job_gb": 18.0}, {"name": "paint", "exit_code": 0, "peak_job_gb": 20.0},
+                {"name": "paint", "exit_code": 1, "peak_job_gb": 30.0}, {"name": "paint", "exit_code": 0, "peak_job_gb": 2.0, "dry_run": True},
+                {"name": "other", "exit_code": 0, "peak_job_gb": 9.0}]
+        ledger.write_text("".join(json.dumps({"event": "finished", **r}) + "\n" for r in rows))
+        self.assertEqual(self.call("gpu.last_peak_gb('paint')"), "22.0")
+        self.assertEqual(self.call("gpu.last_peak_gb('new')"), "0")
+        self.macmon(99)   # holds every job in line, so its ticket can be read
+        for extra, want in (((), 22.0), (("--gb", "0"), 0), (("--dry-run",), 0)):
+            job = self.start("paint", 1, "true", extra=extra)
+            try:
+                self.assertEqual(self.ticket(job.pid)["gb"], want, extra)
+            finally:
+                job.terminate()
+                job.wait(timeout=10)
+
+    def test_status_warns_on_battery_or_low_power_mode(self):
+        self.fake("pmset", "System-wide power settings:\n powermode            2\n")
+        (self.root / "pmset.batt.txt").write_text("Now drawing from 'AC Power'\n")
+        self.assertEqual(self.gpu("status").stdout, "idle\n")
+        (self.root / "pmset.batt.txt").write_text("Now drawing from 'Battery Power'\n")
+        self.assertTrue(self.gpu("status").stdout.startswith("warning: the Mac is on battery;"))
+        self.fake("pmset", " lowpowermode         1\n")
+        out = self.gpu("status").stdout.splitlines()
+        self.assertIn("Low Power Mode is on and the Mac is on battery", out[0])
+        self.assertEqual(out[-1], "idle")
+
+
+def load_tests(loader, standard, pattern):
+    """Guards inherits GpuQueue's setUp only; run its own tests, not the parent's twice."""
+    suite = unittest.TestSuite()
+    suite.addTests(loader.loadTestsFromTestCase(GpuQueue))
+    suite.addTests(Guards(name) for name in Guards.tests)
+    return suite
 
 
 if __name__ == "__main__":

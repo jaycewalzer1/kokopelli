@@ -23,12 +23,76 @@ import subprocess
 import sys
 import tempfile
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RUNNER = Path.home() / "cosmos3" / "cosmos3-mlx"
 HINTS = ("blur", "seg", "depth", "edge")
 WARM = 3
+# KOKO_PROFILE=1: each push reply carries "profile", seconds per stage (docs/PAINT_PROFILE.md). MLX is lazy, so a timed
+# stage evaluates its own results before its clock stops; that sync is the only change in behavior, and only when profiling.
+PROFILE = os.environ.get("KOKO_PROFILE") == "1"
+
+
+SHM_OUT = "shm"   # a push's `out` when the client wants the painted frames back in shared memory (KOKO_WM_SHM=1)
+
+
+def _untrack(shm):
+    """Python 3.12's resource tracker claims every segment a process opens and destroys it when that process exits.
+    The client owns these segments (it unlinks them), so the worker must not hold a claim."""
+    from multiprocessing import resource_tracker
+    resource_tracker.unregister(shm._name, "shared_memory")
+
+
+def read_frames(spec):
+    """A push's control frames, uint8 [n, H, W, 3]: an .npy path, or {"shm": name, "shape": [...]} (KOKO_WM_SHM=1)."""
+    import numpy as np
+    if isinstance(spec, str):
+        return np.load(spec)
+    from multiprocessing import shared_memory
+    shm = shared_memory.SharedMemory(name=spec["shm"])
+    _untrack(shm)
+    try:
+        return np.ndarray(spec["shape"], np.uint8, buffer=shm.buf).copy()
+    finally:
+        shm.close()
+
+
+def write_frames(frames, out):
+    """Painted frames for the client: saved to the .npy path `out`, or put in a new shared-memory segment when `out` is
+    SHM_OUT. Returns what the reply's "out" should say."""
+    import numpy as np
+    if out != SHM_OUT:
+        np.save(out, frames)
+        return out
+    from multiprocessing import shared_memory
+    shm = shared_memory.SharedMemory(create=True, size=max(1, frames.nbytes))
+    _untrack(shm)
+    np.ndarray(frames.shape, np.uint8, buffer=shm.buf)[:] = frames
+    shm.close()
+    return {"shm": shm.name, "shape": list(frames.shape)}
+
+
+class Stages:
+    """Seconds per named stage, summed over repeats. A no-op unless KOKO_PROFILE=1."""
+
+    def __init__(self, mx=None):
+        self.mx, self.s = mx, {}
+
+    @contextmanager
+    def __call__(self, name, sync=None):
+        if not PROFILE:
+            yield
+            return
+        t = time.perf_counter()
+        yield
+        if sync is not None and self.mx is not None:
+            self.mx.eval(sync() if callable(sync) else sync)
+        self.s[name] = self.s.get(name, 0.0) + time.perf_counter() - t
+
+    def report(self):
+        return {k: round(v, 3) for k, v in self.s.items()}
 
 
 class WorldStream:
@@ -92,6 +156,8 @@ class WorldStream:
 # ---------------------------------------------------------------- worker, in the cosmos3-mlx venv
 
 class Worker:
+    stages = Stages()
+
     def start(self, prompt, size, fps, weights, seed, window, sink, quantize, planned_frames, raw_prompt):
         import mlx.core as mx
         from core import world_transfer as wt
@@ -181,26 +247,30 @@ class Worker:
         t_pos = float(self.n_text + wt.MARGIN) + f * (wt.BASE_FPS / self.fps)
         cos, sin = self.rope.tables(mx.stack([mx.full(hh.shape, t_pos), hh, ww]))
         layers = lambda entries: [[self.text_kv[i]] + [e[i] for e in entries] for i in range(36)]
-        hist, gen, branches = self.history, self.gen, range(len(self.hints))
-        for b in branches:
-            hist.add_control(b, gen.control(wt.patchify(lat_cs[b].astype(mx.bfloat16)), cos, sin, layers(hist.view(b, False))))
+        hist, gen, branches, stage = self.history, self.gen, range(len(self.hints)), self.stages
+        with stage("control_branches", sync=lambda: [hist.branches[b].entries[-1] for b in branches]):
+            for b in branches:
+                hist.add_control(b, gen.control(wt.patchify(lat_cs[b].astype(mx.bfloat16)), cos, sin,
+                                                layers(hist.view(b, False))))
         ctxs = [layers(hist.view(b, True)) for b in branches]
         mx.random.seed(self.seed + f)
         x = mx.random.normal((1, 1, h_lat, w_lat, 48)).astype(mx.float32)
         for step, (s, s_next) in enumerate(zip(self.sigmas[:-1], self.sigmas[1:])):
-            v, _ = gen.target(wt.patchify(x.astype(mx.bfloat16)), cos, sin, ctxs, self.weights, sigma=s)
-            x0 = x - s * wt.unpatchify(v, h_lat, w_lat)
-            if s_next == 0.0:
-                x = x0
-            else:
-                mx.random.seed(self.seed + f * 1_000_003 + (step + 1) * 9_176)
-                x = (1 - s_next) * x0 + s_next * mx.random.normal(x.shape).astype(mx.float32)
-            mx.eval(x)
+            with stage(f"denoise_{step}"):
+                v, _ = gen.target(wt.patchify(x.astype(mx.bfloat16)), cos, sin, ctxs, self.weights, sigma=s)
+                x0 = x - s * wt.unpatchify(v, h_lat, w_lat)
+                if s_next == 0.0:
+                    x = x0
+                else:
+                    mx.random.seed(self.seed + f * 1_000_003 + (step + 1) * 9_176)
+                    x = (1 - s_next) * x0 + s_next * mx.random.normal(x.shape).astype(mx.float32)
+                mx.eval(x)
         out = x.astype(mx.bfloat16)
-        ctxs = [layers(hist.view(b, True)) for b in branches]
-        _, kv = gen.target(wt.patchify(out), cos, sin, ctxs, self.weights, store=True)
-        del ctxs
-        hist.add_target(kv)
+        with stage("history_store", sync=lambda: kv):
+            ctxs = [layers(hist.view(b, True)) for b in branches]
+            _, kv = gen.target(wt.patchify(out), cos, sin, ctxs, self.weights, store=True)
+            del ctxs
+            hist.add_target(kv)
         mx.clear_cache()
         return out
 
@@ -225,18 +295,21 @@ class Worker:
         return (frames * 255).round().clip(0, 255).astype(np.uint8)
 
     def push(self, controls, out):
-        import numpy as np
         mx = self.mx
+        self.stages = stage = Stages(mx)
         t0 = time.time()
-        new = {h: np.load(controls[h]) for h in self.hints}
+        with stage("read_controls"):
+            new = {h: read_frames(controls[h]) for h in self.hints}
         if any(v.shape[1:3] != (self.height, self.width) for v in new.values()):
             raise ValueError(f"controls must be {self.width}x{self.height}")
-        self._encode(new)
+        with stage("encode"):
+            self._encode(new)
         t_enc = time.time() - t0
         ready = len(self.lat_c[self.hints[0]])
         if not ready:
-            return {"frames": 0, "out": out}
-        self._load()
+            return {"frames": 0, "out": out, **({"profile": stage.report()} if PROFILE else {})}
+        with stage("weights_load"):
+            self._load()
         t1 = time.time()
         mx.reset_peak_memory()
         painted = []
@@ -246,12 +319,15 @@ class Worker:
             self.n_painted += 1
         t_paint = time.time() - t1
         t2 = time.time()
-        frames = self._decode(painted)
-        np.save(out, frames)
+        with stage("decode"):
+            frames = self._decode(painted)
+        with stage("write_frames"):
+            out = write_frames(frames, out)
         self.frames_out += len(frames)
         return {"frames": len(frames), "out": out, "latents": self.n_painted, "frames_out": self.frames_out,
                 "encode_s": round(t_enc, 1), "paint_s": round(t_paint, 1), "decode_s": round(time.time() - t2, 1),
-                "s_per_latent": round(t_paint / ready, 2), "peak_gb": round(mx.get_peak_memory() / 2 ** 30, 2)}
+                "s_per_latent": round(t_paint / ready, 2), "peak_gb": round(mx.get_peak_memory() / 2 ** 30, 2),
+                **({"profile": stage.report()} if PROFILE else {})}
 
 
 def serve():

@@ -9,6 +9,7 @@ import sys
 import tempfile
 import types
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import numpy as np
@@ -60,7 +61,7 @@ def fake_decode(latents, vae_dir):
     return np.full((1, 4 * t, H, W, 3), 0.5, np.float32)   # the port: 4 frames per latent, the first included
 
 
-class WorkerFrameCount(unittest.TestCase):
+class WorkerCase(unittest.TestCase):
     def setUp(self):
         sys.modules["cosmos3_mlx"] = types.ModuleType("cosmos3_mlx")
         enc = types.ModuleType("cosmos3_mlx.encode_vae")
@@ -95,6 +96,8 @@ class WorkerFrameCount(unittest.TestCase):
         reply = self.w.push(paths, out)
         return np.load(out) if reply["frames"] else np.zeros((0, H, W, 3), np.uint8)
 
+
+class WorkerFrameCount(WorkerCase):
     def test_first_push_matches_controls(self):
         self.assertEqual(len(self.push(21)), 21)        # 1 + 4*5 frames -> 6 latents -> 21 frames
 
@@ -127,6 +130,77 @@ class WorkerFrameCount(unittest.TestCase):
             sent += n
             got += len(self.push(n))
             self.assertTrue(0 <= sent - got <= 3, (sent, got))
+
+
+class Profile(WorkerCase):
+    """KOKO_PROFILE=1 adds per-stage seconds to every push reply; off, the reply is unchanged."""
+
+    def reply(self, n):
+        paths = {}
+        for h in self.w.hints:
+            paths[h] = f"{self.tmp.name}/{h}_{self.w.frames_in}.npy"
+            np.save(paths[h], np.zeros((n, H, W, 3), np.uint8))
+        return self.w.push(paths, f"{self.tmp.name}/out_{self.w.frames_in}.npy")
+
+    def test_off_by_default(self):
+        self.assertNotIn("profile", self.reply(5))
+
+    def test_on_names_every_stage(self):
+        with unittest.mock.patch.object(world_stream, "PROFILE", True):
+            prof = self.reply(5)["profile"]
+        self.assertEqual(set(prof), {"read_controls", "encode", "weights_load", "decode", "write_frames"})
+        self.assertTrue(all(v >= 0 for v in prof.values()))
+
+    def test_client_side_with_fake_worker(self):
+        from core.world_stream_multi import MultiWorldStream
+        with unittest.mock.patch.object(world_stream, "PROFILE", True):
+            wm = MultiWorldStream(out_dir=self.tmp.name, fake=True)
+            try:
+                wm.open("a", "a street", size=f"{W}x{H}", planned_frames=5)
+                wm.push("a", {h: np.zeros((5, H, W, 3), np.uint8) for h in world_stream.HINTS})
+            finally:
+                wm.close()
+        self.assertEqual(set(wm.last["a"]["client_profile"]), {"client_write_controls", "client_call",
+                                                               "client_read_frames", "client_video_check"})
+
+
+class SharedMemoryHandoff(unittest.TestCase):
+    """KOKO_WM_SHM=1: the same frames as the .npy files, and no files."""
+
+    def run_fake(self, shm, out_dir):
+        from core.world_stream_multi import MultiWorldStream
+        rng = np.random.default_rng(0)
+        wm = MultiWorldStream(out_dir=out_dir, fake=True, shm=shm)
+        got, seen = [], set()
+        try:
+            for s in ("a", "b"):
+                wm.open(s, "a street", size=f"{W}x{H}", planned_frames=40)
+            for n in (1, 7, 16, 3):
+                for s in ("a", "b"):
+                    got.append(wm.push(s, {h: rng.integers(0, 255, (n, H, W, 3), np.uint8) for h in world_stream.HINTS}))
+                    seen |= {p.name for p in Path(out_dir).glob("*.npy")}
+        finally:
+            wm.close()
+        return got, seen
+
+    def test_same_frames_and_no_files(self):
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            files, _ = self.run_fake(False, a)
+            shared, seen = self.run_fake(True, b)
+        self.assertEqual(len(files), len(shared))
+        for x, y in zip(files, shared, strict=True):
+            np.testing.assert_array_equal(x, y)
+        self.assertEqual(sum(len(x) for x in shared), 2 * 25)   # 27 in, 25 out per stream (latent lag)
+        self.assertEqual(seen, set())
+
+    def test_round_trip_in_the_worker_helpers(self):
+        from multiprocessing import shared_memory
+        frames = np.arange(2 * H * W * 3, dtype=np.uint8).reshape(2, H, W, 3)
+        spec = world_stream.write_frames(frames, world_stream.SHM_OUT)
+        np.testing.assert_array_equal(world_stream.read_frames(spec), frames)
+        segment = shared_memory.SharedMemory(name=spec["shm"])
+        segment.close()
+        segment.unlink()
 
 
 if __name__ == "__main__":

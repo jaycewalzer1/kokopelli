@@ -20,8 +20,9 @@ Before queueing, `run` checks the job can start at all (folder, executable, modu
 fails in seconds instead of after a wait for its turn. `gpu.py check [--cwd D] [--output O] [--gb N] -- CMD` runs the same
 check alone, plus free memory. `run --dry-run` runs the command with KOKO_DRY_RUN=1, which the world-model scripts take to
 mean: paint one latent, label the sidecar a dry run, exit 0 (half an hour's limit unless --max-hours says otherwise).
-`--gb N` holds a job until ram_share.py says N GB is free. `status` says why each job is waiting and how long a running job's
-log has been quiet. A Python process over 8 GB that no ticket owns counts as an outside model job, whatever its name.
+`--gb N` holds a job until ram_share.py says N GB is free; without --gb a job holds for its name's last good peak plus
+10%. A new job also waits while the GPU is at 95 C or hotter. `status` warns on battery or Low Power Mode, says why each
+job is waiting and how long a running job's log has been quiet. A Python process over 8 GB that no ticket owns counts as an outside model job, whatever its name.
 
 A job can instead run on PACE, if it gives a command that works there:
     python3 ops/gpu.py run --name x --pace-command "python -m thing --cuda" --pull out/x [--where pace] -- MAC CMD
@@ -57,6 +58,8 @@ POLL_SECONDS = float(os.environ.get("KOKOPELLI_GPU_POLL", 15))
 GRACE_SECONDS = float(os.environ.get("KOKOPELLI_GPU_GRACE", 30))    # from SIGTERM to SIGKILL when a job is stopped
 SAMPLE_SECONDS = float(os.environ.get("KOKOPELLI_GPU_SAMPLE", 15))  # how often the keeper reads the machine during a job
 DRY_RUN_HOURS = 0.5                                                 # a dry run's time limit unless --max-hours says otherwise
+HOT_C = float(os.environ.get("KOKOPELLI_GPU_HOT_C", 95))           # a new job waits while the GPU is this hot or hotter
+GB_MARGIN = 1.1                                                     # --gb default: the last good run's peak plus 10%
 HEAVY_PYTHON_GB = 8                                                 # no small script is this big, and every model load is
 
 # Model jobs started without this wrapper still count as using the GPU.
@@ -205,7 +208,52 @@ def blocked_by(ticket, line):
     outside = outside_model_jobs()
     if outside:
         return f"outside job, pid {outside[0][0]}: {outside[0][1][:80]}"
+    hot = gpu_too_hot()
+    if hot:
+        return hot
     return memory_short(ticket["gb"]) if ticket.get("gb") else None
+
+
+def gpu_too_hot():
+    """Why a new job should wait for the GPU to cool, or None. 4 of 22 measured jobs reached 100 C; starting a paint on a
+    hot GPU stacks its heat on the last one's. No reading (macmon missing) never holds a job up."""
+    temp = read_machine().get("gpu_temp")
+    return f"GPU at {temp:.0f} C, waits below {HOT_C:g} C" if temp is not None and temp >= HOT_C else None
+
+
+def last_peak_gb(name):
+    """The default --gb for a job: its last successful, non-dry run's peak footprint plus a margin, or 0 if none."""
+    peak = 0
+    try:
+        lines = LEDGER.read_text().splitlines()
+    except OSError:
+        return 0
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if (event.get("event") == "finished" and event.get("name") == name and event.get("exit_code") == 0
+                and not event.get("dry_run") and event.get("peak_job_gb")):
+            peak = event["peak_job_gb"]
+    return round(peak * GB_MARGIN, 1) if peak else 0
+
+
+def power_warning():
+    """A warning line when the Mac is on battery or in Low Power Mode, else None. A 150-frame paint took 1,782 s on
+    battery against 782-935 s on AC (docs/PAINT_PROFILE.md)."""
+    pmset = os.environ.get("KOKOPELLI_PMSET", "/usr/bin/pmset")
+    try:
+        active = subprocess.run([pmset, "-g"], capture_output=True, text=True, timeout=5).stdout
+        battery = subprocess.run([pmset, "-g", "batt"], capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    notes = []
+    if re.search(r"^\s*(lowpowermode|powermode)\s+1\b", active, re.M):
+        notes.append("Low Power Mode is on")
+    if "'Battery Power'" in battery:
+        notes.append("the Mac is on battery")
+    return f"warning: {' and '.join(notes)}; paints ran about 2x slower on battery (docs/PAINT_PROFILE.md)" if notes else None
 
 
 def wait_for_turn(ticket, path, deadline):
@@ -397,6 +445,10 @@ def run(args):
         print(f"{args.name} wasn't queued: give at least one --output, the file or folder it writes, so the GPU tab can show it.", file=sys.stderr)
         return 2
     outputs = [str(Path(args.cwd or os.getcwd(), output).resolve()) for output in args.output]
+    if args.gb is None:
+        args.gb = 0 if args.dry_run else last_peak_gb(args.name)
+        if args.gb:
+            print(f"{args.name}: --gb {args.gb:g} from its last good run's peak (+10%); --gb 0 turns the hold off", file=sys.stderr)
     problems = [] if args.no_check else preflight(args.command, args.cwd, outputs, memory=False)  # --gb waits in line instead
     if problems:
         for problem in problems:
@@ -599,6 +651,9 @@ def finished_counts():
 
 def status(_args):
     queued, outside = tickets(), outside_model_jobs()
+    warning = power_warning()
+    if warning:
+        print(warning)
     if not queued and not outside:
         print("idle")
         return 0
@@ -663,7 +718,8 @@ def main():
     run_parser.add_argument("--cwd")
     run_parser.add_argument("--give-up-hours", type=float, default=0)
     run_parser.add_argument("--max-hours", type=float, default=0, help="stop the job after this long, so a hang can't hold the GPU all night")
-    run_parser.add_argument("--gb", type=float, default=0, help="hold the job until ram_share.py says this much memory is free")
+    run_parser.add_argument("--gb", type=float, default=None, help="hold the job until ram_share.py says this much memory "
+                            "is free (default: the last good run of this --name's peak plus 10%%, else no hold)")
     run_parser.add_argument("--where", choices=["local", "pace"], help="where to run it; by default, the panel's choice for jobs that have a PACE command")
     run_parser.add_argument("--pace-command", help="the shell command to run on PACE, from the copied code folder")
     run_parser.add_argument("--pull", action="append", default=[], help="a path, relative to --cwd, to copy back from PACE afterwards")
