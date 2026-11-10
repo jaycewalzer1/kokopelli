@@ -105,8 +105,8 @@ PIPELINE_PATHS = {
     "agent_loop": ROOT / ".claude" / "worktrees" / "wm-agent-loop",
     "evals": ROOT / ".claude" / "worktrees" / "agent-a2d4c0a770bb9b339",
 }
-# The queue the GPU queue view changes priorities through. It lives on the feat/ops worktree.
-GPU_QUEUE_SCRIPT = ROOT / ".claude" / "worktrees" / "ops" / "ops" / "gpu.py"
+# The queue the GPU queue view changes priorities through.
+GPU_QUEUE_SCRIPT = ROOT / "ops" / "gpu.py"
 # Jobs written out and waiting for the Start button on the GPU queue page. See life/staged.py.
 STAGED_JOBS = ROOT / "out" / "staged"
 
