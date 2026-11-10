@@ -11,7 +11,9 @@ test suites, linters over the whole repo, builds. It builds on ram_share.py, so 
 
 `run` waits until ram_share says `--gb` is free and fewer than MAX_JOBS guarded commands are running, then runs the command in
 its own process group. It stops the whole group, with exit 75 (the queue's "gave way, try again later"), if the command uses
-well over its claim, or if the Mac's available memory falls below FLOOR_GB or swap passes SWAP_KILL_GB. Standard library only.
+well over its claim, or if the Mac's available memory falls below FLOOR_GB. Swap in use only counts while memory is also
+short: after a hibernate it read 27 GB with 31 GB available, and a watchdog that trusted it killed a healthy test run.
+Standard library only.
 """
 import argparse
 import ctypes
@@ -32,8 +34,7 @@ STATE = Path(os.environ.get("KOKO_MEMGUARD_DIR", Path.home() / ".kokopelli" / "m
 PREFIX = "memguard_"
 MAX_JOBS = 2          # guarded commands running at once, however much room there is
 FLOOR_GB = 3.0        # below this much available memory, guarded commands stop
-SWAP_ADMIT_GB = 14    # no new guarded command starts above this much swap in use
-SWAP_KILL_GB = 24     # guarded commands stop above this
+SWAP_KILL_GB = 24     # with this much swap in use, guarded commands stop at twice the floor instead of at the floor
 OVER = 1.25           # a command may pass its claim by this factor, plus half a GB, before it's stopped
 HOOK_FLOOR_GB = 5.0   # the hook refuses to start anything heavy below this
 POLL_SECONDS = 2
@@ -68,11 +69,16 @@ def blocked(room, need, running, swap):
     """Why a command that needs `need` GB can't start yet, or None."""
     if running >= MAX_JOBS:
         return f"{running} guarded commands are already running (limit {MAX_JOBS})"
-    if swap > SWAP_ADMIT_GB:
-        return f"swap is at {swap:.1f} GB (limit {SWAP_ADMIT_GB})"
+    if swap > SWAP_KILL_GB and room < need + FLOOR_GB:
+        return f"swap is at {swap:.1f} GB and only {max(0, room):.1f} GB of room is left"
     if room < need:
         return f"{max(0, room):.1f} GB of room, {need} GB needed"
     return None
+
+
+def short(available, swap):
+    """Whether the Mac is running out: under the floor, or under twice the floor with swap already deep."""
+    return available < FLOOR_GB or (swap > SWAP_KILL_GB and available < 2 * FLOOR_GB)
 
 
 def stop(process):
@@ -82,6 +88,8 @@ def stop(process):
             os.killpg(process.pid, sign)
         except ProcessLookupError:
             return
+        except PermissionError:  # macOS says this for a group that has only zombies left, as after the watchdog's kill
+            pass
         try:
             process.wait(timeout=grace)
             return
@@ -122,7 +130,7 @@ def run(name, gb, command, wait_seconds=4 * 3600, log=lambda text: print(text, f
             available, swap = ram_share.available_gb(), swap_gb()
             if used > gb * OVER + 0.5:
                 reason = f"it used {used:.1f} GB against a claim of {gb} GB. Rerun with a larger --gb"
-            elif available < FLOOR_GB or swap > SWAP_KILL_GB:
+            elif short(available, swap):
                 strikes += 1  # two readings in a row, so one bad sample doesn't end a long run
                 if strikes >= 2:
                     reason = f"the Mac was down to {available:.1f} GB available with {swap:.1f} GB of swap. Wait before running it again, and don't start anything else heavy"
@@ -187,7 +195,7 @@ def watch(log_path=None, poll=5):
             return 0
         while True:
             available, swap, action = ram_share.available_gb(), swap_gb(), None
-            if available < FLOOR_GB - 0.5 or swap > SWAP_KILL_GB + 2:
+            if short(available + 0.5, swap):
                 table = ram_share.processes()
                 found = ram_share.claims(claims_folder(), table)
                 guarded = sorted((claim for claim in found if claim["name"].startswith(PREFIX)), key=lambda claim: -claim["at"])

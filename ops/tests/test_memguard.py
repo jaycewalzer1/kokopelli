@@ -14,7 +14,14 @@ class Blocked(unittest.TestCase):
         self.assertIsNone(memguard.blocked(room=10, need=6, running=0, swap=1))
         self.assertIn("room", memguard.blocked(room=5, need=6, running=0, swap=1))
         self.assertIn("already running", memguard.blocked(room=30, need=6, running=memguard.MAX_JOBS, swap=1))
-        self.assertIn("swap", memguard.blocked(room=30, need=6, running=0, swap=memguard.SWAP_ADMIT_GB + 1))
+        self.assertIn("swap", memguard.blocked(room=7, need=6, running=0, swap=memguard.SWAP_KILL_GB + 1))
+
+    def test_swap_alone_is_not_a_shortage(self):
+        # After a hibernate swap read 27 GB with 31 GB available. That must neither hold nor stop a command.
+        self.assertIsNone(memguard.blocked(room=27, need=2, running=0, swap=27))
+        self.assertFalse(memguard.short(available=31, swap=27))
+        self.assertTrue(memguard.short(available=memguard.FLOOR_GB * 2 - 1, swap=27))
+        self.assertTrue(memguard.short(available=memguard.FLOOR_GB - 1, swap=0))
 
 
 class Hook(unittest.TestCase):
