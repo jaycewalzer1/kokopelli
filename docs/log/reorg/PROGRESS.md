@@ -152,7 +152,8 @@ the phases that don't move files are deferred.
 - Smoke: main 96 ok, sw 29 ok, cos 10 ok, 0 failures, 1 skip. Phase 0 had 104/30/17; the difference is exactly the
   entries for the deleted root stand-ins.
 - `uvx ruff@0.11.4 check .`: clean.
-- MAC=1: see the line added below when it has run.
+- `MAC=1 make test-all` on the final branch: the same six counts, plus mac_server 26 failed, 215 passed, 16 skipped,
+  the phase 0 numbers. Peak 1.3 GB, 555 s.
 
 ### Not done, on purpose
 
