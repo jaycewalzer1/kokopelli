@@ -82,15 +82,13 @@ extend-exclude = [
 select = ["E9", "F", "B", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
+"experiments/benchmarks/*.py" = ["UP017"]  # also run on PACE in a venv whose Python isn't recorded here; datetime.UTC needs 3.11, timezone.utc works on 3.10
 # BASELINE (generated 2026-11-09, P2-D): existing findings, not fixed in this pass.
 # Remove a code from a file once its findings there are fixed. Counts: docs/fable_log/P2-D.md.
 # Added 2026-11-10 when the commons and exp1 branches were merged, same rule: baselined, not fixed.
 "experiments/commons/prompts.py" = ["UP031"]
 "experiments/commons/run.py" = ["UP031"]
 "experiments/commons/sim.py" = ["UP038"]
-"experiments/benchmarks/freeze.py" = ["UP017"]
-"experiments/benchmarks/prereg.py" = ["UP017"]
-"experiments/benchmarks/run.py" = ["UP017"]
 "kokopelli/agents/live_wm.py" = ["F401"]
 "tools/bodies/metahuman/looks.py" = ["F401", "UP038"]
 "tools/bodies/metahuman/make_bodies.py" = ["B008"]
