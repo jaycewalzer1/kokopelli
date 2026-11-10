@@ -7,6 +7,8 @@ Standing rules first, then one line per live area. Status, results and dates go 
 - `kokopelli/` is the library, one package: `wm/` (world-model runners, video helpers, `controls/`), `loop/` (the agent loop, was `runtime/`), `mind/`, `agents/` (was `city/agents/`), `life/` (generator, store, panel), `ops/` (queue, memory guard, `ram_share`, `cloud/`), `settings.py`.
 - `experiments/` holds `commons/`, `benchmarks/`, `exp1/`, `homeostatic/`, `filter_test/`, `wm_multicontrol/`. `tools/` holds hand-run scripts (`city_build/`, `bodies/`, `realism/`, `moodboard/`, `fable/`, `pace/`, `reorg/`). `data/` holds tracked inputs (`city/world.json`) and the moodboard pictures. `vendor/` is third-party code.
 - Launch with `python -m kokopelli.<package>.<module>` from the repo root. `ops/gpu.py` and `ops/memguard.py` at the root are stand-ins for `kokopelli/ops/`. What moved where: `tools/reorg/migrate.py`; log: `docs/log/reorg/PROGRESS.md`.
+- Every package under `kokopelli/` and every experiment under `experiments/` has a `README.md` (what it is or asked, how to run it, where results go); the top `README.md` maps the rest. Tests: `tests/`, plus `kokopelli/loop/tests`, `kokopelli/ops/tests` and `experiments/*/tests` until phase 7 of the reorganization moves them.
+- Notes: a note that spans packages goes in `docs/`; one about a single area stays beside its code. A finished brief, handoff or work log moves to `docs/log/<area>/` with its date in the name (`docs/log/fable/2026-11-09-P2-D.md`), unless code or a report cites it where it is.
 
 ## Rules
 
@@ -41,12 +43,12 @@ Standing rules first, then one line per live area. Status, results and dates go 
 | Sim-to-real filter test, Model runs page | `experiments/filter_test/`, `kokopelli/life/world_runs.py`, `kokopelli/life/static/worlds.*` | captures on 9001 with no NPCs, `StopAgent` before closing |
 | World-model prompts | `kokopelli/wm/controls/prompts/` | no GPU |
 | Control videos | `kokopelli/wm/controls/controls.py`, `out/city_wm/bridge/controls/` | CPU only, never 9001 |
-| Sim-Transfer on the Mac | `kokopelli/wm/world_transfer.py`, `kokopelli/wm/world_stream.py`, `kokopelli/agents/live_wm.py`, `run_wm_life.sh`, `docs/SIM_TRANSFER_MLX.md` | `~/cosmos3/cosmos3-mlx` venv under `ram_share.py hold` |
+| Sim-Transfer on the Mac | `kokopelli/wm/world_transfer.py`, `kokopelli/wm/world_stream.py`, `kokopelli/agents/live_wm.py`, `kokopelli/agents/run_wm_life.sh`, `docs/SIM_TRANSFER_MLX.md` | `~/cosmos3/cosmos3-mlx` venv under `ram_share.py hold` |
 | Multi-control transfer | `experiments/wm_multicontrol/`, `kokopelli/wm/world_transfer_multi.py`, `kokopelli/wm/world_multicontrol_base.py` (Variant B, reference only) | `wmmc_`; results `experiments/wm_multicontrol/REPORT.md` |
 | Unreal realism pilot | `tools/realism/` | 9003 only, claim `realism_9003`; `docs/log/realism/2026-11-06-BRIEF.md` |
-| Varied city, building kinds | `tools/city_build/kinds/`, `tools/city_build/plan_varied/`, `data/city/world.json`, `SWCityKit` | 9003 only, claim `city_kinds_9003`, lock `out/city_kinds/.editor.lock` via `python -m tools.city_build.kinds.preview`/`.locked`; `city.ue.kinds.watchdog` |
+| Varied city, building kinds | `tools/city_build/kinds/`, `tools/city_build/plan_varied/`, `data/city/world.json`, `SWCityKit` | 9003 only, claim `city_kinds_9003`, lock `out/city_kinds/.editor.lock` via `python -m tools.city_build.kinds.preview`/`.locked`; `tools.city_build.kinds.watchdog` |
 | Experiment 1 homeostatic RL | `experiments/exp1/`, `tests/test_exp1.py`, `docs/homeostatic_rl_map.md` | `exp1_` |
-| Two agents at lunch | `kokopelli/agents/lunch_wm.py`, `run_wm_lunch.sh`, `kokopelli/wm/world_stream_multi.py` | `wmlunch_`, 9001, `ram_share.py hold --name wmlunch_agents --gb 24` |
+| Two agents at lunch | `kokopelli/agents/lunch_wm.py`, `kokopelli/agents/run_wm_lunch.sh`, `kokopelli/wm/world_stream_multi.py` | `wmlunch_`, 9001, `ram_share.py hold --name wmlunch_agents --gb 24` |
 | Realistic bodies | `tools/bodies/`, `mac_server/Config/Bodies.json`, body code in `SWCharacterBase`/`SWHumanoid`/`SWPedestrian`/`SWSettings` | `bodies_`, 9004 only, claim `bodies_9004`; log `tools/bodies/LOG.md` |
 
 ## Memory rules (36 GB Mac)
