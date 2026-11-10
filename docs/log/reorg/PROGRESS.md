@@ -240,3 +240,25 @@ pointed phase 9's new READMEs and two notes at the files phase 3 moved.
   `lint-imports` runs in pre-commit. Graph after: `docs/log/imports-after-phase3.txt`, 0 wrong-way edges outside the allow-list.
 - Checks on main after the merge: tests 600 (10 skipped, 2 expected failures), runtime 100, simworld 197, ops 35,
   benchmarks 198 (1 skipped), commons 62; peak 1.3 GB. Smoke 96 / 29 / 10, 0 failures. ruff clean. lint-imports 3 kept.
+
+## Phase 7: one test tree (merge 2fbe2f2, 2026-11-10)
+
+Subagent in its own worktree (branch `reorg/7-test-tree`). Merged after phases 9 and 3; 14 conflicts, all one pattern
+(phase 3 removed sys.path lines phase 7 had re-pointed one folder deeper), resolved as described in the merge message.
+
+- `kokopelli/loop/tests` -> `tests/loop`, `kokopelli/ops/tests` -> `tests/ops`; `tests/*.py` sorted into
+  `tests/{wm,ops,agents,life,mind}` (bodies, lunch and `golden/` in `tests/agents`). `test_exp1*` ->
+  `experiments/exp1/tests/`, `test_homeostatic_{benchmark,export,grpo,world}` -> `experiments/homeostatic/tests/`.
+- The runner (`tools/fable/test_all.sh`, still behind `make test-all` and the memory claim) is now the pytest-style
+  runner, three runs: main (.venv, not py310), experiments (.venv, own process: a benchmarks test fakes `time.time`
+  and the life tests' `feed_machine` thread would call the fake clock), py310 (SimWorld venv). Markers `model`
+  (skipped unless RUN_MODEL_TESTS), `py310`, `unreal`, `slow` (skipped unless RUN_LONG_TESTS), applied by `conftest.py`.
+- Collected IDs before/after: `docs/log/reorg/tests-before.txt`, `tests-after.txt`. Same 1,192 tests, 11 skips, 2 xfails.
+- Checks on main after the merge (`MAC=1 make test-all`): main 723 passed, 10 skipped, 2 xfailed; experiments 259
+  passed, 1 skipped; py310 197 passed; mac_server 26 failed, 215 passed, 16 skipped (the baseline). Peak 1.3 GB, 572 s.
+  Smoke 96 / 29 / 10, 0 failures. ruff clean. lint-imports 3 kept.
+- In its worktree mac_server showed 29 failures: `mac_server/Content` there holds only the tracked files, so the mock
+  server reports placeholder bodies. Not a code change.
+
+Left: `make test` (life tests) still runs unittest without the memory guard. `tools/pace/wmloop_one_tick.py` now imports
+`tests.loop.fake_unrealcv` (Owed: PACE). `kokopelli/ops/status.py` suites that point at the old worktrees are unchanged.
