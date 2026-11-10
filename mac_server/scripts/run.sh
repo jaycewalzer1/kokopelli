@@ -51,6 +51,7 @@ ARGS+=("-ini:Engine:[SystemSettings]:r.SceneCulling.Async.Update=0")
 # MINIMIZED=1 starts with the window minimized: nothing is presented, so UE 5.8's per-frame Metal shared-event
 # leak (see SWPlayerController.h) stops, and sync stepping runs ~6x faster. Click the Dock icon to look.
 [[ "${MINIMIZED:-0}" == 1 ]] && ARGS+=(-swminimized)
+[[ "${NOMOUSE:-0}" == 1 ]] && ARGS+=(-nomouse)  # the mouse no longer turns the camera; keys still work
 [[ -n "${CVBIND:-}" ]] && ARGS+=(-cvbind="$CVBIND")
 
 case "$MODE" in

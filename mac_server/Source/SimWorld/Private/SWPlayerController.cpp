@@ -28,6 +28,7 @@ void ASWPlayerController::BeginPlay()
 	Super::BeginPlay();
 	SetInputMode(FInputModeGameOnly());
 	bShowMouseCursor = false;
+	bMouseLook = !FParse::Param(FCommandLine::Get(), TEXT("nomouse"));
 	if (FParse::Param(FCommandLine::Get(), TEXT("swminimized")))
 	{
 		Rest(); // agent-only sessions: no presenting, no leak
@@ -88,6 +89,10 @@ void ASWPlayerController::PlayerTick(float DeltaTime)
 
 void ASWPlayerController::Look()
 {
+	if (!bMouseLook)
+	{
+		return;
+	}
 	float DX = 0.f, DY = 0.f;
 	GetInputMouseDelta(DX, DY);
 	if (DX == 0.f && DY == 0.f)

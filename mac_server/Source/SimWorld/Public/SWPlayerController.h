@@ -60,6 +60,7 @@ private:
 	float UnfocusedSeconds = 0.f;
 	float AutoRestSeconds = 120.f;
 	float MouseSensitivity = 0.6f;
+	bool bMouseLook = true; // false with -nomouse: capture runs, where a bumped mouse would turn camera 0
 };
 
 /** The flying camera: the engine spectator without its own key bindings (the controller drives it). */
