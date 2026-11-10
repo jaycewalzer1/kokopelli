@@ -39,8 +39,7 @@ kokopelli/              the library, one importable package, installed editable 
   life/                 today's life/ (generator, store, panel)
   ops/                  today's ops/ and cloud/ (queue, memguard, ram_share, status)
   settings.py
-experiments/            commons/ (already here), exp1/, homeostatic/, filter_test/, wm_multicontrol/ (without upstream/)
-benchmarks/             stays where it is: it's a harness in ongoing use, not a finished experiment
+experiments/            commons/ (already here), benchmarks/, exp1/, homeostatic/, filter_test/, wm_multicontrol/ (without upstream/)
 tools/                  hand-run scripts: moodboard sourcing, body asset generators, capture tools, scripts/fable, scripts/pace
 data/                   city/world.json and other tracked inputs
 tests/                  one tree, mirroring kokopelli/
@@ -128,14 +127,14 @@ Effort figures are my estimates, not measurements.
 
 ### Phase 6: experiments and tools (half a day)
 
-- Move `exp1/`, `homeostatic/` (minus `watch.py`), `filter_test/` and `wm_multicontrol/` into `experiments/`, beside `commons/`. Move `runs/commons/` to `experiments/commons/results/` and update the paths its report cites. Move `wm_multicontrol/upstream/` to `vendor/`.
+- Move `benchmarks/`, `exp1/`, `homeostatic/` (minus `watch.py`), `filter_test/` and `wm_multicontrol/` into `experiments/`, beside `commons/`. `benchmarks/` is the largest (35 Python files, 65 tracked files): its imports become `experiments.benchmarks.*`, and `python -m benchmarks...` commands in its docs, scripts and `scripts/pace/evals` change with it. Move `runs/commons/` to `experiments/commons/results/` and update the paths its report cites. Move `wm_multicontrol/upstream/` to `vendor/`.
 - Move `scripts/fable/` and `scripts/pace/` into `tools/`. `test_all.sh` goes away in phase 7.
 - Each experiment keeps one `README.md`: what it asked, how to rerun it, where the results are.
 - Acceptance: tests unchanged; the import contracts from phase 3 pass with the new paths.
 
 ### Phase 7: one test tree (1 day)
 
-- Move `runtime/tests`, `ops/tests` and `benchmarks/tests` under `tests/`, mirroring the package layout. `mac_server/tests` stays with the Unreal project, and each experiment keeps its own `tests/` folder.
+- Move `runtime/tests` and `ops/tests` under `tests/`, mirroring the package layout. `benchmarks/tests` moves with `benchmarks/` in phase 6. `mac_server/tests` stays with the Unreal project, and each experiment keeps its own `tests/` folder.
 - Add `pytest` to the main environment. Today only the SimWorld venv has it, which is why the commons tests run there.
 - Switch the runner to `pytest` with markers: `model` (loads Qwen or Cosmos, replaces `RUN_MODEL_TESTS`), `py310` (must run in the SimWorld venv), `unreal` (needs a server), `slow`.
 - `make test-all` becomes two guarded `pytest` runs, one per interpreter. It can't be one process: the SimWorld tests need Python 3.10.
@@ -191,9 +190,9 @@ About 11 to 12 working days end to end. Phases 0 to 2 are the cheap, high-value 
 2. **Phase 4 is in.** Everything moves under one `kokopelli/` package.
 3. **Open branches merged before starting.** Done; see constraint 5.
 4. **Pushed to GitHub** on 2026-11-10, so there is an off-machine copy before any renaming and CI can be added in phase 8.
-5. **World file:** keep the current city. `city/world.json` and `city/world_varied.json` are byte-identical on main and both hold the updated, varied city (the original was replaced on 2026-11-09). Phase 5 keeps `world.json`, removes the duplicate and points its five readers at the kept file.
+5. **`benchmarks/` goes under `experiments/`** (phase 6). Under the hard wall the library may not import it; today nothing in the library does.
+6. **World file:** keep the current city. `city/world.json` and `city/world_varied.json` are byte-identical on main and both hold the updated, varied city (the original was replaced on 2026-11-09). Phase 5 keeps `world.json`, removes the duplicate and points its five readers at the kept file.
 
 Still open:
 
-- **`benchmarks/`** stays top-level in this plan. Say if you'd rather it sit under `experiments/`.
 - **`exp1/diagnose_pilot.py`** has four undefined-name lint findings (line 54) that came in with the merge and are baselined, not checked. Look at them in phase 8 before trusting that script.
