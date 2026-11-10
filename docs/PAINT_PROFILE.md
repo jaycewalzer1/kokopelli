@@ -23,3 +23,23 @@ Ruled out:
 The 935 s paint has 149 frames and different controls (flyover, not bridge), so "near-identical" holds for model, size, precision and length only. The two still paints (same bridge controls as a4_full_8bit, on AC) confirm it: 782-819 s.
 
 What to do: paint on AC. P4-E makes `gpu.py status` warn when the Mac is on battery or in Low Power Mode.
+
+## The closed-loop step: what the recorded logs explain
+
+Source: `out/bodies/demo/runs/wm/events.jsonl` (2026-11-08 two-agent run, on AC; 448x256, 8-bit, four controls at 0.25, 160 frames per push, 12 steps).
+
+| per step (mean) | seconds |
+|---|---|
+| step total | 1,136.9 |
+| sim (SimWorld, 10 s of walking) | 107.5 |
+| two pushes (Mara, Iris), one after the other | 2 × 513.7 |
+| Qwen decisions (19 logged, 9.6 s mean) | not separately visible; step total ≈ sim + pushes |
+
+| per 160-frame push (mean of 24) | seconds |
+|---|---|
+| push total, as the agent saw it | 513.7 |
+| painting: 40 latents × `s_per_latent` | 317.4 |
+| controls from the sim frames (`controls_s`) | 12.9 |
+| **not recorded** | **183.3** |
+
+The brief's "about 475 s, while the per-latent figure explains about 310 s" is the same gap, from a different run. The 183 s is the worker's encode, decode, weight reload (`weight_loads` rises by one per step: the loop drops the weights while Qwen thinks) and the `.npy` handoff. The worker already returns `encode_s`, `paint_s` and `decode_s` for every push, but `city/agents/lunch_wm.py:126` logs only `latents`, `s_per_latent`, `peak_gb` and `weight_loads`, so the recorded logs can't split it further. The profile below does.
