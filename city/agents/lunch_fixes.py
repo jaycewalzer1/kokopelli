@@ -17,7 +17,9 @@ import re
 FIXES = ("memory", "repeats", "loops")
 SAME_LINE = 0.75     # difflib ratio at or above which two lines count as the same line
 TALK_SHOWN = 10      # conversation lines kept in the prompt
-FRAME_CHANGE = 6.0   # mean absolute difference (0-255, 64x36 grey) above which a frame counts as changed
+FRAME_CHANGE = 30.0  # mean absolute difference (0-255, 64x36 grey) above which a frame counts as changed. Painted frames
+                     # drift: in out/bodies/demo/runs/wm consecutive frames of a standing agent differed by 21-27, of
+                     # a walking one by 35-57 (one run, 24 pairs), so a small threshold would never gate anything
 QUIET_STEPS = 3      # an idle mind with nothing new still decides after this many quiet steps
 
 
