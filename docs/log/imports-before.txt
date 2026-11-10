@@ -1,0 +1,48 @@
+# Package-to-package imports (tools/reorg/import_graph.py)
+# count = files in the source package that import the target package (root stand-ins resolved)
+
+from           to             files  examples
+(root)         core              12  blend.py, edges.py, llm_model.py
+benchmarks     core               2  benchmarks/backends/llm_model_backend.py, benchmarks/tests/test_before_after.py
+city           core               7  city/agents/live.py, city/agents/live_wm.py, city/agents/lunch_bench.py
+city           life               1  city/agents/lunch_life.py
+city           runtime            4  city/agents/live.py, city/agents/lunch_parts.py, city/agents/lunch_sim.py
+core           runtime            1  core/video_check.py
+exp1           core               3  exp1/diagnose_d2.py, exp1/diagnose_pilot.py, exp1/run.py
+exp1           life               8  exp1/balance.py, exp1/baselines.py, exp1/homeostasis.py
+experiments    life               1  experiments/commons/run.py
+filter_test    core               1  filter_test/scripts/run_cosmos.py
+filter_test    runtime            1  filter_test/scripts/capture.py
+homeostatic    core               9  homeostatic/benchmark.py, homeostatic/evaluate.py, homeostatic/experiment.py
+life           cloud              1  life/gpu_queue.py
+life           core              16  life/architecture.py, life/city.py, life/city_live.py
+life           exp1               1  life/panel.py
+life           homeostatic        3  life/architecture.py, life/panel.py, life/pipeline.py
+mind           core               1  mind/run.py
+mind           runtime            2  mind/feeling.py, mind/run.py
+ops            cloud              1  ops/gpu.py
+ops            core               2  ops/gpu.py, ops/memguard.py
+runtime        core               8  runtime/adapters/cosmos.py, runtime/adapters/qwen.py, runtime/check_video.py
+runtime        life               2  runtime/adapters/life_db.py, runtime/tests/test_life_context.py
+runtime        mind               1  runtime/run.py
+scripts        core               4  scripts/fable/p4_c_compare.py, scripts/fable/p4_profile.py, scripts/fable/stillness.py
+scripts        runtime            2  scripts/pace/wmloop_one_tick.py, scripts/pace/wmloop_wait_server.py
+tests          city               1  tests/test_city_bodies.py
+tests          cloud              1  tests/test_cloud_pace.py
+tests          core              25  tests/test_blend.py, tests/test_city_lunch.py, tests/test_continuous_video.py
+tests          exp1               2  tests/test_exp1.py, tests/test_exp1_learn.py
+tests          homeostatic        6  tests/test_homeostatic_benchmark.py, tests/test_homeostatic_export.py, tests/test_homeostatic_grpo.py
+tests          life              16  tests/test_bodies_demo_runs.py, tests/test_exp1.py, tests/test_life_architecture.py
+tests          mind               1  tests/test_mind.py
+tests          runtime            3  tests/test_city_bodies.py, tests/test_city_lunch.py, tests/test_mind.py
+
+# Cycles (both directions present)
+core <-> runtime   (core -> runtime: 1, runtime -> core: 8)
+exp1 <-> life   (exp1 -> life: 8, life -> exp1: 1)
+mind <-> runtime   (mind -> runtime: 2, runtime -> mind: 1)
+
+# Imports through root stand-ins (package, stand-in, real package): import statements
+exp1           ram_share                  -> core          1
+ops            ram_share                  -> core          2
+
+# 321 files scanned; excluded: simworld/, mac_server/, wm_multicontrol/upstream/, .claude/
