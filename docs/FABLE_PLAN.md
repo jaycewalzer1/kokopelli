@@ -1,0 +1,201 @@
+# Fable plan (execution copy)
+
+Orchestrator decisions, 2026-11-09. The owner said to proceed without further stops, ending near 60% of weekly quota:
+- main is not touched. The three uncommitted files are snapshotted on `integration/fable`, and every worker starts from that branch.
+- Package name is `core`. Skills live in `.claude/skills/`.
+- The owner asked for unused code to be removed, so P2-F2 runs without a separate approval, and the owner reviews everything before it reaches main. Keep `world_multicontrol_base.py`, `cloud/` and anything else with a stated reason to stay.
+- No autoformatting pass. Defaults (four controls at 0.25, 8-bit) are untouched.
+- `-nomouse` packaging is not done in this pass. Worktrees are not retired in this pass.
+
+# Kokopelli optimization pass: execution plan
+
+Source of truth: `/Users/jaycewalzer/Desktop/kokopelli/docs/FABLE_BRIEF.md` (incl. the 2026-11-09 phase 2 deletion bullet). Every package writes a dated entry with before/after numbers to `docs/FABLE_LOG.md` (append-only section per package id, so merges don't conflict).
+
+## Facts found during planning that shape the plan
+
+- Main has uncommitted changes: `AGENTS.md` (2 lines), `city/bodies/LOG.md` (+2), `city/world.json` (10.7k-line rewrite: the varied city). Worktrees cut from `60f9a50` will see the OLD city and old AGENTS.md. **Recommendation (wave 0): the orchestrator commits these three files on main first** ("Snapshot the varied city and current notes") so every worktree starts from them. If the owner won't commit yet, P1-A must copy `/Users/jaycewalzer/Desktop/kokopelli/AGENTS.md` by absolute path before rewriting, and any package touching `city/world.json` (none planned; P1-D if un-cut) must do the same.
+- Worktree trap: `.venv`, `simworld/.venv`, `models/`, `out/` don't exist in a worktree. Every worker's first step: `ln -s /Users/jaycewalzer/Desktop/kokopelli/.venv .venv; ln -s /Users/jaycewalzer/Desktop/kokopelli/simworld/.venv simworld/.venv; ln -s /Users/jaycewalzer/Desktop/kokopelli/out out; ln -s /Users/jaycewalzer/Desktop/kokopelli/models models` inside the worktree (all four are gitignored, so nothing gets committed; the Makefile's `PY := .venv/bin/python` then works). Third interpreter: `~/cosmos3/cosmos3-mlx/.venv/bin/python` (Cosmos MLX). `simworld/.venv` is **Python 3.10** (main `.venv` is 3.12): anything under `runtime/adapters/simworld*.py` and `city/ue/build_city.py` must stay 3.10-compatible.
+- Test suites and how they run today: `tests/` (`.venv`, unittest), `runtime/tests/test_[!s]*.py` (`.venv`), `runtime/tests/test_simworld*.py` (`simworld/.venv`, fake unrealcv), `ops/tests` (unittest), `benchmarks/tests` (`-t .`), `mac_server/tests` (pytest.ini; check pytest exists). No single command runs them all yet; P1-B adds it and that command is the before/after check for every later package.
+- Tools present: `uv`, `ruff` (system 3.12), `node 22`, `macmon`. Missing: `pyright`, `shellcheck`, `pre-commit`, `eslint`/`biome` (P2-D uses pre-commit's `shellcheck-py` wheel and `npx @biomejs/biome`, so no brew installs; needs network once).
+- Ledger (`out/ops/gpu_ledger.jsonl`): 93 finished, 24 non-zero exits = 4× exit 75 (polite yield, not a failure), 5× stopped by owner (-15, stopped=true), and **15 real failures**: 7× -15 not via `stop` (something else SIGTERMs jobs: candidates are `ram_share`/Guard or the `pkill -f SimWorld` lines in `city/agents/run_wm_lunch.sh`), 5× exit 1, 1× 127 (command not found: the worktree-path trap), 1× 2, 1× -9 (SIGKILL/jetsam). `wmbodies_demo` alone failed 6 times. 4 jobs ≥100°C, 7 >8 GB swap: matches the brief.
+- Worktree-path references to fix (P2-A): `city/bodies/PLAN.md`, `city/bodies/apply_core_data.sh`, `city/agents/run_wm_life.sh`, `city/agents/run_wm_lunch.sh`, `life/architecture.py`, `wm_multicontrol/BRIEF.md`, `cloud/README.md`, `benchmarks/noise_check_turns.sh`, `benchmarks/HANDOFF.md`, `ops/status.py`, `filter_test/scripts/queue_all.sh`, plus `AGENTS.md` (P1-A handles) and `out/ops/MORNING.md` (gitignored: orchestrator edits in main). `docs/FABLE_BRIEF.md` keeps its mention.
+- Root modules to package (12): `settings blend llm_model world_model edges world_filter world_transfer world_transfer_multi world_multicontrol_base world_stream world_stream_multi ram_share`. ~40 importing files across `life/ runtime/ city/ tests/ benchmarks/`. `ram_share.py` is also a CLI called from 8 shell scripts.
+- Natural seams: `city/agents/lunch_wm.py` = text constants (l.59-93), `TwoBodySim` (94-270), small parts `Body/SimWorldPair/Mind/QwenBrain/SideBySide/controls_for` (271-468), `Lunch` (469-925), cast/main (926-1041). `runtime/adapters/simworld.py` = specs/config (65-194), `SimWorldPhysics` with weather/clock block (497-583), state reading (583-676), render/capture (676-750), step/actions `_do_*` (751-1003+). `city/ue/build_city.py` = helpers (69-115) + one 816-line `Plan` class with `plan_*` methods (landscape 322-442 and trees 617-770 are the big ones).
+- GPU-job pattern for workers: a worker must not sit waiting on the queue (cache reads are the cost). Worker writes the exact `ops/gpu.py run ... --about ... --output ...` command (cwd = its worktree, outputs land in main's `out/` through the symlink) into its FABLE_LOG entry and a `scripts/fable/<pkg>.sh`; the orchestrator launches it detached (`nohup ... &` from main) and the *next* package or the orchestrator reads the results. Queue priority 35 for all Fable jobs, names `fable_<pkg>_<what>`.
+- Panel on 8765 watches `life/*.py` and `settings.py` in main; nothing here touches main, so it won't restart until the owner merges to main. Flag that at final merge.
+
+## Budget
+
+Calibration assumed: tiny doc/config worker ≈ 1 pt, small code worker ≈ 1.5-2.5, medium ≈ 3, anything reading large files or running analysis ≈ 3-3.5. Core plan (waves 1-6) ≈ 36.5 pts; wave 7 only if ≥3 pts remain. **Re-check `/usage` after wave 1 and scale: if wave 1 costs more than ~10 pts, apply the cut list immediately.**
+
+## Wave 0 (orchestrator, no worker)
+
+1. Commit main's three uncommitted files (see above) or record the fallback.
+2. Record baseline: run each suite command listed above once from main, note pass/fail counts and seconds; paste into the first FABLE_LOG entry when P1-A's branch merges.
+3. Create `integration/fable` from main HEAD.
+
+## Wave 1: Phase 1 (4 packages, ≈ 9 pts, all CPU)
+
+**P1-A Repo hygiene, index, skills** (2.5 pts)
+- Goal: `.gitignore` additions, AGENTS.md cut to a short current index, three skills saved, FABLE_LOG started.
+- Owns: `.gitignore`, `AGENTS.md`, `docs/FABLE_LOG.md` (creates), `.claude/skills/{sim-capture,closed-loop-run,paint-clip}/SKILL.md`, `docs/NEXT_proposed.md` (the trimmed replacement for gitignored `out/ops/NEXT.md`; orchestrator copies it into main's `out/ops/NEXT.md`).
+- Must not touch: any `.py`, `.sh`, Makefile.
+- Details: `.gitignore` gets `.claude/*`, `!.claude/skills/`, `mac_server/Packaged_*`, `mac_server/Packaged/`? (check: `git ls-files mac_server/Packaged` is 0, so ignoring `mac_server/Packaged*/` is safe). AGENTS.md: keep one line per live area (owner, paths, port, queue prefix), drop every dated status; replace the `.claude/worktrees/ops/ops/gpu.py` command with `ops/gpu.py`; add the "one task per session, short workers" rule. Skills are distilled from `city/agents/run_wm_lunch.sh`, `wm_multicontrol/run_a.sh`, `city/wm/controls.py` usage, and `filter_test/scripts/queue_all.sh`, not new behavior.
+- Acceptance: `git check-ignore .claude/worktrees mac_server/Packaged_bodies` both match and `git check-ignore .claude/skills/x` does not; `wc -l AGENTS.md` ≤ 60 (from 151); `grep -c worktrees/ops AGENTS.md` = 0; three SKILL.md files exist with the exact commands.
+- Deps: wave 0.
+
+**P1-B Terse tests and status, one all-suite command** (1.5 pts)
+- Goal: failures-only test output, explicit `idle` from `gpu.py status`, and `make test-all` that runs every suite with the right interpreter.
+- Owns: `Makefile`, `ops/gpu.py` (only `status()` l.441-492), `ops/tests/test_gpu.py` (additive test), `scripts/fable/test_all.sh` (new; the Makefile calls it).
+- Must not touch: `ops/status.py`, anything else in `ops/gpu.py`.
+- Details: `test_all.sh` runs `tests/`, `runtime/tests` non-simworld (.venv), `runtime/tests/test_simworld*` (simworld/.venv), `ops/tests`, `benchmarks/tests -t .`, `mac_server/tests` (pytest if `.venv/bin/python -m pytest --version` works, else print "skipped: no pytest" and say so in the log), quiet mode printing only failures/errors and one summary line per suite with seconds; `VERBOSE=1` restores `-v`. `make test` keeps the node `--check` loop but quiet. `status()` prints exactly `idle` when no job runs and none waits, and separates finished jobs into `ok / failed / stopped / yielded(75)`.
+- Acceptance: `make test-all` exits 0 and prints ≤ 1 line per passing suite; `ops/gpu.py status` with an empty queue prints `idle`; `ops/tests` pass; before/after output line counts in the log.
+- Deps: none (parallel with P1-A; disjoint files).
+
+**P1-C Split `city/agents/lunch_wm.py`** (2.5 pts)
+- Goal: behavior-identical split along the seams above, with `lunch_wm` re-exporting every public name.
+- Owns: `city/agents/lunch_wm.py`, new `city/agents/lunch_text.py` (personas, `WM_PROMPT`, `LUNCH_TOPIC`, `FORMAT_NOTE`, `RETRY_SHAPE`), `city/agents/lunch_sim.py` (`TwoBodySim`), `city/agents/lunch_parts.py` (`Body`, `SimWorldPair`, `Mind`, `QwenBrain`, `SideBySide`, `controls_for`).
+- Must not touch: `city/agents/run_wm_lunch.sh`, `city/bodies/demo_lunch.py`, `tests/test_city_lunch.py`, `world_stream_multi.py`, `runtime/`.
+- Acceptance: `.venv/bin/python -m unittest tests.test_city_lunch tests.test_bodies_demo_talk tests.test_city_bodies` pass with the same test count as before; `python -c "import city.agents.lunch_wm as m; m.Lunch; m.TwoBodySim; m.WM_PROMPT"` works; `lunch_wm.py` ≤ 500 lines (from 1041); `git diff --stat` shows moves, with `ruff check --select F` clean on the four files.
+- Deps: none.
+
+**P1-E Split `runtime/adapters/simworld.py`** (2.5 pts)
+- Goal: same for the adapter: `simworld_config.py` (SpawnSpec/NpcSpec/default_objects/SimWorldConfig, l.65-194), `simworld_weather.py` (weather/clock/sun helpers as a mixin or functions, l.497-583), `simworld_actions.py` (the `_do_*` handlers and `_apply/_preempt/_success/_send_checked` as a mixin, l.883-1003+). `SimWorldPhysics` keeps its name and module so `lunch_wm.TwoBodySim(SimWorldPhysics)` and `runtime/adapters/simworld_*` siblings are unaffected.
+- Owns: `runtime/adapters/simworld.py`, the three new files, `runtime/SIMWORLD.md` (file map paragraph only).
+- Must not touch: `runtime/tests/*`, `runtime/physics.py`, `city/`.
+- Acceptance: `simworld/.venv/bin/python -W ignore -m unittest discover -s runtime/tests -t . -p 'test_simworld*.py'` same pass count before/after; `.venv` non-simworld runtime tests unchanged; `simworld.py` ≤ 800 lines (from 1344); runs under Python 3.10.
+- Deps: none.
+
+(**P1-D Split `city/ue/build_city.py`**, 2.5 pts, CPU, simworld/.venv: owns only that file plus `city/ue/plan_geom.py`, `city/ue/plan_landscape.py`, `city/ue/plan_trees.py` as `Plan` mixins; acceptance is a byte-identical JSON dump of the planned actor list for `city/world.json` before/after via a `--dry-run` flag that prints the plan without a server. **Cut by default**; run in wave 1 only if the owner says phase 1 may exceed 9 pts.)
+
+## Wave 2: Phase 2a (3 packages, ≈ 4.5 pts, CPU)
+
+Merge all of wave 1 first.
+
+**P2-A Worktree path fix** (1 pt)
+- Goal: every tracked reference to `.claude/worktrees/ops/ops/gpu.py` becomes `ops/gpu.py` (absolute: `/Users/jaycewalzer/Desktop/kokopelli/ops/gpu.py` where the shell runs from elsewhere).
+- Owns: the 11 files listed in the facts section (not AGENTS.md, not FABLE_BRIEF.md).
+- Acceptance: `grep -rIl "worktrees/ops/ops/gpu.py" --exclude-dir=simworld --exclude-dir=out --exclude-dir=.claude --exclude-dir=mac_server .` returns only `docs/FABLE_BRIEF.md` and `docs/FABLE_LOG.md`; `bash -n` on each edited `.sh`; `tests.test_life_architecture` passes.
+- After merge, orchestrator: edit main's `out/ops/MORNING.md`, then report `git branch --no-merged main` to the owner; retiring worktrees is an owner decision (list below).
+
+**P2-B Root modules into `core/` with shims** (2 pts)
+- Goal: `git mv` the 12 root modules into `core/` (with `core/__init__.py`), leave one-line root shims (`from core.settings import *` plus explicit re-exports of private names used elsewhere; `ram_share.py` shim keeps `if __name__ == "__main__": main()`), fix only the intra-core imports (`world_stream*` import `world_transfer*`, `settings`, etc.).
+- Owns: the 12 root files, `core/`.
+- Must not touch: any importer outside root; tests.
+- Acceptance: `make test-all` same as baseline; `python -c "import settings, core.settings; assert settings.WM_MODEL is core.settings.WM_MODEL"` style identity check for three names; `python3 ram_share.py --help` still works from a shell.
+- Deps: wave 1 merged (so no one is editing the root files). Package name `core` is an owner decision; `wm` is the alternative.
+
+**P2-E `out/` layout, retention rule, backup proposal** (1.5 pts)
+- Goal: documents only, plus a read-only reporting tool. Covers the phase 3 "backup plan" bullet too (disk 84% full, 45 GB).
+- Owns: `docs/OUT_LAYOUT.md` (standard layout `out/<area>/<run-id>/` with `run.json` sidecar, what each top-level dir is, retention rule by class: golden/report-cited = keep, intermediate frames/npy = 30 days, smoke = 7 days), `docs/OUT_BACKUP.md` (options: external SSD rsync with `--link-dest`, Backblaze/rclone, what to exclude; cost and time estimates), `ops/out_report.py` (prints size, age, newest file and whether a sidecar/README exists per top-level dir and per run, and a **deletion-candidate list** by the rule; deletes nothing).
+- Acceptance: `.venv/bin/python ops/out_report.py` runs in < 60 s on main's `out/` (du-based, no file hashing) and its totals match `du -sh out`; nothing in `out/` changes (`find out -newer <marker>` empty).
+- Deps: none.
+
+## Wave 3: Phase 2b (1 package, alone, ≈ 2.5 pts)
+
+**P2-C Update importers to `core.*`** (2.5 pts)
+- Goal: switch all ~40 importers (`life/ runtime/ city/ tests/ benchmarks/ mind/ homeostatic/ exp1/`) from `import settings` / `from world_model import` to `core.*`; update shell scripts that run root modules as scripts (`world_transfer.py`, `world_stream*.py`) to `python -m core.<mod>`; leave `ram_share.py` CLI calls as they are. Mechanical: use `ruff`-verified sed per directory, test after each directory (the brief's "one small change at a time").
+- Owns: every file importing a root module (list it in the log), plus `README.md` Use section l.98-112, `wm_multicontrol/run_a.sh`, `city/agents/run_wm_life.sh`, `city/bodies/*.sh` python lines.
+- Must not touch: `core/`, root shims (they're deleted in P2-F2).
+- Acceptance: `make test-all` same as baseline; `grep -rnE "^\s*(from|import) (settings|world_model|world_stream|world_stream_multi|world_transfer|world_transfer_multi|world_multicontrol_base|world_filter|llm_model|blend|edges)\b" --include=*.py . --exclude-dir=simworld --exclude-dir=.venv --exclude-dir=out --exclude-dir=.claude` returns only the root shims; `bash -n` on edited scripts.
+- Deps: P2-B merged. Must be alone in its wave.
+
+## Wave 4: Phase 2c (2 packages, ≈ 4.5 pts, CPU)
+
+**P2-D Linters, pre-commit, uv lockfile, venv docs** (2.5 pts)
+- Owns: `pyproject.toml` (project metadata + `[tool.ruff]` + `[tool.pyright]`), `uv.lock`, `.pre-commit-config.yaml`, `biome.json`, `docs/ENVIRONMENTS.md`, `README.md` Setup section l.87-96 only, deletes `requirements.txt`.
+- Rules: ruff `select = ["E9","F","B","UP"]` with `exclude = ["simworld","wm_multicontrol/upstream","mac_server","out",".venv",".claude"]`; **no autoformat and no repo-wide autofix** (would collide with everything); add `per-file-ignores` for existing findings instead and list the counts in the log. pyright `include = ["core","ops","runtime"]`, `basic` mode, typeCheckingMode off for the rest. pre-commit hooks: ruff, `shellcheck-py` on `*.sh` (exclude `mac_server/Binaries`, `simworld`, `.venv`), biome via `npx` local hook on `life/static/*.js`, `check-yaml`, end-of-file. `uv lock` from pyproject with `mlx-vlm==0.7.11`, `opencv-python==5.0.0.93` pinned; do **not** run `uv sync` against main's `.venv`. ENVIRONMENTS.md: `.venv` (3.12: panel, agents, mlx-vlm), `simworld/.venv` (3.10: unrealcv, build_city, simworld tests), `~/cosmos3/cosmos3-mlx/.venv` (Cosmos MLX port), why they can't merge.
+- Acceptance: `ruff check .` exit 0; `pre-commit run --all-files` exit 0 (report shellcheck/biome finding counts, baseline-ignored); `uv lock --check` exit 0; `pyright core ops` error count recorded (target 0 on `core`, else listed); `make test-all` unchanged.
+- Deps: P2-C merged.
+
+**P2-F1 Dead-code and stale-Markdown inventory, Markdown removals** (2 pts)
+- Goal: produce the evidence table and delete only Markdown this round.
+- Owns: `docs/REMOVAL_CANDIDATES.md` (new: file, reason, evidence commands with output counts), Markdown deletions it has evidence for, and `life/architecture.py` data table entries for any deleted Markdown it names (the architecture test fails otherwise).
+- Evidence method (one script, kept at `scripts/fable/reach.py`): for every tracked `.py` outside `simworld/`, `wm_multicontrol/upstream/`, `mac_server/`, grep its module path and basename across tracked `.py/.sh/.md/Makefile`, `out/ops/gpu_ledger.jsonl` commands, `out/**/*.sh|*.json|run*.py` (find with `-name`, not a full sweep), and `life/*.py`. Zero hits outside itself and its own tests = candidate. Markdown: superseded HANDOFF/PLAN/BRIEF files whose contents are now in merged code or FABLE_LOG; move surviving facts into the owning README first. Known candidates to check (verify, don't assume): `runtime/HANDOFF.md`, `wm_multicontrol/HANDOFF.md`, `benchmarks/HANDOFF.md`, `homeostatic/HANDOFF.md`, `city/bodies/PLAN.md`, `mind/OPEN_DECISIONS.md`, `docs/exp1_phase1.md` (keep `exp1_report.md`: results), `city/world_varied.json` (identical to `world.json` per AGENTS.md), root shims from P2-B, `world_multicontrol_base.py` (Variant B reference, owner-kept), `filter_test/scripts/`, `scripts/pace/`. Keep `cloud/` (`gpu.py` imports it).
+- Acceptance: `make test-all` unchanged; `tests.test_life_architecture` passes; every deleted file appears in `docs/FABLE_LOG.md` with reason; candidates table lists ≥ the known items with evidence counts.
+- Deps: P2-C merged. **Owner approves the code-deletion list before P2-F2.**
+
+## Wave 5: Phase 3a (3 packages, ≈ 8.5 pts, CPU)
+
+**P3-A GPU failure causes and a dry run** (3 pts)
+- Goal: classify the 15 real failures from `out/ops/job_logs/*.log` tails + ledger, fix the common causes in the queue, add `gpu.py check` (pre-flight: cwd exists, executable resolves, `python -c "import <module>"` in the job's interpreter, output dir writable, needed GB free) and a `--dry-run` that runs the command with `KOKO_DRY_RUN=1`, which `core/world_transfer_multi.py` and `core/world_stream_multi.py` honor by painting one latent chunk and exiting 0.
+- Owns: `ops/gpu.py` (outside `status()`), `ops/tests/test_gpu.py`, `tests/test_gpu_keeper.py`, `core/world_transfer_multi.py` and `core/world_stream_multi.py` (dry-run flag only), `docs/GPU_FAILURES.md` (the table).
+- Must not touch: `ops/status.py`, `life/gpu_queue.py`.
+- Acceptance: table of 15 failures → ≤ 5 causes with the fix or "not fixable here" per cause; a job with a bad path fails `gpu.py check` in < 5 s instead of taking a turn; unit tests for check/dry-run; `make test-all` unchanged. GPU: one queued one-chunk dry run of Variant A 8-bit on the bridge controls (~5 min), launched by the orchestrator after merge; its sidecar must say "dry run, 1 chunk".
+- Deps: wave 4 merged.
+
+**P3-D Mosaic and drift metric, automatic run check** (3 pts, CPU)
+- Goal: a metric that separates known-good from known-bad painted video, and a hook that fails a run on it. Calibration data exists: good = `out/wm_multicontrol/a4_8bit_blind/` and the first ~50 s of `out/bodies/demo/20261108/`; bad = that demo after ~52 s and `out/ops/job_logs/20261108-152738-wmstill_test.log`'s outputs. Mosaic candidate: energy on the latent tile grid (8/16 px periodicity in the gradient image) vs interior; drift candidate: agreement between the painted frame's edges and the `edge` control it was painted from (the control exists for every frame). Check what `runtime/check_video.py`'s old metric did and why it read 0.99 on garbage.
+- Owns: `core/video_check.py` (new), `tests/test_video_check.py`, `runtime/check_video.py` (delegate to the new module), `core/world_stream_multi.py` hook only in the push loop (stop after 3 consecutive bad pushes, write `check.json`).
+- Must not touch: `ops/`, `city/agents/`.
+- Acceptance: on the labeled clips the metric classifies all good and all bad segments correctly at one stated threshold, with the score-vs-time curve saved to `out/test_outputs/video_check/`; CPU runtime < 2 s per 100 frames; tests pass; the old metric's numbers on the same clips recorded for contrast.
+- Deps: wave 4 merged. Parallel with P3-A: both edit `world_stream_multi.py`. **To avoid that conflict, P3-A owns the dry-run flag at module top/argparse, P3-D owns the push loop; orchestrator merges P3-A first and resolves if needed, or sequence P3-D into wave 6.**
+
+**P3-E1 Run manifests and golden-run regression** (2.5 pts, CPU)
+- Goal: `core/manifest.py` writes `commit, dirty (bool + sha256 of git diff), weights path + hash of the safetensors index + sizes, seed, prompt, quantize, controls, resolution` into every sidecar via one call; a golden regression test runs the two-agent lunch with the fake world model and fake brain at a fixed seed and compares the event log to `tests/golden/lunch_fake.json` (with a `--update-golden` path).
+- Owns: `core/manifest.py`, `tests/test_manifest.py`, `tests/golden/`, `tests/test_golden_lunch.py`, sidecar-writing lines in `city/agents/lunch_wm.py` (`write_sidecar`) and `core/world_transfer_multi.py` sidecar function, `core/world_stream.py` sidecar.
+- Must not touch: anything else in those files.
+- Acceptance: a sidecar from a fake run contains all manifest fields; golden test passes twice in a row and fails when `PATIENCE` is changed (demonstrated and reverted); `make test-all` unchanged; brief rule satisfied: the fake-world-model run is labeled fake in its manifest.
+- Deps: wave 4. Conflict note: P3-A edits `world_transfer_multi.py` too; keep P3-E1's edit to the sidecar function only.
+
+## Wave 6: Phase 3b (3 packages, ≈ 7.5 pts)
+
+**P3-C Stillness vs elapsed time** (2.5 pts + GPU ≈ 1.5 h)
+- Goal: settle whether mosaic follows stillness or elapsed time, with recorded controls (no server, no mouse risk). Builds three control sets from `out/city_wm/bridge/controls/`: A moving 150 frames (exists: `a4_8bit`), B still from frame 0 (frame 60 repeated 150×), C moving 60 then still 90. Paints B and C with Variant A, four controls at 0.25, 8-bit, 832x480, and scores all three with P3-D's metric per frame.
+- Owns: `scripts/fable/stillness.py` (control builder + the two queue commands), `docs/MOSAIC.md` (result), `out/wm_multicontrol/fable_still_{B,C}/`.
+- Acceptance: a frame index where the metric crosses threshold for B and C, compared with A; the conclusion stated as one of "stillness", "elapsed time", "both" or "inconclusive" with the curves; sidecars complete.
+- Deps: P3-D merged. The worker prepares controls and commands and exits; orchestrator queues; a second tiny worker (or the orchestrator) writes `docs/MOSAIC.md` from the outputs (budgeted in the 2.5).
+
+**P3-B Mouse turns camera 0** (3.5 pts; needs the 9003/9004 editor, memory claim via `ram_share.py claim`, owner may need to be present)
+- Goal: smallest fix in `mac_server/Source/SimWorld/Private/SWPlayerController.cpp` (+ `.h`): when launched with `-nomouse` (or when a `-cvport` server flag is present) call `SetIgnoreLookInput(true)` / drop mouse axis bindings so mouse movement can't rotate the agent camera; verify in the editor instance first, no packaging in this package.
+- Owns: `SWPlayerController.{h,cpp}`, `mac_server/docs/` note, `mac_server/tests/test_conformance.py` (additive, if it has a camera-rotation probe).
+- Must not touch: `mac_server/Packaged*`, `build.sh package`, `SWCharacterBase/SWHumanoid` (bodies owner).
+- Acceptance: with the editor on 9003 and the flag on, `vget /camera/0/rotation` is identical before and after a scripted 300 px mouse move (use `cliclick` or a Python Quartz event; owner informed); off, it changes. Then the orchestrator asks the owner about packaging into `mac_server/Packaged_nomouse/` (hours of build time, launched detached, no worker waiting). Until a packaged build with the fix is verified on 9001, **no package in this plan captures from 9001**.
+- Deps: none; placed here so it doesn't compete for the Mac with P3-C's paints (editor + Cosmos together exceed memory).
+
+**P2-F2 Code deletions (owner-approved list)** (1.5 pts, CPU)
+- Owns: exactly the files on the approved list from P2-F1, `life/architecture.py` data entries naming them, and the tests that test only deleted code. Root shims deleted here except `ram_share.py`.
+- Acceptance: `make test-all` passes before and after with only the expected drop in test count; `scripts/fable/reach.py` shows zero references to each deleted path; all listed in FABLE_LOG with reason; nothing under `out/`, `models/`, `mac_server/Packaged*`, `simworld/`, `wm_multicontrol/upstream/` touched (`git diff --stat` shows none).
+- Deps: owner approval; wave 5 merged.
+
+## Wave 7: Phase 4, only if ≥ 3 pts remain before the 60% stop
+
+**P4-A Profile one paint step and explain 935 s vs 1782 s** (2.5 pts + GPU ≈ 0.3 h)
+- Goal: per-stage timers (control encode, 4 denoise steps, decode, `.npy` write/read, PNG write, Qwen call) in one real 16-frame Variant A 8-bit step, plus the explanation of the two 150-frame paints from `out/ops/job_logs/*.metrics.jsonl` (watts, `gpu_temp_max`, `gpu_busy_mean`, swap) and `pmset -g` power mode at the time.
+- Owns: `core/world_transfer_multi.py` timing instrumentation (env-gated `KOKO_PROFILE=1`), `docs/PAINT_PROFILE.md`.
+- Acceptance: a table whose stage sum is within 10% of the step wall time, and a one-paragraph cause for the 1.9× gap backed by the metrics columns.
+
+Remaining phase 4/5 items, with estimates, in cut-first order (first listed = cut first): **P5-A** per-person/per-view prompts and tank-top replacement in `city/agents/lunch_text.py` with a 5 s recorded-control A/B (2.5 + GPU 0.4 h); **P4-E** heat/swap guards in `gpu.py` (hold at ≥ 95°C, `--gb` default from a job's last sidecar peak, low-power-mode warning in status) (2); **P4-D** decide only on change: gate `Lunch.wants_to_decide` on frame-change + new speech + leg end, measured as Qwen calls per fake-run minute (2.5; flag: changes agent cadence); **P4-C** 4-bit test on the bridge clip, time/memory/P3-D score + owner blind view, sidecar says precision lowered, default untouched (1.5 + GPU 0.5 h); **P4-B1** in-memory frames instead of `.npy` in `core/world_stream*.py` (12 refs) measured on a two-stream recorded run (3 + GPU 0.4 h); **P4-B2** batching both agents in one pass (needs P4-A; 4 + GPU); **P3-E2** closed-loop checkpoints/resume (3.5 + GPU 0.3 h); **P1-D** build_city split (2.5); **P5-B/C** repeated lines/feeling system/life-generator switch (not fundable this week; P5-B also needs 9001).
+
+## Merge order
+
+W1: P1-A, P1-B, P1-C, P1-E (any order; disjoint). W2: P2-A, P2-E, then P2-B last. W3: P2-C alone. W4: P2-D, P2-F1. W5: P3-A first, then P3-E1, then P3-D (shared `world_transfer_multi.py` / `world_stream_multi.py`; conflicts are in different functions). W6: P2-F2, P3-C, P3-B. W7: P4-A. Run `make test-all` after each merge; a failing merge is reverted, not patched by the orchestrator.
+
+## Risks
+
+- Point calibration is a guess; wave 1 is the measurement. If wave 1 > 10 pts, drop W7, P3-B, and P2-F2 in that order.
+- `make test-all` is defined in W1 (P1-B); W1 workers use the raw commands from the facts section as their before/after.
+- Both split packages must preserve import paths; `city/bodies/demo_lunch.py` and `tests/test_city_lunch.py` are the tripwires. Python 3.10 for anything the simworld venv runs.
+- P2-C is a 40-file mechanical change; nothing else may be open against those files. Any stale wave-1 branch merged after it will conflict.
+- ruff/pre-commit on a repo with zero prior linting: the baseline must be ignores, not fixes, or the diff collides with every other branch.
+- GPU jobs: a worker that waits on the queue burns cache reads; the queue-and-exit pattern above depends on the orchestrator launching detached. Verify once that a `gpu.py run` launched with `nohup` from main keeps its ticket after the shell exits (AGENTS.md says the keeper owns a started job; a *waiting* ticket's behavior when its waiter dies should be checked in P3-A).
+- P3-C's three paints are ~1.5 h on the only GPU and must not overlap the 9003 editor (P3-B) or the owner's own work.
+- Final merge to main restarts the panel on 8765 (it watches `life/*.py` and `settings.py` → now `core/settings.py`; P2-C must keep the watcher's path list correct, check `life/panel.py`'s reload list).
+
+## Owner decisions needed
+
+1. Commit the uncommitted `city/world.json`, `AGENTS.md`, `city/bodies/LOG.md` on main before wave 1 (recommended).
+2. Skills live in `.claude/skills/` with a `!.claude/skills/` gitignore exception, or in `docs/skills/`.
+3. Package name for the root modules: `core` (proposed) or `wm`; `ram_share.py` stays at the root as a CLI.
+4. Approve P2-F1's deletion list before P2-F2, especially `world_multicontrol_base.py` (Variant B reference), `filter_test/scripts/`, `scripts/pace/`, `city/world_varied.json`.
+5. Which merged worktrees/branches to retire after P2-A (orchestrator supplies `git branch --no-merged main`).
+6. Whether to package a `-nomouse` server build after P3-B verifies in the editor (new folder `mac_server/Packaged_nomouse/`, nothing replaced without approval).
+7. Phase 4/5 pick if budget remains: P4-A (profile) is proposed; P5-A (prompts per person) is the realism alternative.
+8. Confirm: no autoformatting pass, defaults (four controls at 0.25, 8-bit) untouched; P4-C/P4-D are tests/flags only.
+
+### Critical Files for Implementation
+- /Users/jaycewalzer/Desktop/kokopelli/docs/FABLE_BRIEF.md
+- /Users/jaycewalzer/Desktop/kokopelli/city/agents/lunch_wm.py
+- /Users/jaycewalzer/Desktop/kokopelli/runtime/adapters/simworld.py
+- /Users/jaycewalzer/Desktop/kokopelli/ops/gpu.py
+- /Users/jaycewalzer/Desktop/kokopelli/world_stream_multi.py (becomes core/world_stream_multi.py)
