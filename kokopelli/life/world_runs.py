@@ -262,7 +262,7 @@ def collect(paths=PIPELINE_PATHS, now=None):
     now = time.time() if now is None else now
     table = pipeline.process_table()
     readers = {"loop": lambda: loop_entries("loop", Path(paths["agent_loop"]) / "runs", "kokopelli.loop.run", table, now),
-               "mind": lambda: loop_entries("mind", paths["mind"], "kokopelli.mind.run", table, now),
+               "mind": lambda: loop_entries("mind", paths["mind"], "kokopelli.loop.run_mind", table, now),
                "filter": lambda: filter_entries(table), "single": single_entries, "clips": clip_entries, "sim": filter_test_entries,
                "multicontrol": multicontrol_entries, "bodies_demo": bodies_demo_entries}
     runs = []
@@ -280,7 +280,7 @@ def video_file(run_id, paths=PIPELINE_PATHS):
     """The video for a run id from a fresh listing. Anything else raises KeyError."""
     table = []
     readers = {"loop": lambda: loop_entries("loop", Path(paths["agent_loop"]) / "runs", "kokopelli.loop.run", table, 0),
-               "mind": lambda: loop_entries("mind", paths["mind"], "kokopelli.mind.run", table, 0),
+               "mind": lambda: loop_entries("mind", paths["mind"], "kokopelli.loop.run_mind", table, 0),
                "filter": filter_entries, "single": single_entries, "clips": clip_entries, "sim": filter_test_entries,
                "multicontrol": multicontrol_entries, "bodies_demo": bodies_demo_entries}
     group = run_id.split("/", 1)[0]

@@ -1,7 +1,7 @@
 """Blur controls at different strengths: a middle ground between "colours help identify things" and "colours copied
 one-to-one look cartoonish".
 
-    .venv/bin/python -I kokopelli/wm/controls/blur_variants.py [--frames 150] [--size 832x480]
+    .venv/bin/python -m kokopelli.wm.controls.blur_variants [--frames 150] [--size 832x480]
 
 NVIDIA's AddControlInputBlur (cosmos-framework .../transfer_control_input/control_input.py) trains with the final
 down/up factor drawn from 4..16; presets: medium = 10, high = 16. So:
@@ -13,15 +13,13 @@ Writes out/city_wm/bridge/controls/<size>/blur_<variant>.mp4 and blur_variants.j
 import argparse
 import json
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
 import cv2
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from controls import blur, load_rgb, resize_rgb  # noqa: E402
+from kokopelli.wm.controls.controls import blur, load_rgb, resize_rgb
 
 ROOT = Path(__file__).resolve().parents[3]
 FPS = 30

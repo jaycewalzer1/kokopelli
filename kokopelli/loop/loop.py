@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 
 from kokopelli.loop import checkpoint, drift
-from kokopelli.loop.actions import InvalidDecision, action_dict, parse_decision, was_reshaped
+from kokopelli.mind.actions import InvalidDecision, action_dict, parse_decision, was_reshaped
 from kokopelli.loop.frames import control_frame, evenly_spaced, file_hash, read_clip, save_rgb, write_clip
 from kokopelli.loop.interfaces import AgentInput, ChunkRequest, CondFrame
 from kokopelli.loop.leak_guard import LeakError, drop_future

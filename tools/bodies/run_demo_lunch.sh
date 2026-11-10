@@ -28,7 +28,7 @@ simworld/.venv/bin/python -I tools/city_build/build_city.py --port "$PORT" || {
 	echo "build_city failed"; [[ -n "$started" ]] && pkill -f "SimWorld.*-cvport=$PORT"; exit 4; }
 sleep 5
 
-python3 kokopelli/ops/ram_share.py hold --name bodies_demo_agents --gb "$HOLD_GB" -- .venv/bin/python tools/bodies/demo_lunch.py --port "$PORT" "$@"
+python3 kokopelli/ops/ram_share.py hold --name bodies_demo_agents --gb "$HOLD_GB" -- .venv/bin/python -m tools.bodies.demo_lunch --port "$PORT" "$@"
 code=$?
 
 if [[ -n "$started" ]]; then

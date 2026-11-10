@@ -68,10 +68,10 @@ main,sw help    kokopelli.loop.preflight
 main,sw help    kokopelli.loop.probe_decisions
 main,sw help    kokopelli.loop.run
 main,sw help    kokopelli.loop.viewer
-# --- mind (namespace package, launched with -m) ---
-main    help    kokopelli.mind.change_check
-main    help    kokopelli.mind.check
-main    help    kokopelli.mind.run
+# --- mind launchers (in loop: they wire the mind into the loop) ---
+main    help    kokopelli.loop.mind_change_check
+main    help    kokopelli.loop.mind_check
+main    help    kokopelli.loop.run_mind
 # --- homeostatic ---
 main    help    experiments.homeostatic.evaluate
 main    help    experiments.homeostatic.experiment
@@ -95,18 +95,18 @@ main    help    experiments.benchmarks.report
 main    help    experiments.benchmarks.report_screenshots
 main    help    experiments.benchmarks.run
 # --- city ---
-main    help    kokopelli/agents/live.py
-main    help    kokopelli/agents/live_wm.py
-main    help    kokopelli/agents/lunch_bench.py
-main    help    kokopelli/agents/lunch_life.py
-main    help    kokopelli/agents/lunch_wm.py
+main    help    kokopelli.agents.live
+main    help    kokopelli.agents.live_wm
+main    help    tools.fable.lunch_bench
+main    help    kokopelli.agents.lunch_life
+main    help    kokopelli.agents.lunch_wm
 main    import  kokopelli/agents/navmap.py              # no argparse: running it builds the nav map
 main    help    tools/bodies/demo_cut.py
-main    import  tools/bodies/demo_lunch.py          # hand-parses argv and forwards the rest to lunch_wm; running it starts a demo
-main    help    tools/bodies/demo_promptcheck.py
+main    import  tools.bodies.demo_lunch          # hand-parses argv and forwards the rest to lunch_wm; running it starts a demo
+main    help    tools.bodies.demo_promptcheck
 main    help    tools/bodies/metahuman/looks.py
 sw      help    tools/bodies/wave1_renders.py
-sw      help    tools/bodies/wave2_renders.py
+sw      help    tools.bodies.wave2_renders
 main    help    tools/bodies/write_parts.py
 sw      help    tools/realism/replay_bridge.py
 main    help    tools/moodboard/source_arena.py
@@ -116,36 +116,36 @@ sw      help    tools/city_build/build_city.py
 sw      import  tools.city_build.kinds.locked               # runs argv as a command under a lock; no --help
 sw      help    tools.city_build.kinds.preview
 sw      help    tools.city_build.kinds.watchdog
-sw      help    tools/city_build/plan_varied/check.py
-sw      import  tools/city_build/plan_varied/kitmap.py      # hand-parses argv; no --help
-sw      help    tools/city_build/plan_varied/plan.py
-sw      help    tools/city_build/plan_varied/run_build.py
+sw      help    tools.city_build.plan_varied.check
+sw      import  tools.city_build.plan_varied.kitmap      # hand-parses argv; no --help
+sw      help    tools.city_build.plan_varied.plan
+sw      help    tools.city_build.plan_varied.run_build
 sw      help    tools/city_build/plan_varied/views.py
 sw      help    tools/city_build/render_views.py
-main    help    kokopelli/wm/controls/blur_variants.py
+main    help    kokopelli.wm.controls.blur_variants
 main    help    kokopelli/wm/controls/controls.py
 sw      import  kokopelli/wm/controls/plaza_clip.py              # no argparse: running it needs the city server on 9001
 main    help    kokopelli/wm/controls/prompts/build.py
-cos     import  kokopelli/wm/controls/run_bridge_final.py        # no argparse: running it paints with Cosmos
+cos     import  kokopelli.wm.controls.run_bridge_final        # no argparse: running it paints with Cosmos
 # --- experiments, filter_test ---
 sw      import  experiments/commons/analyze.py     # no argparse: running it rewrites the report
 sw      import  experiments/commons/audit.py       # no argparse: running it runs the audit
 sw      help    experiments/commons/run.py
-main    help    experiments/filter_test/scripts/capture.py
+main    help    experiments.filter_test.scripts.capture
 main    import  experiments/filter_test/scripts/controls.py    # no argparse: running it rewrites the control videos
 main    import  experiments/filter_test/scripts/preview_videos.py  # no argparse: running it renders previews
-main    help    experiments/filter_test/scripts/run_cosmos.py
+main    help    experiments.filter_test.scripts.run_cosmos
 skip    -       experiments/filter_test/scripts/run_sd.py      # runs in its own experiments/filter_test/.venv (torch, diffusers), not one of the three; by hand: experiments/filter_test/.venv/bin/python experiments/filter_test/scripts/run_sd.py --help
 # --- scripts ---
-main    import  tools/fable/p4_c_compare.py      # no argparse: running it runs the comparison
+main    import  tools.fable.p4_c_compare      # no argparse: running it runs the comparison
 main    import  tools/fable/p4_paint_gap.py      # no argparse: running it runs the measurement
-main    help    tools/fable/p4_profile.py
+main    help    tools.fable.p4_profile
 main    import  tools/fable/p4_profile_table.py  # treats every argument as a file to read
 main    import  tools/fable/reach.py             # hand-parses argv and ignores --help; running it scans the repo
-main    help    tools/fable/stillness.py
-main    help    tools/fable/stillness_score.py
-sw      help    tools/pace/wmloop_one_tick.py
-sw      help    tools/pace/wmloop_wait_server.py
+main    help    tools.fable.stillness
+main    help    tools.fable.stillness_score
+sw      help    tools.pace.wmloop_one_tick
+sw      help    tools.pace.wmloop_wait_server
 # --- shell launchers ---
 main    bash    experiments/benchmarks/noise_check_turns.sh
 main    bash    kokopelli/agents/run_wm_life.sh

@@ -132,7 +132,7 @@ def decision_prompt(base, rows, size="small"):
 
 def parse_action(raw, visible):
     """The action the loop would carry out for this reply, or None. Uses the loop's parser so the record can't disagree with the sim."""
-    from kokopelli.loop.actions import InvalidDecision, parse_decision
+    from kokopelli.mind.actions import InvalidDecision, parse_decision
     try:
         return parse_decision(raw, visible).action.model_dump()
     except InvalidDecision:

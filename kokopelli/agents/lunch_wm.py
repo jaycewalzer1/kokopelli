@@ -1,8 +1,8 @@
 """Two thinking people meet for lunch inside the world model: each sees only what Cosmos3-Nano-Sim-Transfer paints.
 
     kokopelli/agents/run_wm_lunch.sh --minutes 5                       # the real thing (queue it; see AGENTS.md)
-    .venv/bin/python kokopelli/agents/lunch_wm.py --port 9001 --minutes 5
-    .venv/bin/python kokopelli/agents/lunch_wm.py --fake-wm ...        # SimWorld for real, world model faked (no weights)
+    .venv/bin/python -m kokopelli.agents.lunch_wm --port 9001 --minutes 5
+    .venv/bin/python -m kokopelli.agents.lunch_wm --fake-wm ...        # SimWorld for real, world model faked (no weights)
 
 Mara (live.DEFAULT_WHO) and her neighbour Iris agreed to meet at The Kettle for lunch and then sit and talk. Both are the
 same Qwen3-VL (loaded once), each asked with its own prompt, memory and picture.
@@ -32,23 +32,18 @@ import argparse
 import json
 import math
 import shutil
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))
-import live  # noqa: E402  (borrows unrealcv, puts the wm-agent-loop worktree on the path)
-from live import Cast, parse_reply, rough, bearing, compass  # noqa: E402,F401
-from live_wm import BLUR_DOWNUP, FAR_CM, NEAR_CM, REACH_M, Film  # noqa: E402,F401
-from navmap import NavMap  # noqa: E402
-import lunch_fixes as fx  # noqa: E402
+from kokopelli.agents import live  # noqa: E402  (borrows unrealcv)
+from kokopelli.agents.live import Cast, parse_reply, rough, bearing, compass  # noqa: E402,F401
+from kokopelli.agents.live_wm import BLUR_DOWNUP, FAR_CM, NEAR_CM, REACH_M, Film  # noqa: E402,F401
+from kokopelli.agents.navmap import NavMap  # noqa: E402
+from kokopelli.agents import lunch_fixes as fx  # noqa: E402
 
 ROOT = live.ROOT
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "kokopelli" / "wm" / "controls"))
-import controls as ctl  # noqa: E402  (kokopelli/wm/controls/controls.py)
+from kokopelli.wm.controls import controls as ctl  # noqa: E402
 from kokopelli.loop.adapters import simworld_commands as c  # noqa: E402,F401  (demo_lunch imports c from here)
 from kokopelli.loop.adapters.simworld import (AGENT_ACTOR, AGENT_ASSET, MUG_ASSET, NpcSpec, SimWorldConfig,  # noqa: E402,F401
                                        SimWorldPhysics, SpawnSpec)
@@ -59,10 +54,10 @@ from kokopelli.loop.physics import Vec3  # noqa: E402,F401
 # The parts live in four files; every name stays importable from here (tools/bodies/demo_lunch.py, tests/test_city_lunch.py).
 # demo_lunch.py replaces lunch_wm.TwoBodySim and lunch_wm.Lunch: make_world() and main() below read those names from
 # this module when they run, so keep both functions here.
-from lunch_text import (FORMAT_NOTE, IRIS_SITUATION, IRIS_WHO, LUNCH_TOPIC, MARA_SITUATION,  # noqa: E402,F401
+from kokopelli.agents.lunch_text import (FORMAT_NOTE, IRIS_SITUATION, IRIS_WHO, LUNCH_TOPIC, MARA_SITUATION,  # noqa: E402,F401
                         RETRY_SHAPE, WM_PROMPT, LunchWords, QuietCast, lunch_cast, people)
-from lunch_sim import FRIEND_ACTOR, TwoBodySim  # noqa: E402,F401
-from lunch_parts import (HINTS, Body, LunchRecord, Mind, QwenBrain, SideBySide, SimWorldPair,  # noqa: E402,F401
+from kokopelli.agents.lunch_sim import FRIEND_ACTOR, TwoBodySim  # noqa: E402,F401
+from kokopelli.agents.lunch_parts import (HINTS, Body, LunchRecord, Mind, QwenBrain, SideBySide, SimWorldPair,  # noqa: E402,F401
                          controls_for, open_streams, place_or_point)
 
 HEAR_M = live.HEAR_M

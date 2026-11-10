@@ -121,12 +121,12 @@ class PipelineTest(unittest.TestCase):
 
     def test_shells_greps_and_mock_runs_are_not_model_jobs(self):
         listing = ("1 0 /bin/zsh -c python -m experiments.homeostatic.train x\n2 0 grep collect.py\n3 0 vim txt2video.py\n"
-                   f"4 0 {PYTHON} -m kokopelli.loop.run --ticks 60\n5 0 {PYTHON} -m experiments.benchmarks.run --backend mock\n6 0 {PYTHON} -m kokopelli.mind.run --ticks 8\n7 0 {PYTHON} notes.py txt2video.py\n")
+                   f"4 0 {PYTHON} -m kokopelli.loop.run --ticks 60\n5 0 {PYTHON} -m experiments.benchmarks.run --backend mock\n6 0 {PYTHON} -m kokopelli.loop.run_mind --ticks 8\n7 0 {PYTHON} notes.py txt2video.py\n")
         self.assertEqual(self.collect(listing)["gpu"]["outside"], [])
 
     def test_real_runs_of_the_loop_are_model_jobs(self):
-        listing = f"4 0 {PYTHON} -m kokopelli.loop.run --wm cosmos\n5 0 {PYTHON} -m experiments.benchmarks.run --backend llm_model\n6 0 {PYTHON} -m kokopelli.mind.run --agent qwen\n"
-        self.assertEqual([job["name"] for job in self.collect(listing)["gpu"]["outside"]], ["kokopelli.loop.run", "experiments.benchmarks.run", "kokopelli.mind.run"])
+        listing = f"4 0 {PYTHON} -m kokopelli.loop.run --wm cosmos\n5 0 {PYTHON} -m experiments.benchmarks.run --backend llm_model\n6 0 {PYTHON} -m kokopelli.loop.run_mind --agent qwen\n"
+        self.assertEqual([job["name"] for job in self.collect(listing)["gpu"]["outside"]], ["kokopelli.loop.run", "experiments.benchmarks.run", "kokopelli.loop.run_mind"])
 
     def test_the_ledger_becomes_one_line_per_job(self):
         self.ledger({"at": 1, "event": "queued", "id": "a", "name": "a", "priority": 10},

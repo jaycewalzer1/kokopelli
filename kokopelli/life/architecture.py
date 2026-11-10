@@ -92,7 +92,7 @@ NODES = [
     {"id": "mind", "name": "Feel-then-decide", "at": [1, 3], "status": "partial", "kind": "process",
      "does": "Wraps any agent so it appraises what it just saw, then decides only at a decision point. A feeling shapes its own later prompts, and is never a score.",
      "why": "Uncommitted on this checkout, and it needs kokopelli/loop/ from the agent loop worktree to run. Tested with scripted feelings. Whether real Qwen has run it is under Live, and kokopelli/mind/OPEN_DECISIONS.md lists what's still undecided.",
-     "files": ["kokopelli/mind/feeling.py", "kokopelli/mind/run.py", "kokopelli/mind/OPEN_DECISIONS.md", "tests/test_mind.py"]},
+     "files": ["kokopelli/mind/feeling.py", "kokopelli/loop/run_mind.py", "kokopelli/mind/OPEN_DECISIONS.md", "tests/test_mind.py"]},
     {"id": "blend", "name": "Clips and blending", "at": [2, 3], "status": "built", "kind": "data",
      "does": "Finished clips land on disk, and blend.py crossfades clips into one video.",
      "why": "Tested and used for the continuous video. Whether blend.py itself is running isn't measured, only clips being written.",

@@ -1,6 +1,6 @@
 """Run the runtime loop with a FeelingAgent. Needs the agent-loop branch on the path:
 
-PYTHONPATH=.claude/worktrees/wm-agent-loop:. .venv/bin/python -m kokopelli.mind.run --ticks 60 --out out/mind/mock_60
+PYTHONPATH=.claude/worktrees/wm-agent-loop:. .venv/bin/python -m kokopelli.loop.run_mind --ticks 60 --out out/mind/mock_60
 """
 import argparse
 import json

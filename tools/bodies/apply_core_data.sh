@@ -114,7 +114,7 @@ STEPS+=("suite_rc_$SUITE_RC")
 
 gate "renders"
 (cd "$K" && "$SPY" tools/city_build/build_city.py --port 9004 > "$OUT/build_city.log" 2>&1) || fail "city build"
-(cd "$K" && "$SPY" tools/bodies/wave2_renders.py evidence --port 9004 --out "$OUT" --label packaged-core-data) || fail "renders"
+(cd "$K" && "$SPY" -m tools.bodies.wave2_renders evidence --port 9004 --out "$OUT" --label packaged-core-data) || fail "renders"
 STEPS+=(renders)
 "$K/tools/bodies/serve_9004.sh" stop
 summary "$([[ $SUITE_RC == 0 ]] && echo ok || echo suite_failed)"

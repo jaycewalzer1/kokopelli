@@ -1,8 +1,8 @@
 """A local Qwen living in the solarpunk city: it sees, decides, walks, talks and carries things.
 
-    .venv/bin/python kokopelli/agents/live.py --port 9001 --steps 30
-    .venv/bin/python kokopelli/agents/live.py --situation "You're hungry and it's lunchtime."
-    .venv/bin/python kokopelli/agents/live.py --vision cosmos      # Qwen sees Cosmos's repaint of the frame
+    .venv/bin/python -m kokopelli.agents.live --port 9001 --steps 30
+    .venv/bin/python -m kokopelli.agents.live --situation "You're hungry and it's lunchtime."
+    .venv/bin/python -m kokopelli.agents.live --vision cosmos      # Qwen sees Cosmos's repaint of the frame
 
 Each step the sim advances STEP_S sim-seconds. Qwen is asked only at decision points: when it has
 arrived, when something failed, when someone spoke to it, or every step while it isn't walking.
@@ -13,7 +13,7 @@ Pieces:
 - routes:  navmap.py, from world.json
 - people:  npcs.json, scripted; they answer when spoken to within HEAR_M
 - mind:    llm_model.ask (Qwen3-VL on MLX), 4-bit by default
-- bodies:  tools/bodies/client.py; after spawning, each person is asked into a body (--body, npcs.json "body")
+- bodies:  kokopelli/agents/bodies_client.py; after spawning, each person is asked into a body (--body, npcs.json "body")
 Everything is written to out/city_agents/<run>/: events.jsonl, transcript.md, run.json (models, bodies) and the frames.
 """
 import argparse
@@ -28,9 +28,6 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-RUNTIME = ROOT / ".claude" / "worktrees" / "wm-agent-loop"
-sys.path.insert(0, str(ROOT))
-sys.path.insert(1, str(RUNTIME))
 
 
 def _borrow_unrealcv():
@@ -50,10 +47,9 @@ try:
     import unrealcv  # noqa: F401
 except ImportError:
     _borrow_unrealcv()
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from tools.bodies import client as bodies  # noqa: E402
-from navmap import NavMap  # noqa: E402
+from kokopelli.agents import bodies_client as bodies  # noqa: E402
+from kokopelli.agents.navmap import NavMap  # noqa: E402
 from kokopelli.loop.adapters.simworld import AGENT_ACTOR, BOX_ASSET, NpcSpec, SimWorldConfig, SimWorldPhysics, SpawnSpec  # noqa: E402
 
 STEP_S = 15.0
@@ -231,7 +227,7 @@ class Life:
         self.new_leg = False
         self.approaching = None
         self.running, self.last_thought, self.last_action = True, "", None
-        self.bodies = {}  # who -> what the server said to SetBody (tools/bodies/client.py BodyResult.as_dict())
+        self.bodies = {}  # who -> what the server said to SetBody (kokopelli/agents/bodies_client.py BodyResult.as_dict())
         self.watch_tiers = False  # ask GetBody each step for near/far, while the server knows the command
         self.tiers = {}  # who -> last tier seen, so a fall back to the mannequin is warned about once, not every step
         self.vision = CosmosVision(self.out) if args.vision == "cosmos" else UnrealVision()

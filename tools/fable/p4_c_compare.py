@@ -3,16 +3,14 @@
 Per paint: wall and stage seconds and MLX peak from its sidecar, the job's peak footprint and swap from the ledger,
 kokopelli/wm/video_check scores (median mosaic and drift over the clip, bad windows, first failure), and PSNR against the
 original a4_full_8bit result (same seed, same controls), so the effect of 4-bit on the picture is a number.
-    .venv/bin/python tools/fable/p4_c_compare.py > out/fable/P4/bits/compare.md
+    .venv/bin/python -m tools.fable.p4_c_compare > out/fable/P4/bits/compare.md
 """
 import json
-import sys
 from pathlib import Path
 
 import numpy as np
 
 K = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(K))
 from kokopelli.wm import video_check as vc  # noqa: E402
 
 BRIDGE = K / "out/city_wm/bridge/controls/832x480/blur.mp4"

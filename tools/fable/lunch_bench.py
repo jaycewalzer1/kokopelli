@@ -3,9 +3,9 @@ use, the lunch routine and Qwen calls per simulated minute. No SimWorld and no C
 FakeWorld (real NavMap coordinates, toy walking at 1.6 m/s, 10 s steps) plus the two lunch bowls and the barista, and
 the world model is the fake worker. This measures behavior only; it is not a quality test of the world model.
 
-    .venv/bin/python kokopelli/agents/lunch_bench.py run --brain parrot --out out/fable/P5/bench/parrot_off
-    .venv/bin/python kokopelli/agents/lunch_bench.py run --brain qwen --seed 7 --fixes all --out ...   # queue this (kokopelli/ops/gpu.py)
-    .venv/bin/python kokopelli/agents/lunch_bench.py score out/bodies/demo/runs/wm ...                 # any lunch run folder
+    .venv/bin/python -m tools.fable.lunch_bench run --brain parrot --out out/fable/P5/bench/parrot_off
+    .venv/bin/python -m tools.fable.lunch_bench run --brain qwen --seed 7 --fixes all --out ...   # queue this (kokopelli/ops/gpu.py)
+    .venv/bin/python -m tools.fable.lunch_bench score out/bodies/demo/runs/wm ...                 # any lunch run folder
 
 With --brain qwen, Qwen3-VL-8B-Instruct-4bit (QwenBrain's sampling, temperature 0.4) gets a fixed random seed per call
 and, instead of the fake world model's abstract frames, a real painted frame recorded by the owner's closed-loop run
@@ -20,11 +20,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
-for _p in (ROOT, ROOT / "tests", HERE):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
+ROOT = Path(__file__).resolve().parents[2]
 
 STEP_S, FPS, SPEED = 10.0, 1, 1.6
 RECORDED = ROOT / "out" / "bodies" / "demo" / "runs" / "wm" / "frames"
@@ -39,7 +35,7 @@ def load_events(run):
 
 def metrics(events, step_s=STEP_S):
     """Behavior numbers from a lunch events.jsonl (any lunch run: bench, golden or a real closed loop)."""
-    import lunch_fixes as fx
+    from kokopelli.agents import lunch_fixes as fx
     says = [e for e in events if e["kind"] == "says"]
     acts = [e for e in events if e["kind"] == "act"]
     steps = max([e["step"] for e in events] or [0]) + 1
@@ -89,8 +85,8 @@ def metrics(events, step_s=STEP_S):
 
 def bench_world(nav, folder, cast):
     import numpy as np  # noqa: F401  (test_city_lunch needs it importable)
-    import test_city_lunch as tcl
-    from live_wm import REACH_M
+    from tests import test_city_lunch as tcl
+    from kokopelli.agents.live_wm import REACH_M
 
     class BenchWorld(tcl.FakeWorld):
         """FakeWorld plus the two lunch bowls on the cafe's doorstep, picking up and putting down."""
@@ -146,7 +142,7 @@ class ParrotBrain:
         self.n = Counter()
 
     def ask(self, prompt, image):
-        import test_city_lunch as tcl
+        from tests import test_city_lunch as tcl
         name = re.match(r"You are (\w+)", prompt).group(1)
         other = "Iris" if name == "Mara" else "Mara"
         self.n[name] += 1
@@ -179,7 +175,7 @@ class SeededQwen:
     """QwenBrain with a fixed seed per call, shown a recorded painted frame instead of the fake world model's."""
 
     def __init__(self, weights, seed, frames=RECORDED):
-        from lunch_parts import QwenBrain
+        from kokopelli.agents.lunch_parts import QwenBrain
         self.inner, self.seed, self.calls = QwenBrain(weights), seed, Counter()
         self.frames = {k: sorted(p for p in (Path(frames) / k).glob("[0-9]*.png")) for k in ("mara", "iris")}
 
@@ -200,7 +196,7 @@ class SeededQwen:
 # ================================================================ one run
 
 def run(argv=None):
-    import lunch_wm as lw
+    from kokopelli.agents import lunch_wm as lw
     from kokopelli.wm.world_stream_multi import MultiWorldStream
     ap = argparse.ArgumentParser()
     ap.add_argument("--brain", choices=("parrot", "scripted", "qwen"), default="parrot")
@@ -224,7 +220,7 @@ def run(argv=None):
     if a.brain == "qwen":
         brain = SeededQwen(a.weights, a.seed)
     elif a.brain == "scripted":
-        import test_golden_lunch as tg
+        from tests import test_golden_lunch as tg
         brain = tg.GoldenBrain()
     else:
         brain = ParrotBrain()

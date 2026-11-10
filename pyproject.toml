@@ -22,6 +22,12 @@ koko-transfer = "kokopelli.wm.world_transfer:main"
 koko-transfer-multi = "kokopelli.wm.world_transfer_multi:main"
 koko-filter = "kokopelli.wm.world_filter:main"
 
+[dependency-groups]
+# Checks only, nothing at run time. `lint-imports` enforces [tool.importlinter] below (also a pre-commit hook).
+dev = [
+    "import-linter==2.16",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -101,7 +107,7 @@ select = ["E9", "F", "B", "UP"]
 "experiments/benchmarks/stats.py" = ["B905"]
 "kokopelli/agents/live.py" = ["B007", "B905"]
 "kokopelli/agents/live_wm.py" = ["F401"]
-"tools/bodies/client.py" = ["UP007"]
+"kokopelli/agents/bodies_client.py" = ["UP007"]
 "tools/bodies/demo_cut.py" = ["B905"]
 "tools/bodies/demo_lunch.py" = ["B905"]
 "tools/bodies/metahuman/looks.py" = ["F401", "UP038"]
@@ -152,9 +158,9 @@ select = ["E9", "F", "B", "UP"]
 "kokopelli/life/scenario.py" = ["B905"]
 "kokopelli/life/scenario_night.py" = ["B007", "B904", "F401"]
 "kokopelli/life/windows.py" = ["B905"]
-"kokopelli/mind/change_check.py" = ["F401"]
-"kokopelli/mind/check.py" = ["B905"]
-"kokopelli/loop/actions.py" = ["UP007"]
+"kokopelli/loop/mind_change_check.py" = ["F401"]
+"kokopelli/loop/mind_check.py" = ["B905"]
+"kokopelli/mind/actions.py" = ["UP007"]
 "kokopelli/loop/adapters/life_db.py" = ["F401"]
 "kokopelli/loop/adapters/simworld.py" = ["UP007", "UP038"]
 "kokopelli/loop/adapters/simworld_actions.py" = ["UP007"]
@@ -188,6 +194,49 @@ select = ["E9", "F", "B", "UP"]
 "tests/test_life_scenario.py" = ["F401"]
 "tests/test_life_windows.py" = ["B905"]
 "tests/test_wm_multicontrol_b.py" = ["B905"]
+
+[tool.importlinter]
+# The import wall, checked by `lint-imports` from the repo root (pre-commit runs it too). The library is kokopelli/;
+# experiments/, tools/ and tests/ may import it, never the other way. An exception is one ignore_imports line with a
+# comment saying why, and only where moving the code would change behaviour. Edges: tools/reorg/import_graph.py.
+# experiments, tools and tests are scanned too (namespace packages), so an allowed edge can name the exact module.
+root_packages = ["kokopelli", "experiments", "tools", "tests"]
+
+[[tool.importlinter.contracts]]
+name = "The library never imports experiments, tools or tests"
+type = "forbidden"
+source_modules = ["kokopelli"]
+forbidden_modules = ["experiments", "tools", "tests"]
+ignore_imports = [
+    # The dev panel serves the Experiment 1 page; its reader needs exp1's world and homeostasis code, which is the experiment itself.
+    "kokopelli.life.panel -> experiments.exp1.panel",
+]
+
+[[tool.importlinter.contracts]]
+# Low to high: wm (world model) <- mind <- loop <- life <- agents. life sits above loop: it holds the dev panel and the
+# life generator, which read runs; the loop reaches life only through its life_db adapter (allowed below).
+name = "Layers: wm, mind, loop, life, agents (a lower layer never imports a higher one)"
+type = "layers"
+layers = [
+    "kokopelli.agents",
+    "kokopelli.life",
+    "kokopelli.loop",
+    "kokopelli.mind",
+    "kokopelli.wm",
+]
+ignore_imports = [
+    # The loop's adapter that feeds it a life from the life generator's database: an adapter's whole job is that edge.
+    "kokopelli.loop.adapters.life_db -> kokopelli.life.*",
+    # The adapter's own test, which builds a life database to read; it moves to tests/ in phase 7.
+    "kokopelli.loop.tests.test_life_context -> kokopelli.life.*",
+]
+
+[[tool.importlinter.contracts]]
+# The system python3 runs gpu.py, memguard.py and ram_share.py with no venv (docs/REORG_EXECUTION.md section 3, rule 9).
+name = "ops imports nothing else from the library, settings included"
+type = "forbidden"
+source_modules = ["kokopelli.ops"]
+forbidden_modules = ["kokopelli.wm", "kokopelli.mind", "kokopelli.loop", "kokopelli.life", "kokopelli.agents", "kokopelli.settings"]
 
 [tool.pyright]
 include = ["core", "ops", "runtime"]

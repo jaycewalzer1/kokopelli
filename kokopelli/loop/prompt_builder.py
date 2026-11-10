@@ -1,5 +1,5 @@
 """Builds both prompts. Every string that reaches a model passes through the leak guard here."""
-from kokopelli.loop.actions import ACTION_HELP
+from kokopelli.mind.actions import ACTION_HELP
 from kokopelli.loop.leak_guard import check
 
 MAX_WM_CHARS = 1800

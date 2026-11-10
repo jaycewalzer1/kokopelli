@@ -75,9 +75,9 @@ class GpuQueueTest(unittest.TestCase):
         self.assertEqual([ticket["name"] for ticket in taken["stale"]], ["gone"])
 
     def test_it_says_which_outside_jobs_the_queue_would_wait_for(self):
-        listing = f"21 1 {PYTHON} -m experiments.homeostatic.train\n22 1 {PYTHON} -m kokopelli.mind.run --agent qwen\n23 1 {PYTHON} -m kokopelli.mind.run --agent mock"
+        listing = f"21 1 {PYTHON} -m experiments.homeostatic.train\n22 1 {PYTHON} -m kokopelli.loop.run_mind --agent qwen\n23 1 {PYTHON} -m kokopelli.loop.run_mind --agent mock"
         waits = {job["name"]: job["queue_waits"] for job in self.collect(listing)["outside"]}
-        self.assertEqual(waits, {"experiments.homeostatic.train": True, "kokopelli.mind.run": False})
+        self.assertEqual(waits, {"experiments.homeostatic.train": True, "kokopelli.loop.run_mind": False})
 
     def test_a_child_of_the_holder_is_not_outside(self):
         self.ticket("a", 11, running=True)

@@ -272,7 +272,6 @@ def rebuild(job, ram_share, guard):
 
 
 def main(run, out):
-    sys.path.insert(0, str(ROOT))
     from kokopelli.ops import ram_share
     guard = ram_share.Guard(f"{run.name}_d2_diagnostic", POLITE_GB, log=_log)
     job = Rebuild(run, out)

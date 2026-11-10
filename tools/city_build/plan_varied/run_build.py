@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Clear + build the varied city on the 9003 editor and render it. Run it inside the shared editor lock:
 
-    simworld/.venv/bin/python -m tools.city_build.kinds.locked -- simworld/.venv/bin/python tools/city_build/plan_varied/run_build.py --label r1
+    simworld/.venv/bin/python -m tools.city_build.kinds.locked -- simworld/.venv/bin/python -m tools.city_build.plan_varied.run_build --label r1
 
 Kinds that don't exist yet are mapped to example_pavilion in a scratch copy (out/city_kinds/planner/scratch_world.json);
 data/city/world.json itself is never changed. Renders: render_views.py --only aerial,street plus this folder's
@@ -10,7 +10,6 @@ views.py (per-cell views), into out/city_kinds/planner/<label>/.
 import argparse
 import json
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -20,7 +19,6 @@ OUT = ROOT / "out" / "city_kinds" / "planner"
 
 
 def scratch_world(src):
-    sys.path.insert(0, str(ROOT))
     from tools.city_build.kinds import all_kinds
     have = set(all_kinds())
     w = json.loads(Path(src).read_text())

@@ -5,7 +5,7 @@ weights (as the loop does while Qwen thinks), a 16-frame push each, then one 160
 size of a real closed-loop push). Controls are recorded, not live: Iris's 448x256 controls from the 2026-11-08 bodies demo
 feed both streams, with different seeds. Writes <out>/profile.json and prints a table.
 
-    env KOKO_PROFILE=1 .venv/bin/python tools/fable/p4_profile.py --out out/fable/P4/profile [--fake] [--long 160] [--shm]
+    env KOKO_PROFILE=1 .venv/bin/python -m tools.fable.p4_profile --out out/fable/P4/profile [--fake] [--long 160] [--shm]
 """
 import argparse
 import json
@@ -16,7 +16,6 @@ import time
 from pathlib import Path
 
 K = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(K))
 CONTROLS = K / "out/bodies/demo/runs/wm/controls/iris"
 HINTS = ("blur", "seg", "depth", "edge")
 PROMPT = ("First-person view of someone walking through a sunny solarpunk village around midday, at eye level. "

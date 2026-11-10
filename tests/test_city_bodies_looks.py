@@ -15,11 +15,9 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools" / "bodies" / "metahuman"))
-sys.path.insert(0, str(ROOT / "tools" / "bodies"))
 
-import looks  # noqa: E402
-import write_parts  # noqa: E402
+from tools.bodies import write_parts  # noqa: E402
+from tools.bodies.metahuman import looks  # noqa: E402
 
 LOOKS = looks.load()
 PEOPLE = ("mara", "iris", "ana", "tomas", "wen", "priya", "kai")

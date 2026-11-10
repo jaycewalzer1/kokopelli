@@ -26,9 +26,9 @@ Distilled from `experiments/filter_test/scripts/capture.py` and `kokopelli/wm/co
 ## 1. Capture (300 frames, 10 s, no NPCs, fixed clock)
 
 ```
-.venv/bin/python experiments/filter_test/scripts/capture.py                 # bridge walk with head motion, 1280x720, 14:00
-.venv/bin/python experiments/filter_test/scripts/capture.py --place garden  # replays Qwen's first route from a city run
-.venv/bin/python experiments/filter_test/scripts/capture.py --still         # SimWorld's own camera, locked to the body
+.venv/bin/python -m experiments.filter_test.scripts.capture                 # bridge walk with head motion, 1280x720, 14:00
+.venv/bin/python -m experiments.filter_test.scripts.capture --place garden  # replays Qwen's first route from a city run
+.venv/bin/python -m experiments.filter_test.scripts.capture --still         # SimWorld's own camera, locked to the body
 ```
 Flags: `--port 9001 --size 1280x720 --clock 14:00 --speed 1.6`. It sends `StopAgent` before closing. Output: `out/filter_test/test_clip/{rgb,depth,segmentation}/NNNN.*`, `poses.jsonl`, `head.jsonl`, `capture.json`.
 

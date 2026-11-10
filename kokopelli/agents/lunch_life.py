@@ -6,22 +6,19 @@ before the lunch are not written). At lunch, kokopelli/life/memory.recall() at t
 in mind: the outline, the last years in some detail and the moments that stuck. That text is added to their "who",
 under the persona, so the persona still says who they are today and the past only adds where they came from.
 
-    .venv/bin/python kokopelli/agents/lunch_life.py generate --db out/fable/P5/life/life.db         # Qwen: queue it
-    .venv/bin/python kokopelli/agents/lunch_life.py generate --db /tmp/x.db --mock                    # no model, [mock] text
-    .venv/bin/python kokopelli/agents/lunch_life.py show --db out/fable/P5/life/life.db
-    .venv/bin/python kokopelli/agents/lunch_wm.py ... --life out/fable/P5/life/life.db
+    .venv/bin/python -m kokopelli.agents.lunch_life generate --db out/fable/P5/life/life.db         # Qwen: queue it
+    .venv/bin/python -m kokopelli.agents.lunch_life generate --db /tmp/x.db --mock                    # no model, [mock] text
+    .venv/bin/python -m kokopelli.agents.lunch_life show --db out/fable/P5/life/life.db
+    .venv/bin/python -m kokopelli.agents.lunch_wm ... --life out/fable/P5/life/life.db
 
 Only its own database is written; the panel's out/life.db is never opened.
 """
 import argparse
 import json
-import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 PAST_CHARS = 1500   # the most the past adds to a prompt
 DEEPEST = "year"

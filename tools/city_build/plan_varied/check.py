@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Validate data/city/world.json against data/city/world.json and the building-kind catalog.
 
-    ~/Desktop/kokopelli/simworld/.venv/bin/python tools/city_build/plan_varied/check.py [--world data/city/world.json] [--kits]
+    ~/Desktop/kokopelli/simworld/.venv/bin/python -m tools.city_build.plan_varied.check [--world data/city/world.json] [--kits]
 
 Errors (exit 1): overlaps / gaps < 3 m between buildings, anything on a lane or path, out-of-cell footprints,
 heights and plot sizes outside the kind's range (module SIZES when the kind exists, else CATALOG.md), sky-bridge
@@ -22,8 +22,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "tools" / "city_build"))
 RES = ("fern", "moss", "birch", "reed", "clover", "sorrel", "heron")
 KEEP = {"moss_east"}
 WALK = 17.5
@@ -234,7 +232,7 @@ def main():
             E(f"{b['id']}: bad front {b['front']}")
         if len(b.get("palette", [])) != 3:
             E(f"{b['id']}: palette needs 3 names")
-        from build_city import COLORS
+        from tools.city_build.build_city import COLORS
         for n in b.get("palette", []):
             if n not in COLORS:
                 E(f"{b['id']}: palette colour {n!r} not in build_city.COLORS")
@@ -442,7 +440,7 @@ def main():
 
     # ---- 8. moss_east's actor config is identical (the world-model bridge shot) -----------------------------------
     try:
-        import build_city as bc
+        from tools.city_build import build_city as bc
 
         def moss_cfg(world):
             pl = bc.Plan(copy.deepcopy(world))
@@ -459,7 +457,7 @@ def main():
 
     # ---- 8b. the whole build_city plan runs (what `build_city.py --world ... --dry` does) ---------------------------
     try:
-        import build_city as bc
+        from tools.city_build import build_city as bc
         acts = bc.Plan(copy.deepcopy(w)).build()
         if not args.q:
             print(f"  build_city plan: {len(acts)} actors")
@@ -471,7 +469,7 @@ def main():
     # ---- 9. kits (geometry) ----------------------------------------------------------------------------------
     if args.kits:
         from tools.city_build.kinds import Plot, all_kinds
-        from build_city import rgb
+        from tools.city_build.build_city import rgb
         ak = all_kinds()
         for b in kits:
             if b["arch"] not in ak:

@@ -22,10 +22,8 @@ from types import SimpleNamespace
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "kokopelli" / "agents"))
 
-import lunch_wm as lw  # noqa: E402
+from kokopelli.agents import lunch_wm as lw  # noqa: E402
 from kokopelli.wm.world_stream_multi import MultiWorldStream, SharedWeights, stream_class  # noqa: E402
 
 W, H = 64, 32

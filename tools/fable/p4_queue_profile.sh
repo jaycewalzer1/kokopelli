@@ -7,11 +7,11 @@ ABOUT="Cosmos3-Nano-Sim-Transfer (models/Cosmos3-Nano-Sim-Transfer, gen weights 
 if [ -z "$SHM" ]; then
   python3 kokopelli/ops/gpu.py run --dry-run --name fable_P4_profile_dry --priority 40 --gb 12 --cwd "$W" \
     --about "$ABOUT; ONE stream ONE frame: checks the P4-A KOKO_PROFILE script" --output out/fable/P4/profile_dry -- \
-    env KOKO_PROFILE=1 .venv/bin/python tools/fable/p4_profile.py --out out/fable/P4/profile_dry || exit $?
+    env KOKO_PROFILE=1 .venv/bin/python -m tools.fable.p4_profile --out out/fable/P4/profile_dry || exit $?
   exec python3 kokopelli/ops/gpu.py run --name fable_P4_profile --priority 40 --gb 20 --max-hours 1 --cwd "$W" \
     --about "$ABOUT; KOKO_PROFILE=1 per-stage timers: 1+16 frames per stream then one 160-frame push (P4-A)" \
-    --output out/fable/P4/profile -- env KOKO_PROFILE=1 .venv/bin/python tools/fable/p4_profile.py --out out/fable/P4/profile
+    --output out/fable/P4/profile -- env KOKO_PROFILE=1 .venv/bin/python -m tools.fable.p4_profile --out out/fable/P4/profile
 fi
 exec python3 kokopelli/ops/gpu.py run --name fable_P4_profile_shm --priority 40 --gb 20 --max-hours 1 --cwd "$W" \
   --about "$ABOUT; same as fable_P4_profile but KOKO_WM_SHM shared-memory frame handoff instead of .npy files (P4-B1 test)" \
-  --output out/fable/P4/profile_shm -- env KOKO_PROFILE=1 .venv/bin/python tools/fable/p4_profile.py --out out/fable/P4/profile_shm --shm
+  --output out/fable/P4/profile_shm -- env KOKO_PROFILE=1 .venv/bin/python -m tools.fable.p4_profile --out out/fable/P4/profile_shm --shm

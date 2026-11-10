@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 
 from kokopelli.loop import replay
-from kokopelli.loop.actions import InvalidDecision, parse_decision
+from kokopelli.mind.actions import InvalidDecision, parse_decision
 from kokopelli.loop.frames import load_rgb, save_rgb
 
 NOTES = re.compile(r"Your notes:\n.*?\n\nThe (\d+) images", re.DOTALL)

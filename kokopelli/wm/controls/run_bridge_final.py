@@ -1,15 +1,13 @@
 """The 5 s bridge run the user chose: Cosmos3-Nano-Sim-Transfer, blur control V2 (NVIDIA "high", down/up 16),
 832x480, first 150 frames of out/filter_test/test_clip, prompt variant a. Queued through kokopelli/ops/gpu.py.
 
-    .venv/bin/python -I kokopelli/wm/controls/run_bridge_final.py
+    .venv/bin/python -m kokopelli.wm.controls.run_bridge_final
 """
 import json
-import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT))
 from kokopelli.wm.world_transfer import transfer_video  # noqa: E402
 
 MODEL = "Cosmos3-Nano-Sim-Transfer"

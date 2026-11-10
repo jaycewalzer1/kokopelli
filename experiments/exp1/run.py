@@ -22,7 +22,6 @@ import argparse
 import json
 import os
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -278,7 +277,6 @@ def polite(make, folder):
     checkpoint, if the room left falls below ram_share's floor, unloads and waits, then resumes from that checkpoint.
     Returns the Run, model loaded, with its life finished."""
     import gc
-    sys.path.insert(0, str(ROOT))
     from kokopelli.ops import ram_share
 
     def log(message):

@@ -2,23 +2,17 @@
 side-by-side film, the controls, and the run's log/transcript/live.json/run.json writers (a mixin of Lunch)."""
 import json
 import shutil
-import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-if str(HERE) not in sys.path:   # imported through lunch_wm, which set up the path already, this is a no-op
-    sys.path.insert(0, str(HERE))
-import live  # noqa: E402
+from kokopelli.agents import live
+from kokopelli.agents.live_wm import BLUR_DOWNUP, FAR_CM, NEAR_CM
+from kokopelli.agents.lunch_sim import FRIEND_ACTOR, TwoBodySim
+from kokopelli.loop.adapters.simworld import AGENT_ACTOR
+from kokopelli.wm.controls import controls as ctl
+
 ROOT = live.ROOT
-for _p in (ROOT, ROOT / "kokopelli" / "wm" / "controls"):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-import controls as ctl  # noqa: E402  (kokopelli/wm/controls/controls.py)
-from live_wm import BLUR_DOWNUP, FAR_CM, NEAR_CM  # noqa: E402
-from lunch_sim import FRIEND_ACTOR, TwoBodySim  # noqa: E402
-from kokopelli.loop.adapters.simworld import AGENT_ACTOR  # noqa: E402
 
 HINTS = ("blur", "seg", "depth", "edge")
 
@@ -295,7 +289,7 @@ class LunchRecord:
                 "controls": {"blur": f"downup {BLUR_DOWNUP} (v2 high)", "seg": "SimWorld masks x material class",
                              "depth": f"inverse depth, near {NEAR_CM} cm, far {FAR_CM} cm", "edge": "Canny 100/200",
                              "weights": "0.25 each"},
-                "wm_prompt": a.wm_prompt, "wm_prompts": __import__("lunch_text").prompts_for(a, list(self.minds)), "size": a.size, "fps": a.fps, "seeds": {k: a.seed + i for i, k in enumerate(self.minds)},
+                "wm_prompt": a.wm_prompt, "wm_prompts": __import__("kokopelli.agents.lunch_text", fromlist=["prompts_for"]).prompts_for(a, list(self.minds)), "size": a.size, "fps": a.fps, "seeds": {k: a.seed + i for i, k in enumerate(self.minds)},
                 "denoise_steps": 4, "window": a.window, "sink": a.sink, "quantize": a.quantize,
                 "sim_steps": a.steps, "step_seconds": a.step_s, "clock": a.clock, "meet": a.meet,
                 "agents": {k: {"name": m.name, "who": m.who, "situation": m.situation, "decisions": m.decisions}
@@ -328,7 +322,7 @@ def place_or_point(nav, text):
 
 
 def open_streams(wm, args, ids):
-    from lunch_text import prompts_for
+    from kokopelli.agents.lunch_text import prompts_for
     planned = int(args.steps * args.step_s * args.fps) + 1
     prompts = prompts_for(args, ids)
     for i, k in enumerate(ids):

@@ -1,6 +1,6 @@
 """Ask the server which body a person wears: `vbp <actor> SetBody <id>` / `vbp <actor> GetBody` (tools/bodies/PLAN.md).
 
-    from tools.bodies.client import set_body, dress
+    from kokopelli.agents.bodies_client import set_body, dress
     result = set_body(sim.wire, "GEN_BP_Humanoid_0", "mara")      # -> BodyResult(ok=True, body="mara", ...)
     results = dress(sim.wire, {"GEN_BP_Humanoid_0": "mara", "GEN_BP_Humanoid_1": "iris"})
 

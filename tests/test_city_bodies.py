@@ -15,11 +15,9 @@ from types import SimpleNamespace
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "kokopelli" / "agents"))
 
-import live  # noqa: E402  (puts the wm-agent-loop worktree on the path)
-from tools.bodies import client as bodies  # noqa: E402
+from kokopelli.agents import live  # noqa: E402
+from kokopelli.agents import bodies_client as bodies  # noqa: E402
 from kokopelli.loop.adapters.simworld_wire import CommandError  # noqa: E402
 
 NPCS = json.loads((ROOT / "kokopelli" / "agents" / "npcs.json").read_text())["npcs"]

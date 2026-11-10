@@ -1,7 +1,7 @@
 """Cosmos3-Nano (MLX, base model) repainting test_clip from the sim's depth, through world_filter.py. Experiment 1.
 
-    .venv/bin/python experiments/filter_test/scripts/run_cosmos.py            # all 300 frames, about an hour
-    .venv/bin/python experiments/filter_test/scripts/run_cosmos.py --chunks 1 # one chunk, a smoke test
+    .venv/bin/python -m experiments.filter_test.scripts.run_cosmos            # all 300 frames, about an hour
+    .venv/bin/python -m experiments.filter_test.scripts.run_cosmos --chunks 1 # one chunk, a smoke test
 
 Stands in for Cosmos3-Nano-Sim-Transfer, which needs an NVIDIA GPU. world_filter.py is the edge-control runner; its system prompt
 already names depth as a control, so the depth video goes in where the edges would. Same command as world_model.filter_video,
@@ -13,12 +13,10 @@ import argparse
 import json
 import os
 import subprocess
-import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT))
 from kokopelli.settings import WORLD_MODEL_RUNNER, WORLD_MODEL_WEIGHTS  # noqa: E402
 
 CONTROL = ROOT / "out" / "filter_test" / "controls" / "cosmos_simdepth.mp4"

@@ -15,8 +15,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import test_city_lunch as tcl  # noqa: E402  (FakeWorld, ScriptedBrain and the lunch args; its tests aren't re-run here)
+from tests import test_city_lunch as tcl  # noqa: E402  (FakeWorld, ScriptedBrain and the lunch args; its tests aren't re-run here)
 
 lw = tcl.lw
 GOLDEN = Path(__file__).resolve().parent / "golden" / "lunch_fake.json"

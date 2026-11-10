@@ -251,7 +251,7 @@ def old_drift(painted, control, crop=None, every=WINDOW):
     closest thing to the sim frame it compared with). Kept for contrast only."""
     from PIL import Image
 
-    from kokopelli.loop.drift import LAYOUT_WEIGHT, SMALL, appearance_distance, layout_distance
+    from kokopelli.wm.pixel_distance import LAYOUT_WEIGHT, SMALL, appearance_distance, layout_distance
     w, h = (int(n) for n in crop.split(":")[:2]) if crop else probe_size(painted)
     small = lambda x: np.asarray(Image.fromarray(x).convert("L").resize(SMALL, Image.BILINEAR), np.float64)  # noqa: E731
     out, i = [], 0

@@ -9,8 +9,8 @@ C holds the same frame B holds, so B and C differ only in whether the camera mov
 selection and re-encodes with the bridge controls' own settings (libx264, yuv420p, CRF 10, 30 fps), streaming, so
 nothing is held whole. That re-encode is one generation more than A's controls had; `verify` measures what it costs.
 
-    python3 kokopelli/ops/memguard.py run --name fable_p3c_build --gb 4 -- .venv/bin/python tools/fable/stillness.py build
-    python3 kokopelli/ops/memguard.py run --name fable_p3c_verify --gb 4 -- .venv/bin/python tools/fable/stillness.py verify
+    python3 kokopelli/ops/memguard.py run --name fable_p3c_build --gb 4 -- .venv/bin/python -m tools.fable.stillness build
+    python3 kokopelli/ops/memguard.py run --name fable_p3c_verify --gb 4 -- .venv/bin/python -m tools.fable.stillness verify
 """
 import argparse
 import json
@@ -21,7 +21,6 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT))
 from kokopelli.wm.video_check import read_frames  # noqa: E402
 
 SRC = Path("out/city_wm/bridge/controls/832x480")

@@ -20,5 +20,5 @@ These are the user's to make. Each default was chosen so overnight work could co
 - `visible` comes from the sim, not from what the world model drew, so the agent can be told about something the frames don't show. Fixing this belongs in `kokopelli/loop/`.
 - The appraisal prompt is made by cutting the loop's prompt at `DECIDE_MARK`. If that wording changes in `kokopelli/loop/prompt_builder.py`, it stops working. A proper hook for this would need to go through `kokopelli/loop/HANDOFF.md`.
 - The loop's log records a `wait` on a quiet tick the same as a real choice to wait. Only `feelings.jsonl` shows which was which, through `decided`.
-- Nothing shows that training on the homeostatic world moves the agent in a healthier direction here, because the loop has no variables to keep in range. `mind.check --replay` can only show whether replies stay valid and whether behaviour moved.
+- Nothing shows that training on the homeostatic world moves the agent in a healthier direction here, because the loop has no variables to keep in range. `kokopelli.loop.mind_check --replay` can only show whether replies stay valid and whether behaviour moved.
 - A resumed run repeats any tick after the last checkpoint and replaces what that tick felt, so `feelings.jsonl` is rewritten on that one occasion. Everything else only appends.

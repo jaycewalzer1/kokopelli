@@ -93,7 +93,7 @@ class ProtocolTest(unittest.TestCase):
 class GateScriptTest(unittest.TestCase):
     def test_fake_checklist_passes_and_says_fake_everywhere(self):
         with tempfile.TemporaryDirectory(prefix="wmloop_") as out:
-            result = run([sys.executable, "-W", "ignore", str(PACE / "wmloop_one_tick.py"), "--fake", "--checklist", "--out", out])
+            result = run([sys.executable, "-W", "ignore", "-m", "tools.pace.wmloop_one_tick", "--fake", "--checklist", "--out", out])
             self.assertEqual(result.returncode, 0, result.stdout[-2000:] + result.stderr[-1000:])
             self.assertIn("FAKE SERVER", result.stdout)
             self.assertIn("FAKE SERVER SUMMARY", result.stdout)
@@ -107,7 +107,7 @@ class GateScriptTest(unittest.TestCase):
 
     def test_one_tick_prints_seconds_per_stage(self):
         with tempfile.TemporaryDirectory(prefix="wmloop_") as out:
-            result = run([sys.executable, "-W", "ignore", str(PACE / "wmloop_one_tick.py"), "--fake", "--out", out])
+            result = run([sys.executable, "-W", "ignore", "-m", "tools.pace.wmloop_one_tick", "--fake", "--out", out])
             self.assertEqual(result.returncode, 0, result.stdout[-2000:])
             for stage in ("action apply", "stepping", "state capture", "render 15s:rgb", "render 30s:depth", "total"):
                 self.assertIn(stage, result.stdout)
@@ -118,18 +118,18 @@ class GateScriptTest(unittest.TestCase):
         port = probe.getsockname()[1]
         probe.close()
         with tempfile.TemporaryDirectory(prefix="wmloop_") as out:
-            result = run([sys.executable, "-W", "ignore", str(PACE / "wmloop_one_tick.py"), "--port", str(port), "--out", out], timeout=60)
+            result = run([sys.executable, "-W", "ignore", "-m", "tools.pace.wmloop_one_tick", "--port", str(port), "--out", out], timeout=60)
             self.assertEqual(result.returncode, 1)
             self.assertIn("nothing listening", result.stdout)
             self.assertNotIn("FAKE", result.stdout)
 
     def test_wait_script(self):
         with FakeUnrealCV() as server:
-            ready = run([sys.executable, "-W", "ignore", str(PACE / "wmloop_wait_server.py"), "--port", str(server.port), "--timeout", "5"])
+            ready = run([sys.executable, "-W", "ignore", "-m", "tools.pace.wmloop_wait_server", "--port", str(server.port), "--timeout", "5"])
             self.assertEqual(ready.returncode, 0, ready.stderr)
             self.assertIn("Ready", ready.stdout)
             port = server.port
-        down = run([sys.executable, "-W", "ignore", str(PACE / "wmloop_wait_server.py"), "--port", str(port), "--timeout", "0.2"])
+        down = run([sys.executable, "-W", "ignore", "-m", "tools.pace.wmloop_wait_server", "--port", str(port), "--timeout", "0.2"])
         self.assertEqual(down.returncode, 1)
 
 

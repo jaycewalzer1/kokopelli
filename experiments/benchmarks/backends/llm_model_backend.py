@@ -23,16 +23,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 from experiments.benchmarks.backends.base import Backend, GenResult, adapter_hash, check_not_fake
-from experiments.benchmarks.core import REPO
 
 
 class LLMModelBackend(Backend):
     name = "llm_model"
 
     def __init__(self):
-        import sys
-        if str(REPO) not in sys.path:
-            sys.path.insert(0, str(REPO))
         import mlx.core as mx
         from kokopelli.wm import llm_model
         from kokopelli.settings import LLM_MODEL_WEIGHTS
