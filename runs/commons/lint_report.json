@@ -1,0 +1,25 @@
+{
+ "static_hits": [],
+ "seeds": [
+  {
+   "seed": 0,
+   "lengths": {
+    "clones": 1197,
+    "described": 1199.6,
+    "lived": 1203.1
+   },
+   "hits": [],
+   "length_mismatch": []
+  },
+  {
+   "seed": 1,
+   "lengths": {
+    "clones": 1197,
+    "described": 1199,
+    "lived": 1201.3
+   },
+   "hits": [],
+   "length_mismatch": []
+  }
+ ]
+}

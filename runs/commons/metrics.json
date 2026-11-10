@@ -1,0 +1,370 @@
+{
+ "seeds": [
+  0,
+  1
+ ],
+ "table": {
+  "0": {
+   "clones": {
+    "survived": 0,
+    "collapsed_at": 6,
+    "final_SK": 2.36865906711153e-21,
+    "goal_mean": 0.3651509111095722,
+    "goal_min": 0.09166666666666666,
+    "edge_slope": -0.004199933738603778,
+    "edge_final": 0.05855363484387305,
+    "gini": 0.5268902646237257,
+    "sanction_precision": null,
+    "sanction_fish_after_arrival": 0.0,
+    "rules_proposed": 0,
+    "rules_passed": 0,
+    "rule_compliance": null,
+    "rules_with_number": 0,
+    "invalid_rate": 0.5952380952380952,
+    "defaulted": 226,
+    "sacrifice_rate": 0.15,
+    "mean_founder_harvest": 5.864285714285714,
+    "talk_parse_fail": 0,
+    "collapse_season": 6,
+    "collapsed_before_arrival": 1,
+    "ask_before_collapse": 30.0,
+    "invalid_before_collapse": 0.023809523809523808,
+    "success": 0
+   },
+   "described": {
+    "survived": 0,
+    "collapsed_at": 7,
+    "final_SK": 4.780374762568624e-21,
+    "goal_mean": 0.29805388943779276,
+    "goal_min": 0.05,
+    "edge_slope": -0.005264983203682269,
+    "edge_final": 0.07106219224208,
+    "gini": 0.4230582616976827,
+    "sanction_precision": null,
+    "sanction_fish_after_arrival": 0.0,
+    "rules_proposed": 0,
+    "rules_passed": 0,
+    "rule_compliance": null,
+    "rules_with_number": 0,
+    "invalid_rate": 0.669047619047619,
+    "defaulted": 265,
+    "sacrifice_rate": 0.1595238095238095,
+    "mean_founder_harvest": 4.742857142857143,
+    "talk_parse_fail": 46,
+    "collapse_season": 7,
+    "collapsed_before_arrival": 1,
+    "ask_before_collapse": 27.551020408163264,
+    "invalid_before_collapse": 0.08163265306122448,
+    "success": 0
+   },
+   "lived": {
+    "survived": 0,
+    "collapsed_at": 6,
+    "final_SK": 6.748340667554411e-24,
+    "goal_mean": 0.3677421551096323,
+    "goal_min": 0.08333333333333333,
+    "edge_slope": -0.0042136148527957855,
+    "edge_final": 0.05077267280232939,
+    "gini": 0.48572867219418997,
+    "sanction_precision": null,
+    "sanction_fish_after_arrival": 0.0,
+    "rules_proposed": 0,
+    "rules_passed": 0,
+    "rule_compliance": null,
+    "rules_with_number": 0,
+    "invalid_rate": 0.7,
+    "defaulted": 266,
+    "sacrifice_rate": 0.09523809523809523,
+    "mean_founder_harvest": 5.3238095238095235,
+    "talk_parse_fail": 88,
+    "collapse_season": 6,
+    "collapsed_before_arrival": 1,
+    "ask_before_collapse": 30.0,
+    "invalid_before_collapse": 0.0,
+    "success": 0
+   }
+  },
+  "1": {
+   "clones": {
+    "survived": 0,
+    "collapsed_at": 6,
+    "final_SK": 1.2670699558055683e-22,
+    "goal_mean": 0.20921621060480677,
+    "goal_min": 0.075,
+    "edge_slope": -0.005158603427493889,
+    "edge_final": 0.06606119318265462,
+    "gini": 0.7284537630788751,
+    "sanction_precision": null,
+    "sanction_fish_after_arrival": 0.0,
+    "rules_proposed": 0,
+    "rules_passed": 0,
+    "rule_compliance": null,
+    "rules_with_number": 0,
+    "invalid_rate": 0.6761904761904762,
+    "defaulted": 268,
+    "sacrifice_rate": 0.12380952380952381,
+    "mean_founder_harvest": 5.35,
+    "talk_parse_fail": 0,
+    "collapse_season": 6,
+    "collapsed_before_arrival": 1,
+    "ask_before_collapse": 30.0,
+    "invalid_before_collapse": 0.047619047619047616,
+    "success": 0
+   },
+   "described": {
+    "survived": 0,
+    "collapsed_at": 7,
+    "final_SK": 4.396557220585602e-25,
+    "goal_mean": 0.36407198992486534,
+    "goal_min": 0.06666666666666667,
+    "edge_slope": -0.003708781995855784,
+    "edge_final": 0.04244665073954446,
+    "gini": 0.5787456807395565,
+    "sanction_precision": null,
+    "sanction_fish_after_arrival": 0.0,
+    "rules_proposed": 1,
+    "rules_passed": 0,
+    "rule_compliance": null,
+    "rules_with_number": 0,
+    "invalid_rate": 0.7595238095238095,
+    "defaulted": 304,
+    "sacrifice_rate": 0.11428571428571428,
+    "mean_founder_harvest": 4.892857142857143,
+    "talk_parse_fail": 2,
+    "collapse_season": 7,
+    "collapsed_before_arrival": 1,
+    "ask_before_collapse": 25.714285714285715,
+    "invalid_before_collapse": 0.16326530612244897,
+    "success": 0
+   },
+   "lived": {
+    "survived": 0,
+    "collapsed_at": 6,
+    "final_SK": 1.5095168171292633e-20,
+    "goal_mean": 0.3626987635670012,
+    "goal_min": 0.17559775642364744,
+    "edge_slope": -0.004902353285681065,
+    "edge_final": 0.056830569124182766,
+    "gini": 0.4603654524679953,
+    "sanction_precision": null,
+    "sanction_fish_after_arrival": 0.0,
+    "rules_proposed": 1,
+    "rules_passed": 0,
+    "rule_compliance": null,
+    "rules_with_number": 0,
+    "invalid_rate": 0.6785714285714286,
+    "defaulted": 255,
+    "sacrifice_rate": 0.16904761904761906,
+    "mean_founder_harvest": 5.283333333333333,
+    "talk_parse_fail": 18,
+    "collapse_season": 6,
+    "collapsed_before_arrival": 1,
+    "ask_before_collapse": 29.285714285714285,
+    "invalid_before_collapse": 0.09523809523809523,
+    "success": 0
+   }
+  }
+ },
+ "means": {
+  "clones": {
+   "survived": 0,
+   "final_SK": 1.2476830313460433e-21,
+   "goal_mean": 0.2871835608571895,
+   "goal_min": 0.08333333333333333,
+   "edge_slope": -0.0046792685830488335,
+   "edge_final": 0.06230741401326383,
+   "success": 0,
+   "gini": 0.6276720138513003,
+   "sanction_precision": null,
+   "sanction_fish_after_arrival": 0.0,
+   "rules_proposed": 0,
+   "rules_passed": 0,
+   "rule_compliance": null,
+   "rules_with_number": 0,
+   "invalid_rate": 0.6357142857142857,
+   "defaulted": 247,
+   "sacrifice_rate": 0.13690476190476192,
+   "mean_founder_harvest": 5.607142857142857
+  },
+  "described": {
+   "survived": 0,
+   "final_SK": 2.390407209145341e-21,
+   "goal_mean": 0.33106293968132905,
+   "goal_min": 0.058333333333333334,
+   "edge_slope": -0.004486882599769026,
+   "edge_final": 0.05675442149081224,
+   "success": 0,
+   "gini": 0.5009019712186196,
+   "sanction_precision": null,
+   "sanction_fish_after_arrival": 0.0,
+   "rules_proposed": 0.5,
+   "rules_passed": 0,
+   "rule_compliance": null,
+   "rules_with_number": 0,
+   "invalid_rate": 0.7142857142857142,
+   "defaulted": 284.5,
+   "sacrifice_rate": 0.1369047619047619,
+   "mean_founder_harvest": 4.817857142857143
+  },
+  "lived": {
+   "survived": 0,
+   "final_SK": 7.550958255980094e-21,
+   "goal_mean": 0.36522045933831676,
+   "goal_min": 0.12946554487849038,
+   "edge_slope": -0.004557984069238425,
+   "edge_final": 0.05380162096325608,
+   "success": 0,
+   "gini": 0.4730470623310926,
+   "sanction_precision": null,
+   "sanction_fish_after_arrival": 0.0,
+   "rules_proposed": 0.5,
+   "rules_passed": 0,
+   "rule_compliance": null,
+   "rules_with_number": 0,
+   "invalid_rate": 0.6892857142857143,
+   "defaulted": 260.5,
+   "sacrifice_rate": 0.13214285714285715,
+   "mean_founder_harvest": 5.303571428571429
+  }
+ },
+ "lived_vs_described": {
+  "diffs": {
+   "survived": [
+    0,
+    0.0,
+    0.0
+   ],
+   "final_SK": [
+    5.160551046834752e-21,
+    -4.7736264219010696e-21,
+    1.5094728515570574e-20
+   ],
+   "goal_mean": [
+    0.03415751965698771,
+    -0.0013732263578641324,
+    0.06968826567183956
+   ],
+   "goal_min": [
+    0.07113221154515706,
+    0.033333333333333326,
+    0.10893108975698078
+   ],
+   "edge_slope": [
+    -7.110146946939853e-05,
+    -0.0011935712898252806,
+    0.0010513683508864835
+   ],
+   "success": [
+    0,
+    0.0,
+    0.0
+   ]
+  },
+  "beat": false,
+  "supported": false,
+  "word": "not supported"
+ },
+ "described_vs_clones": {
+  "diffs": {
+   "survived": [
+    0,
+    0.0,
+    0.0
+   ],
+   "final_SK": [
+    1.1427241777992978e-21,
+    -1.2626733985849826e-22,
+    2.411715695457094e-21
+   ],
+   "goal_mean": [
+    0.04387937882413956,
+    -0.06709702167177944,
+    0.15485577932005856
+   ],
+   "goal_min": [
+    -0.024999999999999994,
+    -0.04166666666666666,
+    -0.008333333333333331
+   ],
+   "edge_slope": [
+    0.00019238598327980696,
+    -0.0010650494650784907,
+    0.0014498214316381046
+   ],
+   "success": [
+    0,
+    0.0,
+    0.0
+   ]
+  },
+  "beat": false,
+  "supported": false,
+  "word": "not supported"
+ },
+ "lived_vs_clones": {
+  "diffs": {
+   "survived": [
+    0,
+    0.0,
+    0.0
+   ],
+   "final_SK": [
+    6.30327522463405e-21,
+    -2.3619107264439757e-21,
+    1.4968461175712076e-20
+   ],
+   "goal_mean": [
+    0.07803689848112727,
+    0.002591244000060111,
+    0.15348255296219443
+   ],
+   "goal_min": [
+    0.04613221154515706,
+    -0.008333333333333331,
+    0.10059775642364745
+   ],
+   "edge_slope": [
+    0.00012128451381040843,
+    -1.3681114192007175e-05,
+    0.00025625014181282404
+   ],
+   "success": [
+    0,
+    0.0,
+    0.0
+   ]
+  },
+  "beat": false,
+  "supported": false,
+  "word": "not supported"
+ },
+ "spend": {
+  "usd": 0.0,
+  "calls": 15467,
+  "input_tokens": 19982444,
+  "output_tokens": 848791,
+  "seconds": 44599.875989822554
+ },
+ "model": "/Users/jaycewalzer/Desktop/kokopelli/models/Qwen3-VL-8B-Instruct-4bit",
+ "config_sha256": "6b62947d7f09f5061b6c4d4b4e9701d5164f74c271a58b39f7d76ef9d578d255",
+ "exploratory_means": {
+  "clones": {
+   "collapse_season": 6,
+   "collapsed_before_arrival": 1,
+   "ask_before_collapse": 30.0,
+   "invalid_before_collapse": 0.03571428571428571
+  },
+  "described": {
+   "collapse_season": 7,
+   "collapsed_before_arrival": 1,
+   "ask_before_collapse": 26.632653061224488,
+   "invalid_before_collapse": 0.12244897959183673
+  },
+  "lived": {
+   "collapse_season": 6,
+   "collapsed_before_arrival": 1,
+   "ask_before_collapse": 29.642857142857142,
+   "invalid_before_collapse": 0.047619047619047616
+  }
+ }
+}

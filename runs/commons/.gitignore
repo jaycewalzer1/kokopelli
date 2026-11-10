@@ -1,0 +1,4 @@
+# Raw per-game logs stay on disk; summaries and the report are committed.
+*/
+!plots/
+__pycache__/
