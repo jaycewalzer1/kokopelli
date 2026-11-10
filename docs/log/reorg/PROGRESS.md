@@ -49,6 +49,10 @@ ue_manager_reports_humanoid, ue_manager_update_objects_sees_late_spawns,
 vehicle_batch_state_via_manager, vehicle_throttle_brake, vehicle_u_turn, weather_roundtrip.
 Compare later phases against this list of 26.
 
+After the phase 0 commits, `make test-all` on the branch: tests 600 (skipped 10, expected failures 2),
+runtime 100, simworld 197, ops 35, benchmarks 198 (skipped 1), commons 62 passed; peak 1.2 of 2.0 GB,
+422 s. Unchanged.
+
 ### Lint baseline
 
 - `uvx ruff@0.11.4 check .` is clean. 0.11.4 is the version `.pre-commit-config.yaml` pins. Newer
