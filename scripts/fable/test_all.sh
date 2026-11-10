@@ -8,7 +8,7 @@
 cd "$(dirname "$0")/../.." || exit 2
 # The tests suite peaks near 18 GB, and five copies at once crashed the Mac on 2026-11-09. So the whole run takes one
 # memory claim and waits its turn: python3 ops/memguard.py status shows who holds it.
-[ -n "$MEMGUARD" ] || exec python3 ops/memguard.py run --name test_all --gb "${TEST_GB:-20}" -- bash "$0" "$@"
+[ -n "$MEMGUARD" ] || exec python3 ops/memguard.py run --name test_all --gb "${TEST_GB:-2}" -- bash "$0" "$@"
 want=${*:-tests runtime simworld ops benchmarks}
 [ "${MAC:-0}" = 1 ] && case " $want " in *" mac_server "*) ;; *) want="$want mac_server" ;; esac
 MAC_KNOWN_FAILURES=29

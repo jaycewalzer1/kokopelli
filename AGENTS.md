@@ -52,4 +52,4 @@ Five full test runs at once (18 GB each) ran the Mac out of memory and swap on 2
 - Exit 75 from the guard means memory ran short. Wait and run it again later; don't retry in a loop and don't start a second copy.
 - Don't put a heavy command in the background and then start another. At most two guarded commands run at once.
 - `python3 ops/memguard.py status` prints memory, swap and who holds a claim. The overnight watchdog is `ops/memguard.py watch`.
-- Measured peaks: `tests` 18.3 GB, `runtime` 0.7, `simworld` 0.3, `ops` 0.1, `benchmarks` 0.7.
+- Measured peaks: `tests` 1.3 GB (18.3 before P1-M; the real-model tests behind `RUN_MODEL_TESTS=1` peak at 17.3), `runtime` 0.7, `simworld` 0.3, `ops` 0.1, `benchmarks` 0.7.
