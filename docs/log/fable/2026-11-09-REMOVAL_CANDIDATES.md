@@ -22,7 +22,7 @@ Evidence for the owner before any code is deleted (P2-F2). Nothing in this table
 
 | File | Path hits / name hits | Why kept |
 |---|---|---|
-| `docs/NEXT_proposed.md` | 2 / 2 | P1-A's proposed replacement for `out/ops/NEXT.md`; waiting on the owner. |
+| `docs/log/fable/2026-11-09-NEXT_proposed.md` | 2 / 2 | P1-A's proposed replacement for `out/ops/NEXT.md`; waiting on the owner. |
 | `benchmarks/proposals/homeostatic_arm.md` | 0 / 1 | An unadopted proposal the owner still has to decide on (says so in its first line). |
 | `benchmarks/noticing/PREREG.md` | 0 / 16 | Pre-registration; never delete. |
 | `wm_multicontrol/BRIEF.md` | 4 / 6 | The task is done (results in `REPORT.md`), but `core/world_multicontrol_base.py` and `core/world_transfer_multi.py` cite it; P2-F1 can't edit `core/`. Candidate once those comments point at `REPORT.md`/`NOTES.md`. |

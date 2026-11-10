@@ -1,8 +1,8 @@
 # Cosmos3-Nano-Sim-Transfer on the Mac (MLX)
 
-`world_transfer.py` runs `models/Cosmos3-Nano-Sim-Transfer` (checkpoint
+`kokopelli/wm/world_transfer.py` runs `models/Cosmos3-Nano-Sim-Transfer` (checkpoint
 `causal_8b_sf_dmd_transfer_480p_direct_resize_caption_mix_from_stage2_iter2250@iter_000001500`) on Apple silicon with MLX.
-It's a port of NVIDIA's own causal transfer inference, not of the base-model control hack in `world_filter.py`.
+It's a port of NVIDIA's own causal transfer inference, not of the base-model control hack in `kokopelli/wm/world_filter.py`.
 
 ## What the reference does
 
@@ -47,7 +47,7 @@ distilled blocks for the SDE step.
 | 4 | bf16 everywhere. RoPE is applied in fp32 and cast back. The sampler state is fp32, as in the reference | n/a | Matches the reference's BF16 runtime within normal kernel differences |
 | 5 | Text K/V come from the understanding half, run once one layer at a time; then only the generation half (~14 GB) stays in memory | 16B parameters at bf16 (32 GB) don't fit in 36 GB | None: the text half is never used again after frame 0 |
 | 6 | Attention is dense MLX SDPA over [text, selected history, current]. The reference uses varlen/flex kernels and a ring buffer | Kernels | Numerically equivalent attention pattern |
-| 8 | **Known bug (fixed in streaming, open in batch):** the port's VAE decoder turns the first latent into 4 frames instead of 1 (measured by the `world_stream.py` smoke test, 2026-11-08). Batch runs keep the first N frames, so their output is about 0.1 s (3 frames) behind the control, the first 3 frames are near-duplicates, and the last 3 are lost. The streaming worker (`world_stream.py`) is fixed as of 2026-11-08: it drops the first 3 frames of its first decode, checked by `tests/test_world_stream.py` | Port decoder (`decode_vae.py`) has no first-chunk trim for multi-latent input | Still open for `world_transfer.decode_chunked` (batch runs, including the bridge video): drop the first 3 frames of the first chunk |
+| 8 | **Known bug (fixed in streaming, open in batch):** the port's VAE decoder turns the first latent into 4 frames instead of 1 (measured by the `kokopelli/wm/world_stream.py` smoke test, 2026-11-08). Batch runs keep the first N frames, so their output is about 0.1 s (3 frames) behind the control, the first 3 frames are near-duplicates, and the last 3 are lost. The streaming worker (`world_stream.py`) is fixed as of 2026-11-08: it drops the first 3 frames of its first decode, checked by `tests/test_world_stream.py` | Port decoder (`decode_vae.py`) has no first-chunk trim for multi-latent input | Still open for `world_transfer.decode_chunked` (batch runs, including the bridge video): drop the first 3 frames of the first chunk |
 | 7 | Only one control per call | Same as the reference ("Causal transfer AR inference requires exactly one control hint") | None |
 
 ## Validation
@@ -75,11 +75,11 @@ scripted in `out/sim_transfer/bench.py` but was not run.
 ## Using it
 
 ```python
-from world_transfer import transfer_video
+from kokopelli.wm.world_transfer import transfer_video
 transfer_video(prompt, {"depth": "out/city_wm/bridge/controls/832x480/depth_inverse.mp4"},
                "out/sim_transfer/bridge_depth_832x480.mp4", size="832x480", frames=150, seed=2025)
 ```
 
-It runs in `~/cosmos3/cosmos3-mlx/.venv` under `ram_share.py hold --name sim_transfer --gb 20` and writes `<output>.json`
+It runs in `~/cosmos3/cosmos3-mlx/.venv` under `kokopelli/ops/ram_share.py hold --name sim_transfer --gb 20` and writes `<output>.json`
 with the model name, prompt, the prompt as formatted, controls, size, frames, fps, seed, steps, seconds and peak GB.
 `raw_prompt=True` skips the metadata injection described above.

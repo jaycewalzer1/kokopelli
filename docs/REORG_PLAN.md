@@ -1,5 +1,10 @@
 # Reorganization plan
 
+> **Update, 2026-11-10 evening.** Phases 0, 1, 2, 4, 5 and 6 are done (a fast pass did 1 to 6 except 3 as one scripted
+> move, `tools/reorg/migrate.py`). The paths below describe the repo *before* that move, and the fable logs this plan
+> cites are now in `docs/log/fable/` with the date in the name. What the layout is now and what is left:
+> `docs/log/reorg/PROGRESS.md`.
+
 Written 2026-11-10, updated the same day with the owner's decisions. No phase is started; the one precondition (merging the open branches) is done. It continues from the cleanup pass logged in `docs/fable_log/`.
 
 ## Goal

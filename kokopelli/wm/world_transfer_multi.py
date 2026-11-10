@@ -1,4 +1,4 @@
-"""Weighted multi-control on Cosmos3-Nano-Sim-Transfer (MLX), Variant A of experiments/wm_multicontrol/BRIEF.md.
+"""Weighted multi-control on Cosmos3-Nano-Sim-Transfer (MLX), Variant A of docs/log/wm_multicontrol/2026-11-06-BRIEF.md.
 
 Sim-Transfer was trained with exactly one control, so this is an untrained combination. It borrows NVIDIA's base-model
 trick (cosmos-framework `multi_control_two_way_attention`): each control i is its own branch, the target's attention runs

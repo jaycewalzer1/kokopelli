@@ -2,7 +2,7 @@
 
 Result on 2026-11-10: **inconclusive at 150 frames.**
 
-Three paints with Cosmos3-Nano-Sim-Transfer (8-bit), Variant A, four controls at 0.25, 832x480, 150 frames, same caption and seed (2025), scored per frame with `core/video_check.py` (mosaic threshold 1.0, higher is worse):
+Three paints with Cosmos3-Nano-Sim-Transfer (8-bit), Variant A, four controls at 0.25, 832x480, 150 frames, same caption and seed (2025), scored per frame with `kokopelli/wm/video_check.py` (mosaic threshold 1.0, higher is worse):
 
 | Set | Controls | Mosaic median | Mosaic max | Crossed 1.0 | Paint time |
 |---|---|---|---|---|---|
@@ -13,7 +13,7 @@ Three paints with Cosmos3-Nano-Sim-Transfer (8-bit), Variant A, four controls at
 What this shows: stillness alone does not break the picture inside 150 frames. B's maximum is higher than A's and C's, but it stays under the threshold.
 What it doesn't show: whether a still camera breaks later. Earlier still-camera failures appeared near frame 224, just past the 51-latent history window, and 150 frames is 38 latents. The next test is the same three sets at 300 frames, about an hour of GPU.
 
-Curves and per-frame scores: `out/wm_multicontrol/fable_still_C/score/` (`stillness.json`, `.csv`, `.svg`). Rerun: `python3 ops/memguard.py run --name score --gb 2 -- .venv/bin/python scripts/fable/stillness_score.py`.
+Curves and per-frame scores: `out/wm_multicontrol/fable_still_C/score/` (`stillness.json`, `.csv`, `.svg`). Rerun: `python3 kokopelli/ops/memguard.py run --name score --gb 2 -- .venv/bin/python tools/fable/stillness_score.py`.
 
 ## 300 frames, 2026-11-10 (partial: stopped when the owner took the GPU back)
 
@@ -28,4 +28,4 @@ Only the moving clip was painted. `fable_still_A300` (bridge controls forward th
 
 It never comes near the 1.0 threshold, including past frame 204 where the 51-latent history window fills. So **elapsed time alone does not break a moving camera** on recorded controls. That removes one of the two explanations, but it does not prove stillness is the cause: the two still clips (`B300`, `C300`) were not painted. `B300` was stopped 29 minutes in and left no file.
 
-To finish: `scripts/fable/stillness300.sh run B300 C300` (about 40 minutes each, 24 GB), then score each with `core.video_check.score_video`. Per-frame scores for A300: `out/wm_multicontrol/fable_still_A300/mosaic_per_frame.json`.
+To finish: `tools/fable/stillness300.sh run B300 C300` (about 40 minutes each, 24 GB), then score each with `kokopelli.wm.video_check.score_video`. Per-frame scores for A300: `out/wm_multicontrol/fable_still_A300/mosaic_per_frame.json`.

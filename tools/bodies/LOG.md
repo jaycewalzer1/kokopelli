@@ -1,7 +1,7 @@
 - 2026-11-07 (C) `tools/bodies/client.py`: SetBody/GetBody helper (dress, get_body, tiers). It parses ok/error/fallback and near/far/fallback tiers, and never raises.
 - 2026-11-07 (C) npcs.json `body` fields: ana=resident_a, tomas=resident_b, wen=resident_c, priya=resident_d, kai=resident_a. The resident ids are assumed, and no child body is planned.
 - 2026-11-07 (C) live.py: `--body` (default mara), SetBody after spawn, `body`/`body_warning` events, per-step `tiers` rows, a warning on fallback, and run.json with the model and bodies.
-- 2026-11-07 (C) tests/test_city_bodies.py: 28 tests, 2 skipped until mac_server/Config/Bodies.json exists. HANDOFF.md written for the lunch, adapter and live_wm owners.
+- 2026-11-07 (C) tests/test_city_bodies.py: 28 tests, 2 skipped until mac_server/Config/Bodies.json exists. HANDOFF.md (now `docs/log/bodies/2026-11-07-HANDOFF.md`) written for the lunch, adapter and live_wm owners.
 - 2026-11-07 A: scratch project out/bodies/scratch_project (copy of mac_server + MetaHumanCharacter/Python/MHLocal helper plugin), editor build OK. MetaHuman Optional content (clothes, hair grooms) is NOT installed with the engine.
 - 2026-11-07 (C) Changed body ids to the person ids (ana, tomas, wen, priya, kai) in npcs.json, client.py PLANNED_BODIES, the tests and HANDOFF, and set PLAN.md default_resident to ana. This replaces the resident_a..d entry above.
 - 2026-11-07 15:48 (B) PORT CLASH: agent A's scratch editor (`tools/bodies/metahuman/run_editor_gui.sh`, pid 30172) passes `-cvport=9004`, so its SimCV plugin listens on 9004 next to B's test game; clients randomly hit A's editor and time out. A: please launch with `-nosimcv` (SimCV skips the server then) or a port nobody uses; B's game keeps 9004.

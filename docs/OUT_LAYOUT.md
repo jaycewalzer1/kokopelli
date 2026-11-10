@@ -1,11 +1,11 @@
 # out/: layout and retention rule
 
-`out/` holds every run's output. It's ignored by git, so this file and `ops/out_report.py` are the only record of how it's organised. On 2026-11-09 it held 45.0 GB in 39,492 files. The disk was 82% full (734 of 926 GiB used).
+`out/` holds every run's output. It's ignored by git, so this file and `kokopelli/ops/out_report.py` are the only record of how it's organised. On 2026-11-09 it held 45.0 GB in 39,492 files. The disk was 82% full (734 of 926 GiB used).
 
 See what's there and what the rule would remove:
 
-    .venv/bin/python ops/out_report.py              # areas, runs over 50 MB, deletion candidates (under a second)
-    .venv/bin/python ops/out_report.py --min-mb 0   # every run
+    .venv/bin/python kokopelli/ops/out_report.py              # areas, runs over 50 MB, deletion candidates (under a second)
+    .venv/bin/python kokopelli/ops/out_report.py --min-mb 0   # every run
 
 The report only reads. It deletes nothing. Deleting is always the owner's call, made by hand from the candidate list.
 
@@ -52,7 +52,7 @@ Each run (`out/<area>/<entry>`) gets one class. The first match wins:
 
 | Class | How it's recognised | Keep for |
 |---|---|---|
-| keep: cited | `out/<area>/<entry>` appears in a git-tracked text file (Markdown, Python, shell, JSON; `simworld/` and `wm_multicontrol/upstream/` are skipped) or in a Markdown file elsewhere in `out/`. A run's own notes don't count. | forever |
+| keep: cited | `out/<area>/<entry>` appears in a git-tracked text file (Markdown, Python, shell, JSON; `simworld/` and `vendor/wm_multicontrol_upstream/` are skipped) or in a Markdown file elsewhere in `out/`. A run's own notes don't count. | forever |
 | keep: golden | `golden` in the name | forever |
 | smoke | `smoke`, `scratch`, `tmp`, `debug`, `dry run` or `memtest` in the name | 7 days |
 | intermediate | holds `.npy` files or a `frames*` / `*_frames` directory | 30 days |
@@ -66,18 +66,18 @@ Why these choices:
 
 - **Report-cited means keep.** A result a report depends on is the evidence for a claim. Deleting it makes the claim impossible to check. The scan is broad (any tracked text file) because a false keep only costs disk, while a false delete loses evidence.
 - **"test" and "probe" don't mark smoke runs.** `filter_test/test_clip_garden` is a 1.6 G input clip and `homeostatic/probe-*` are learning-rate sweeps. Both are real work. The smoke words are kept narrow, and anything doubtful falls through to `intermediate` (30 days) or `unclassified` (keep).
-- **Intermediate frames get 30 days.** `.npy` controls and frame dirs can be rebuilt from the sim clip and `city/wm/controls.py`, and they're the bulk of most runs (`city_wm/demo_flyover` 1.0 of 1.7 G). 30 days covers a phase of work plus its review.
+- **Intermediate frames get 30 days.** `.npy` controls and frame dirs can be rebuilt from the sim clip and `kokopelli/wm/controls/controls.py`, and they're the bulk of most runs (`city_wm/demo_flyover` 1.0 of 1.7 G). 30 days covers a phase of work plus its review.
 - **Unclassified means keep.** Most of the 45 G is old-style runs with no sidecar. Guessing would delete things nobody checked.
 
 ### Where the rule stands today (2026-11-09)
 
 - Candidates: 1 entry, 0 KB (`wm_multicontrol/memtest`, an empty dir). Almost everything in `out/` is under 7 days old, so the rule frees nothing yet.
 - Due to become candidates (all intermediate, about 3 days old, so they cross 30 days around 2026-12-06 unless cited first): `filter_test/test_clip_garden` 1.6 G, `filter_test/test_clip_still` 1.6 G, `city_wm/demo_flyover` 1.7 G, `city_realism/before` 1.5 G, `city_wm/varied_aerial` 0.2 G, `world_stream/rope_test` 0.1 G, and 12 `city_agents/2026*` runs totalling 0.3 G. That's about 7 G.
-- **The rule can't reach most of the bulk.** `bodies/demo` (24.4 G) is cited as a whole by `.claude/skills/closed-loop-run/SKILL.md`, so it counts as one kept run. Inside it are `runs/` (20.2 G) and `failed_tries/` (3.9 G). `bodies/scratch_project` (4.0 G) is cited by `city/bodies/LOG.md`, and `bodies/clothing` (2.5 G) is unclassified. These need an owner decision (see below). They're the space that matters.
+- **The rule can't reach most of the bulk.** `bodies/demo` (24.4 G) is cited as a whole by `.claude/skills/closed-loop-run/SKILL.md`, so it counts as one kept run. Inside it are `runs/` (20.2 G) and `failed_tries/` (3.9 G). `bodies/scratch_project` (4.0 G) is cited by `tools/bodies/LOG.md`, and `bodies/clothing` (2.5 G) is unclassified. These need an owner decision (see below). They're the space that matters.
 
 ## Owner decisions
 
 1. **`bodies/demo/failed_tries` (3.9 G) and `bodies/scratch_project` (4.0 G).** Both names say "not the result". Delete them, or back them up and then delete? The rule keeps both because they're cited or sit inside a cited run.
-2. **Treat `bodies/demo/runs/<id>` as runs.** The rule works two levels down. One extra level for `bodies/demo/runs` would let old demo runs age out on their own. This changes `ops/out_report.py`, a small follow-up.
+2. **Treat `bodies/demo/runs/<id>` as runs.** The rule works two levels down. One extra level for `bodies/demo/runs` would let old demo runs age out on their own. This changes `kokopelli/ops/out_report.py`, a small follow-up.
 3. **Old panel copies** (`panel-radial-backup`, `panel-rulers-only`, `moodboard`, under 1 M together). Keep or drop? They cost nothing in disk but add clutter.
-4. **Who writes `run.json`?** The layout only helps if the queue (`ops/gpu.py`) or each runner writes the sidecar. A phase 3 item (full run manifests) already covers this. That item should write the file described above.
+4. **Who writes `run.json`?** The layout only helps if the queue (`kokopelli/ops/gpu.py`) or each runner writes the sidecar. A phase 3 item (full run manifests) already covers this. That item should write the file described above.

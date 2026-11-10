@@ -1,4 +1,4 @@
-"""Weighted multi-control transfer on the bidirectional base Cosmos3-Nano, in MLX (Variant B, experiments/wm_multicontrol/BRIEF.md).
+"""Weighted multi-control transfer on the bidirectional base Cosmos3-Nano, in MLX (Variant B, docs/log/wm_multicontrol/2026-11-06-BRIEF.md).
 
 This is NVIDIA's supported multi-control path (cosmos-framework `inference/transfer.py` + `multi_control_two_way_attention`):
 

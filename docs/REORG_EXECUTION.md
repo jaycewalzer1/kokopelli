@@ -6,6 +6,10 @@ Written 2026-11-10 for a Claude Code session that has none of the earlier conver
 > (`tools/reorg/migrate.py`). The paths in this brief describe the repo *before* that move. Read
 > `docs/log/reorg/PROGRESS.md` first: it says what the layout is now and what is left (phases 3, 7, 8, 9 and a list of
 > leftovers). Sections 3 to 5 (rules, method, traps) still apply.
+> Phase 9 then moved `docs/fable_log/`, `docs/FABLE_BRIEF.md`, `docs/FABLE_PLAN.md` and the finished briefs and handoffs
+> into `docs/log/<area>/` with the date in the name (for example `docs/log/fable/2026-11-09-P2-D.md`). Paths below that
+> name them are the old ones. `scripts/fable/test_all.sh` is now `tools/fable/test_all.sh`, `ops/memguard.py` is
+> `kokopelli/ops/memguard.py` (the root `ops/` stand-ins still work).
 
 To start the session, the owner pastes:
 

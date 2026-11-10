@@ -35,7 +35,7 @@ APPRAISE = ("Before doing anything, how do you feel about what just happened, an
             '{"feeling": "<one word>", "intensity": <0 to 1>, "why": "<one sentence about what you saw>"}')
 BIG_NOTE = "This moment matters. Think about what your choice could lead to.\n"
 FAILED_MARK = "It didn't work."  # kokopelli/loop/prompt_builder.outcome_text writes this after a failed action
-FEEL_EVENTS_ENV = "KOKO_FEEL_EVENTS"  # "1" turns on known_event() below; off by default (P5, docs/fable_log/P5.md)
+FEEL_EVENTS_ENV = "KOKO_FEEL_EVENTS"  # "1" turns on known_event() below; off by default (P5, docs/log/fable/2026-11-10-P5.md)
 CARRY_ON = "move_to"  # In the sim, wait cancels a walk in progress, so a tick with no decision has to keep walking.
 
 

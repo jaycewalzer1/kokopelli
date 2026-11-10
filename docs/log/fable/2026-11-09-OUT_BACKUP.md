@@ -19,7 +19,7 @@ Live state that's always mid-write and means nothing once restored:
     ops/panel_8765.log
     overnight/latest    (a symlink; rsync -a copies it as a link, which is fine, but don't follow it)
 
-Optional, to save about 7 G: smoke and intermediate runs past their retention limit (`ops/out_report.py` lists them). I'd back these up anyway. They're cheap at this size, and backing up before any deletion is the point.
+Optional, to save about 7 G: smoke and intermediate runs past their retention limit (`kokopelli/ops/out_report.py` lists them). I'd back these up anyway. They're cheap at this size, and backing up before any deletion is the point.
 
 `life.db` and `demo.db` are SQLite. Copy them while the panel is stopped, or copy them with `sqlite3 out/life.db ".backup '/Volumes/X/life.db'"`. A plain file copy while the panel writes can give a torn database.
 
@@ -29,7 +29,7 @@ Each night `rsync --link-dest` makes a dated folder that looks like a full copy.
 
     DEST=/Volumes/KokoBackup/out
     TODAY=$(date +%Y-%m-%d)
-    rsync -a --delete --exclude-from=ops/out_backup_exclude.txt \
+    rsync -a --delete --exclude-from=kokopelli/ops/out_backup_exclude.txt \
           --link-dest="$DEST/latest" out/ "$DEST/$TODAY/"
     ln -sfn "$TODAY" "$DEST/latest"
 
@@ -43,7 +43,7 @@ Each night `rsync --link-dest` makes a dated folder that looks like a full copy.
 
 ## Option B: cloud with rclone (Backblaze B2 or similar)
 
-    rclone sync out/ b2:kokopelli-out --exclude-from ops/out_backup_exclude.txt --fast-list --transfers 8
+    rclone sync out/ b2:kokopelli-out --exclude-from kokopelli/ops/out_backup_exclude.txt --fast-list --transfers 8
     # with versioning turned on in the bucket, deleted or overwritten files stay recoverable for N days
 
 - Needs `rclone` (not installed; `brew install rclone`), a B2 account and a key. That's an outside service, so it's the owner's decision.
@@ -67,4 +67,4 @@ Use A every night and B weekly. That gives three copies, on two kinds of media, 
 1. A, B or C (I'd pick A now and add B later).
 2. Buy an SSD (A), or create a B2 account and key (B).
 3. When it runs: nightly after the queue is idle, or by hand.
-4. Then a small follow-up package adds `ops/out_backup_exclude.txt` (the list above) and a script. Neither exists yet, because this package only writes documents and the read-only report.
+4. Then a small follow-up package adds `kokopelli/ops/out_backup_exclude.txt` (the list above) and a script. Neither exists yet, because this package only writes documents and the read-only report.

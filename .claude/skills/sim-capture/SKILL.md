@@ -18,7 +18,7 @@ Distilled from `experiments/filter_test/scripts/capture.py` and `kokopelli/wm/co
   ```
   MINIMIZED=1 CVPORT=9001 mac_server/scripts/run.sh packaged > /tmp/capture_server_9001.log 2>&1 &
   # wait until 9001 listens, then ~20 s for the map to stream in
-  python3 ram_share.py claim --name capture_server_9001 --gb 10 --pid "$(pgrep -f 'SimWorld.*-cvport=9001' | head -1)"
+  python3 kokopelli/ops/ram_share.py claim --name capture_server_9001 --gb 10 --pid "$(pgrep -f 'SimWorld.*-cvport=9001' | head -1)"
   simworld/.venv/bin/python -I tools/city_build/build_city.py --port 9001
   ```
   Stop only a server you started: `pkill -f "SimWorld.*-cvport=9001"` (a server, not a model process).

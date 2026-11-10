@@ -1,6 +1,6 @@
 # Checks only: nothing here reformats code. Existing findings are baselined
 # (ruff in pyproject.toml, biome in biome.json, shellcheck below), so new code
-# meets the rules without a repo-wide rewrite. Counts: docs/fable_log/P2-D.md.
+# meets the rules without a repo-wide rewrite. Counts: docs/log/fable/2026-11-09-P2-D.md.
 #
 #   uvx pre-commit install              # once, runs on every commit
 #   uvx pre-commit run --all-files      # whole repo; wrap in kokopelli/ops/memguard.py run

@@ -43,7 +43,7 @@ class MultiWorldStream:
     def __init__(self, out_dir=None, quantize=None, fake=False, check=None, shm=None):
         self.dir = Path(out_dir or tempfile.mkdtemp(prefix="world_stream_multi_"))
         # KOKO_WM_SHM=1 (or shm=True): hand frames to and from the worker in shared memory instead of .npy files. Off by
-        # default; docs/fable_log/P4.md has the measured difference.
+        # default; docs/log/fable/2026-11-10-P4.md has the measured difference.
         self.shm = os.environ.get("KOKO_WM_SHM") == "1" if shm is None else shm
         # Video check on every push (kokopelli/wm/video_check.py): "stop" raises after 3 bad pushes in a row, "warn" only
         # records them in check.json, "off" skips it. The fake painter is not a painting, so it is off there by default.
