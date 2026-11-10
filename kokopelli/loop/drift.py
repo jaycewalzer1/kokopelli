@@ -8,29 +8,14 @@ import numpy as np
 from PIL import Image
 
 from kokopelli.loop.frames import load_rgb
+from kokopelli.wm.pixel_distance import LAYOUT_WEIGHT, SMALL, appearance_distance, layout_distance
 
-SMALL = (64, 36)
-LAYOUT_WEIGHT = 0.7
 estimate_maps = None
 
 
 def _gray(path):
     image = Image.fromarray(load_rgb(path)).convert("L").resize(SMALL, Image.BILINEAR)
     return np.asarray(image, dtype=np.float64)
-
-
-def layout_distance(a, b):
-    """0 when bright and dark areas line up, 1 when they don't. Correlation ignores overall brightness."""
-    a, b = a - a.mean(), b - b.mean()
-    scale = np.sqrt((a * a).sum() * (b * b).sum())
-    return 1.0 if scale == 0 else float(1 - max(0.0, (a * b).sum() / scale))
-
-
-def appearance_distance(a, b):
-    """0 when the brightness histograms match. A stand-in for embedding similarity, which needs a model."""
-    ha = np.histogram(a, bins=16, range=(0, 255))[0] / a.size
-    hb = np.histogram(b, bins=16, range=(0, 255))[0] / b.size
-    return float(np.abs(ha - hb).sum() / 2)
 
 
 def score(wm_frame, sim_frame):
