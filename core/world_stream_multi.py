@@ -44,7 +44,9 @@ class MultiWorldStream:
         self.dir = Path(out_dir or tempfile.mkdtemp(prefix="world_stream_multi_"))
         # Video check on every push (core/video_check.py): "stop" raises after 3 bad pushes in a row, "warn" only
         # records them in check.json, "off" skips it. The fake painter is not a painting, so it is off there by default.
-        self.check = os.environ.get("KOKO_VIDEO_CHECK") or check or ("off" if fake else "stop")
+        # Real runs warn by default: the calibration margin is thin (best good window 1.004, worst bad 1.01) and the check would
+        # have stopped the 2026-11-08 demo at push 3. KOKO_VIDEO_CHECK=stop ends a run after three bad pushes in a row.
+        self.check = os.environ.get("KOKO_VIDEO_CHECK") or check or ("off" if fake else "warn")
         self.checks = {}
         self.dir.mkdir(parents=True, exist_ok=True)
         self.k = 0

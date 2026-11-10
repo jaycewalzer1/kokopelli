@@ -8,7 +8,7 @@
 # Usage: scripts/fable/stillness_queue.sh [check|run] [B C]   check (default) only runs ops/gpu.py check; run queues.
 # Score afterwards: scripts/fable/stillness_score.py (see its docstring).
 set -euo pipefail
-K=/Users/jaycewalzer/Desktop/kokopelli/.claude/worktrees/integration-fable
+K=/Users/jaycewalzer/Desktop/kokopelli
 CM=$HOME/cosmos3/cosmos3-mlx
 GB=28
 mode=${1:-check}; shift || true
