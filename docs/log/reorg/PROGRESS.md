@@ -98,3 +98,19 @@ It also shows two cycles and two edges the plan does not name:
 ### Owed / skipped
 
 - Nothing skipped in phase 0 apart from the `run_sd.py` smoke entry above.
+
+### Phase 0 review and merge (orchestrator)
+
+- Reviewed the four commits (smoke script, import graph, log). Retested the branch myself:
+  `make test-all` 600 (10 skipped, 2 expected failures) / 100 / 197 / 35 / 198 (1 skipped) / 62,
+  peak 1.2 GB, 422 s; smoke 0 failures in all three interpreters; `uvx ruff@0.11.4 check .` clean.
+- Found by phase 0 and left for later phases:
+  - mac_server has 26 baseline failures (all in `test_conformance.py`), not the 29 the brief says.
+  - `uvx pre-commit run --all-files` already fails on main: shellcheck findings in
+    `experiments/commons/overnight.sh` and three `scripts/fable/p4_*.sh`, and end-of-file-fixer
+    would rewrite `runs/commons/*.json`.
+  - The installed ruff (0.17) adds 79 UP045 findings. Use the pinned `uvx ruff@0.11.4`.
+- Plan change (owner, relayed by session jaycewalzer-d6): this session stops after phase 0.
+  jaycewalzer-d6 does a fast pass in this checkout: phase 1, then phases 2, 4, 5 and 6 as one move,
+  one `ruff format` commit, and the hook and watchdog steps. Phases 3, 7, 8 and 9 are deferred
+  until the owner assigns them.
