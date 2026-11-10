@@ -299,6 +299,14 @@ class LunchRecord:
                            for k, m in self.minds.items()},
                 "finished": final, "steps_done": self.steps_done,
                 "films": {"side_by_side": "film/side_by_side.mp4", **{k: f"film/{k}.mp4" for k in self.minds}}}
+        from core.manifest import manifest   # commit, dirty, weight hashes: see core/manifest.py
+        fake_wm, fake_brain = meta["fake_world_model"], not isinstance(getattr(self, "brain", None), QwenBrain)
+        meta["manifest"] = manifest(
+            weights={"agent": None if fake_brain else a.weights,
+                     "world_model": None if fake_wm else ROOT / "models" / meta["world_model"]},
+            seed=meta["seeds"], prompt=a.wm_prompt, quantize=a.quantize, controls=meta["controls"], resolution=a.size,
+            fake=fake_wm or fake_brain, fake_world_model=fake_wm, fake_brain=fake_brain,
+            brain=type(getattr(self, "brain", None)).__name__)
         (self.out / "run.json").write_text(json.dumps(meta, indent=1, default=str))
         if final:
             for name in ["side_by_side", *self.minds]:

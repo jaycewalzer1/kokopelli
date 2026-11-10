@@ -286,6 +286,7 @@ def run(args):
     wt.save_mp4((video * 255).round().clip(0, 255).astype(np.uint8), output, fps)
     seconds = time.time() - started
     peak = mx.get_peak_memory() / 2 ** 30
+    from core.manifest import manifest   # commit, dirty, weight hashes: see core/manifest.py
     sidecar = {
         "variant": "A", "model": model_dir.name, "model_dir": str(model_dir), "checkpoint_id": cfg["checkpoint_id"],
         "runtime": "MLX port (world_transfer_multi.py over world_transfer.py), bf16, weighted per-control attention"
@@ -297,6 +298,9 @@ def run(args):
         "seconds": round(seconds, 1), "seconds_per_output_second": round(seconds / (len(video) / fps), 1),
         "timing": {k: round(v, 1) for k, v in clock.items()}, "peak_gb": round(peak, 2),
         "ru_maxrss_gb": round(__import__("resource").getrusage(__import__("resource").RUSAGE_SELF).ru_maxrss / 2 ** 30, 2),
+        "manifest": manifest(weights=model_dir, seed=args.seed, prompt=args.prompt, quantize=args.quantize,
+                             controls={h: {"path": str(controls[h]), "weight": weights[h]} for h in hints},
+                             resolution=f"{width}x{height}", fake=False),
         **(json.loads(args.extra) if args.extra else {}),
     }
     Path(str(output) + ".json").write_text(json.dumps(sidecar, indent=1))
