@@ -22,7 +22,7 @@ export class Calendar {
   add(table) {
     for (const [id, kids] of Object.entries(table)) {
       this.children.set(id, kids);
-      kids.forEach(kid => this.slots.set(kid.id, kid));
+      kids.forEach(kid => { this.slots.set(kid.id, kid); });
     }
   }
 

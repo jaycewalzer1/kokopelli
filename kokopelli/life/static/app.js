@@ -92,7 +92,7 @@ function drawViews() {
   const {rows, funnels, path, agentPath, missing} = buildRulers(ui.model, ui.calendar, ui.pinned, box.width - 64);
   ui.viewPath = path;
   ui.scene = buildScene(ui.model, ui.calendar, {selected: ui.pinned, hover: ui.hover, viewPath: path, agentPath});
-  ui.scene.missing.forEach(id => missing.add(id));
+  ui.scene.missing.forEach(id => { missing.add(id); });
   if (isFollowing() && (isLive() || ui.findAgent)) { ui.findAgent = false; followCamera(); }
   // The chosen branch may need calendar slots from the server, so wait for those before framing it. The agent's don't count.
   if (ui.fitPending && !path.slice(path.indexOf(ui.pinned)).some(id => missing.has(id))) { ui.fitPending = false; frameBranch(); }
@@ -108,7 +108,7 @@ function drawViews() {
 async function loadMissing(missing) {
   const needed = [...missing].filter(id => !ui.requested.has(id));
   if (!needed.length) return;
-  needed.forEach(id => ui.requested.add(id));
+  needed.forEach(id => { ui.requested.add(id); });
   const run = ui.run;
   const table = await get(`/api/calendar?run=${run}&nodes=${encodeURIComponent(needed.join(","))}`);
   if (run !== ui.run) return;

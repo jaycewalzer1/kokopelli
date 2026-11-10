@@ -75,7 +75,7 @@ function nightFor(run, row) {
   return run.nights.find(n => n.index === row.index) ?? null;
 }
 
-function gateLine(run, row) {
+function gateLine(_run, row) {
   if (row.decision === "D1") {
     const opened = row.arrival_after && row.arrival_after <= "09:08";
     return `Arrived at ${escapeHtml(row.arrival_after ?? "an unknown time")}, so the ${term("front-gap gate")} was ${opened ? "open" : "closed"} for D2.`;
@@ -147,7 +147,7 @@ function overnightMarkup(run, row) {
     const moved = Object.keys(after).map(o => ({o, d: after[o] - before[o]})).sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0];
     return `${escapeHtml(name)}: ${escapeHtml(moved.o)} ${signed(moved.d * 100, 1)} points`;
   }).join("<br>");
-  return stats + shifts + `<div class="meta">Biggest move on each ${term("probe")}:<br>${probes}</div>`;
+  return `${stats + shifts}<div class="meta">Biggest move on each ${term("probe")}:<br>${probes}</div>`;
 }
 
 // ----- whole-run views -----
@@ -157,7 +157,7 @@ function drawNeeds(run, row) {
   const series = run.needs.map((need, i) => ({cls: `s${i}`, label: need, points: shown.flatMap(r => [{x: r.n, y: r.h_pre[i]}, {x: r.n + 0.6, y: r.h_post[i]}])}));
   const rare = shown.filter(r => r.rare).map(r => ({x: r.n + 0.6, y: 0.04, cls: "", text: "×", title: `${r.decision} ${r.choice}: rare outcome, reward ${signed(r.reward)}`}));
   drawLines($("needs"), series, {yMin: 0, yMax: 1, references: [{y: run.setpoint, label: "setpoint", quiet: true}], marks: rare, cursor: row ? row.n + 0.3 : null, xLabel: "decision"});
-  $("needs-key").innerHTML = keyMarkup(run.needs.map((need, i) => ({cls: `s${i}`, label: need}))) + `<span>The last eight mornings up to the selected decision. Each decision is a step at the outcome, then the ${term("depletion")} before the next one. Mornings reset. × is a ${term("rare outcome")}.</span>`;
+  $("needs-key").innerHTML = `${keyMarkup(run.needs.map((need, i) => ({cls: `s${i}`, label: need})))}<span>The last eight mornings up to the selected decision. Each decision is a step at the outcome, then the ${term("depletion")} before the next one. Mornings reset. × is a ${term("rare outcome")}.</span>`;
 }
 
 function drawProbes(run) {
@@ -201,7 +201,7 @@ function drawShares(run) {
 function drawTraining(run) {
   const trained = run.nights.filter(n => n.steps > 0);
   const byDay = new Map();
-  run.rows.filter(r => r.phase === "free").forEach(r => byDay.set(r.day, [...(byDay.get(r.day) ?? []), r.reward]));
+  run.rows.filter(r => r.phase === "free").forEach(r => { byDay.set(r.day, [...(byDay.get(r.day) ?? []), r.reward]); });
   const rewards = [...byDay].map(([day, values]) => ({x: day, y: values.reduce((a, b) => a + b, 0) / values.length}));
   const ref = run.reference;
   const randomMean = ref.random.this_seed.mean_reward.all, safeMean = ref.always_safe.this_seed.mean_reward.all;
@@ -232,7 +232,7 @@ function drawArms(data) {
   })).join("");
   const predicted = `<p class="note">Predicted: ${term("arm", "lived")} keeps ${term("rare-bad")} over ${term("rare-good")}; flipped reverses it; shuffled shows neither. Each cell is rare-bad / rare-good share in the second half. One life gives about a dozen picks per decision, so a single run is a reading, not a test.</p>`;
   const head = `<tr><th>arm</th><th>run</th><th>policy</th><th>state</th>${Object.keys(data.pairs).map(g => `<th>${escapeHtml(g)}</th>`).join("")}<th>reward</th><th>random</th><th>always safe</th></tr>`;
-  $("arms").innerHTML = predicted + `<div class="table-scroll"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
+  $("arms").innerHTML = `${predicted}<div class="table-scroll"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function statusText(run) {
