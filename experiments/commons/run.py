@@ -292,7 +292,7 @@ def play(seed, arm, config, model, deadline=None, mode="R3", log=print):
             rows.append(row)
         if failed:
             repaired = model.ask([(s, pt.repair_prompt(u, e)) for _, (s, u), e in failed], config["llm"]["action_max_tokens"], key(seed, arm, season, "repair"))
-            for (name, request, error), answer in zip(failed, repaired):
+            for (name, _request, error), answer in zip(failed, repaired):
                 row = {"season": season, "phase": "act", "agent": name, "raw": answer, "attempt": 2}
                 try:
                     cleaned, row["dropped"] = tidy(world, name, coerce(pt.parse_json(answer)))

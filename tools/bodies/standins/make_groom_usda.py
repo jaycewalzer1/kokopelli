@@ -4,7 +4,7 @@ import math, random, sys
 from pathlib import Path
 rng = random.Random(7)
 counts, pts = [], []
-for i in range(400):
+for _i in range(400):
     # roots on the upper half of a 10 cm sphere, strands falling outwards and down
     u, v = rng.random() * 2 * math.pi, rng.uniform(0.05, 1.0)
     th = math.acos(v)

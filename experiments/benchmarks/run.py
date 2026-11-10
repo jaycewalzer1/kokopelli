@@ -134,7 +134,7 @@ def run_prompts(arm, seed, instrument, backend, info, args, sampling, done, out_
                 outputs[index] = output
                 parsed[index] = instrument.parse(output.text, batch[index][0], built[index][0])
 
-        for index, ((item, template, sample), (order, request)) in enumerate(zip(batch, built)):
+        for index, ((item, template, sample), (order, _request)) in enumerate(zip(batch, built)):
             result: Parsed = parsed[index]
             scored = instrument.score(result, item, order) if result.valid else None
             row = {**base_row(args.run_id, arm, instrument, seed, info, sampling),

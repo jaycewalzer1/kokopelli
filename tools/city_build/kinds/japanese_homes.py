@@ -320,7 +320,7 @@ def sukiya_villa(plot):
         k.solid(fx0, fy0, 0, fx1, fy1, zf)
 
     # moss band along the drip line of each wing
-    for (x0, y0, x1, y1) in wings:
+    for (x0, y0, x1, _y1) in wings:
         k.box(moss, x0 - eng_s - ov - 0.3, y0 - eng_f - ov - 0.6, 0.03, x1 + eng_s + ov + 0.3, y0 - eng_f - ov + 0.2,
               0.05)
 

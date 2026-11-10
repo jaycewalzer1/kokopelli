@@ -52,7 +52,7 @@ def tree(k, rng, x, y, z, h, r, trunk_r=0.16, bark=BARK, leaf=None, bloom=None, 
         k.plant("Puff", "Foliage", leaf or rng.choice(LEAVES), x + math.cos(a) * o, y + math.sin(a) * o,
                 z + h * 0.62 + (0 if i else r * 0.25), rr, rr, rr * 0.75, rng.uniform(0, 360))
     if bloom:
-        for i in range(bloom_n):
+        for _i in range(bloom_n):
             a = rng.uniform(0, 6.283)
             k.plant("Blob", "Foliage", rng.choice(bloom) if isinstance(bloom[0], tuple) else bloom,
                     x + math.cos(a) * r * 0.5, y + math.sin(a) * r * 0.5, z + h * 0.62 + r * 0.55,
@@ -455,7 +455,7 @@ def bawa_courtyard(plot):
     for _ in range(3):
         k.plant("Blob", "Foliage", rng.choice(((240, 150, 190), (250, 246, 236))), pcx + rng.uniform(-pw2 + 0.4, pw2 - 0.4),
                 pcy + rng.uniform(-ph2 + 0.4, ph2 - 0.4), plinth + 0.25, 0.12, 0.12, 0.08)
-    for i in range(4):  # reeds clump at a corner of the pond
+    for _i in range(4):  # reeds clump at a corner of the pond
         k.plant("Reed", "Foliage", rng.choice(LEAVES), pcx + pw2 - 0.3 + rng.uniform(-0.2, 0.2),
                 pcy + ph2 - 0.3 + rng.uniform(-0.2, 0.2), plinth, 1.2, 1.2, rng.uniform(0.9, 1.4))
     fx = cx0 + 1.6 if rng.random() < 0.5 else cx1 - 1.6
@@ -1383,7 +1383,7 @@ def kampung_terraces(plot):
                                 for q in range(int((xe - xs) / 3.6)):
                                     k.plant("Blob", "Foliage", c, xs + 1.2 + q * 3.6, yy, z + 0.6, 0.6, 0.26, 0.15)
                     elif kind < 0.7:                     # trees and flowering shrubs on the lawn
-                        for q in range(max(1, int(seg / 5))):
+                        for _q in range(max(1, int(seg / 5))):
                             tree(k, rng, rng.uniform(xs + 1, xe - 1), rng.uniform(gy0 + 0.6, gy1 - 0.6), z + 0.06,
                                  rng.uniform(4.0, 6.0), rng.uniform(1.8, 2.4), puffs=3,
                                  bloom=rng.choice((None, ((236, 132, 170),), ((240, 206, 80),), ((226, 70, 46),))),
@@ -1413,11 +1413,11 @@ def kampung_terraces(plot):
     # the top park in front of the bars
     gy0, gy1 = ty0 + 1.4, fy0 - 2.2
     if gy1 - gy0 > 1.5:
-        for q in range(max(2, int((tx1 - tx0) / 7))):
+        for _q in range(max(2, int((tx1 - tx0) / 7))):
             x = rng.uniform(tx0 + 2, tx1 - 2)
             tree(k, rng, x, rng.uniform(gy0 + 0.6, max(gy0 + 0.7, gy1)), zf, rng.uniform(4.5, 6.5), 2.2, puffs=3,
                  bloom=rng.choice((None, ((236, 132, 170),), ((240, 206, 80),))), bloom_n=2)
-        for q in range(int((tx1 - tx0) / 6)):
+        for _q in range(int((tx1 - tx0) / 6)):
             bush(k, rng, rng.uniform(tx0 + 1.5, tx1 - 1.5), rng.uniform(gy0, max(gy0 + 0.1, gy1)), zf,
                  rng.uniform(0.5, 0.8), flowers=0.6)
     sto = 3.1
@@ -1477,7 +1477,7 @@ def kampung_terraces(plot):
     for q in range(int(w / 9)):
         tree(k, rng, X0 + (X1 - X0) * (q + 0.5) / int(w / 9), 0.9, 0.1, rng.uniform(5.5, 7.5), 2.2, puffs=3,
              bloom=rng.choice((None, ((236, 132, 170),), ((226, 70, 46),))), bloom_n=2)
-    for q in range(int(w / 5)):
+    for _q in range(int(w / 5)):
         bush(k, rng, rng.uniform(1, w - 1), rng.uniform(0.3, 1.4), 0.1, rng.uniform(0.5, 0.8), flowers=0.5)
     return _cap(k)
 

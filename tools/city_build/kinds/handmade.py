@@ -157,7 +157,7 @@ def lantern(k, s_lan, s_cord, x, y, ztop, drop, size=0.22):
 
 def banana(k, rng, s_leaf, s_stem, x, y, h):
     """A banana / bird-of-paradise clump: stems + big paddle leaves (oriented boxes)."""
-    for j in range(rng.randint(1, 2)):
+    for _j in range(rng.randint(1, 2)):
         bx, by = x + rng.uniform(-0.4, 0.4), y + rng.uniform(-0.4, 0.4)
         hh = h * rng.uniform(0.75, 1.0)
         k.pole(s_stem, (bx, by, 0), (bx, by, hh * 0.65), 0.09, 6)
@@ -821,7 +821,7 @@ def shiroiya_hill(plot):
         k.obox(white, x, y, z, 0.7, 0.5, 0.35, 20, math.degrees(a) + 90, 0)
         k.obox(dark, x, y - 0.3, z + 0.02, 0.6, 0.12, 0.25, 20, math.degrees(a) + 90, 0)
     # planting on the hill: small rounded trees, shrubs, a red maple, flowers in the grass
-    for i in range(int(_clamp(W / 2.4, 10, 26))):
+    for _i in range(int(_clamp(W / 2.4, 10, 26))):
         cx, cy, cz, rx, ry, rz = rng.choice(lobes)
         a, rr = rng.uniform(-math.pi, 0.2), rng.uniform(0.2, 0.92)
         x, y = cx + math.cos(a) * rx * rr, cy + math.sin(a) * ry * rr

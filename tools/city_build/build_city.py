@@ -1001,13 +1001,13 @@ def main():
     # spawn in batches, then configure one by one (each Configure builds meshes on the game thread)
     for i in range(0, len(actors), 50):
         chunk = actors[i:i + 50]
-        for (cls, name, _), r in zip(chunk, sim.batch([f"vset /objects/spawn_bp_asset /Script/SimWorld.{cls} {name}" for cls, name, _ in chunk])):
+        for (_cls, name, _), r in zip(chunk, sim.batch([f"vset /objects/spawn_bp_asset /Script/SimWorld.{cls} {name}" for cls, name, _ in chunk])):
             if r.lower().startswith("error"):
                 errors += 1
                 print("spawn", name, r)
     t2 = time.time()
     slow = []
-    for cls, name, cfg in actors:
+    for _cls, name, cfg in actors:
         s = time.time()
         r = sim.req(f"vbp {name} Configure {json.dumps(cfg, separators=(',', ':'))}")
         if r.lower().startswith("error"):

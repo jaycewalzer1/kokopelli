@@ -197,7 +197,7 @@ class Garden:
         th = h - crown * 0.8
         k.plant("Trunk", "Bark", BARK, x, y, 0, 0.4, 0.4, th, r.uniform(0, 360))
         leaf = r.choice(LEAF)
-        for i in range(4):
+        for _i in range(4):
             a, rr = r.uniform(0, 6.28), r.uniform(0.35, 0.75) * crown
             c = bloom if (bloom and r.random() < 0.65) else leaf
             s = r.uniform(0.6, 0.8) * crown
@@ -205,7 +205,7 @@ class Garden:
                     s, s, s * 0.62, r.uniform(0, 360))
         k.plant("Puff", "Foliage", bloom or leaf, x, y, th + crown * 0.3, crown * 0.72, crown * 0.72, crown * 0.5)
         if kind == "fruit":
-            for i in range(4):
+            for _i in range(4):
                 a = r.uniform(0, 6.28)
                 k.plant("Blob", "Foliage", FRUIT, x + crown * 0.75 * math.cos(a), y + crown * 0.75 * math.sin(a),
                         th + r.uniform(-0.2, 0.6), 0.22, 0.22, 0.22, shadow=False)
@@ -543,17 +543,17 @@ def central_park(plot):
         for j in (-1, 0, 1):
             k.plant("Stone", "PermeableStone", STONE, x - uy * 0.7 * j, y + ux * 0.7 * j, 0.0, 0.35, 0.3, 0.2, rng.uniform(0, 360))
     # reeds round the margins and along the swale, lily pads on the water
-    for i, (x, y) in enumerate(marsh):
-        for j in range(4):
+    for _i, (x, y) in enumerate(marsh):
+        for _j in range(4):
             g.reeds(x + rng.uniform(-1.6, 1.6), y + rng.uniform(-1.6, 1.6), rng.uniform(0.8, 1.2))
     for (x, y, ux, uy) in along(swale, 1.4) + along(outflow, 1.4):
         side = rng.choice((-1, 1))
         g.reeds(x - uy * side * rng.uniform(1.3, 2.2), y + ux * side * rng.uniform(1.3, 2.2), rng.uniform(0.7, 1.0))
-    for i in range(26):
+    for _i in range(26):
         a, rr = rng.uniform(0, 6.28), rng.uniform(0.2, 0.75)
         k.plant("Disc", "Foliage", LILY, pcx + prx * rr * math.cos(a), pcy + pry * rr * math.sin(a), 0.11, 0.6, 0.6, 0.02,
                 rng.uniform(0, 360), shadow=False)
-    for i in range(10):
+    for _i in range(10):
         a, rr = rng.uniform(0, 6.28), rng.uniform(0.2, 0.7)
         k.plant("Blob", "Foliage", BANDS[3], pcx + prx * rr * math.cos(a), pcy + pry * rr * math.sin(a), 0.14, 0.18, 0.18,
                 0.08, shadow=False)

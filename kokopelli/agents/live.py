@@ -402,7 +402,7 @@ class Life:
         prompt = self.prompt(state)
         seen = self.vision.see(frame, "A sunny solarpunk village street, timber buildings with plants, people walking.")
         error = None
-        for attempt in range(2):
+        for _attempt in range(2):
             p = prompt if not error else f"{prompt}\n\nYour last reply was rejected: {error}. Reply with only the JSON object."
             t = time.time()
             try:

@@ -122,7 +122,7 @@ class Scenario:
         texts = {"D1": "9:06: the bus drops them at the main gate. The 9:00 outdoor class on the lawn has already started.",
                  "D3": "9:50: the outdoor class is ending. Buses leave the main gate at 10:00 and 10:30, and another route stops at the far stop."}
         found = []
-        for when, morning, decision in self.moments():
+        for when, _morning, decision in self.moments():
             if window.start <= when < window.end:
                 found.append(texts.get(decision) or f"{when:%-H:%M}: they reach the edge of the class lawn, where class is underway "
                                                          "with the instructor at the front.")

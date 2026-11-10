@@ -87,7 +87,7 @@ def cypress(c, x, y, h, lean=0.0, flat=1.0, wind=0.0):
         f = i / max(1, tiers - 1)
         zz = lerp(h * 0.38, h * 0.82, f)
         s = (2.5 - 0.7 * f) * sz
-        for j in range(2):
+        for _j in range(2):
             k.plant("Puff", "Foliage", col, x + wind * f + r.uniform(-0.5, 0.5), y + r.uniform(-0.5, 0.5), zz,
                     s * r.uniform(0.9, 1.1), s * r.uniform(0.8, 1.0), s * 0.5, r.uniform(0, 360))
 
@@ -460,7 +460,7 @@ def sea_ranch(plot):
         tops.append(_shed(c, wood, line, ua, va, ub, vb, zlo, zhi, fall, roof))
 
     # windows: Condo One is nearly blind; a few saddlebag bays, deep small windows, one big glass corner to the sea
-    for j, (ua, va, ub, vb, fall, zlo, zhi) in enumerate(units):
+    for _j, (ua, va, ub, vb, fall, zlo, _zhi) in enumerate(units):
         cx = (ua + ub) / 2
         if fall == "y0" and ub - ua > 3.0:
             # a boxed bay on the low street wall, plus a clerestory slot high on the side
