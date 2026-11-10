@@ -1,8 +1,9 @@
 # Checks only: nothing here reformats code (there is no formatter; see pyproject.toml). The 2026-11-09 baselines
 # were burned down in reorg phase 8; what is still allowed has a reason next to it, in the file or below.
 #
-#   uvx pre-commit install              # once, runs on every commit
+#   uvx pre-commit install              # once: lint on every commit, `make test-all` before every push
 #   uvx pre-commit run --all-files      # whole repo, commit-stage hooks; wrap in kokopelli/ops/memguard.py run
+default_install_hook_types: [pre-commit, pre-push]
 exclude: ^(simworld/|vendor/wm_multicontrol_upstream/|mac_server/Binaries/|\.venv/|out/|models/)
 
 repos:
@@ -50,3 +51,12 @@ repos:
         # cites, which are never rewritten.
         exclude: ^(tools/bodies/standins/import_standins\.json|kokopelli/life/static/inspector\.js|mac_server/SimWorld\.uproject|mac_server/Tools/look/realism_means\.json|experiments/commons/results/)
 
+  - repo: local
+    hooks:
+      - id: test-all
+        name: make test-all (every suite, through memguard)
+        language: system
+        entry: make test-all
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

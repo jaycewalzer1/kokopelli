@@ -1,0 +1,47 @@
+# Lint, type-check and the tests that need neither MLX nor Unreal. Written in reorg phase 8 and not run yet:
+# it can only be checked once main is pushed. macOS on Apple silicon, because uv.lock only resolves for
+# darwin/arm64 (see [tool.uv] environments in pyproject.toml).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+
+      - name: ruff (pinned to the pre-commit version)
+        run: uvx ruff@0.11.4 check .
+
+      - name: install the main environment
+        # pyright reads third-party types from .venv; cosmos3_mlx and unrealcv are stubbed under typings/.
+        run: uv sync --frozen
+
+      - name: pyright on the library
+        run: uvx pyright kokopelli
+
+      - name: import-linter
+        # The contracts come with reorg phase 3. Until its config is in pyproject.toml (or .importlinter), skip.
+        run: |
+          if grep -q '^\[tool.importlinter\]' pyproject.toml || [ -f .importlinter ]; then
+            uvx --from import-linter lint-imports
+          else
+            echo "no import-linter config yet (reorg phase 3); skipped"
+          fi
+
+  tests:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: install the main environment
+        run: uv sync --frozen
+      - name: ops suite (standard library only)
+        # Through the same script as on the Mac, so a moved test folder (reorg phase 7) is picked up there.
+        # The other suites load MLX or need simworld/.venv and the Unreal server, which CI doesn't have.
+        run: tools/fable/test_all.sh ops
