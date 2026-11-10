@@ -23,7 +23,7 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = ROOT / "models" / "Cosmos3-Nano-Sim-Transfer"
 RUNNER = Path.home() / "cosmos3" / "cosmos3-mlx"
 HINTS = ("depth", "seg", "edge", "blur")
@@ -45,7 +45,7 @@ def transfer_video(prompt, controls, output, size="832x480", frames=None, seed=2
         raise ValueError(f"Sim-Transfer takes exactly one control per request, got {sorted(controls)}")
     (hint, path), = controls.items()
     output = Path(output).resolve()
-    command = [str(RUNNER / ".venv" / "bin" / "python"), str(Path(__file__).resolve()), prompt,
+    command = [str(RUNNER / ".venv" / "bin" / "python"), str(ROOT / "world_transfer.py"), prompt,
                "--hint", hint, "--control", str(Path(path).resolve()), "--output", str(output), "--size", size,
                "--seed", str(seed), "--window", str(window), "--sink", str(sink), "--model-dir", str(model_dir),
                "--decode-chunk", str(decode_chunk)]

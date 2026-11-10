@@ -167,7 +167,7 @@ def main():
     parser.add_argument("prompt")
     parser.add_argument("--control", required=True)
     parser.add_argument("--output", required=True)
-    parser.add_argument("--model-dir", default=str(Path(__file__).parent / "models" / "Cosmos3-Nano"))
+    parser.add_argument("--model-dir", default=str(Path(__file__).resolve().parent.parent / "models" / "Cosmos3-Nano"))
     parser.add_argument("--size", default="448x256")
     parser.add_argument("--frames", type=int, default=16)
     parser.add_argument("--cond-frames", type=int, default=5)

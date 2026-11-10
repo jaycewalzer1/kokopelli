@@ -25,7 +25,7 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = ROOT / "models" / "Cosmos3-Nano"
 RUNNER = Path.home() / "cosmos3" / "cosmos3-mlx"
 HINTS = ("edge", "blur", "depth", "seg")
@@ -44,7 +44,7 @@ def multicontrol_video(prompt, controls, output, weights=None, size="448x256", f
     sequence and of the hint names in the prompt). weights: {hint: w}, default 1 each, normalised to sum 1.
     Returns the output path; the sidecar is output + ".json"."""
     output = Path(output).resolve()
-    command = [str(RUNNER / ".venv" / "bin" / "python"), str(Path(__file__).resolve()), prompt, "--output", str(output),
+    command = [str(RUNNER / ".venv" / "bin" / "python"), str(ROOT / "world_multicontrol_base.py"), prompt, "--output", str(output),
                "--size", size, "--frames", str(frames), "--steps", str(steps), "--guidance", str(guidance),
                "--control-guidance", str(control_guidance), "--shift", str(shift), "--seed", str(seed),
                "--query-chunk", str(query_chunk), "--model-dir", str(model_dir)]
@@ -161,7 +161,7 @@ def forward(gen, tokens, cos, sin, text_kv, n_ctrl, weights, sigma, chunk=0, hea
     (its weights and time embedding). cos/sin are one item's tables [1, n, 1, D]; every item reuses them. Only the
     target gets the timestep. Returns the target's velocity [1, n, 192] in fp32 (the controls' would be masked anyway)."""
     import mlx.core as mx
-    from world_transfer import EPS, rotate
+    from core.world_transfer import EPS, rotate
     g = gen.g
     M = tokens.shape[1]
     n = M // (n_ctrl + 1)
@@ -233,7 +233,7 @@ def run(args):
     import numpy as np
     from cosmos3_mlx.encode_vae import encode_video
     from cosmos3_mlx.scheduler import UniPCScheduler
-    from world_transfer import (Generator, Rope, decode_chunked, format_prompt, patchify, probe_fps, read_video,
+    from core.world_transfer import (Generator, Rope, decode_chunked, format_prompt, patchify, probe_fps, read_video,
                                 reflect_pad, save_mp4, shard_arrays, text_cache, tokenize, unpatchify)
 
     mx.set_default_device(mx.gpu)

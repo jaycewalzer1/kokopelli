@@ -29,7 +29,7 @@ import tempfile
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 RUNNER = Path.home() / "cosmos3" / "cosmos3-mlx"
 HINTS = ("blur", "seg", "depth", "edge")
 
@@ -45,7 +45,7 @@ class MultiWorldStream:
         self.info, self.last = {}, {}
         self.log = (self.dir / "worker.log").open("a")
         python = sys.executable if fake else str(RUNNER / ".venv" / "bin" / "python")
-        cmd = [python, str(Path(__file__).resolve()), "--worker"] + (["--fake"] if fake else [])
+        cmd = [python, str(ROOT / "world_stream_multi.py"), "--worker"] + (["--fake"] if fake else [])
         self.proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log, text=True,
                                      cwd=str(ROOT if fake else RUNNER),
                                      env={**os.environ, "PYTHONPATH": str(ROOT) if fake else f"{RUNNER}:{ROOT}"})
@@ -132,7 +132,7 @@ class SharedWeights:
 def stream_class():
     """world_stream.Worker with its weights taken from a SharedWeights instead of loaded per stream.
     Built lazily so this module imports without world_stream on the path."""
-    from world_stream import Worker
+    from core.world_stream import Worker
 
     class Stream(Worker):
         def __init__(self, shared):
@@ -199,8 +199,8 @@ class MultiWorker:
             self.make = FakeStream
             return {"fake": True, "model": "fake (no model)"}
         import mlx.core as mx
-        import world_transfer as wt
-        import world_transfer_multi as wm
+        from core import world_transfer as wt
+        from core import world_transfer_multi as wm
         mx.set_default_device(mx.gpu)
         self.mx = mx
         self.shared = SharedWeights(lambda: wm.MultiGenerator(wt.shard_arrays(wt.MODEL_DIR), bits=quantize))

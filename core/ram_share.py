@@ -21,7 +21,7 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(os.environ.get("KOKOPELLI_ROOT", Path(__file__).resolve().parent))
+ROOT = Path(os.environ.get("KOKOPELLI_ROOT", Path(__file__).resolve().parent.parent))
 CLAIMS = ROOT / "out" / "ram" / "claims"
 MARGIN_GB = 4      # left free on top of everything, for the system and the panel
 FLOOR_GB = 2.5     # a polite job holding a model gives it back below this

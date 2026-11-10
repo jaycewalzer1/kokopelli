@@ -1,7 +1,7 @@
 """Which models this repo uses and where they live."""
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 
 WORLD_MODEL = "nvidia/Cosmos3-Nano"
 LLM_MODEL = "Qwen/Qwen3-VL-8B-Instruct"

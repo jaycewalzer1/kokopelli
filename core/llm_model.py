@@ -6,7 +6,7 @@ import mlx.core as mx
 from mlx_vlm import generate, load
 from mlx_vlm.prompt_utils import apply_chat_template
 
-from settings import LLM_MODEL_WEIGHTS
+from core.settings import LLM_MODEL_WEIGHTS
 
 
 @lru_cache(maxsize=1)

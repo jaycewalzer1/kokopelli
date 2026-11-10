@@ -3,7 +3,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from settings import WORLD_MODEL_RUNNER, WORLD_MODEL_WEIGHTS
+from core.settings import WORLD_MODEL_RUNNER, WORLD_MODEL_WEIGHTS
 
 
 def _generate(script, prompt, output, size, frames, steps, seed, extra=()):
@@ -44,7 +44,7 @@ def continue_video(prompt, video, output, size="448x256", frames=16, steps=30, s
 def filter_video(prompt, control, output, size="448x256", frames=16, cond_frames=5, steps=30, seed=7, chunks=None):
     """Repaint an edge video from edges.py, in overlapping chunks. Each starts from the last cond_frames of the one before."""
     output = Path(output).resolve()
-    command = [str(WORLD_MODEL_RUNNER / ".venv" / "bin" / "python"), str(Path(__file__).resolve().parent / "world_filter.py"), prompt,
+    command = [str(WORLD_MODEL_RUNNER / ".venv" / "bin" / "python"), str(Path(__file__).resolve().parent.parent / "world_filter.py"), prompt,
                "--control", str(Path(control).resolve()), "--output", str(output), "--model-dir", str(WORLD_MODEL_WEIGHTS),
                "--size", size, "--frames", str(frames), "--cond-frames", str(cond_frames), "--steps", str(steps), "--seed", str(seed)]
     if chunks is not None:

@@ -25,7 +25,7 @@ import tempfile
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 RUNNER = Path.home() / "cosmos3" / "cosmos3-mlx"
 HINTS = ("blur", "seg", "depth", "edge")
 WARM = 3
@@ -40,7 +40,7 @@ class WorldStream:
         self.dir.mkdir(parents=True, exist_ok=True)
         self.k = 0
         self.log = (self.dir / "worker.log").open("a")
-        self.proc = subprocess.Popen([str(RUNNER / ".venv" / "bin" / "python"), str(Path(__file__).resolve()), "--worker"],
+        self.proc = subprocess.Popen([str(RUNNER / ".venv" / "bin" / "python"), str(ROOT / "world_stream.py"), "--worker"],
                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log, text=True, cwd=RUNNER,
                                      env={**os.environ, "PYTHONPATH": f"{RUNNER}:{ROOT}"})
         self.info = self._call(cmd="start", prompt=prompt, size=size, fps=fps, weights=weights or {h: 0.25 for h in HINTS},
@@ -94,8 +94,8 @@ class WorldStream:
 class Worker:
     def start(self, prompt, size, fps, weights, seed, window, sink, quantize, planned_frames, raw_prompt):
         import mlx.core as mx
-        import world_transfer as wt
-        import world_transfer_multi as wm
+        from core import world_transfer as wt
+        from core import world_transfer_multi as wm
         mx.set_default_device(mx.gpu)
         self.wt, self.wm, self.mx = wt, wm, mx
         self.model_dir = wt.MODEL_DIR

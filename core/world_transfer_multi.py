@@ -26,9 +26,9 @@ import sys
 import time
 from pathlib import Path
 
-import world_transfer as wt   # stdlib-only at import time; its mlx code lives inside functions
+from core import world_transfer as wt   # stdlib-only at import time; its mlx code lives inside functions
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def normalize_weights(controls, weights=None):
@@ -61,7 +61,7 @@ def transfer_video_multi(prompt, controls, output, weights=None, size="832x480",
     normalize_weights(controls, weights)          # fail here, not after the hold and the venv start
     weights = weights or {h: 1.0 for h in controls}
     output = Path(output).resolve()
-    command = [str(wt.RUNNER / ".venv" / "bin" / "python"), str(Path(__file__).resolve()), prompt,
+    command = [str(wt.RUNNER / ".venv" / "bin" / "python"), str(ROOT / "world_transfer_multi.py"), prompt,
                "--output", str(output), "--size", size, "--seed", str(seed), "--window", str(window), "--sink", str(sink),
                "--model-dir", str(model_dir), "--decode-chunk", str(decode_chunk)]
     for hint, path in controls.items():
