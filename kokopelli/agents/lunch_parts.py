@@ -2,23 +2,17 @@
 side-by-side film, the controls, and the run's log/transcript/live.json/run.json writers (a mixin of Lunch)."""
 import json
 import shutil
-import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-if str(HERE) not in sys.path:   # imported through lunch_wm, which set up the path already, this is a no-op
-    sys.path.insert(0, str(HERE))
-import live  # noqa: E402
+from kokopelli.agents import live
+from kokopelli.agents.live_wm import BLUR_DOWNUP, FAR_CM, NEAR_CM
+from kokopelli.agents.lunch_sim import FRIEND_ACTOR, TwoBodySim
+from kokopelli.loop.adapters.simworld import AGENT_ACTOR
+from kokopelli.wm.controls import controls as ctl
+
 ROOT = live.ROOT
-for _p in (ROOT, ROOT / "kokopelli" / "wm" / "controls"):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-import controls as ctl  # noqa: E402  (kokopelli/wm/controls/controls.py)
-from live_wm import BLUR_DOWNUP, FAR_CM, NEAR_CM  # noqa: E402
-from lunch_sim import FRIEND_ACTOR, TwoBodySim  # noqa: E402
-from kokopelli.loop.adapters.simworld import AGENT_ACTOR  # noqa: E402
 
 HINTS = ("blur", "seg", "depth", "edge")
 
@@ -328,7 +322,7 @@ def place_or_point(nav, text):
 
 
 def open_streams(wm, args, ids):
-    from lunch_text import prompts_for
+    from kokopelli.agents.lunch_text import prompts_for
     planned = int(args.steps * args.step_s * args.fps) + 1
     prompts = prompts_for(args, ids)
     for i, k in enumerate(ids):

@@ -1,7 +1,7 @@
 """A life lived inside the world model: the agent sees only what Cosmos3-Nano-Sim-Transfer paints, never the sim.
 
-    .venv/bin/python kokopelli/agents/live_wm.py --port 9001 --minutes 5
-    .venv/bin/python kokopelli/agents/live_wm.py --minutes 5 --size 448x256 --fps 24
+    .venv/bin/python -m kokopelli.agents.live_wm --port 9001 --minutes 5
+    .venv/bin/python -m kokopelli.agents.live_wm --minutes 5 --size 448x256 --fps 24
 
 How a step goes (live.py's Life, with its eyes replaced):
   1. The sim (SimWorld) holds the truth. It applies the agent's action and advances STEP_S sim-seconds, capturing the
@@ -30,16 +30,12 @@ import sys
 import time
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))
-import live  # noqa: E402
-from live import HEAR_M, STEP_S, Life, m  # noqa: E402
+from kokopelli.agents import live
+from kokopelli.agents.live import HEAR_M, STEP_S, Life, m
+from kokopelli.wm.controls import controls as ctl
+from kokopelli.wm.world_stream import WorldStream
 
 ROOT = live.ROOT
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "kokopelli" / "wm" / "controls"))
-import controls as ctl  # noqa: E402  (kokopelli/wm/controls/controls.py)
-from kokopelli.wm.world_stream import WorldStream  # noqa: E402
 
 
 class VideoRateSim(live.SimWorldPhysics):

@@ -2,18 +2,15 @@
 the toy world with the fake brains. No model runs."""
 import json
 import shutil
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-for _p in (ROOT, ROOT / "tests", ROOT / "kokopelli" / "agents"):
-    sys.path.insert(0, str(_p))
 
-import lunch_bench as lb  # noqa: E402
-import lunch_fixes as fx  # noqa: E402
-import lunch_wm as lw  # noqa: E402
+from tools.fable import lunch_bench as lb  # noqa: E402
+from kokopelli.agents import lunch_fixes as fx  # noqa: E402
+from kokopelli.agents import lunch_wm as lw  # noqa: E402
 
 
 def bench(*extra, brain="parrot"):
@@ -31,7 +28,7 @@ class HelpersTest(unittest.TestCase):
         self.assertFalse(a.decide_on_change)
 
     def test_view_prompts_off_by_default_and_each_person_worded_the_same(self):
-        import lunch_text as lt
+        from kokopelli.agents import lunch_text as lt
         a = lw.build_args([])
         self.assertEqual(lt.prompts_for(a, ["mara", "iris"]), {"mara": lt.WM_PROMPT, "iris": lt.WM_PROMPT})
         a = lw.build_args(["--view-prompts"])
@@ -43,7 +40,7 @@ class HelpersTest(unittest.TestCase):
         self.assertIn(lt.LOOKS["ana"], p["iris"])
 
     def test_life_switch_adds_the_generated_past_under_the_persona(self):
-        import lunch_life
+        from kokopelli.agents import lunch_life
         tmp = Path(tempfile.mkdtemp(prefix="test_lunch_life_"))
         try:
             db = tmp / "life.db"

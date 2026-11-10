@@ -1,6 +1,6 @@
 """Bodies demo: the two-agent lunch (kokopelli/agents/lunch_wm.py, used unchanged) plus what a viewer needs to see the bodies.
 
-    .venv/bin/python tools/bodies/demo_lunch.py --port 9001 --minutes 2 --fake-wm --out out/bodies/demo/runs/sim
+    .venv/bin/python -m tools.bodies.demo_lunch --port 9001 --minutes 2 --fake-wm --out out/bodies/demo/runs/sim
     tools/bodies/run_demo_lunch.sh --minutes 2 --fake-wm --out ...       # same, starting the packaged server if needed
 
 Everything lunch_wm.py does still happens (same agents, prompts, world-model streams, films, transcript, run.json).
@@ -25,9 +25,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-sys.path.insert(0, str(ROOT / "kokopelli" / "agents"))
-import lunch_wm as L  # noqa: E402
-from lunch_wm import c, FRIEND_ACTOR, AGENT_ACTOR  # noqa: E402
+from kokopelli.agents import lunch_wm as L  # noqa: E402
+from kokopelli.agents.lunch_wm import c, FRIEND_ACTOR, AGENT_ACTOR  # noqa: E402
 
 DIRECTOR_CAM = 0
 SHOT_MIN_S = 3.0          # hold a shot at least this long before cutting
@@ -476,7 +475,7 @@ def main(argv=None):
     if "--no-director" in argv:
         argv.remove("--no-director")
         director = False
-    from navmap import NavMap
+    from kokopelli.agents.navmap import NavMap
     args = L.build_args(argv)
     nav = NavMap()
     L.people(args, nav)

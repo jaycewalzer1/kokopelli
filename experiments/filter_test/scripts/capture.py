@@ -1,6 +1,6 @@
 """Record the one 10-second SimWorld clip every filter in this test is run on: rgb, depth and segmentation at 30 fps.
 
-    .venv/bin/python experiments/filter_test/scripts/capture.py              # needs the packaged server on port 9001, nobody else connected
+    .venv/bin/python -m experiments.filter_test.scripts.capture              # needs the packaged server on port 9001, nobody else connected
 
 The camera is a walking head (head.py): it looks around, bobs with each step, and holds steady on what it looks at.
 --still turns that off and leaves SimWorld's own camera, which is locked to the body.
@@ -19,10 +19,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT / "kokopelli" / "agents"))
-import live  # noqa: E402  (sets up the runtime worktree's path and the unrealcv client, the same way the city agent does)
-from navmap import NavMap  # noqa: E402
-from head import Head  # noqa: E402
+from experiments.filter_test.scripts.head import Head  # noqa: E402
+from kokopelli.agents import live  # noqa: E402  (sets up the unrealcv client, the same way the city agent does)
+from kokopelli.agents.navmap import NavMap  # noqa: E402
 from kokopelli.loop.adapters.simworld import AGENT_ACTOR, SimWorldConfig, SimWorldPhysics  # noqa: E402
 
 OUT = ROOT / "out" / "filter_test" / "test_clip"

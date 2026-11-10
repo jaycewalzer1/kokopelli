@@ -29,7 +29,7 @@ if ! lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1; then
 	simworld/.venv/bin/python -I tools/city_build/build_city.py --port "$PORT" || { echo "build_city failed"; pkill -f "SimWorld.*-cvport=$PORT"; exit 4; }
 fi
 
-python3 kokopelli/ops/ram_share.py hold --name wmlunch_agents --gb 24 -- .venv/bin/python kokopelli/agents/lunch_wm.py --port "$PORT" "$@"
+python3 kokopelli/ops/ram_share.py hold --name wmlunch_agents --gb 24 -- .venv/bin/python -m kokopelli.agents.lunch_wm --port "$PORT" "$@"
 code=$?
 
 if [[ -n "$started" ]]; then

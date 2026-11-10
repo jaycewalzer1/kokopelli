@@ -1,21 +1,15 @@
 """TwoBodySim (kokopelli/agents/lunch_wm.py): the SimWorld adapter plus a second humanoid with its own head camera."""
 import math
-import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-if str(HERE) not in sys.path:   # imported through lunch_wm, which set up the path already, this is a no-op
-    sys.path.insert(0, str(HERE))
-import live  # noqa: E402
+from kokopelli.agents import live
+from kokopelli.loop.adapters import simworld_commands as c
+from kokopelli.loop.adapters.simworld import AGENT_ASSET, SimWorldPhysics
+from kokopelli.loop.adapters.simworld_control import MoverIO
+from kokopelli.loop.adapters.simworld_math import angle_delta, distance_cm, heading_to
+from kokopelli.loop.physics import Vec3
+
 ROOT = live.ROOT
-for _p in (ROOT, ROOT / "kokopelli" / "wm" / "controls"):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-from kokopelli.loop.adapters import simworld_commands as c  # noqa: E402
-from kokopelli.loop.adapters.simworld import AGENT_ASSET, SimWorldPhysics  # noqa: E402
-from kokopelli.loop.adapters.simworld_control import MoverIO  # noqa: E402
-from kokopelli.loop.adapters.simworld_math import angle_delta, distance_cm, heading_to  # noqa: E402
-from kokopelli.loop.physics import Vec3  # noqa: E402
 
 FRIEND_ACTOR = "GEN_BP_Humanoid_1"
 

@@ -2,20 +2,15 @@
 prompt, the reply-format notes, what Lunch tells a mind (LunchWords), and the residents who stay quiet unless spoken
 to."""
 import math
-import sys
 from pathlib import Path
 
+from kokopelli.agents import live
+from kokopelli.agents.live import Cast, bearing, compass, rough
+from kokopelli.agents.live_wm import REACH_M
+from kokopelli.agents.lunch_fixes import TALK_SHOWN
+
 HERE = Path(__file__).resolve().parent
-if str(HERE) not in sys.path:   # imported through lunch_wm, which set up the path already, this is a no-op
-    sys.path.insert(0, str(HERE))
-import live  # noqa: E402
 ROOT = live.ROOT
-for _p in (ROOT, ROOT / "kokopelli" / "wm" / "controls"):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-from live import Cast, bearing, compass, rough  # noqa: E402
-from live_wm import REACH_M  # noqa: E402
-from lunch_fixes import TALK_SHOWN  # noqa: E402
 
 HEAR_M = live.HEAR_M
 
@@ -90,7 +85,7 @@ def people(args, nav):
     sit_i = IRIS_SITUATION.replace("The Kettle (kettle_cafe)", f"{meet} ({args.meet})")
     who_m, who_i = live.DEFAULT_WHO, IRIS_WHO
     if getattr(args, "life", None):   # --life (lunch_life.py): add each person's generated past under the persona
-        from lunch_life import with_past
+        from kokopelli.agents.lunch_life import with_past
         who_m, who_i = with_past(who_m, args.life, "mara"), with_past(who_i, args.life, "iris")
     args.first = {"id": "mara", "name": "Mara", "who": who_m, "situation": sit_m,
                   "start_note": "You just stepped out of the Fern Common House."}
