@@ -1,4 +1,5 @@
 """These call the real model."""
+import os
 import subprocess
 import tempfile
 import unittest
@@ -6,6 +7,10 @@ from pathlib import Path
 
 from llm_model import ask, load_llm, unload
 from settings import LLM_MODEL, LLM_MODEL_WEIGHTS
+
+# Loading Qwen3-VL-8B (peak 16.5 GB) in the default run made tests/ peak at 18.3 GB, and five runs at once crashed the Mac.
+# These are model jobs: run them through ops/gpu.py with RUN_MODEL_TESTS=1 (command in docs/fable_log/P1-M.md).
+needs_model = unittest.skipUnless(os.environ.get("RUN_MODEL_TESTS"), "loads Qwen3-VL-8B (peak 16.5 GB); set RUN_MODEL_TESTS=1 and queue it")
 
 
 class LLMModelTest(unittest.TestCase):
@@ -17,10 +22,12 @@ class LLMModelTest(unittest.TestCase):
         self.assertEqual(LLM_MODEL, "Qwen/Qwen3-VL-8B-Instruct")
         self.assertTrue(LLM_MODEL_WEIGHTS.is_dir())
 
+    @needs_model
     def test_answers_text(self):
         answer = ask("What is the capital of France? Answer with one word.", max_tokens=10)
         self.assertIn("paris", answer.lower())
 
+    @needs_model
     def test_answers_about_an_image(self):
         with tempfile.TemporaryDirectory() as temp:
             image = Path(temp) / "red.png"
@@ -29,10 +36,12 @@ class LLMModelTest(unittest.TestCase):
             answer = ask("What color is this image? Answer with one word.", images=[image], max_tokens=10)
         self.assertIn("red", answer.lower())
 
+    @needs_model
     def test_max_tokens_limits_the_answer(self):
         answer = ask("Count from 1 to 100, separated by spaces.", max_tokens=5)
         self.assertLess(len(answer.split()), 10)
 
+    @needs_model
     def test_model_is_loaded_once_until_unloaded(self):
         first = load_llm()
         self.assertIs(load_llm(), first)
