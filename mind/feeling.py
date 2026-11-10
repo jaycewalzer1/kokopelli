@@ -34,6 +34,8 @@ CHANGE = ("The first image is from a moment ago. The others are what you see now
 APPRAISE = ("Before doing anything, how do you feel about what just happened, and why? Reply with one JSON object and nothing else:\n"
             '{"feeling": "<one word>", "intensity": <0 to 1>, "why": "<one sentence about what you saw>"}')
 BIG_NOTE = "This moment matters. Think about what your choice could lead to.\n"
+FAILED_MARK = "It didn't work."  # runtime/prompt_builder.outcome_text writes this after a failed action
+FEEL_EVENTS_ENV = "KOKO_FEEL_EVENTS"  # "1" turns on known_event() below; off by default (P5, docs/fable_log/P5.md)
 CARRY_ON = "move_to"  # In the sim, wait cancels a walk in progress, so a tick with no decision has to keep walking.
 
 
@@ -61,6 +63,17 @@ def parse_change(raw):
     if changed is not True:
         return None, True
     return (what or "Something changed.")[:MAX_CHANGE_CHARS], True
+
+
+def known_event(agent_input, last_visible):
+    """What the loop already knows happened this tick, without asking the model: someone or something came into or went
+    out of view, or the last action failed. Real Qwen's frame-only check said "nothing changed" on 19 of 19 ticks of
+    qwen_change_20, so with this off such a tick carries the old feeling unasked."""
+    gained = [name for name in agent_input.visible if name not in last_visible]
+    lost = [name for name in last_visible if name not in agent_input.visible]
+    parts = [f"Now in view: {', '.join(gained)}." if gained else "", f"No longer in view: {', '.join(lost)}." if lost else "",
+             "What you just tried didn't work." if FAILED_MARK in agent_input.prompt else ""]
+    return " ".join(p for p in parts if p)[:MAX_CHANGE_CHARS] or None
 
 
 def settle(current, reported):
@@ -153,8 +166,10 @@ def timeline(path):
 class FeelingAgent:
     """Runs appraise, gate, decide inside the loop's one agent turn. Rows go to a file, so a resumed run keeps its past."""
 
-    def __init__(self, inner, path):
+    def __init__(self, inner, path, events=None):
         self.inner, self.path = inner, Path(path)
+        # Known events count as a change (known_event); off unless asked for, or KOKO_FEEL_EVENTS=1.
+        self.events = os.environ.get(FEEL_EVENTS_ENV) == "1" if events is None else events
         self.rows = read_rows(self.path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._rewrite()
@@ -201,6 +216,10 @@ class FeelingAgent:
         past = self._appraisal_rows()
         noticed = self._notice(agent_input, past) if past else {"change": None, "change_raw": None, "change_seconds": 0.0, "change_usage": None}
         change = noticed["change"]
+        if past and not change and self.events:
+            change = known_event(agent_input, past[-1]["visible"])
+            if change:
+                noticed = {**noticed, "change": change, "change_from": "event"}
         current = next((row for row in reversed(past) if row["feeling"]), None)
         previous = current["feeling"] if current else ("" if past else None)
         last_visible = past[-1]["visible"] if past else []

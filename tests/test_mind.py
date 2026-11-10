@@ -472,3 +472,28 @@ class WeightsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class KnownEventTest(unittest.TestCase):
+    """P5: with events on, a failed action or a change in view is felt even when the frame-only check says nothing
+    changed (real Qwen said so on 19 of 19 ticks of qwen_change_20)."""
+
+    def ticks(self, events):
+        inner = Inner([CALM, {"feeling": "annoyed", "intensity": 0.5, "why": "It didn't work."}], change=NOTHING)
+        agent = FeelingAgent(inner, Path(tempfile.mkdtemp(prefix="mind_")) / "feelings.jsonl", events=events)
+        agent.decide(turn(1))
+        agent.decide(Input(PROMPT.replace("Decide", "It didn't work. Decide"), [], ["bench", "ana"], "2004-06-12T16:02:00", 2))
+        return agent._appraisal_rows()[-1], inner
+
+    def test_off_by_default_the_event_is_not_felt(self):
+        row, inner = self.ticks(None)
+        self.assertTrue(row["carried"])
+        self.assertEqual(row["feeling"], "calm")
+
+    def test_on_the_event_is_appraised(self):
+        row, inner = self.ticks(True)
+        self.assertFalse(row["carried"])
+        self.assertEqual(row["change_from"], "event")
+        self.assertIn("Now in view: ana.", row["change"])
+        self.assertIn("didn't work", row["change"])
+        self.assertIn("What just changed: Now in view: ana.", inner.prompts[-2])
