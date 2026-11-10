@@ -2,7 +2,7 @@
 # P4-C: paint the bridge clip exactly as wmmc_a4_full_8bit did (Variant A, 4 controls at 0.25, 832x480, 150 frames,
 # seed 2025, window 51, sink 1), at gen-weight precision $1 (4 or 8). The prompt is copied verbatim from that job's
 # ledger entry. 4-bit is quantized at load from the local bf16 weights (mx.quantize, group 64): nothing downloaded.
-#   sh tools/fable/p4_c_bits.sh 4 [--dry-run]       (queue it with kokopelli/ops/gpu.py; see docs/fable_log/P4.md)
+#   sh tools/fable/p4_c_bits.sh 4 [--dry-run]       (queue it with kokopelli/ops/gpu.py; see docs/log/fable/2026-11-10-P4.md)
 set -eu
 BITS=$1; shift
 W=$(cd "$(dirname "$0")/../.." && pwd)

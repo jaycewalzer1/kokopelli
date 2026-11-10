@@ -8,7 +8,7 @@
 - **Variant B, `world_multicontrol_base.py`**: NVIDIA's supported path on base Cosmos3-Nano: 50 UniPC steps (shift 10),
   text CFG 3, control CFG 1.5 with upstream's rescale, per-control weights, and query-chunked attention. Only the
   ~14 GB generation half stays in memory. Tests: `tests/test_wm_multicontrol_b.py` (19).
-- Deviations from NVIDIA's reference: `NOTES.md`. Optional hooks for `world_transfer.py`: `HANDOFF.md`, none needed.
+- Deviations from NVIDIA's reference: `NOTES.md`. Optional hooks for `world_transfer.py`: `docs/log/wm_multicontrol/2026-11-06-HANDOFF.md`, none needed.
   Run script for A: `run_a.sh`.
 
 ## Results (`out/wm_multicontrol/`, each mp4 has a JSON sidecar)

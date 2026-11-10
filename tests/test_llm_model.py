@@ -9,7 +9,7 @@ from kokopelli.wm.llm_model import ask, load_llm, unload
 from kokopelli.settings import LLM_MODEL, LLM_MODEL_WEIGHTS
 
 # Loading Qwen3-VL-8B (peak 16.5 GB) in the default run made tests/ peak at 18.3 GB, and five runs at once crashed the Mac.
-# These are model jobs: run them through kokopelli/ops/gpu.py with RUN_MODEL_TESTS=1 (command in docs/fable_log/P1-M.md).
+# These are model jobs: run them through kokopelli/ops/gpu.py with RUN_MODEL_TESTS=1 (command in docs/log/fable/2026-11-09-P1-M.md).
 needs_model = unittest.skipUnless(os.environ.get("RUN_MODEL_TESTS"), "loads Qwen3-VL-8B (peak 16.5 GB); set RUN_MODEL_TESTS=1 and queue it")
 
 

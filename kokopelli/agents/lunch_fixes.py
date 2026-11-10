@@ -1,5 +1,5 @@
 """Behavior fixes for the lunch (kokopelli/agents/lunch_wm.py), each behind a switch that is off by default (P5, see
-docs/fable_log/P5.md for the measured effect of each):
+docs/log/fable/2026-11-10-P5.md for the measured effect of each):
 
   --fixes memory    the prompt keeps the conversation so far (both voices), and a diary note that only restates one of
                     the last three is dropped. Before, "What you heard" was emptied after every decision, so Mara forgot

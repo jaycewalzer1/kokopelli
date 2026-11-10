@@ -15,7 +15,7 @@ Drift. Correlation between the painted frame's luma and the blur control it was 
 1/8 size, so only the layout (where the bright and dark masses are) counts. A frame from an unrelated moment of the
 same walk scores about 0.0-0.35 against the control; painted frames that follow the sim score 0.45-0.8. Edge-vs-edge
 agreement was tried first (the plan's candidate) and separated worse: the edge control is full of sim-only texture
-(paving grid lines) that a good painting rightly leaves out. See docs/fable_log/P3-D.md for the numbers.
+(paving grid lines) that a good painting rightly leaves out. See docs/log/fable/2026-11-09-P3-D.md for the numbers.
 
 Why the older drift number read 0.99 on garbage: kokopelli/loop/drift.py compared the painted frame with the mock sim's grid
 picture, which shares no layout with any painting, so the distance sat near its ceiling for good and broken frames
@@ -206,7 +206,7 @@ def windows(rows, fps, window=WINDOW):
 DEMO = "out/bodies/demo/runs/wm"
 BRIDGE = "out/city_wm/bridge/controls/832x480/blur.mp4"
 # (name, painted, blur control or None, fps, crop, labelled segments in seconds: (start, end, expected verdict)).
-# Labels come from contact sheets of each clip, read by eye before the thresholds were set (docs/fable_log/P3-D.md).
+# Labels come from contact sheets of each clip, read by eye before the thresholds were set (docs/log/fable/2026-11-09-P3-D.md).
 CLIPS = [
     ("iris", f"{DEMO}/film/iris.mp4", f"{DEMO}/controls/iris/blur.mp4", 16, None, [(0, 46, "good"), (58, 120, "bad")]),
     ("mara", f"{DEMO}/film/mara.mp4", f"{DEMO}/controls/mara/blur.mp4", 16, None,

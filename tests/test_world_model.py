@@ -12,7 +12,7 @@ from kokopelli.wm.world_model import continue_video, image_to_video, text_to_vid
 SMALL = {"size": "256x256", "frames": 8, "steps": 4, "seed": 7}
 
 # Loading Cosmos3-Nano (peak 17.3 GB) in the default run made tests/ peak at 18.3 GB, and five runs at once crashed the Mac.
-# These are model jobs: run them through kokopelli/ops/gpu.py with RUN_MODEL_TESTS=1 (command in docs/fable_log/P1-M.md).
+# These are model jobs: run them through kokopelli/ops/gpu.py with RUN_MODEL_TESTS=1 (command in docs/log/fable/2026-11-09-P1-M.md).
 needs_model = unittest.skipUnless(os.environ.get("RUN_MODEL_TESTS"), "loads Cosmos3-Nano (peak 17.3 GB); set RUN_MODEL_TESTS=1 and queue it")
 
 
