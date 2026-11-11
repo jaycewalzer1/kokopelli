@@ -84,7 +84,10 @@ class Run(unittest.TestCase):
         self.assertIn("available", self.said[-1])
 
     def test_a_command_that_never_gets_room_gives_way(self):
-        with mock.patch.object(memguard.ram_share, "room_gb", return_value=(0.5, [], [])):
+        # total_gb is pinned too: on a small machine (a 7 GB CI runner) 5 GB is more than it can ever give, and run()
+        # refuses up front with 2 instead of reaching the wait this test is about.
+        with mock.patch.object(memguard.ram_share, "room_gb", return_value=(0.5, [], [])), \
+                mock.patch.object(memguard.ram_share, "total_gb", return_value=36):
             code = memguard.run("wait", 5, ["true"], wait_seconds=0, log=self.said.append)
         self.assertEqual(code, memguard.GAVE_WAY)
 
