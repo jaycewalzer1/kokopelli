@@ -1,0 +1,11 @@
+name: psych101_pilot
+model: Qwen/Qwen3-VL-8B-Instruct
+weights: models/adapters/psych101_pilot/fused
+seed: 0
+training_text:
+  - out/sensation/psych101/data/lora/pilot/train.jsonl
+notes: >-
+  The 4-bit base with the Psych-101 pilot LoRA fused in (experiments/sensation/psych101/train_pilot.py). A pilot: a small
+  fixed sample of human choices, with every food and giving experiment held out, trained once through. Read it against
+  base_4bit, same seeds. models/adapters/psych101_pilot/run.json says how many rows it saw, what the fused folder holds
+  and how much of the adapter's effect the folder kept. The folder doesn't exist until that job has run.
