@@ -12,7 +12,7 @@ gets stingier as it gets hungrier is acting on that belief, not on how people be
 import json
 import re
 
-from kokopelli.body import cues
+from kokopelli.body import components
 from kokopelli.body.state import Body
 
 # Food level for each named hunger level. full sits above the healthy range, half in the "mild" band, starving in
@@ -70,9 +70,10 @@ def scene_lines(body: Body) -> str:
 def text_prompt(level: str, arm: str, paraphrase: int = 0) -> str:
     """The sweep's prompt: the closed loop's words without the picture. Only the body block changes with level."""
     body = start_body(level)
-    feel = cues.block(body.values(), arm, paraphrase=paraphrase)
+    scene = components.Situation(WHO, SITUATION)
+    feel = components.Interoception(arm, paraphrase=paraphrase)   # no tick: a sweep always shows the cue
     return "\n\n".join(part for part in (
-        WHO, f"Situation: {SITUATION}", scene_lines(body), feel,
+        scene.pre_act(body), scene_lines(body), feel.pre_act(body),
         f"What you heard:\n{NEIGHBOUR['name']} ({NEIGHBOUR['id']}): \"{ASK}\"", ACTIONS) if part)
 
 

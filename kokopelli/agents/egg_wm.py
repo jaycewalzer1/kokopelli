@@ -10,7 +10,8 @@ Cosmos3-Nano-Sim-Transfer paints what she sees, Qwen decides from the painted fr
 What this adds to that loop:
   - a body (kokopelli/body/state.py) whose food starts at the chosen level, drifts with sim time, and moves only by the world's
     rules: cook, eat and give change it, and the world refuses what isn't possible (no eggs left);
-  - felt cues (kokopelli/body/cues.py) in the prompt, never numbers; mild ones come and go between decisions;
+  - felt cues (kokopelli/body/cues.py, put together by kokopelli/body/components.py) in the prompt, never numbers; mild
+    ones come and go between decisions;
   - three body verbs (give, cook, eat) and the scene's actions list (kokopelli/body/egg.py), the same words the text sweep uses;
   - Teo's scripted answers, and the outcome: gave, declined, promised, or no answer;
   - body.jsonl: the true state each step, with what the agent felt, for the viewer overlay (kokopelli/body/overlay.py).
@@ -29,7 +30,7 @@ from pathlib import Path
 from kokopelli.agents import live_wm
 from kokopelli.agents.live import HEAR_M, STEP_S, Cast, Life, m
 from kokopelli.agents.live_wm import WorldModelLife
-from kokopelli.body import cues, egg
+from kokopelli.body import components, cues, egg
 from kokopelli.body import state as body_state
 from kokopelli.body._hash import stable_int
 from kokopelli.loop.adapters.simworld import NpcSpec
@@ -75,6 +76,7 @@ class EggLife(WorldModelLife):
                                      "start_time": args.clock})
         self.body = egg.start_body(args.level)
         self.arm = args.arm
+        self.senses = components.Senses(components.Interoception(args.arm), components.Contact(args.arm))
         self.decisions = 0
         self.responses = []
         self.felt, self.felt_lines = "", []
@@ -98,8 +100,8 @@ class EggLife(WorldModelLife):
                  for n in state.npcs if n.id == egg.NEIGHBOUR["id"] and math.dist(me, m(n.pose.location)) <= HEAR_M]
         lines.append("Who is right next to you (close enough to talk):\n" + ("\n".join(close) if close else "- nobody"))
         contact, self.body = body_state.touched(self.body)
-        self.felt_lines = cues.sensations(self.body.values(), self.arm, tick=self.decisions, contact=contact)
-        self.felt = cues.block(self.body.values(), self.arm, tick=self.decisions, contact=contact)
+        self.felt_lines = self.feel(contact)
+        self.felt = components.block(self.felt_lines)
         if self.felt:
             lines.append(self.felt)
         lines.append("Anyone or anything farther away, you only know from what you see in the picture.")
@@ -113,6 +115,11 @@ class EggLife(WorldModelLife):
                 f"The image is what you see right now, through your own eyes.\n\n{self.describe(state)}\n\n"
                 f"What you did recently:\n{recent}\nWhat just happened: {self.last}\nWhat you heard:\n{heard}\n\n"
                 f"Your notes so far:\n{notes}\n\n{egg.ACTIONS}")
+
+    def feel(self, touched):
+        """The felt lines for the coming decision: the components are told which decision it is and what was touched."""
+        self.senses.update(components.Moment(tick=self.decisions, touched=touched))
+        return self.senses.lines(self.body)
 
     def check(self, act, state):
         kind = act["type"]
@@ -175,8 +182,7 @@ class EggLife(WorldModelLife):
         if state is None:
             return
         # What the agent was actually given at its last decision; before the first one, what it is about to be given.
-        felt_now = (self.felt_lines if self.responses else
-                    cues.sensations(self.body.values(), self.arm, tick=self.decisions, contact=self.body.contact))
+        felt_now = self.felt_lines if self.responses else self.feel(self.body.contact)
         self.body_log.write(json.dumps({"step": step, "t": round(state.sim_time_s, 2), "clock": state.time_of_day.clock,
                                         **self.body.as_dict(), "felt": felt_now,
                                         "last_action": self.responses[-1]["action"] if self.responses else None,

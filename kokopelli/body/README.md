@@ -8,6 +8,8 @@ so. Spec: [`docs/M1_HUNGER_BENCHMARK.md`](../../docs/M1_HUNGER_BENCHMARK.md).
 |---|---|
 | `state.py` | `Body`, drift over time, what cook, eat, give, rest and tea do, what the world refuses, and the drive |
 | `cues.py` | The three delivery arms: `cue` (felt text), `label` ("You are very hungry.") and `none`; bands and three wordings each |
+| `components.py` | The components a prompt's body section is built from: `Situation`, `Interoception`, `Contact`, and `Senses` to join them. Each has `pre_act(state)` and `update(event)` |
+| `master.py` | `resolve(body, action)`: what the world makes of an attempt: done, refused with a reason, or not a body action |
 | `egg.py` | The egg scene: who, where, the ask, the actions, and scoring a reply (gave, promised, declined, other) |
 | `overlay.py` | For viewers: the true numbers next to the felt cue on a painted film, and three levels side by side |
 | `voice.py` | For viewers: the agent's thoughts read aloud over its film (Kokoro-82M through mlx-audio). Never fed back |
@@ -15,7 +17,8 @@ so. Spec: [`docs/M1_HUNGER_BENCHMARK.md`](../../docs/M1_HUNGER_BENCHMARK.md).
 
 Imports: `kokopelli.settings`, the standard library, numpy and pillow only (a contract in `pyproject.toml`). The text
 sweep that uses this is [`experiments/sensation/`](../../experiments/sensation/README.md); the closed-loop video run is
-`kokopelli/agents/egg_wm.py`.
+`kokopelli/agents/egg_wm.py`. Both build the body section from `components.py`. The component and game-master designs come
+from Concordia; what was borrowed is in [`vendor/concordia_patterns/SOURCE.md`](../../vendor/concordia_patterns/SOURCE.md).
 
 ## Running
 

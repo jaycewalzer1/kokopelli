@@ -2,6 +2,8 @@
 
     state.py   food, energy, warmth and what's in the cupboard; the world's rules move them, never the model
     cues.py    numbers in, felt text out (or a plain label, or nothing): the three delivery arms of a sweep
+    components.py  what a prompt's body section is built from: situation, interoception, contact
+    master.py  an attempted action in, what the world made of it out (done, refused and why, or no rule)
     egg.py     the egg scene: a neighbour asks for one of your last eggs, at a chosen level of hunger
     overlay.py true numbers next to the felt cue on a painted film, and three films side by side
     voice.py   an optional spoken inner voice for the films, for viewers only
