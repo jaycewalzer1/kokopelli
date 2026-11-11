@@ -16,6 +16,7 @@ draw and encode; never a GPU job.
 """
 import argparse
 import json
+import math
 import subprocess
 import textwrap
 from pathlib import Path
@@ -25,6 +26,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 LEVEL_ORDER = ("full", "half", "starving")
 PANEL_W = 420
+PANEL_MIN_H = 480   # lines the panel needs for all its text; a shorter film is enlarged to reach it
 PAD = 24
 # DESIGN.md section 1, dark theme.
 BG, SURFACE, HAIR = (20, 16, 13), (30, 24, 20), (58, 48, 42)
@@ -72,6 +74,17 @@ def body_at(lines: list[dict], t: float) -> dict:
         else:
             break
     return chosen
+
+
+def shown_at(lines: list[dict], t: float) -> dict:
+    """What the panel shows at time t: the body as it is then, with the choice made at that moment.
+    egg_wm writes a line before each decision, so the choice made at line k is only recorded on line k+1, 15 seconds
+    later. Without this the panel says "Nothing yet" for the whole step in which she is already doing it."""
+    line = body_at(lines, t)
+    k = next(i for i, other in enumerate(lines) if other is line)
+    if k + 1 < len(lines):
+        return {**line, "last_action": lines[k + 1].get("last_action"), "outcome": lines[k + 1].get("outcome")}
+    return line
 
 
 def describe_action(action: dict | None) -> str:
@@ -141,8 +154,14 @@ def panel(height, title, line, fonts, final=None, dry=False):
     return np.asarray(img)
 
 
-def overlay(run_dir: str | Path, out: str | Path | None = None, title: str | None = None) -> Path:
-    """Painted film + panel. Returns the path of overlay.mp4 next to the film."""
+def fitting_scale(height: int) -> int:
+    """How many times to enlarge a film so the panel's text fits beside it: 1 for a 480-line film, 2 for a 256-line one."""
+    return max(1, math.ceil(PANEL_MIN_H / height))
+
+
+def overlay(run_dir: str | Path, out: str | Path | None = None, title: str | None = None, scale: int = 1) -> Path:
+    """Painted film + panel. Returns the path of overlay.mp4 next to the film.
+    scale: enlarge the film by this whole number first (the panel needs PANEL_MIN_H lines; see fitting_scale)."""
     run = Path(run_dir).resolve()
     film = run / "world_model.mp4"
     lines = [json.loads(line) for line in (run / "body.jsonl").read_text().splitlines() if line.strip()]
@@ -150,9 +169,11 @@ def overlay(run_dir: str | Path, out: str | Path | None = None, title: str | Non
     title = title or result.get("level", run.name)
     dry = bool(result.get("dry_run"))
     w, h, fps, _ = probe(film)
+    w, h = w * scale, h * scale
     out = Path(out or run / "overlay.mp4")
     fonts, cache = Fonts(), {}
-    reader = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(film), "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+    enlarge = ["-vf", f"scale={w}:{h}:flags=lanczos"] if scale != 1 else []
+    reader = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(film), *enlarge, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
                               stdout=subprocess.PIPE)
     writer = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{w + PANEL_W}x{h}",
                                "-r", f"{fps:g}", "-i", "-", "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p", str(out)],
@@ -164,7 +185,7 @@ def overlay(run_dir: str | Path, out: str | Path | None = None, title: str | Non
             raw = reader.stdout.read(frame_bytes)
             if len(raw) < frame_bytes:
                 break
-            line = body_at(lines, k / fps)
+            line = shown_at(lines, k / fps)
             key = (line["t"], line.get("outcome"))
             if key not in cache:
                 cache[key] = panel(h, title, line, fonts, final=None, dry=dry)
@@ -178,6 +199,7 @@ def overlay(run_dir: str | Path, out: str | Path | None = None, title: str | Non
     if k == 0:
         raise RuntimeError(f"no frames read from {film}")
     sidecar = {"made_by": "kokopelli/body/overlay.py", "source": str(film), "frames": k, "fps": fps, "panel_px": PANEL_W,
+               "film_enlarged": scale,
                "level": result.get("level"), "arm": result.get("arm"), "outcome": result.get("outcome"),
                "world_model": result.get("world_model"), "quantize": result.get("quantize"), "size": result.get("size"),
                "agent_model": result.get("agent_model"), "dry_run": result.get("dry_run")}
@@ -227,11 +249,13 @@ def main():
     one = sub.add_parser("one")
     one.add_argument("run")
     one.add_argument("--voice", help="a voice.wav to mux in (default: the run's own voice.wav, if there is one)")
+    one.add_argument("--scale", type=int, help="enlarge the film this many times (default: just enough for the panel to fit)")
     tri = sub.add_parser("triptych")
     tri.add_argument("folder")
     args = ap.parse_args()
     if args.command == "one":
-        made = overlay(args.run)
+        height = probe(Path(args.run).resolve() / "world_model.mp4")[1]
+        made = overlay(args.run, scale=args.scale or fitting_scale(height))
         voice = Path(args.voice) if args.voice else Path(args.run).resolve() / "voice.wav"
         print(made)
         if voice.exists():

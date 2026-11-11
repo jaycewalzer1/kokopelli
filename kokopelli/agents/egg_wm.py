@@ -44,7 +44,11 @@ from kokopelli.wm import seen as seen_wm
 HERE = Path(__file__).resolve().parent
 ROOT = live_wm.ROOT
 
-TEO_OFFSET_M = 2.5     # Teo stands this far east of the door; Mara stands at it, facing him
+TEO_OFFSET_M = 2.5     # Teo stands this far east of Mara; she faces him
+# Where Mara stands, from the plan's door point for the common house, in metres (x east, y south). The door point itself is
+# inside a raised boardwalk nothing collides with: the first real run (2026-11-11) had both of them chest-deep in planks.
+# 2.6 m north is open lawn beside the house's timber wall (sim frames: out/sensation/smoke/stage3/).
+STAND_OFFSET_M = (0.0, -2.6)
 BODY_VERBS = ("give", "cook", "eat")
 VERB_RESULT = {"give": "You hand Teo one of your eggs.",
                "cook": "You crack an egg into the pan. It starts to sizzle.",
@@ -77,8 +81,11 @@ class EggLife(WorldModelLife):
         self.cast = EggCast(self.nav, HERE / "egg_npcs.json")
         self.cast.met.add(egg.NEIGHBOUR["id"])   # he has already said good morning: the ask is his greeting
         door = self.nav.doors["fern_common"]
-        teo = NpcSpec(id=egg.NEIGHBOUR["id"], position=((door[0] + TEO_OFFSET_M) * 100, door[1] * 100, 150), index=0)
+        x, y = door[0] + STAND_OFFSET_M[0], door[1] + STAND_OFFSET_M[1]
+        # yaw 180: he faces west, towards her. The spec's default of 0 had him asking with his back turned.
+        teo = NpcSpec(id=egg.NEIGHBOUR["id"], position=((x + TEO_OFFSET_M) * 100, y * 100, 150), yaw=180.0, index=0)
         self.cfg = type(self.cfg)(**{**self.cfg.model_dump(), "npcs": [teo], "objects": [], "agent_yaw": 0.0,
+                                     "agent_position": (x * 100, y * 100, self.cfg.agent_position[2]),
                                      "start_time": args.clock})
         self.body = egg.start_body(args.level)
         self.arm = args.arm

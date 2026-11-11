@@ -203,6 +203,15 @@ class EggLoopTest(unittest.TestCase):
             w, h, _, frames = overlay.probe(made)
             self.assertEqual((w, h), (W + overlay.PANEL_W, H))
             self.assertGreater(frames, 1)
+        # The panel shows a choice from the moment it is made, not a step later.
+        lines = [{"t": 0.0, "last_action": None, "outcome": None}, {"t": 15.0, "last_action": {"type": "give"}, "outcome": "gave"}]
+        self.assertEqual(overlay.shown_at(lines, 3.0), {"t": 0.0, "last_action": {"type": "give"}, "outcome": "gave"})
+        self.assertIs(overlay.shown_at(lines, 15.0), lines[1])
+        # A film too short for the panel's text is enlarged by a whole number, and the record says by how much.
+        self.assertEqual([overlay.fitting_scale(h) for h in (480, 256, 36)], [1, 2, 14])
+        big = overlay.overlay(self.tmp / "links" / "full", out=self.tmp / "big.mp4", scale=2)
+        self.assertEqual(overlay.probe(big)[:2], (2 * W + overlay.PANEL_W, 2 * H))
+        self.assertEqual(json.loads((self.tmp / "big.mp4.json").read_text())["film_enlarged"], 2)
         tri = overlay.triptych(self.tmp / "links")
         w, h, _, _ = overlay.probe(tri)
         self.assertEqual(w, 3 * (W + overlay.PANEL_W))
