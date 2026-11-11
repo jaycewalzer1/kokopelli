@@ -70,6 +70,12 @@ done
 if [[ -n "$started" ]]; then
 	echo "stopping the SimWorld server this script started"
 	pkill -f "SimWorld.*-cvport=$PORT" || true
+	# Wait for the port to close. A job queued straight after this one otherwise finds the dying server still
+	# listening, starts none of its own, and fails on its first request (the full level did, 2026-11-11 02:20).
+	for _ in $(seq 1 60); do
+		lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1 || break
+		sleep 1
+	done
 fi
 
 if [[ -e "$OUT/full/overlay.mp4" && -e "$OUT/half/overlay.mp4" && -e "$OUT/starving/overlay.mp4" ]]; then
