@@ -199,6 +199,10 @@ class EggLoopTest(unittest.TestCase):
         # The sidecar has a place for the precision and both weights folders, and a stand-in has no folder to name.
         self.assertEqual((sidecar["world_model_weights"], sidecar["agent_weights"]), (None, None))
         self.assertIn("quantize", sidecar)
+        # A real painter reports its folder's name from another process; the path is the one place that worker loads from.
+        from kokopelli.wm import world_transfer
+        self.assertEqual(egg_wm.painter_weights(world_transfer.MODEL_DIR.name), str(world_transfer.MODEL_DIR))
+        self.assertEqual([egg_wm.painter_weights(name) for name in (None, "fake (no model)")], [None, None])
 
     def test_overlay_and_triptych(self):
         from kokopelli.body import overlay

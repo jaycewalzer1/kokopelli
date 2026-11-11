@@ -255,12 +255,19 @@ class EggLife(WorldModelLife):
         (self.out / "egg.json").write_text(json.dumps(result, indent=1))
         meta = json.loads((self.out / "run.json").read_text())
         # run.json is the sidecar a reader opens first, so it names the precision and both weights folders itself.
-        painter_dir = getattr(self.wm, "model_dir", None)
         meta.update(scene="egg", level=self.args.level, arm=self.arm, outcome=result["outcome"], dry_run=result["dry_run"],
                     quantize=self.args.quantize, world_model_checkpoint=result["world_model_checkpoint"],
-                    world_model_weights=str(painter_dir) if painter_dir else None,
+                    world_model_weights=painter_weights(painted_by),
                     agent_weights=str(self.args.weights) if real_brain else None)
         (self.out / "run.json").write_text(json.dumps(meta, indent=1))
+
+
+def painter_weights(painted_by: str | None) -> str | None:
+    """The folder the painter loaded, for the sidecar. The handle a life holds talks to a worker in another process
+    and only hears back the folder's name, so the path comes from the one place the worker loads from, and only when
+    the name it reported is that folder's. A stand-in reports no name and gets no folder."""
+    from kokopelli.wm import world_transfer
+    return str(world_transfer.MODEL_DIR) if painted_by == world_transfer.MODEL_DIR.name else None
 
 
 def main():
