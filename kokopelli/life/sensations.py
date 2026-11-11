@@ -42,7 +42,10 @@ def _sweeps():
                      "backend": record["backend"], "arm": record["arm"], "real": record["real"],
                      "model": (record.get("model") or {}).get("model_id"), "cells": cells,
                      "verdicts": {arm: {"change": a["change"], "verdict": a["verdict"]} for arm, a in report["arms"].items()},
-                     "anchor": report["anchor"]})
+                     "anchor": report["anchor"],
+                     # Per-scene words, absent from reports written before the scenes registry (the page then uses
+                     # the hunger scene's): "gave" above is whatever the scene's primary score is.
+                     "paraphrases": record.get("paraphrases"), "words": report.get("words")})
     return sorted(runs, key=lambda run: -run["at"])
 
 

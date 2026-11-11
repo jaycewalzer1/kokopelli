@@ -79,7 +79,12 @@ function drawVideos() {
 }
 
 function sweepBlock(sweep) {
-  const head = `<tr><th>Arm</th>${sweep.levels.map(level => `<th>${escapeHtml(level)}</th>`).join("")}<th>Full to starving</th><th>Reads as</th></tr>`;
+  // Each scene brings its own words for its score; a report written before the scenes registry has none and is the hunger scene's.
+  const words = sweep.words ?? {rate: "Giving rate", primary: "a give action to Teo"};
+  const first = sweep.levels[0] ?? "";
+  const span = `${first.charAt(0).toUpperCase()}${first.slice(1)} to ${sweep.levels[sweep.levels.length - 1] ?? ""}`;
+  const noAnchor = sweep.anchor.verified === false;
+  const head = `<tr><th>Arm</th>${sweep.levels.map(level => `<th>${escapeHtml(level)}</th>`).join("")}<th>${escapeHtml(span)}</th><th>Reads as</th></tr>`;
   const rows = sweep.arms.map(arm => {
     const cells = sweep.levels.map(level => {
       const cell = sweep.cells[`${arm}|${level}`];
@@ -91,12 +96,12 @@ function sweepBlock(sweep) {
   const when = new Date(sweep.at * 1000).toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"});
   return `<article class="sweep">
     <div class="title">${escapeHtml(sweep.id)}${sweep.real ? "" : `<span class="tag">Not a real model</span>`}</div>
-    <div class="numbers">${escapeHtml(sweep.model ?? "")} · ${escapeHtml(sweep.backend)} · ${sweep.samples} samples × 3 wordings per cell · ${when}</div>
+    <div class="numbers">${escapeHtml(sweep.model ?? "")} · ${escapeHtml(sweep.backend)} · ${sweep.samples} samples × ${sweep.paraphrases ?? 3} wordings per cell · ${when}</div>
     <div class="table-wrap"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div>
-    <p class="meta">Giving rate: a give action to Teo, with its 95% interval. "none" gets the same prompt at every level, so it must
+    <p class="meta">${escapeHtml(words.rate)}: ${escapeHtml(words.primary.replaceAll("`", ""))}, with its 95% interval. "none" gets the same prompt at every level, so it must
       read flat; if it doesn't, the level is leaking.</p>
     <div class="anchor">
-      <p><span class="eyebrow">What people do</span><br>${escapeHtml(sweep.anchor.real)}</p>
+      <p><span class="eyebrow">${noAnchor ? "No verified anchor" : "What people do"}</span><br>${escapeHtml(sweep.anchor.real)}</p>
       <p><span class="eyebrow">What people predict</span><br>${escapeHtml(sweep.anchor.lay)}</p>
     </div>
   </article>`;
