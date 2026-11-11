@@ -72,7 +72,7 @@ constraint-dependencies = [
 # `make test-all` runs these twice: .venv with -m "not py310", simworld/.venv with -m py310 (tools/fable/test_all.sh).
 # The markers are applied and enforced in conftest.py. mac_server/tests has its own pytest.ini and runs with MAC=1.
 testpaths = ["tests", "experiments/benchmarks/tests", "experiments/commons/tests", "experiments/exp1/tests",
-             "experiments/homeostatic/tests", "experiments/sensation/tests"]
+             "experiments/homeostatic/tests", "experiments/sensation/tests", "experiments/sensation/psych101/tests"]
 # The repo root on sys.path, and experiments/ (no __init__.py) resolved as a namespace package, so every test module
 # imports under its full dotted name (tests.loop.test_x, experiments.benchmarks.tests.test_y) and nothing is loaded twice.
 pythonpath = ["."]
