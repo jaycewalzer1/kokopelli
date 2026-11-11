@@ -2,10 +2,10 @@
 
 It loads Qwen, so it only ever runs through the GPU queue:
 
-    python3 kokopelli/ops/gpu.py run --name sens_lora_psych101_pilot --priority 50 --max-hours 1.5 --gb 14 --cwd "$PWD" \
+    python3 kokopelli/ops/gpu.py run --name sens_lora_psych101_pilot --priority 50 --max-hours 0.65 --gb 14 --cwd "$PWD" \
       --about "Pilot LoRA: Qwen3-VL-8B-Instruct 4-bit on a fixed sample of Psych-101 human choices ..." \
       --output models/adapters/psych101_pilot -- \
-      .venv/bin/python -u -m experiments.sensation.psych101.train_pilot --minutes 25
+      .venv/bin/python -u -m experiments.sensation.psych101.train_pilot --minutes 15
 
 What it does, in order, and why:
 
