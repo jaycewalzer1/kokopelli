@@ -2,7 +2,8 @@
 # Run the test tree with pytest, one summary line per run; a failing run also prints its failing tests.
 # Usage: tools/fable/test_all.sh [pytest args or paths ...]   (default: everything, in the runs below)
 #   main         .venv (Python 3.12), -m "not py310": tests/, experiments/exp1/tests, experiments/homeostatic/tests
-#   experiments  .venv, -m "not py310": experiments/benchmarks/tests, experiments/commons/tests, experiments/sensation/tests
+#   experiments  .venv, -m "not py310": experiments/benchmarks/tests, experiments/commons/tests, experiments/sensation/tests,
+#                experiments/sensation/psych101/tests
 #   py310        simworld/.venv (Python 3.10), -m py310: the SimWorld tests (tests/loop/test_simworld*.py)
 #   MAC=1        also run mac_server (starts a mock server on port 9000, so one checkout at a time).
 #                Its 29 known baseline failures are reported but don't fail the run.
@@ -52,7 +53,7 @@ if [ $# -gt 0 ]; then
   one main .venv/bin/python -W ignore -m pytest $v -rfE -m "not py310" "$@"
 else
   one main .venv/bin/python -W ignore -m pytest $v -rfE -m "not py310" tests experiments/exp1/tests experiments/homeostatic/tests
-  one experiments .venv/bin/python -W ignore -m pytest $v -rfE -m "not py310" experiments/benchmarks/tests experiments/commons/tests experiments/sensation/tests
+  one experiments .venv/bin/python -W ignore -m pytest $v -rfE -m "not py310" experiments/benchmarks/tests experiments/commons/tests experiments/sensation/tests experiments/sensation/psych101/tests
 fi
 # shellcheck disable=SC2086  # as above
 one py310 simworld/.venv/bin/python -W ignore -m pytest $v -rfE -m py310 "$@"

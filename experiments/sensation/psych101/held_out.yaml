@@ -1,0 +1,77 @@
+# Which Psych-101 experiments never reach training, and which were looked at and kept. Read by prepare.py.
+#
+# Rule (plan, Lane D): hold out every experiment about food, hunger, generosity or social giving, so the sensation
+# sweeps measure transfer and not memory.
+#
+# How this list was made, 2026-11-10: `prepare.py survey` over every session of revision 611565c (76 experiment ids from
+# 46 studies), a screen for food and giving words (prepare.SCREEN), then reading how each of the 46 studies opens and the
+# sentence around every match. An entry names a study (everything before the "/") or one experiment id.
+#
+# What the reading found: the public training file has NO dictator, ultimatum, public-goods or trust game, and no
+# experiment that manipulates or asks about hunger. It is bandits, risky choice, category learning, memory and planning.
+# So nothing is held out for being a giving game; the two entries below are the nearest things there are.
+#
+# `convert` refuses to run if an experiment matches the screen and appears in neither list.
+
+held_out:
+  - experiment: ludwig2023human
+    tier: rule
+    reason: >-
+      Its cover story is handing out food: "You will have to repeatedly feed animals with fruits", choosing which
+      fruit each animal gets. Underneath it is a learning task about matching vitamins to preferences, but it is the
+      one experiment where a person decides who is given food, which is what the egg scene asks.
+  - experiment: hebart2023things
+    tier: cautious
+    reason: >-
+      Odd-one-out judgments over triplets of everyday objects (THINGS). It is not about eating or sharing, but many of
+      its objects are foods ("egg, scrambled egg, doorknocker"), so it is the one place an adapter would read
+      thousands of food words, eggs among them. Held out tonight because that can't be undone after training and
+      costs the pilot nothing. It is also the largest experiment in the set (about a quarter of all choices), so
+      whether a real run keeps it out is the owner's call (the log's Decisions for Jayce).
+
+kept_after_review:
+  - experiment: cox2017information
+    reason: >-
+      A memory test on random word pairs. Words such as HUNGER, EGG, DICTATOR, DONATE and SHARE turn up only as items
+      to recall ("You view the word STRIKE. You answer HUNGER"); nobody decides anything about food or giving.
+  - experiment: popov2023intent
+    reason: >-
+      Word lists to remember, each judged larger or smaller than a football. "bread" and "fruit" are list words.
+  - experiment: jansen2021dunningkruger
+    reason: >-
+      People guess their own score on grammar and logic quizzes and where they rank "compared to other participants".
+      It is self-assessment; nothing is given or divided.
+  - experiment: wulff2018description
+    reason: The match is "the lotteries offer different points". Risky choice for oneself, no other person.
+  - experiment: wulff2018sampling
+    reason: The match is "the lotteries offer different points". Sampling then choosing a lottery for oneself.
+  - experiment: feng2021dynamics
+    reason: The match is slot machines that "give you the most points". A two-armed bandit.
+  - experiment: sadeghiyeh2020temporal
+    reason: The match is slot machines that "give you the most points". A two-armed bandit.
+  - experiment: somerville2017charting
+    reason: The match is slot machines that "give you the most points". A two-armed bandit.
+  - experiment: waltz2020differential
+    reason: The match is slot machines that "give you the most points". A two-armed bandit.
+  - experiment: wilson2014humans
+    reason: The match is slot machines that "give you the most points". A two-armed bandit (the horizon task).
+  - experiment: xiong2023neural
+    reason: The match is a slot machine that "will not always give you the same points". A changing bandit.
+  - experiment: gershman2018deconstructing
+    reason: The match is a machine that "will always give 0 points". A two-armed bandit.
+  - experiment: frey2017cct
+    reason: The match is gains and losses "summed up to give you your final score". A card-turning risk task.
+  - experiment: garcia2023experiential
+    reason: The match is a question about the odds that an "option gives 1.0 points". Choice between gambles.
+  - experiment: kumar2023disentangling
+    reason: The match is "if you give the location on the grid". Revealing tiles to find a pattern.
+  - experiment: kool2016when
+    reason: >-
+      The two-step task with a space story: the player asks aliens for treasure and "the treasure an alien can give
+      will change slowly". The player only ever receives; the choice is which spaceship to take.
+  - experiment: kool2017cost
+    reason: The same two-step space task as kool2016when; aliens give treasure, the player never gives.
+  - experiment: zorowitz2023data
+    reason: >-
+      The two-step task again: "choose an alien to trade with ... it will either give you treasure or junk". "Trade"
+      is the story's word for asking; the player hands nothing over and no one else's outcome is at stake.
