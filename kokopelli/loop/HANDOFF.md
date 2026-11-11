@@ -188,3 +188,11 @@ and the server died, three times, including once with no client connected. Measu
 close, then reached 508 m south. Proposed: in `close()`, before `resume()`, send `npc_stop` for every NPC spec and
 `stop_agent` for the agent. `kokopelli/agents/live.py` does this itself for now (`Life.halt`), and after it nobody moved
 in 40 s.
+
+## Ask from the sensations work (2026-11-10): `WorldModelLife.__init__` logs before the clock exists
+
+Not applied. `kokopelli/agents/live_wm.py` belongs to the Sim-Transfer area; it's written here because this file is where asks about the loop go.
+
+`Life.log` (`kokopelli/agents/live.py:246`) reads `self.sim_t`, which only `Life.run` sets (`live.py:479`). `WorldModelLife.__init__` calls `self.log("world_model", ...)` at `kokopelli/agents/live_wm.py:104`, before `run`. Read from the code, not run: `live_wm.main` builds a plain `WorldModelLife(args)`, so that line should raise `AttributeError: ... no attribute 'sim_t'` once the world-model worker has started. `lunch_wm.py` sets its own clock in `__init__` (line 97) and isn't affected.
+
+`kokopelli/agents/egg_wm.py` works around it by setting `self.sim_t = 0.0` before `super().__init__(args)`. The fix on your side is one line, `self.sim_t = 0.0` at the top of `Life.__init__` (`live.py:216`), after which the workaround in `egg_wm.py` can go. Still the case on `main` at 6d6e339.

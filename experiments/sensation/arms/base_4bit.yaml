@@ -1,0 +1,7 @@
+name: base_4bit
+model: Qwen/Qwen3-VL-8B-Instruct
+weights: models/Qwen3-VL-8B-Instruct-4bit
+seed: 0
+notes: >-
+  The base model at 4-bit, no adapter: the weights the closed-loop egg videos decide with (kokopelli/agents/egg_wm.py's
+  default), and the base a 4-bit LoRA is read against. The benchmarks' own `base` arm is the full-precision weights.

@@ -1,0 +1,32 @@
+# What people do, and what people predict they'd do, for each sweep. Reports only: nothing here changes a score.
+# A sweep is scored against both. Matching the prediction instead of the behaviour is the failure we're looking for:
+# it means the model is acting on what it read about people, not on how people act.
+
+hunger_sharing:
+  used_by: [hunger_egg]
+  source: >-
+    Hausser, Stollberger, Kellerwessel, Mojzisch, Schulz-Hardt 2019, "Acute hunger does not always undermine
+    prosociality", Nature Communications 10:4733. https://pmc.ncbi.nlm.nih.gov/articles/PMC6800423
+  verified: true   # read on 2026-11-10: main findings, Study 4 and Study 5 below
+  real:
+    summary: >-
+      Across 4 studies (N = 795), acute hunger did not reliably change prosocial choices: public goods, ultimatum,
+      dictator games, social value orientation, volunteering. Pooled effects were near zero; Bayes factors favoured
+      no effect for 7 of 12 tests.
+    food_vs_money: >-
+      Study 4 (N = 363, before vs after lunch): people gave more when the resource was food (about 5.3 of 10 packs)
+      than money (about 4.4 of 10), and hunger didn't change giving in either.
+    direction: flat
+  lay_prediction:
+    summary: >-
+      Study 5 (N = 197): 79% predicted hungry people would be more selfish, 73% less cooperative; 62% expected it of
+      themselves. Predicted dictator-game giving by hungry people was 1.96 euros against 2.60 actually given.
+    direction: falls_with_hunger
+  limits: >-
+    Acute, everyday hunger in mostly German university students, in economic games with strangers. Not chronic
+    scarcity, and not a neighbour asking for your second-to-last egg. Treat it as the nearest human anchor, not a
+    measurement of this exact scene.
+
+# Margin for "no change", chosen by us, not by the paper: a change in giving rate from full to starving smaller than
+# this, with its whole 95% interval inside +/- the margin, counts as flat.
+flat_margin: 0.10
