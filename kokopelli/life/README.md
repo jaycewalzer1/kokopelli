@@ -43,7 +43,7 @@ Tune the stages, the salience-to-depth table, the budget and the default seed in
 | `scenario.py`, `scenario_night.py`, `staged.py` | The wellness center scenario and its night run through the generator; jobs staged for the Start button on the queue page |
 | `city.py` | Checks on the city plan in `data/city/world.json` |
 | `panel.py`, `static/` | The dev panel server (`make panel`, or `koko-panel`) and its pages |
-| `architecture.py`, `pipeline.py`, `gpu_queue.py`, `city_live.py`, `world_runs.py`, `moodboard.py`, `watch.py` | What each panel view reads |
+| `architecture.py`, `pipeline.py`, `gpu_queue.py`, `city_live.py`, `world_runs.py`, `moodboard.py`, `sensations.py`, `watch.py` | What each panel view reads |
 
 ## System architecture view
 

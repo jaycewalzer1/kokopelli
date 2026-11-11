@@ -1,0 +1,47 @@
+/* The sensations view's layout. Colors, type and components come from design.css. */
+header #status-line { margin-left: auto; min-width: 0; }
+.sens { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--space-4) var(--space-6) var(--space-12); display: flex; flex-direction: column; gap: var(--space-12); }
+.headline { margin: var(--space-2) 0; font: 300 40px/44px var(--font-serif); }
+.intro .meta { max-width: 65ch; }
+.section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-2); }
+.section-head .pick { display: flex; align-items: center; gap: var(--space-2); font: 500 14px/20px var(--font-sans); text-transform: none; letter-spacing: 0; color: var(--ink); }
+.section-head select { max-width: 260px; }
+
+.toggles { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-4) 0; }
+/* A pressed toggle is marked by its border and a word, not by color alone. */
+.toggles button[aria-pressed="true"] { border-color: var(--ink); }
+.toggles button[aria-pressed="true"]::before { content: "On · "; color: var(--ink-muted); }
+.toggles button[aria-pressed="false"]::before { content: "Off · "; color: var(--ink-muted); }
+
+video { display: block; width: 100%; background: var(--surface-200); border: 1px solid var(--hairline); }
+#triptych video { aspect-ratio: 3756 / 480; }
+#triptych:empty { display: none; }
+.levels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin-top: var(--space-6); }
+.level { margin: 0; display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.level video { aspect-ratio: 1252 / 480; object-fit: contain; }   /* 832x480 film + the 420 px panel */
+.level .name { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font: 400 28px/34px var(--font-serif); }
+.level .first { margin: 0; font: 400 13px/18px var(--font-sans); }
+.level .thought { margin: 0; font: 400 13px/18px var(--font-sans); font-style: italic; color: var(--ink-muted); }
+.empty, .none { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); padding: var(--space-2) 0; }
+.empty.box { display: flex; align-items: center; justify-content: center; aspect-ratio: 1252 / 480; border: 1px solid var(--hairline); }
+
+/* A word in a box, never a color alone. */
+.tag { flex: none; padding: 0 4px; border: 1px solid var(--ink-muted); font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); }
+.tag.strong { border-color: var(--ink); color: var(--ink); }
+
+.sweep { margin-bottom: var(--space-12); display: flex; flex-direction: column; gap: var(--space-4); }
+.sweep .title { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); font: 400 28px/34px var(--font-serif); }
+.sweep .numbers { font: 400 13px/20px var(--font-mono); color: var(--ink-muted); }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font: 400 13px/20px var(--font-mono); }
+th { text-align: left; font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); }
+th, td { padding: var(--space-2) var(--space-4) var(--space-2) 0; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+td.verdict { font: 400 13px/18px var(--font-sans); min-width: 220px; }
+.ci { color: var(--ink-muted); }
+.anchor { max-width: 65ch; font: 400 13px/18px var(--font-sans); display: flex; flex-direction: column; gap: var(--space-2); }
+
+@media (max-width: 900px) {
+  .sens { padding: var(--space-4) var(--space-4) var(--space-12); overflow: visible; }
+  .headline { font: 400 28px/34px var(--font-serif); }
+  .levels { grid-template-columns: minmax(0, 1fr); }
+}

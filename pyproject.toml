@@ -72,7 +72,7 @@ constraint-dependencies = [
 # `make test-all` runs these twice: .venv with -m "not py310", simworld/.venv with -m py310 (tools/fable/test_all.sh).
 # The markers are applied and enforced in conftest.py. mac_server/tests has its own pytest.ini and runs with MAC=1.
 testpaths = ["tests", "experiments/benchmarks/tests", "experiments/commons/tests", "experiments/exp1/tests",
-             "experiments/homeostatic/tests"]
+             "experiments/homeostatic/tests", "experiments/sensation/tests", "experiments/sensation/psych101/tests"]
 # The repo root on sys.path, and experiments/ (no __init__.py) resolved as a namespace package, so every test module
 # imports under its full dotted name (tests.loop.test_x, experiments.benchmarks.tests.test_y) and nothing is loaded twice.
 pythonpath = ["."]
@@ -131,15 +131,16 @@ ignore_imports = [
 ]
 
 [[tool.importlinter.contracts]]
-# Low to high: wm (world model) <- mind <- loop <- life <- agents. life sits above loop: it holds the dev panel and the
-# life generator, which read runs; the loop reaches life only through its life_db adapter (allowed below).
-name = "Layers: wm, mind, loop, life, agents (a lower layer never imports a higher one)"
+# Low to high: wm (world model) <- body <- mind <- loop <- life <- agents. life sits above loop: it holds the dev panel and
+# the life generator, which read runs; the loop reaches life only through its life_db adapter (allowed below).
+name = "Layers: wm, body, mind, loop, life, agents (a lower layer never imports a higher one)"
 type = "layers"
 layers = [
     "kokopelli.agents",
     "kokopelli.life",
     "kokopelli.loop",
     "kokopelli.mind",
+    "kokopelli.body",
     "kokopelli.wm",
 ]
 ignore_imports = [
@@ -153,6 +154,14 @@ name = "ops imports nothing else from the library, settings included"
 type = "forbidden"
 source_modules = ["kokopelli.ops"]
 forbidden_modules = ["kokopelli.wm", "kokopelli.mind", "kokopelli.loop", "kokopelli.life", "kokopelli.agents", "kokopelli.settings"]
+
+[[tool.importlinter.contracts]]
+# The body is pure rules and words: numbers in, text out. It may use kokopelli.settings, the standard library, numpy and
+# pillow (and mlx-audio inside voice.py's loader). Keeping the world model out is what lets a sweep run with no model.
+name = "body imports nothing else from the library but settings"
+type = "forbidden"
+source_modules = ["kokopelli.body"]
+forbidden_modules = ["kokopelli.wm", "kokopelli.mind", "kokopelli.loop", "kokopelli.life", "kokopelli.agents", "kokopelli.ops"]
 
 [tool.pyright]
 # The library only: experiments/ and tools/ stay unchecked, and so do tests (phase 7 moves the ones still under

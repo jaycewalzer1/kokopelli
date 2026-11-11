@@ -9,6 +9,7 @@ Cosmos3-Nano-Sim-Transfer paints from it. Moved here from `city/agents/` in the 
 | `live_wm.py`, `run_wm_life.sh` | The same life, but the agent sees only the world model's painting, never the sim. The script starts the packaged server on 9001 if nothing is listening, then `live_wm.py` |
 | `lunch_wm.py`, `run_wm_lunch.sh` | Two people meet for lunch inside the world model, each with their own view |
 | `lunch_parts.py`, `lunch_sim.py`, `lunch_text.py` | The lunch's pieces: bodies, minds and writers; the two-body sim; the personas and prompts |
+| `egg_wm.py`, `egg_npcs.json`, `run_egg_videos.sh` | The egg scene inside the world model at one level of hunger, and the queued job that runs all three levels ([spec](../../docs/M1_HUNGER_BENCHMARK.md)) |
 | `lunch_fixes.py` | Behavior fixes for the lunch, each behind a switch that is off by default (measured in [`docs/log/fable/2026-11-10-P5.md`](../../docs/log/fable/2026-11-10-P5.md)) |
 | `lunch_life.py` | A generated past for the two people through the life generator, behind `--life` |
 | `bodies_client.py` | The SetBody/GetBody helper the live agent uses (moved from `tools/bodies/client.py`) |

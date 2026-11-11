@@ -21,7 +21,7 @@ import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-WORLD = HERE.parent / "world.json"
+WORLD = HERE.parents[1] / "data" / "city" / "world.json"
 CM = 100.0
 WALK_M = 17.5
 

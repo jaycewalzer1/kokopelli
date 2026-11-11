@@ -19,6 +19,7 @@ and must not pull in anything heavy.
 | `labels.py` | Optional object labels on the seg control: the label pass of a clip, caption subjects, token spans, token regions and the attention mask `world_transfer.py --labels` uses. Plan and status: [`docs/LABELS_PLAN.md`](../../docs/LABELS_PLAN.md) |
 | `label_check.py` | Asks Qwen whether each labeled object was painted as its label: accuracy, flips, neighbor leak. Loads Qwen, so it goes through the queue |
 | `manifest.py` | The `manifest` block every output sidecar carries (commit, weights, seed, prompt, controls) |
+| `seen.py` | `seen(frame, candidates)`: keeps a sim candidate only if an open-vocabulary detector (OWLv2, Grounding DINO or Florence-2, by `settings.SEEN`) finds it in the painted frame. The detectors need torch, so they run in a worker under `simworld/.venv`. Measured by `experiments/sensation/seen_eval.py` |
 | `controls/` | Builds the control videos (depth, seg, edge, blur) from SimWorld shots; `controls/prompts/` holds the prompts ([README](controls/prompts/README.md)) |
 
 ## Running
