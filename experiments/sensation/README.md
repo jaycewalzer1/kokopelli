@@ -1,18 +1,31 @@
 # Sensation sweeps
 
 **What it asks:** when an agent's body state changes, do its choices follow the curve real people's do, or the curve
-people *predict*? First sweep: the egg scene (`kokopelli/body/egg.py`) at three levels of hunger. People asked to share
-when hungry give about as much as when full (Hausser et al. 2019), but most people predict they'd give less. A model
-that gets stingier with hunger is acting on what it read about people, not on how people act.
+people *predict*? First sweep: the egg scene (`kokopelli/body/scenes/egg.py`) at three levels of hunger. People asked to
+share when hungry give about as much as when full (Hausser et al. 2019), but most people predict they'd give less. A
+model that gets stingier with hunger is acting on what it read about people, not on how people act.
+
+Every sensation gets a sweep. A sweep is a scene from `kokopelli/body/scenes/` (the registry there is `SWEEPS` here):
+
+| Sweep | Scene | Levels | Anchor (`anchors.yaml`) |
+|---|---|---|---|
+| `hunger_egg` | a neighbour asks for one of your last two eggs | full, half, starving | `hunger_sharing`: verified. People's sharing stays flat; people predict it falls |
+| `energy_boxes` | a friend asks for an hour of carrying boxes up four flights | rested, tired, exhausted | `sleep_loss_helping`: verified. Willingness to help falls after sleep loss (Ben Simon et al. 2022); the paper has no lay prediction |
+| `warmth_door` | a stranger asks you to hold a door open in driving rain | warm, cool, cold | `warmth_priming`: **no verified anchor**. Warmth priming (Williams and Bargh 2008) failed its replications |
+
+The verdict follows the anchor's recorded direction: against a flat anchor a flat line "matches what people do"; against
+one that falls, a fall is "the direction people move" (direction only: a questionnaire score and a rate aren't the same
+unit). With no verified anchor the report says so and gives only what the model did.
+`python -m experiments.sensation.sweep list` prints this table from the code.
 
 Spec, limits and open questions: [`docs/M1_HUNGER_BENCHMARK.md`](../../docs/M1_HUNGER_BENCHMARK.md).
 
 | File | What it holds |
 |---|---|
-| `sweep.py` | The paired sweep (levels x delivery arms x wordings x samples), the analysis and the report |
-| `anchors.yaml` | What people do and what people predict, per sweep, with the source and its limits. Reports only |
+| `sweep.py` | The paired sweep (levels x delivery arms x wordings x samples) over any registered scene, the analysis and the report |
+| `anchors.yaml` | What people do and what people predict, per sweep, with the source, which text was read, and its limits. `verified: true` only for a source read in full whose finding held up. Reports only |
 | `arms/` | This experiment's own arm configs (which weights answer), looked up before the benchmarks'. `base_4bit` is the weights the egg videos decide with |
-| `tests/` | The sweep end to end on the mock backend: a planted lay belief is caught, no effect reads as flat |
+| `tests/` | The sweep end to end on the mock backend, for every registered scene: a planted fall is caught, no effect reads as flat, the verdict follows each anchor, and an unverified anchor is never compared with |
 
 ## Rerun
 
