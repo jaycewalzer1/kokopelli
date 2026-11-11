@@ -44,6 +44,7 @@ Standing rules first, then one line per live area. Status, results and dates go 
 | World-model prompts | `kokopelli/wm/controls/prompts/` | no GPU |
 | Control videos | `kokopelli/wm/controls/controls.py`, `out/city_wm/bridge/controls/` | CPU only, never 9001 |
 | Sim-Transfer on the Mac | `kokopelli/wm/world_transfer.py`, `kokopelli/wm/world_stream.py`, `kokopelli/agents/live_wm.py`, `kokopelli/agents/run_wm_life.sh`, `docs/SIM_TRANSFER_MLX.md` | `~/cosmos3/cosmos3-mlx` venv under `ram_share.py hold` |
+| Object labels | `kokopelli/wm/labels.py`, `kokopelli/wm/label_check.py`, the `--labels` flags in `kokopelli/wm/world_transfer.py`, `experiments/labels/`, `docs/LABELS_PLAN.md` | `labels_`; seg-only paints by the plan, said in `--about`; checker runs through the queue |
 | Multi-control transfer | `experiments/wm_multicontrol/`, `kokopelli/wm/world_transfer_multi.py`, `kokopelli/wm/world_multicontrol_base.py` (Variant B, reference only) | `wmmc_`; results `experiments/wm_multicontrol/REPORT.md` |
 | Unreal realism pilot | `tools/realism/` | 9003 only, claim `realism_9003`; `docs/log/realism/2026-11-06-BRIEF.md` |
 | Varied city, building kinds | `tools/city_build/kinds/`, `tools/city_build/plan_varied/`, `data/city/world.json`, `SWCityKit` | 9003 only, claim `city_kinds_9003`, lock `out/city_kinds/.editor.lock` via `python -m tools.city_build.kinds.preview`/`.locked`; `tools.city_build.kinds.watchdog` |

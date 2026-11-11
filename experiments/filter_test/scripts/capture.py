@@ -1,6 +1,7 @@
 """Record the one 10-second SimWorld clip every filter in this test is run on: rgb, depth and segmentation at 30 fps.
 
     .venv/bin/python -m experiments.filter_test.scripts.capture              # needs the packaged server on port 9001, nobody else connected
+    .venv/bin/python -m experiments.filter_test.scripts.capture --labels labels.json   # also the object-label pass (kokopelli/wm/labels.py)
 
 The camera is a walking head (head.py): it looks around, bobs with each step, and holds steady on what it looks at.
 --still turns that off and leaves SimWorld's own camera, which is locked to the body.
@@ -22,6 +23,7 @@ from experiments.filter_test.scripts.head import Head  # noqa: E402
 from kokopelli.agents import live  # noqa: E402, F401  (imported for its side effect: sets up the unrealcv client, the same way the city agent does)
 from kokopelli.agents.navmap import NavMap  # noqa: E402
 from kokopelli.loop.adapters.simworld import AGENT_ACTOR, SimWorldConfig, SimWorldPhysics  # noqa: E402
+from kokopelli.wm import labels as object_labels  # noqa: E402
 
 OUT = ROOT / "out" / "filter_test" / "test_clip"
 SOURCE_RUN = ROOT / "out" / "city_agents" / "20261106-115650"
@@ -92,7 +94,9 @@ def main():
     ap.add_argument("--speed", type=float, default=1.6, help="walking speed, m/s (the city agent's default)")
     ap.add_argument("--still", action="store_true", help="no head motion: SimWorld's own camera, locked to the body")
     ap.add_argument("--place", choices=sorted(PLACES), default="bridge")
+    ap.add_argument("--labels", help="labels.json: its actors get mask colours, and labels/NNNN.png + labels_meta.json are written")
     args = ap.parse_args()
+    labels = object_labels.load(args.labels) if args.labels else []   # read before the old clip is removed, so a bad file stops here
     width, height = map(int, args.size.split("x"))
 
     spot = PLACES[args.place]
@@ -115,7 +119,7 @@ def main():
         capture_offsets_s=tuple(k * TICK for k in range(2, FRAMES + 2)), resolution=(width, height), fov_deg=90,
         modalities=("rgb", "depth", "segmentation"), out_dir=str(raw), run_id="clip", npcs=[], objects=[],
         agent_position=(a[0] * 100, a[1] * 100, floor + 200), agent_yaw=yaw, agent_speed_cm_s=args.speed * 100,
-        spawn_weather_manager=False, start_time=args.clock, seed=0)
+        spawn_weather_manager=False, start_time=args.clock, seed=0, label_actors=tuple(e["actor"] for e in labels))
 
     with Recorder(cfg) as sim:
         sim.head = None if args.still else Head(dt=TICK, **({"glances": spot["glances"]} if "glances" in spot else {}))
@@ -146,7 +150,13 @@ def main():
         "speed_m_s": args.speed, "head": "still" if args.still else "head.py", "server_port": args.port, "camera_id": sim.camera_id, "warnings": sim.warnings,
         "place": args.place, "place_about": spot["about"], "route_source": source, "leg_m": [list(a), list(b)], "floor_cm": floor,
         "outcome": result.outcome.model_dump(mode="json"), "depth_units": "cm, float32; sky clamps near 65504",
+        "mask_colors": [m.model_dump() for m in sim.mask_colors],
     }, indent=1))
+    if labels:
+        meta = object_labels.build_pass(OUT, labels, object_labels.capture_colors({"mask_colors": [m.model_dump() for m in sim.mask_colors]}),
+                                        args.labels)
+        for warning in meta["warnings"]:
+            print(f"labels: {warning}")
     print(f"{len(result.captures)} frames to {OUT}, outcome {result.outcome.status}: {result.outcome.detail}")
 
 

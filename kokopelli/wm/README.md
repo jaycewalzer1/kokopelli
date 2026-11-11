@@ -16,6 +16,8 @@ and must not pull in anything heavy.
 | `edges.py` | Edge maps of sim frames |
 | `blend.py` | Crossfades clips into one video |
 | `video_check.py` | Mosaic and drift scores for a painted video, CPU only |
+| `labels.py` | Optional object labels on the seg control: the label pass of a clip, caption subjects, token spans, token regions and the attention mask `world_transfer.py --labels` uses. Plan and status: [`docs/LABELS_PLAN.md`](../../docs/LABELS_PLAN.md) |
+| `label_check.py` | Asks Qwen whether each labeled object was painted as its label: accuracy, flips, neighbor leak. Loads Qwen, so it goes through the queue |
 | `manifest.py` | The `manifest` block every output sidecar carries (commit, weights, seed, prompt, controls) |
 | `controls/` | Builds the control videos (depth, seg, edge, blur) from SimWorld shots; `controls/prompts/` holds the prompts ([README](controls/prompts/README.md)) |
 

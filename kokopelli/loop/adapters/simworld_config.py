@@ -85,6 +85,8 @@ class SimWorldConfig(BaseModel):
     out_dir: str = "out/wmloop_simworld"
     run_id: str | None = None
     assign_mask_colors: bool = True
+    label_actors: tuple[str, ...] = Field(default=(), description="Actors named in a labels.json (kokopelli/wm/labels.py) "
+                                          "that aren't tracked: they get a mask colour too, so their pixels can be found.")
 
     seed: int = 0
     agent_position: tuple[float, float, float] = (0.0, 0.0, 600.0)  # communicator.py:626 spawns at z=600

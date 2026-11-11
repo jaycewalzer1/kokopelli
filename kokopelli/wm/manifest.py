@@ -5,7 +5,8 @@
 
 Fields: commit, dirty (bool + sha256 of `git diff HEAD` + untracked count), weights (path, sha256 of every
 *.safetensors.index.json and config.json, size of every *.safetensors), seed, prompt, quantize, controls, resolution,
-fake. Weight files are never read (they are many GB): only the small index files are hashed and the big ones stat'ed.
+fake, and labels when the paint used object labels (labels.Paint.identity(): the labels.json hash, how many labels, the
+mask settings). Weight files are never read (they are many GB): only the small index files are hashed and the big ones stat'ed.
 A fake world model is labeled "fake": True and gets no weights, so it can't pass for the real one.
 """
 import functools
@@ -67,12 +68,14 @@ def weights_info(path):
 
 
 def manifest(*, weights=None, seed=None, prompt=None, quantize=None, controls=None, resolution=None, fake=False,
-             root=ROOT, **extra):
+             labels=None, root=ROOT, **extra):
     """The manifest dict for a sidecar. `weights` is a folder or file (or a dict name -> path for several models);
-    pass fake=True for any run whose world model is faked, and weights is then left out for it."""
+    pass fake=True for any run whose world model is faked, and weights is then left out for it. `labels` is only
+    present for a paint that used object labels."""
     if isinstance(weights, dict):
         w = {k: weights_info(str(v)) for k, v in weights.items() if v is not None}
     else:
         w = weights_info(str(weights)) if weights is not None else None
     return {**git_state(Path(root)), "weights": w, "seed": seed, "prompt": prompt, "quantize": quantize,
-            "controls": controls, "resolution": resolution, "fake": bool(fake), **extra}
+            "controls": controls, "resolution": resolution, "fake": bool(fake),
+            **({"labels": labels} if labels is not None else {}), **extra}

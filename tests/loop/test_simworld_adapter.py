@@ -20,7 +20,7 @@ from kokopelli.loop.adapters.simworld import (AGENT_ACTOR, AGENT_ASSET, BOX_ASSE
                                        SimWorldConfig, SimWorldPhysics)
 from kokopelli.loop.adapters.simworld_wire import CommandError, SimWorldError
 from kokopelli.loop.physics import PhysicalState, PhysicsSim, StepResult
-from tests.loop.fake_unrealcv import FakeUnrealCV
+from tests.loop.fake_unrealcv import Actor, FakeUnrealCV
 
 FAST = dict(tick_interval_s=0.5, control_interval_s=0.5, settle_s=0, init_settle_s=0, reconnect_backoff_s=0.01,
             agent_position=(0.0, 0.0, 100.0), request_timeout_s=5.0, connect_timeout_s=5.0)
@@ -343,6 +343,23 @@ class RenderTest(AdapterCase):
         self.assertEqual(colors["npc_0"].assigned_rgb, colors["npc_0"].readback_rgb)
         rgb = [tuple(m.assigned_rgb) for m in colors.values()]
         self.assertEqual(len(set(rgb)), len(rgb), "two actors share a colour")
+
+    def test_labeled_actors_get_mask_colours_after_the_tracked_ones(self):
+        """config.label_actors (object labels, kokopelli/wm/labels.py): a level actor nobody tracks gets a colour too,
+        and the tracked actors keep the colours they have without labels."""
+        self.server.actors["SM_Lantern_3"] = Actor("SM_Lantern_3")
+        before = {m.id: m.assigned_rgb for m in self.first.mask_colors}
+        sim = self.replace_sim(label_actors=("SM_Lantern_3", "GEN_BP_mug_0", "SM_Gone_9", "SM_Lantern_3"))
+        colors = {m.id: m for m in sim.reset().mask_colors}
+        self.assertEqual(list(colors)[len(before):], ["SM_Lantern_3", "SM_Gone_9"])   # the mug is tracked already
+        self.assertEqual({k: colors[k].assigned_rgb for k in before}, before)
+        lantern = colors["SM_Lantern_3"]
+        self.assertEqual(lantern.actor, "SM_Lantern_3")
+        self.assertEqual(lantern.assigned_rgb, lantern.readback_rgb)
+        self.assertEqual(tuple(lantern.readback_rgb), self.server.actors["SM_Lantern_3"].color)
+        self.assertNotIn(lantern.assigned_rgb, list(before.values()))
+        self.assertEqual((colors["SM_Gone_9"].assigned_rgb, colors["SM_Gone_9"].readback_rgb), (None, None))
+        self.assertTrue(any("SM_Gone_9" in w for w in sim.warnings))
 
     def test_mask_map_survives_a_server_that_cannot_report_colours(self):
         self.server.refuse.add("vget /object/GEN_BP_mug_0/color")

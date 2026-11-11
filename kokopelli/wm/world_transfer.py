@@ -36,11 +36,14 @@ EPS = 1e-6
 
 
 def transfer_video(prompt, controls, output, size="832x480", frames=None, seed=2025, window=51, sink=1,
-                   hold_gb=20, quantize=None, model_dir=MODEL_DIR, decode_chunk=6, raw_prompt=False, save_latents=None, extra=None):
+                   hold_gb=20, quantize=None, model_dir=MODEL_DIR, decode_chunk=6, raw_prompt=False, save_latents=None, extra=None,
+                   labels=None):
     """Repaint one control video. controls: {"depth"|"seg"|"edge"|"blur": path}, exactly one (the causal checkpoint
     takes one control per request). size "WxH" (832x480 is the native 16:9 canvas). frames: first N frames of the
     control (None = all). window/sink: history window in latent frames and pinned initial frames (config: 51/1;
-    NVIDIA's 600-frame example uses 30/3). Returns the output path; the sidecar is output + ".json"."""
+    NVIDIA's 600-frame example uses 30/3). labels: optional object labels (kokopelli/wm/labels.py),
+    {"file": labels.json, "frames": the clip's labels/ folder} plus any of steps, tau, mode, beta, store, max.
+    Returns the output path; the sidecar is output + ".json"."""
     if len(controls) != 1:
         raise ValueError(f"Sim-Transfer takes exactly one control per request, got {sorted(controls)}")
     (hint, path), = controls.items()
@@ -59,6 +62,13 @@ def transfer_video(prompt, controls, output, size="832x480", frames=None, seed=2
         command += ["--save-latents", str(save_latents)]
     if extra:
         command += ["--extra", json.dumps(extra)]
+    if labels:
+        command += ["--labels", str(Path(labels["file"]).resolve()), "--label-frames", str(Path(labels["frames"]).resolve())]
+        for key in ("steps", "tau", "mode", "beta", "max"):
+            if labels.get(key) is not None:
+                command += [f"--label-{key}", str(labels[key])]
+        if labels.get("store"):
+            command += ["--label-store"]
     if hold_gb:
         command = [sys.executable, str(ROOT / "kokopelli" / "ops" / "ram_share.py"), "hold", "--name", "sim_transfer", "--gb", str(hold_gb),
                    "--"] + command
@@ -124,17 +134,43 @@ def format_prompt(prompt, frames, fps, width, height):
     return text.rstrip(".") + ". " + f"This video is of {height}x{width} resolution."
 
 
+def chat_text(tokenizer, text):
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": text}]
+    return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+
+
 def tokenize(model_dir, text):
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(str(Path(model_dir) / "text_tokenizer"))
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": text}]
-    chat = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    chat = chat_text(tokenizer, text)
     ids = tokenizer.encode(chat, add_special_tokens=False)
     # Training truncated chat ids at 4096 (imaginaire4 _MAX_NUM_TOKENS; SGLang TEXT_TOKENS_TRAINING_MAX). The config's
     # text_cache_max_len=512 is only the paged/static-compile engine's buffer size, not a training limit.
     ids = list(ids)[:4096]
     # Text split = chat ids + EOS + start-of-generation (no BOS for Qwen); compute_text_split_length.
     return list(ids) + [tokenizer.eos_token_id, tokenizer.convert_tokens_to_ids("<|vision_start|>")]
+
+
+def token_offsets(model_dir, text):
+    """The chat string `tokenize` encodes and each of its tokens' (start, end) characters in it, cut at the same 4096.
+    Token i here is id i of `tokenize` (whose two closing ids have no text). Object labels use it to find which text
+    keys carry a label's words (labels.find_spans)."""
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained(str(Path(model_dir) / "text_tokenizer"))
+    chat = chat_text(tokenizer, text)
+    offsets = tokenizer(chat, add_special_tokens=False, return_offsets_mapping=True)["offset_mapping"]
+    return chat, [tuple(o) for o in offsets][:4096]
+
+
+def attention_mask(text_mask, n_keys):
+    """labels.text_mask's [N, L_text] bias, widened to the target's whole key list: [1, 1, N, n_keys] bf16. The text
+    keys come first in Generator.__call__'s concatenation, so text column j is key j; the history's keys and the
+    frame's own get 0 (never masked)."""
+    import mlx.core as mx
+    if text_mask is None:
+        return None
+    n, n_text = text_mask.shape
+    return mx.concatenate([mx.array(text_mask), mx.zeros((n, n_keys - n_text))], axis=1)[None, None].astype(mx.bfloat16)
 
 
 class Rope:
@@ -252,9 +288,11 @@ class Generator:
         e = e * mx.sigmoid(e)
         return e @ g["time_embedder.linear_2.weight"].T + g["time_embedder.linear_2.bias"]   # [1, 4096]
 
-    def __call__(self, tokens, cos, sin, context, sigma=None, store=False):
+    def __call__(self, tokens, cos, sin, context, sigma=None, store=False, mask=None):
         """tokens [1, N, 192] patch latents. context: per layer list of (K, V) to attend to besides the tokens
-        themselves. Returns velocity [1, N, 192] (or None when store) and, when store, per-layer (K, V)."""
+        themselves. mask: additive attention bias [1, 1, N, keys] over [context... | own] (object labels,
+        attention_mask), None = every token reads every key. Returns velocity [1, N, 192] (or None when store) and,
+        when store, per-layer (K, V)."""
         import mlx.core as mx
         g = self.g
         N = tokens.shape[1]
@@ -275,7 +313,7 @@ class Generator:
             ks = [c[0] for c in context[i]] + [k]
             vs = [c[1] for c in context[i]] + [v]
             o = mx.fast.scaled_dot_product_attention(q, mx.concatenate(ks, axis=2), mx.concatenate(vs, axis=2),
-                                                     scale=128 ** -0.5)
+                                                     scale=128 ** -0.5, mask=mask)
             h = h + layer["o"](o.transpose(0, 2, 1, 3).reshape(1, N, 4096))
             x = mx.fast.rms_norm(h, layer["ln2"], EPS)
             a = layer["gate"](x)
@@ -387,8 +425,17 @@ def run(args):
     frames = len(control)
     latents_t = 1 + -(-(frames - 1) // TCF)
     control = reflect_pad(control, 1 + (latents_t - 1) * TCF)
-    text = args.prompt if args.raw_prompt else format_prompt(args.prompt, frames, fps, width, height)
+    paint = None   # object labels (kokopelli/wm/labels.py); without --labels nothing below changes
+    if getattr(args, "labels", None):
+        from kokopelli.wm import labels as lb
+        paint = lb.Paint(args.labels, args.label_frames, width, height, reflect_pad(np.arange(frames), len(control)),
+                         steps=args.label_steps, tau=args.label_tau, mode=args.label_mode, beta=args.label_beta,
+                         store=args.label_store, max_labels=args.label_max)
+    prompt = paint.prompt(args.prompt) if paint else args.prompt
+    text = prompt if args.raw_prompt else format_prompt(prompt, frames, fps, width, height)
     ids = tokenize(model_dir, text)
+    if paint:
+        paint.bind(*token_offsets(model_dir, text), len(ids))
     stride = BASE_FPS / fps
     rope = Rope()
 
@@ -397,6 +444,8 @@ def run(args):
     mx.eval(lat_c)
     h_lat, w_lat = lat_c.shape[2:4]
     hp, wp = (h_lat + 1) // 2, (w_lat + 1) // 2
+    if paint and paint.grid != [hp, wp]:
+        raise ValueError(f"label regions were laid out on a {paint.grid} token grid, the latents give {[hp, wp]}")
     clock["encode_s"] = time.time() - t0
     mx.clear_cache()
 
@@ -430,10 +479,14 @@ def run(args):
         history.add(kv)
         # 2. denoise R_f: the four fixed SDE steps
         ctx = layers(history.view(True))
+        # Labels: tokens outside a label's region can't read its words, for the first label_steps steps (and the store
+        # pass if asked). The keys are [text | history entries | this frame], hp*wp tokens per entry.
+        mask = attention_mask(paint.mask(f), len(ids) + len(ctx[0]) * hp * wp) if paint else None
         mx.random.seed(args.seed + f)
         x = mx.random.normal((1, 1, h_lat, w_lat, 48)).astype(mx.float32)
         for step, (s, s_next) in enumerate(zip(sigmas[:-1], sigmas[1:], strict=False)):
-            v, _ = gen(patchify(x.astype(mx.bfloat16)), cos, sin, ctx, sigma=s)
+            v, _ = gen(patchify(x.astype(mx.bfloat16)), cos, sin, ctx, sigma=s,
+                       mask=mask if paint and step < paint.steps else None)
             x0 = x - s * unpatchify(v, h_lat, w_lat)
             if s_next == 0.0:
                 x = x0
@@ -445,7 +498,8 @@ def run(args):
         out.append(x.astype(mx.bfloat16))
         # 3. clean R_f -> cache (skipped for the last frame: nothing reads it)
         if f < latents_t - 1:
-            _, kv = gen(patchify(out[-1]), cos, sin, layers(history.view(True)), store=True)
+            _, kv = gen(patchify(out[-1]), cos, sin, layers(history.view(True)), store=True,
+                        mask=mask if paint and paint.store else None)
             history.add(kv)
         mx.clear_cache()
         print(json.dumps({"latent": f, "of": latents_t, "seconds": round(time.time() - tf, 2),
@@ -476,6 +530,12 @@ def run(args):
         "ru_maxrss_gb": round(__import__("resource").getrusage(__import__("resource").RUSAGE_SELF).ru_maxrss / 2 ** 30, 2),
         **(json.loads(args.extra) if args.extra else {}),
     }
+    if paint:
+        from kokopelli.wm.manifest import manifest
+        sidecar["labels"] = {**paint.report(), "seconds_per_latent": round(clock["denoise_s"] / latents_t, 2)}
+        sidecar["manifest"] = manifest(weights=model_dir, seed=args.seed, prompt=args.prompt, quantize=args.quantize,
+                                       controls={args.hint: {"path": str(args.control)}},
+                                       resolution=f"{width}x{height}", labels=paint.identity())
     Path(str(output) + ".json").write_text(json.dumps(sidecar, indent=1))
     print(json.dumps({"done": str(output), "seconds": sidecar["seconds"], "peak_gb": sidecar["peak_gb"]}), flush=True)
 
@@ -497,9 +557,23 @@ def main():
     parser.add_argument("--save-latents", help="also write the denoised latents to this .npy (debugging)")
     parser.add_argument("--raw-prompt", action="store_true", help="skip the reference's duration/fps/resolution metadata")
     parser.add_argument("--extra", help="JSON merged into the sidecar")
+    lab = parser.add_argument_group("object labels (kokopelli/wm/labels.py, docs/LABELS_PLAN.md)")
+    lab.add_argument("--labels", help="labels.json; the caption gains one subject per labeled actor in frame")
+    lab.add_argument("--label-frames", help="the clip's labels/ folder (16-bit PNGs, one per control frame)")
+    lab.add_argument("--label-steps", type=int, default=2, choices=range(5),
+                     help="denoise steps (of 4, from the first) in which only a label's own region reads its words; "
+                          "0 = caption only")
+    lab.add_argument("--label-tau", type=float, default=0.25, help="share of a token a label must cover to own it")
+    lab.add_argument("--label-mode", choices=("hard", "soft"), default="hard",
+                     help="hard: other tokens can't read the label at all; soft: -beta outside, +beta inside")
+    lab.add_argument("--label-beta", type=float, default=5.0)
+    lab.add_argument("--label-store", action="store_true", help="also mask the clean pass that becomes history")
+    lab.add_argument("--label-max", type=int, default=6, help="most labels the caption names (0 = no cap)")
     args = parser.parse_args()
     if args.window and not 0 <= args.sink < args.window:
         raise SystemExit("need 0 <= sink < window")
+    if bool(args.labels) != bool(args.label_frames):
+        raise SystemExit("--labels and --label-frames go together")
     run(args)
 
 

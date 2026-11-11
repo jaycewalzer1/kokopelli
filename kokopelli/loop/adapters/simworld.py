@@ -330,10 +330,15 @@ class SimWorldPhysics(WeatherMixin, ActionsMixin, PhysicsSim):
     def _setup_mask_colors(self) -> None:
         """Give each tracked actor its own mask colour, then ask the server what it actually uses.
 
-        SimWorld assigns mask colours the same way in generate_world (communicator.py:864).
+        SimWorld assigns mask colours the same way in generate_world (communicator.py:864). Actors that only carry an
+        object label (config.label_actors) follow the tracked ones, so the tracked colours are the same with or without
+        labels; their id is the actor name.
         """
         colors = []
-        for i, (actor_id, actor) in enumerate(sorted(self._tracked().items())):
+        tracked = sorted(self._tracked().items())
+        named = {actor for _, actor in tracked}
+        labeled = [(actor, actor) for actor in dict.fromkeys(self.config.label_actors) if actor not in named]
+        for i, (actor_id, actor) in enumerate(tracked + labeled):
             assigned = None
             if self.config.assign_mask_colors:
                 assigned = [(40 + 53 * i) % 256, (200 - 37 * i) % 256, (90 + 101 * i) % 256]
