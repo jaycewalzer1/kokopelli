@@ -31,7 +31,7 @@ class PublicSeed:
 
 @dataclass(frozen=True)
 class LifeSeed(PublicSeed):
-    hidden_target: str = field(default=None, repr=False)
+    hidden_target: str | None = field(default=None, repr=False)
 
     def public(self):
         return PublicSeed(self.prompt, self.birth_date, self.place, self.era, self.family,

@@ -14,7 +14,7 @@ estimate_maps = None
 
 
 def _gray(path):
-    image = Image.fromarray(load_rgb(path)).convert("L").resize(SMALL, Image.BILINEAR)
+    image = Image.fromarray(load_rgb(path)).convert("L").resize(SMALL, Image.Resampling.BILINEAR)
     return np.asarray(image, dtype=np.float64)
 
 

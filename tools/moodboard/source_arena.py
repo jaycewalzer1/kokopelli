@@ -132,7 +132,7 @@ def main():
     with ThreadPoolExecutor(4) as pool:
         for start in range(0, len(queue), 8):
             batch = queue[start:start + 8]
-            for block, data in zip(batch, pool.map(lambda block: _try(download, block), batch)):
+            for block, data in zip(batch, pool.map(lambda block: _try(download, block), batch), strict=False):
                 if data is None:
                     failed += 1
                     continue

@@ -76,6 +76,7 @@ def connection_state(config=None, remote=None):
     gaps = missing(config)
     if gaps:
         return {"ready": False, "configured": False, "connected": False, "missing": gaps}
+    assert config is not None  # missing() reports a None config
     try:
         connected = (remote or Remote(config["host"])).connected()
     except (OSError, subprocess.SubprocessError):
@@ -125,6 +126,7 @@ def run_job(ticket, log_path, on_update, config=None, remote=None, poll=None, sl
     if gaps:
         log.write_text(f"[pace] PACE isn't set up. Missing: {', '.join(gaps)}. See kokopelli/ops/cloud/README.md.\n")
         return 2
+    assert config is not None  # missing() reports a None config
     remote = remote or Remote(config["host"])
     poll = config.get("poll_seconds", 60) if poll is None else poll
     folder = remote_folder(config, ticket["cwd"] or os.getcwd())
@@ -166,4 +168,4 @@ def run_job(ticket, log_path, on_update, config=None, remote=None, poll=None, sl
 
 def cancel(job, config=None, remote=None):
     config = load_config() if config is None else config
-    return (remote or Remote(config["host"])).shell(f"scancel {int(job)}\n")[0]
+    return (remote or Remote(config["host"])).shell(f"scancel {int(job)}\n")[0]  # pyright: ignore[reportOptionalSubscript]  # only called once PACE is set up

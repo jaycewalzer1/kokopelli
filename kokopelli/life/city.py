@@ -85,7 +85,7 @@ def checks(data):
         points = path.get("polyline_m", [])
         for pond in ponds:
             (cx, cy), rx, ry = pond["ellipse_m"]["center"], pond["ellipse_m"]["rx"], pond["ellipse_m"]["ry"]
-            for (x0, y0), (x1, y1) in zip(points, points[1:]):
+            for (x0, y0), (x1, y1) in zip(points, points[1:], strict=False):
                 wet = [t / 50 for t in range(51) if ((x0 + (x1 - x0) * t / 50 - cx) / rx) ** 2 + ((y0 + (y1 - y0) * t / 50 - cy) / ry) ** 2 < 1]
                 if wet:
                     note("water", [path["id"], pond["id"]], f"{path['id']} runs through {pond['id']} for about {len(wet) / 50 * ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5:.0f} m.")

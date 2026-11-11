@@ -32,7 +32,7 @@ def _text(answer, key):
 
 
 def _probability(value, name):
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value <= 1:
+    if isinstance(value, bool) or not isinstance(value, int | float) or not 0 <= value <= 1:
         raise BadAnswer(f"{name} must be a number from 0 to 1")
     return round(float(value), 3)
 

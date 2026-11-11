@@ -68,7 +68,7 @@ def compare(out, name, n_perm=5000):
                      "difference": float(a.score.mean() - b.score.mean()), "ci_95": [low, high], "cohens_d": _number(stats.cohens_d(a.score, b.score)),
                      "p": stats.permutation_test(a.score.to_numpy(), b.score.to_numpy(), stats._strata_labels(a), stats._strata_labels(b), n_perm=n_perm),
                      "difference_per_seed": {str(seed): float(value) for seed, value in per_seed.items()}, "n_before": len(b), "n_after": len(a)})
-    for row, adjusted in zip(main, stats.holm([row["p"] for row in main])):
+    for row, adjusted in zip(main, stats.holm([row["p"] for row in main]), strict=False):
         row["p_holm"] = adjusted
     failures = stats.parse_failures(rows)
     info = {arm: next((row for row in rows if row["arm"] == arm and row["instrument"] in {m["instrument"] for m in main} | {g["instrument"] for g in guardrails}), {}) for arm in (BASE, name)}

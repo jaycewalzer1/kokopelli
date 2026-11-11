@@ -79,7 +79,7 @@ def begin_season(world, config):
 
 
 def _amount(value, label):
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+    if isinstance(value, bool) or not isinstance(value, int | float) or not math.isfinite(value) or value < 0:
         raise InvalidAction(f"{label} must be a number that is 0 or more")
     return float(value)
 

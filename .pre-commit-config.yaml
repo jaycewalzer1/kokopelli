@@ -1,9 +1,9 @@
-# Checks only: nothing here reformats code. Existing findings are baselined
-# (ruff in pyproject.toml, biome in biome.json, shellcheck below), so new code
-# meets the rules without a repo-wide rewrite. Counts: docs/log/fable/2026-11-09-P2-D.md.
+# Checks only: nothing here reformats code (there is no formatter; see pyproject.toml). The 2026-11-09 baselines
+# were burned down in reorg phase 8; what is still allowed has a reason next to it, in the file or below.
 #
-#   uvx pre-commit install              # once, runs on every commit
-#   uvx pre-commit run --all-files      # whole repo; wrap in kokopelli/ops/memguard.py run
+#   uvx pre-commit install              # once: lint on every commit, `make test-all` before every push
+#   uvx pre-commit run --all-files      # whole repo, commit-stage hooks; wrap in kokopelli/ops/memguard.py run
+default_install_hook_types: [pre-commit, pre-push]
 exclude: ^(simworld/|vendor/wm_multicontrol_upstream/|mac_server/Binaries/|\.venv/|out/|models/)
 
 repos:
@@ -11,24 +11,31 @@ repos:
     rev: v0.11.4
     hooks:
       - id: ruff
+        stages: [pre-commit]
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
     hooks:
       - id: shellcheck
         name: shellcheck
-        exclude: &sh_baseline ^(kokopelli/agents/run_wm_life\.sh|kokopelli/agents/run_wm_lunch\.sh|tools/bodies/metahuman/run_editor_gui\.sh|tools/bodies/perf_maxnear\.sh|tools/bodies/run_demo_lunch\.sh|tools/bodies/serve_9004\.sh|experiments/filter_test/scripts/queue_all\.sh|mac_server/scripts/relaunch\.sh|tools/pace/simworld_server\.sh|tools/pace/wmloop_gate\.sbatch|tools/pace/wmloop_run\.sbatch|experiments/wm_multicontrol/run_a\.sh)$
+        stages: [pre-commit]
+        # -x follows the files a script sources (the PACE batch scripts source tools/pace/env.sh).
+        args: [-x]
+        exclude: ^mac_server/scripts/relaunch\.sh$
       - id: shellcheck
-        name: shellcheck (baselined scripts)
-        # Codes these scripts had on 2026-11-09. Fix a script, then move it to the strict hook.
-        args: [-e, "SC1091,SC2012,SC2034,SC2086,SC2102,SC2153,SC2164,SC2206,SC2329"]
-        files: *sh_baseline
+        name: shellcheck (mac_server/scripts/relaunch.sh)
+        stages: [pre-commit]
+        # mac_server/ is the snapshot of the Mac SimWorld server and isn't edited outside its own work; this script's
+        # one finding (SC2012, ls in a pipe) stays until then.
+        args: [-e, "SC2012"]
+        files: ^mac_server/scripts/relaunch\.sh$
 
   - repo: local
     hooks:
       - id: biome
         name: biome lint (kokopelli/life/static)
         language: system
+        stages: [pre-commit]
         entry: npx -y @biomejs/biome@2.6.6 lint --no-errors-on-unmatched
         files: ^kokopelli/life/static/.*\.js$
       - id: lint-imports
@@ -43,6 +50,20 @@ repos:
     rev: v5.0.0
     hooks:
       - id: check-yaml
+        stages: [pre-commit]
       - id: end-of-file-fixer
-        # These files lacked a final newline on 2026-11-09; the fixer would rewrite them.
-        exclude: ^(tools/bodies/standins/import_standins\.json|kokopelli/life/static/inspector\.js|mac_server/SimWorld\.uproject|mac_server/Tools/look/realism_means\.json)$
+        stages: [pre-commit]
+        # These lack a final newline on purpose: import_standins.json is written by the Unreal script, inspector.js
+        # and the mac_server files are left as they are, and experiments/commons/results/ holds results a report
+        # cites, which are never rewritten.
+        exclude: ^(tools/bodies/standins/import_standins\.json|kokopelli/life/static/inspector\.js|mac_server/SimWorld\.uproject|mac_server/Tools/look/realism_means\.json|experiments/commons/results/)
+
+  - repo: local
+    hooks:
+      - id: test-all
+        name: make test-all (every suite, through memguard)
+        language: system
+        entry: make test-all
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

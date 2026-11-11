@@ -281,7 +281,7 @@ def unite_habitation(plot):
             # parapet: one long pre-cast band per row
             k.box(rough, x0 + t_fin / 2, yo - 0.02 if out < 0 else yo - 0.16, za + t_sl / 2,
                   x1 - t_fin / 2, yo + 0.16 if out < 0 else yo + 0.02, za + 1.08)
-        for f, za, zt, xa, xc, left, pw, sidewall, lit_ in cells:
+        for _f, za, zt, xa, xc, left, pw, sidewall, _lit in cells:
             # painted panel on the back wall beside the window (reads head-on)
             if pw > 0:
                 pa, pc = (xa, xa + pw) if left else (xc - pw, xc)
@@ -585,7 +585,7 @@ def habitat67(plot):
         above = levels[lvl + 1] if lvl + 1 < NL else []
         same = levels[lvl]
 
-        def face_free(fx0, fy0, fx1, fy1):
+        def face_free(fx0, fy0, fx1, fy1, r=r, same=same):
             probe = (fx0, fy0, fx1, fy1)
             return not any(o is not r and _ov(probe, o) > 0.05 for o in same)
 
@@ -704,7 +704,7 @@ def habitat67(plot):
                 k.obox(rng.choice((sail, sail2)), cxs, cys, z1 + 2.35, hx + 0.2, hy + 0.2, 0.03, 0, 0, rng.uniform(-6, 6))
 
     # ---- lift cores ----------------------------------------------------------------------------------
-    for (cx, cyc, peak), cr in zip(cores, core_r):
+    for (cx, _cyc, peak), cr in zip(cores, core_r, strict=False):
         zt = min(H - 0.3, peak * BH + 1.2)
         k.box(conc2, cr[0], cr[1], 0, cr[2], cr[3], zt)
         k.box(wood, cx - 0.35, cr[1] - 0.03, 0.0, cx + 0.35, cr[1], 2.3)            # timber door
@@ -1072,7 +1072,7 @@ def barbican_terrace(plot):
     glass = k.mat("SolarGlass", GLASS, 400.0)   # scale 400: smooth window glass (scale 0 is the PV grid)
     lit = k.mat("Lantern", LIT)
     wood = k.mat("Timber", _mix((150, 100, 62), pal[2], 0.2))   # dark hardwood window frames
-    roofg = k.mat("GreenRoof", GREENROOF)
+    k.mat("GreenRoof", GREENROOF)   # registers the material slot, as before; this house never uses it
     water = k.mat("Water", (64, 118, 128))
     pv = k.mat("SolarGlass", PV)
     accent = k.mat("Fabric", _vivid(pal[rng.randrange(3)], 0.45, 0.85))
@@ -1191,7 +1191,7 @@ def barbican_terrace(plot):
             k.cyl(conc, 1.0 + i * cs, hy0 + 0.9, 0, 0.32, 0.32, zpod - 0.3, 10, False)
         # water garden at the foot of the highwalk
         k.box(water, 1.0, hy0 + 1.4, 0.0, w - 1.0, yb0 - 0.2, 0.08)
-        for i in range(int(w / 3.0)):
+        for _i in range(int(w / 3.0)):
             x = rng.uniform(1.2, w - 1.2)
             if rng.random() < 0.5:
                 k.plant("Reed", "Foliage", rng.choice(LEAVES), x, rng.uniform(hy0 + 1.6, yb0 - 0.4), 0.05,
@@ -1212,7 +1212,7 @@ def barbican_terrace(plot):
             k.box(water, 1.0, 0.6, 0.0, w - 1.0, yb0 - 0.9, 0.08)
         else:
             g.bed(0.8, 0.4, w - 0.8, yb0 - 0.6, 0, int(w / 2.2), (0.5, 0.9), 0.35)
-        for i in range(int(w / 2.5)):
+        for _i in range(int(w / 2.5)):
             x = rng.uniform(1.0, w - 1.0)
             k.plant("Reed", "Foliage", rng.choice(LEAVES), x, rng.uniform(0.7, max(0.8, yb0 - 1.0)), 0.05,
                     rng.uniform(0.8, 1.3), rng.uniform(0.8, 1.3), rng.uniform(0.9, 1.5), rng.uniform(0, 360), False, 200)
@@ -1224,7 +1224,7 @@ def barbican_terrace(plot):
         k.solid(xs - 1.9, yb1 - 1.5, 0, xs + 1.9, yb1 + 2.3, zv + 0.6)
 
     # ---- planting: troughs on every balcony (budgeted) ---------------------------------------------
-    for i in range(int(w / 16)):
+    for _i in range(int(w / 16)):
         x = rng.uniform(2, w - 2)
         if d - yb1 > 3.0:
             g.tree(x, rng.uniform(yb1 + 1.5, d - 1.0), 0, rng.uniform(4.5, 7.0), rng.uniform(1.6, 2.3), 0.35)

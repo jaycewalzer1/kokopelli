@@ -26,7 +26,7 @@ function layOut(width) {
   const laneOf = row => lanes.findIndex(lane => row >= lane.rows[0] && row <= lane.rows[1]);
   if (narrow) {
     let row = 0;
-    lanes.forEach((lane, index) => {
+    lanes.forEach((_lane, index) => {
       const members = nodes.filter(node => laneOf(node.at[1]) === index).sort((a, b) => a.at[1] - b.at[1] || a.at[0] - b.at[0]);
       members.forEach((node, i) => { cells[node.id] = [i % 2, row + Math.floor(i / 2)]; });
       row += Math.ceil(members.length / 2);
@@ -35,7 +35,7 @@ function layOut(width) {
     for (const node of nodes) cells[node.id] = node.at;
   }
   // A lane's name sits just above its first row, and the gap above that stays free for routes.
-  const firstRows = narrow ? lanes.map((lane, index) => Math.min(...nodes.filter(node => laneOf(node.at[1]) === index).map(node => cells[node.id][1]))) : lanes.map(lane => lane.rows[0]);
+  const firstRows = narrow ? lanes.map((_lane, index) => Math.min(...nodes.filter(node => laneOf(node.at[1]) === index).map(node => cells[node.id][1]))) : lanes.map(lane => lane.rows[0]);
   const lastRow = Math.max(...Object.values(cells).map(cell => cell[1]));
   const rowTop = [];
   let y = 0;
@@ -140,7 +140,7 @@ function drawKindKey() {
 }
 
 function drawLaneRules(svg, layout, width) {
-  ui.catalog.lanes.forEach((lane, index) => {
+  ui.catalog.lanes.forEach((_lane, index) => {
     if (index) shape(svg, "path", {class: "lane-rule", d: `M0 ${layout.rowTop[layout.firstRows[index]] - LANE_H + .5}H${width}`});
   });
 }
@@ -162,7 +162,7 @@ const stretchBox = ([a, b]) => ({x0: Math.min(a[0], b[0]) - 1, x1: Math.max(a[0]
 
 // Where a label sits clear of parts, other lines and other labels. A flat line has it above; an upright line has it beside, on either side.
 function placeLabel(text, routed, placed, layout) {
-  const {points, stretches, edge} = routed;
+  const {stretches, edge} = routed;
   const width = text.getComputedTextLength();
   const fixed = !layout.narrow && edge.label_at ? [{i: edge.label_at[0], along: edge.label_at[1]}] : [];
   const longest = stretches.reduce((best, stretch, i) => stretch[2] > stretches[best][2] ? i : best, 0);
@@ -233,7 +233,7 @@ function drawEdges(svg, layout, rects) {
   return ui.edges.filter(routed => routed.group);
 }
 
-function drawNodes(svg, layout, rects) {
+function drawNodes(svg, _layout, rects) {
   ui.nodes = {};
   const {statuses} = ui.catalog;
   for (const node of ui.catalog.nodes) {
@@ -259,7 +259,7 @@ function drawChart() {
   const width = Math.floor($("chart").getBoundingClientRect().width);
   if (!width) return;
   ui.width = width;
-  ui.tokens.forEach(token => token.element.remove());
+  ui.tokens.forEach(token => { token.element.remove(); });
   ui.tokens = [];
   const layout = layOut(width), svg = $("diagram");
   svg.replaceChildren();
@@ -278,7 +278,7 @@ function drawChart() {
   const laneNames = drawLaneNames(svg, layout);
   const partBoxes = Object.values(rects).map(rect => ({x0: rect.x - 2, x1: rect.x + rect.w + 2, y0: rect.y - 2, y1: rect.y + NODE_H + 2}));
   const lines = routes.flatMap(routed => routed.stretches.map(stretch => ({owner: routed, box: stretchBox(stretch)})));
-  const laneRules = ui.catalog.lanes.map((lane, index) => layout.rowTop[layout.firstRows[index]] - LANE_H).map(y => ({x0: 0, x1: width, y0: y - 1, y1: y + 2}));
+  const laneRules = ui.catalog.lanes.map((_lane, index) => layout.rowTop[layout.firstRows[index]] - LANE_H).map(y => ({x0: 0, x1: width, y0: y - 1, y1: y + 2}));
   drawEdgeLabels(svg, routes, {solid: [...partBoxes, ...laneNames, ...laneRules], lines}, layout);
   drawNodes(svg, layout, rects);
   $("chart-note").hidden = !layout.narrow;

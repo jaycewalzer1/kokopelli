@@ -5,7 +5,7 @@ import subprocess
 import sys
 import time
 import traceback
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 
 from kokopelli.life.engine import Budget, Engine
@@ -112,6 +112,7 @@ def supervise(folder):
         while True:
             child = subprocess.Popen([sys.executable, "-u", "-m", "kokopelli.life.overnight", "--worker", str(folder)],
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=ROOT)
+            assert child.stdout is not None  # stdout=PIPE
             for line in child.stdout:
                 print(line, end="", flush=True)
                 log.write(line)
@@ -147,7 +148,7 @@ def main():
             work(Path(args.worker))
         except Exception:
             traceback.print_exc()
-            raise SystemExit(1)
+            raise SystemExit(1) from None
         return
     folder = Path(args.resume) if args.resume else new_folder(args.trial, args.hours)
     print(f"Writing to {folder}", flush=True)

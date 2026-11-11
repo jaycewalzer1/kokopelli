@@ -32,7 +32,7 @@ class CondFrame:
 class ChunkRequest:
     prompt: str
     cond: list
-    target: Capture
+    target: Capture | None
     output: str
     tick: int
     chunk: int
@@ -66,7 +66,7 @@ class PhysicsSim(ABC):
     @abstractmethod
     def restore_state(self, state) -> None: ...
 
-    def close(self):
+    def close(self):  # noqa: B027 -- optional hook: a deliberate no-op default, not abstract
         pass
 
 
@@ -80,7 +80,7 @@ class WorldModel(ABC):
     def get_state(self):
         return {}
 
-    def set_state(self, state):
+    def set_state(self, state):  # noqa: B027 -- optional hook: a deliberate no-op default, not abstract
         pass
 
 
@@ -89,7 +89,7 @@ class AgentPolicy(ABC):
     def decide(self, agent_input) -> str:
         """Return raw text, which the loop validates against the action schema."""
 
-    def release(self):
+    def release(self):  # noqa: B027 -- optional hook: a deliberate no-op default, not abstract
         """Free memory before the world model runs, for machines that can't hold both."""
 
 

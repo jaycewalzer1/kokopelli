@@ -138,7 +138,7 @@ class QwenPolicy:
         try:
             yield
         finally:
-            for module, scale in zip(self.lora, scales):
+            for module, scale in zip(self.lora, scales, strict=False):
                 module.scale = scale
 
     def base_log_probs(self, row):

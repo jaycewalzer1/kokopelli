@@ -19,17 +19,15 @@ import gc
 import itertools
 import json
 import math
-import sys
 import time
 
 import mlx.core as mx
 import mlx.nn as nn
-import mlx.optimizers as optim
 from mlx.utils import tree_flatten, tree_map, tree_unflatten
 
 from experiments.exp1 import observe
 from experiments.exp1.learn import DEFAULTS, Sleeper, replay_rows
-from experiments.exp1.run import POLITE_GB, QWEN_WEIGHTS, ROOT, _pi, probes
+from experiments.exp1.run import POLITE_GB, QWEN_WEIGHTS, _pi, probes
 
 SHIFT_NIGHTS = (28, 29, 30)   # sleep.jsonl index: the nights after free days 21, 22 and 23
 PROBE, TARGET = "D2 gate closed", "back_row"
@@ -94,7 +92,7 @@ def odds_grad(policy, probe):
         c = float(dscores[k])
         if c == 0.0:
             continue
-        grad = tree_map(lambda g: g * c, _option_grads(policy, probe, k))
+        grad = tree_map(lambda g, c=c: g * c, _option_grads(policy, probe, k))
         total = grad if total is None else tree_map(lambda a, b: a + b, total, grad)
         mx.eval(total)
     return _flat(total)
@@ -114,8 +112,8 @@ def split_grad(sleeper, row, scale):
         if a == 0.0 and b == 0.0:
             continue
         grad = _option_grads(policy, row, k)
-        pg_part = tree_map(lambda g: g * a, grad)
-        kl_part = tree_map(lambda g: g * b, grad)
+        pg_part = tree_map(lambda g, a=a: g * a, grad)
+        kl_part = tree_map(lambda g, b=b: g * b, grad)
         g_pg = pg_part if g_pg is None else tree_map(lambda x, y: x + y, g_pg, pg_part)
         g_kl = kl_part if g_kl is None else tree_map(lambda x, y: x + y, g_kl, kl_part)
         mx.eval(g_pg, g_kl)
@@ -145,7 +143,7 @@ def attributed_step(sleeper, rows, probe):
     mx.eval(denom)
 
     def effect(tree):
-        return sum(float((df[k] * (-lr * (1 - b1) * clip * tree[k] / denom[k])).sum()) for k in df)
+        return sum(float((df[k] * (-lr * (1 - b1) * clip * tree[k] / denom[k])).sum()) for k in df)  # noqa: F821 -- pyflakes sees the later `del denom`; this is only called before it
 
     momentum = sum(float((df[k] * (-lr * b1 * state[f"{k}.m"] / denom[k])).sum()) for k in df)
     transitions = [{"day": row["day"], "decision": row["decision"], "choice": row["choice"], "outcome": row["outcome_label"], "advantage": row["advantage"],

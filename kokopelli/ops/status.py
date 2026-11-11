@@ -57,11 +57,11 @@ SUITES = [
 ]
 
 
-def sh(*command, cwd=ROOT, env=None):
+def sh(*command, cwd: str | Path = ROOT, env=None):
     return subprocess.run(command, cwd=cwd, env=env, capture_output=True, text=True)
 
 
-def git(*args, cwd=ROOT, env=None):
+def git(*args, cwd: str | Path = ROOT, env=None):
     return sh("git", *args, cwd=cwd, env=env)
 
 
@@ -162,8 +162,8 @@ def backup():
 
 def machine():
     pages = sh("vm_stat").stdout
-    page = int(re.search(r"page size of (\d+)", pages).group(1))
-    count = lambda label: int(re.search(rf"{label}:\s+(\d+)", pages).group(1))
+    page = int(re.search(r"page size of (\d+)", pages).group(1))  # pyright: ignore[reportOptionalMemberAccess]  # the output always has it
+    count = lambda label: int(re.search(rf"{label}:\s+(\d+)", pages).group(1))  # pyright: ignore[reportOptionalMemberAccess]  # the output always has this line
     available = (count("Pages free") + count("Pages inactive") + count("Pages speculative")) * page / 2**30
     swap = re.search(r"used = ([\d.]+)M", sh("sysctl", "vm.swapusage").stdout)
     disk = shutil.disk_usage(ROOT)

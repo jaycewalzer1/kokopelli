@@ -85,7 +85,10 @@ function flag(ids) {
 
 function drawChecks(checks) {
   $("plan-check-count").textContent = checks.length;
-  if (!checks.length) return void ($("plan-checks").innerHTML = `<div class="none">The file agrees with itself.</div>`);
+  if (!checks.length) {
+    $("plan-checks").innerHTML = `<div class="none">The file agrees with itself.</div>`;
+    return;
+  }
   const kinds = [...new Set(checks.map(check => check.kind))];
   $("plan-checks").innerHTML = kinds.map(kind => {
     const these = checks.filter(check => check.kind === kind);
@@ -148,7 +151,7 @@ function wire() {
     if (!button) return;
     const same = ui.held === button.dataset.ids;
     ui.held = same ? null : button.dataset.ids;
-    document.querySelectorAll(".check").forEach(other => other.setAttribute("aria-pressed", String(!same && other === button)));
+    document.querySelectorAll(".check").forEach(other => { other.setAttribute("aria-pressed", String(!same && other === button)); });
     flag(new Set(same ? [] : button.dataset.ids.split(" ")));
   });
 }
@@ -157,7 +160,7 @@ function showView() {
   const view = location.hash === "#pictures" ? "pictures" : "plan";
   $("view-plan").hidden = view !== "plan";
   $("view-pictures").hidden = view !== "pictures";
-  document.querySelectorAll(".views .tab").forEach(tab => tab.setAttribute("aria-current", tab.dataset.view === view ? "page" : "false"));
+  document.querySelectorAll(".views .tab").forEach(tab => { tab.setAttribute("aria-current", tab.dataset.view === view ? "page" : "false"); });
 }
 
 async function poll() {

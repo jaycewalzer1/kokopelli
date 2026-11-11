@@ -47,12 +47,14 @@ one() {
 # -W ignore as before: the libraries' deprecation warnings drown the summary.
 # With no arguments, benchmarks and commons get a process of their own, as they had before: benchmarks' resume test fakes
 # time.time, and a daemon thread the life tests leave reading macmon (kokopelli/life/gpu_queue.py) eats the fake clock.
+# shellcheck disable=SC2086  # $v is empty or a flag, left unquoted so an empty value adds no argument
 if [ $# -gt 0 ]; then
   one main .venv/bin/python -W ignore -m pytest $v -rfE -m "not py310" "$@"
 else
   one main .venv/bin/python -W ignore -m pytest $v -rfE -m "not py310" tests experiments/exp1/tests experiments/homeostatic/tests
   one experiments .venv/bin/python -W ignore -m pytest $v -rfE -m "not py310" experiments/benchmarks/tests experiments/commons/tests
 fi
+# shellcheck disable=SC2086  # as above
 one py310 simworld/.venv/bin/python -W ignore -m pytest $v -rfE -m py310 "$@"
 [ "${MAC:-0}" = 1 ] && one mac_server sh -c "cd mac_server && SIMCV_START_MOCK=1 ../simworld/.venv/bin/python -m pytest $v -p no:cacheprovider tests"
 exit $failed

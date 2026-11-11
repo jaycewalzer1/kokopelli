@@ -183,7 +183,7 @@ def evaluate_contrasts(frame, config, n_perm=5000):
     for contrast in config["contrasts"]:
         rows.append(_evaluate_one(frame, contrast, settings, n_perm))
     tested = [row for row in rows if row["kind"] == "difference"]
-    for row, adjusted in zip(tested, holm([row["p"] for row in tested])):
+    for row, adjusted in zip(tested, holm([row["p"] for row in tested]), strict=False):
         row["p_holm"] = adjusted
     for row in rows:
         row["status"] = _status(row, settings)

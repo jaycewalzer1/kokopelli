@@ -66,7 +66,7 @@ def main():
         for m in modes:
             view, fmt, folder = MODES[m]
             data = req(f"vget /camera/0/{view} {fmt}")
-            if not isinstance(data, (bytes, bytearray)) or len(data) < 64:
+            if not isinstance(data, bytes | bytearray) or len(data) < 64:
                 sys.exit(f"frame {p['frame']} {m}: bad reply {str(data)[:120]!r}")
             (out / folder / f"{p['frame']:04d}.{fmt}").write_bytes(data)
         if k % 30 == 0:

@@ -297,7 +297,7 @@ def main():
             for k in range(11):
                 t = lo + (hi - lo) * k / 10
                 if along_y:
-                    xs = [a[0] + (c[0] - a[0]) * (t - a[1]) / (c[1] - a[1]) for a, c in zip(cl, cl[1:]) if a[1] <= t <= c[1] and c[1] != a[1]]
+                    xs = [a[0] + (c[0] - a[0]) * (t - a[1]) / (c[1] - a[1]) for a, c in zip(cl, cl[1:], strict=False) if a[1] <= t <= c[1] and c[1] != a[1]]
                     if not xs:
                         E(f"{b['id']}: creek doesn't pass y={t:.0f}")
                         break

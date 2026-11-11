@@ -326,7 +326,7 @@ def farnsworth(plot):
         if sx0 - 1.6 < x < sx0 + sw + 1.6:
             continue
         c = rng.choice(FLOWER + tuple(pal))
-        for q in range(rng.randint(3, 5)):
+        for _q in range(rng.randint(3, 5)):
             px, py = x + rng.uniform(-0.4, 0.4), y + rng.uniform(-0.3, 0.3)
             hh = rng.uniform(0.9, 1.5)
             k.plant("Reed", "Foliage", LEAF[1], px, py, 0, 2.5, 2.5, hh, rng.uniform(0, 360), shadow=False, cull_m=70)
@@ -614,7 +614,7 @@ def casa_de_vidro(plot):
     def slab(s, z0, z1, holes):
         """Slab over the box footprint minus rectangular holes (x-strips)."""
         xs = sorted({bx0, bx1} | {h[0] for h in holes} | {h[2] for h in holes})
-        for a, b in zip(xs, xs[1:]):
+        for a, b in zip(xs, xs[1:], strict=False):
             ys = [by0]
             for h in holes:
                 if h[0] <= a and b <= h[2]:
@@ -693,7 +693,6 @@ def casa_de_vidro(plot):
             x = sxa + j * run
             k.pole(dark, (x, y, fl * j / n), (x, y, fl * j / n + 0.95), 0.015, segs=4)
     k.box(stone, sxa - 1.2, sy0 - 0.3, 0, sxa, sy1 + 0.3, 0.05)            # landing pad
-    ya = sy0
     # ---- the back wing on the hill: plain render, small windows, green roof
     wy0 = by1
     if D - wy0 > 3.0:

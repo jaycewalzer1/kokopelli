@@ -18,7 +18,7 @@ if [ "$BITS" = 8 ]; then LABEL="default precision (8-bit), same-session baseline
 else LABEL="LOWERED PRECISION: gen weights ${BITS}-bit (default is 8-bit); P4-C test only"; fi
 mkdir -p "$W/out/fable/P4/bits"
 cd "$W"
-exec env PYTHONPATH=$HOME/cosmos3/cosmos3-mlx $HOME/cosmos3/cosmos3-mlx/.venv/bin/python -m kokopelli.wm.world_transfer_multi "$P" \
+exec env PYTHONPATH="$HOME/cosmos3/cosmos3-mlx" "$HOME/cosmos3/cosmos3-mlx/.venv/bin/python" -m kokopelli.wm.world_transfer_multi "$P" \
   --control blur=$C/blur.mp4 --control seg=$C/seg.mp4 --control depth=$C/depth.mp4 --control edge=$C/edge.mp4 \
   --weight blur=0.25 --weight seg=0.25 --weight depth=0.25 --weight edge=0.25 \
   --output "$OUT" --size 832x480 --frames 150 --seed 2025 --window 51 --sink 1 --quantize "$BITS" \

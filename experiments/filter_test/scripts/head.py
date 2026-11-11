@@ -104,7 +104,7 @@ class Head:
                  eye[1] + FOCUS_CM * math.cos(look_pitch) * math.sin(look_yaw),
                  eye[2] + FOCUS_CM * math.sin(look_pitch))
         camera = (eye[0] + side * right[0], eye[1] + side * right[1], eye[2] + down)
-        dx, dy, dz = (f - c for f, c in zip(focus, camera))
+        dx, dy, dz = (f - c for f, c in zip(focus, camera, strict=False))
         yaw = math.degrees(math.atan2(dy, dx))
         pitch = math.degrees(math.atan2(dz, math.hypot(dx, dy))) + BOB_PITCH_DEG * amp * math.sin(2 * self.phase)
         self.t += self.dt

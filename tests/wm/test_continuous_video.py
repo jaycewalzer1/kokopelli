@@ -5,7 +5,6 @@ Run it with RUN_LONG_TESTS=1. Finished segments are kept, so a rerun resumes whe
 import os
 import subprocess
 import unittest
-from pathlib import Path
 
 import pytest
 

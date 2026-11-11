@@ -20,7 +20,6 @@ saved, so the next turn picks up where this one stopped.
 """
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
@@ -122,7 +121,7 @@ class Scenario:
         texts = {"D1": "9:06: the bus drops them at the main gate. The 9:00 outdoor class on the lawn has already started.",
                  "D3": "9:50: the outdoor class is ending. Buses leave the main gate at 10:00 and 10:30, and another route stops at the far stop."}
         found = []
-        for when, morning, decision in self.moments():
+        for when, _morning, decision in self.moments():
             if window.start <= when < window.end:
                 found.append(texts.get(decision) or f"{when:%-H:%M}: they reach the edge of the class lawn, where class is underway "
                                                          "with the instructor at the front.")
@@ -136,6 +135,7 @@ class Scenario:
         if decision == "D1":
             return scenario.start_of_day(self.seed_key, morning)
         before = self.record(morning, "D1" if decision == "D2" else "D2")
+        assert before is not None  # the earlier decision is recorded first
         return scenario.relax(before["state_after"])
 
     def cosmetic(self, morning):
@@ -525,6 +525,7 @@ def supervise(folder):
         while True:
             child = subprocess.Popen([sys.executable, "-u", "-m", "kokopelli.life.scenario_night", "--worker", str(folder)],
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=ROOT)
+            assert child.stdout is not None  # stdout=PIPE
             for line in child.stdout:
                 print(line, end="", flush=True)
                 log.write(line)
@@ -618,10 +619,10 @@ def main():
             work(Path(args.worker))
         except YieldTurn as waiting:
             print(f"Giving the GPU to {waiting}. Everything so far is saved; the next turn picks up here.", flush=True)
-            raise SystemExit(YIELDED)
+            raise SystemExit(YIELDED) from None
         except Exception:
             traceback.print_exc()
-            raise SystemExit(1)
+            raise SystemExit(1) from None
         return
     if args.queued:
         raise SystemExit(take_turns(Path(args.queued)))

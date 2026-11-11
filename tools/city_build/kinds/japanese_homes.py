@@ -98,7 +98,6 @@ def pine(k, rng, x, y, h=5.0, lean=22.0, toward=0.0):
     dx, dy = math.cos(math.radians(toward)), math.sin(math.radians(toward))
     off = L * math.sin(math.radians(lean))
     tz = L * math.cos(math.radians(lean))
-    tx, ty = x + dx * off, y + dy * off
     # pads: one crown pad at the top, more along the trunk stepping out
     pads = [(1.0, 0.0, 1.5), (0.62, 1.0, 1.25), (0.62, -1.0, 1.1), (0.35, 1.0, 1.0), (0.82, -0.6, 1.0)]
     for f, side, r in pads:
@@ -320,7 +319,7 @@ def sukiya_villa(plot):
         k.solid(fx0, fy0, 0, fx1, fy1, zf)
 
     # moss band along the drip line of each wing
-    for (x0, y0, x1, y1) in wings:
+    for (x0, y0, x1, _y1) in wings:
         k.box(moss, x0 - eng_s - ov - 0.3, y0 - eng_f - ov - 0.6, 0.03, x1 + eng_s + ov + 0.3, y0 - eng_f - ov + 0.2,
               0.05)
 
@@ -405,7 +404,7 @@ def sukiya_villa(plot):
 
     def stones_along(pts, step=0.75, size=0.62):
         out = []
-        for (ax, ay), (bx_, by_) in zip(pts, pts[1:]):
+        for (ax, ay), (bx_, by_) in zip(pts, pts[1:], strict=False):
             L = math.hypot(bx_ - ax, by_ - ay)
             nst = max(1, int(L / step))
             for j in range(nst):

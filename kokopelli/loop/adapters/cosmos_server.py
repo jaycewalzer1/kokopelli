@@ -77,6 +77,7 @@ class CosmosServerWorldModel(WorldModel):
                 if attempt == ATTEMPTS - 1:
                     raise
             time.sleep(RETRY_WAIT_SECONDS)
+        assert response is not None  # ATTEMPTS >= 1: the loop either raised or set it
         response.raise_for_status()
         output = Path(request.output)
         output.parent.mkdir(parents=True, exist_ok=True)

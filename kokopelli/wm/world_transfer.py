@@ -170,7 +170,7 @@ def shard_arrays(model_dir):
     import mlx.core as mx
     out = {}
     for shard in sorted((Path(model_dir) / "transformer").glob("*.safetensors")):
-        out.update(mx.load(str(shard)))   # lazy: nothing is read until an array is evaluated
+        out.update(mx.load(str(shard)))  # pyright: ignore[reportCallIssue, reportArgumentType]  # a .safetensors load is a dict; lazy: nothing is read until an array is evaluated
     return out
 
 
@@ -197,7 +197,7 @@ def text_cache(arrays, ids, rope):
     cache = []
     for i in range(36):
         p = f"layers.{i}."
-        g = lambda n: arrays[p + n].astype(mx.bfloat16)
+        g = lambda n, p=p: arrays[p + n].astype(mx.bfloat16)
         x = mx.fast.rms_norm(h, g("input_layernorm.weight"), EPS)
         q = mx.fast.rms_norm((x @ g("self_attn.to_q.weight").T).reshape(1, L, 32, 128), g("self_attn.norm_q.weight"), EPS)
         k = mx.fast.rms_norm((x @ g("self_attn.to_k.weight").T).reshape(1, L, 8, 128), g("self_attn.norm_k.weight"), EPS)
@@ -209,7 +209,8 @@ def text_cache(arrays, ids, rope):
             o = mx.fast.scaled_dot_product_attention(q, k, v, scale=128 ** -0.5, mask=mask)
             h = h + o.transpose(0, 2, 1, 3).reshape(1, L, 4096) @ g("self_attn.to_out.weight").T
             x = mx.fast.rms_norm(h, g("post_attention_layernorm.weight"), EPS)
-            h = h + (mx.fast.silu if hasattr(mx.fast, "silu") else (lambda a: a * mx.sigmoid(a)))(
+            h = h + (mx.fast.silu if hasattr(mx.fast, "silu")  # pyright: ignore[reportAttributeAccessIssue]  # guarded by hasattr
+                      else (lambda a: a * mx.sigmoid(a)))(
                 x @ g("mlp.gate_proj.weight").T) * (x @ g("mlp.up_proj.weight").T) @ g("mlp.down_proj.weight").T
         mx.eval(h, k, v)
     return cache
@@ -422,7 +423,7 @@ def run(args):
         tf = time.time()
         t_pos = float(len(ids) + MARGIN) + f * stride
         cos, sin = rope.tables(mx.stack([mx.full(hh.shape, t_pos), hh, ww]))
-        layers = lambda entries: [[text_kv[i]] + [e[i] for e in entries] for i in range(36)]
+        layers = lambda entries: [[text_kv[i]] + [e[i] for e in entries] for i in range(36)]  # noqa: F821 -- pyflakes sees the later `del text_kv`; only called inside the loop, before it
         # 1. clean control C_f -> cache
         tokens_c = patchify(lat_c[:, f:f + 1].astype(mx.bfloat16))
         _, kv = gen(tokens_c, cos, sin, layers(history.view(False)), store=True)
@@ -431,7 +432,7 @@ def run(args):
         ctx = layers(history.view(True))
         mx.random.seed(args.seed + f)
         x = mx.random.normal((1, 1, h_lat, w_lat, 48)).astype(mx.float32)
-        for step, (s, s_next) in enumerate(zip(sigmas[:-1], sigmas[1:])):
+        for step, (s, s_next) in enumerate(zip(sigmas[:-1], sigmas[1:], strict=False)):
             v, _ = gen(patchify(x.astype(mx.bfloat16)), cos, sin, ctx, sigma=s)
             x0 = x - s * unpatchify(v, h_lat, w_lat)
             if s_next == 0.0:

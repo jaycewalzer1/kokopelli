@@ -47,8 +47,8 @@ class ComparisonTest(unittest.TestCase):
     def test_a_real_difference_is_clear_and_noise_is_not(self):
         rng = np.random.default_rng(0)
         base = [{"m": value} for value in rng.normal(10, 3, 100)]
-        better = [{"m": row["m"] - 2 + noise} for row, noise in zip(base, rng.normal(0, 1, 100))]
-        same = [{"m": row["m"] + noise} for row, noise in zip(base, rng.normal(0, 1, 100))]
+        better = [{"m": row["m"] - 2 + noise} for row, noise in zip(base, rng.normal(0, 1, 100), strict=False)]
+        same = [{"m": row["m"] + noise} for row, noise in zip(base, rng.normal(0, 1, 100), strict=False)]
         found = paired_difference(better, base, "m")
         self.assertLess(found["high"], 0)
         found = paired_difference(same, base, "m")

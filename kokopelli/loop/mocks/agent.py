@@ -1,6 +1,7 @@
 """Agents with no model in them, for running the loop anywhere."""
 import json
 import random
+from typing import Any
 
 from kokopelli.loop.interfaces import AgentPolicy
 
@@ -21,7 +22,7 @@ class ScriptedAgent(AgentPolicy):
         if target:
             options += [{"type": "move_to", "target": target}] * 3 + [{"type": "look_at", "target": target},
                                                                        {"type": "interact", "target": target}]
-        decision = {"action": draw.choice(options)}
+        decision: dict[str, Any] = {"action": draw.choice(options)}
         if tick % 4 == 1:
             decision["diary"] = f"Note from tick {tick}: {decision['action']['type']} seemed right."
         return json.dumps(decision)

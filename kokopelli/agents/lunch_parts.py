@@ -5,6 +5,7 @@ import shutil
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from kokopelli.agents import live
 from kokopelli.agents.live_wm import BLUR_DOWNUP, FAR_CM, NEAR_CM
@@ -24,7 +25,7 @@ class Body:
     xy: tuple
     yaw: float
     posture: str = "standing"
-    held: str = None
+    held: str | None = None
 
 
 class SimWorldPair:
@@ -38,7 +39,7 @@ class SimWorldPair:
         self.sim = (sim_class or TwoBodySim)(cfg, friend_id=second,
                                              friend_position=(second_xy[0] * 100, second_xy[1] * 100, 200),
                                              friend_yaw=second_yaw)
-        self.state = None
+        self.state: Any = None   # the last PhysicalState, set by reset()
 
     def __enter__(self):
         return self
@@ -124,20 +125,20 @@ class Mind:
     heard: list = field(default_factory=list)
     recent: list = field(default_factory=list)
     route: list = field(default_factory=list)
-    goal_place: str = None
-    approaching: str = None
+    goal_place: str | None = None
+    approaching: str | None = None
     new_leg: bool = False
     blocked_count: int = 0
-    awaiting: int = None        # steps since this mind spoke to someone and got no answer; None = not waiting
-    pending: str = None         # why this mind should decide at the next chance
+    awaiting: int | None = None        # steps since this mind spoke to someone and got no answer; None = not waiting
+    pending: str | None = None         # why this mind should decide at the next chance
     met: set = field(default_factory=set)
-    seen: str = None
+    seen: str | None = None
     k_seen: int = 0
     last_thought: str = ""
-    last_action: dict = None
+    last_action: dict | None = None
     decisions: int = 0
     talk: list = field(default_factory=list)    # --fixes memory: every line said near this mind, both voices
-    decided_frame: str = None   # --decide-on-change: the frame this mind last decided from
+    decided_frame: str | None = None   # --decide-on-change: the frame this mind last decided from
     quiet: int = 0              # --decide-on-change: steps idle without a decision
 
     @property
@@ -177,7 +178,7 @@ class SideBySide:
     def __init__(self, film, names, gap=4):
         import numpy as np
         self.film, self.names, self.gap, self.np = film, names, gap, np
-        self.buf = {n: None for n in names}
+        self.buf: dict[str, Any] = {n: None for n in names}
 
     def add(self, name, frames):
         np = self.np
@@ -226,6 +227,20 @@ def controls_for(frames, size, palette):
 class LunchRecord:
     """events.jsonl, transcript.md, live.json and run.json for Lunch (needs self.out, self.events, self.transcript,
     self.minds, self.world, self.nav, self.wm, self.args, self.sim_t, self.step_no, self.running, self.steps_done)."""
+
+    if TYPE_CHECKING:   # set by Lunch.__init__ (lunch_wm.py), declared for the type checker only
+        out: Path
+        events: Any
+        transcript: Any
+        minds: dict[str, Any]
+        world: Any
+        nav: Any
+        wm: Any
+        args: Any
+        sim_t: float
+        step_no: int
+        running: bool
+        steps_done: int
 
     # --- logging
     def log(self, kind, **data):

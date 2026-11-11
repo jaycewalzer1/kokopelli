@@ -9,9 +9,10 @@ UE="/Users/Shared/Epic Games/UE_5.8"
 SCRIPT="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 LOG="$(cd "$(dirname "${2:-$K/out/bodies/editor_gui.log}")" && pwd)/$(basename "${2:-editor_gui.log}")"
 export MH_QUIT=1
+# shellcheck disable=SC2086  # MH_EXTRA holds extra editor arguments and must split into words
 "$UE/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" "$PROJ" -ExecutePythonScript="$SCRIPT" \
   -unattended -nosplash -nop4 -log -ABSLOG="$LOG" -nosimcv -ResX=1280 -ResY=720 -windowed \
-  -ini:Engine:[ConsoleVariables]:mh.Character.SuppressContentWarnings=1 ${MH_EXTRA:-} > "${LOG%.log}.stdout" 2>&1 &
+  "-ini:Engine:[ConsoleVariables]:mh.Character.SuppressContentWarnings=1" ${MH_EXTRA:-} > "${LOG%.log}.stdout" 2>&1 &
 PID=$!
 cd "$K" && .venv/bin/python kokopelli/ops/ram_share.py claim --name bodies_mh_editor --gb 10 --pid $PID >/dev/null
 # minimize the editor window once it exists (Metal present leak)

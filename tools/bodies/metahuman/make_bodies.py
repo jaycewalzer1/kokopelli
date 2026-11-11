@@ -145,10 +145,13 @@ def landmarks(ch):
 
 
 def rms(a, b):
-    return math.sqrt(sum((p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2 for p, q in zip(a, b)) / max(1, len(a)))
+    return math.sqrt(sum((p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2 for p, q in zip(a, b, strict=False)) / max(1, len(a)))
 
 
-def set_face(ch, spec, rep, amp_cm=float(os.environ.get('MH_FACE_AMP', '1.0'))):
+FACE_AMP_CM = float(os.environ.get('MH_FACE_AMP', '1.0'))   # read once at import, as the default argument was
+
+
+def set_face(ch, spec, rep, amp_cm=FACE_AMP_CM):
     """Sculpt the face like dragging landmarks in the Creator UI: symmetric random offsets per landmark pair.
 
     (Setting the face model coefficients directly fails - the array is a serialized blob, not free

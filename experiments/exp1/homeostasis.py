@@ -69,7 +69,7 @@ FELT = {
 
 def felt_text(h: np.ndarray) -> str:
     parts = []
-    for name, v in zip(NEEDS, h):
+    for name, v in zip(NEEDS, h, strict=False):
         for cut, phrase in FELT[name]:
             if v < cut:
                 parts.append(phrase)
@@ -113,7 +113,7 @@ def balance(table, safe, states, lo=0.0, hi=5.0, iters=60) -> dict:
     for opt in table:
         if opt == safe:
             continue
-        f = lambda s: expected_reward(table, opt, states, s) - target
+        f = lambda s, opt=opt: expected_reward(table, opt, states, s) - target
         a, b = lo, hi
         if f(a) * f(b) > 0:
             scales[opt] = None  # can't balance by scaling this branch alone

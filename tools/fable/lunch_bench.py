@@ -143,7 +143,7 @@ class ParrotBrain:
 
     def ask(self, prompt, image):
         from tests.agents import test_city_lunch as tcl
-        name = re.match(r"You are (\w+)", prompt).group(1)
+        name = re.match(r"You are (\w+)", prompt).group(1)  # pyright: ignore[reportOptionalMemberAccess]  # every prompt starts this way
         other = "Iris" if name == "Mara" else "Mara"
         self.n[name] += 1
         n = self.n[name]
@@ -181,7 +181,7 @@ class SeededQwen:
 
     def ask(self, prompt, image):
         import mlx.core as mx
-        k = re.match(r"You are (\w+)", prompt).group(1).lower()
+        k = re.match(r"You are (\w+)", prompt).group(1).lower()  # pyright: ignore[reportOptionalMemberAccess]  # every prompt starts this way
         n = self.calls[k]
         self.calls[k] += 1
         shown = self.frames.get(k) or []

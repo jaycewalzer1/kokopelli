@@ -15,12 +15,11 @@ import argparse
 import json
 import math
 import shutil
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 from experiments.filter_test.scripts.head import Head  # noqa: E402
-from kokopelli.agents import live  # noqa: E402  (sets up the unrealcv client, the same way the city agent does)
+from kokopelli.agents import live  # noqa: E402, F401  (imported for its side effect: sets up the unrealcv client, the same way the city agent does)
 from kokopelli.agents.navmap import NavMap  # noqa: E402
 from kokopelli.loop.adapters.simworld import AGENT_ACTOR, SimWorldConfig, SimWorldPhysics  # noqa: E402
 
@@ -69,7 +68,7 @@ def qwen_choice(run):
 def first_long_leg(nav, start, place):
     """The first straight stretch of Qwen's route long enough to fill 10 s of walking."""
     points = [start] + nav.route(start, nav.doors[place])
-    for a, b in zip(points, points[1:]):
+    for a, b in zip(points, points[1:], strict=False):
         if math.dist(a, b) >= MIN_LEG_M:
             return a, b
     raise SystemExit(f"no stretch of {MIN_LEG_M} m on the route to {place}")

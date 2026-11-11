@@ -55,7 +55,7 @@ export function buildScene(model, calendar, {selected, hover, viewPath, agentPat
   const expanded = new Set([...viewPath, ...agentPath]);
   const onSel = new Set(selPath), labelled = new Set(viewPath);
   const nodes = [], labels = [], positions = new Map();
-  const branches = calendar.hubs.map((hub, i) => ({color: STAGE_COLORS[i], spokes: "", ticks: ""}));
+  const branches = calendar.hubs.map((_hub, i) => ({color: STAGE_COLORS[i], spokes: "", ticks: ""}));
   const scene = {ghostSpokes: "", branches, nodes, labels, positions, missing, cursor};
 
   const life = calendar.life;
@@ -112,7 +112,7 @@ export function buildScene(model, calendar, {selected, hover, viewPath, agentPat
     // Outside the ring, where there's room, so each name labels its whole sector.
     const [lx, ly] = at(STAGE_LABEL_RING, angle);
     labels.push({x: lx, y: ly, text: hub.name, anchor: anchorFor(angle), size: 14, weight: 500, color: INK, rank: RANK.stage});
-    group.forEach((year, k) => visit(year, statuses[k], yearAngle(year.index, years.length), [hx, hy], ARC / (years.length - 1), i));
+    group.forEach((year, k) => { visit(year, statuses[k], yearAngle(year.index, years.length), [hx, hy], ARC / (years.length - 1), i); });
   });
 
   addNode(life.id, lifeStatus, 0, 0, 13, life, INK);

@@ -54,7 +54,7 @@ def _walk(value, now, path):
             if key in DATE_FIELDS and is_future(item, now):
                 raise LeakError(f"future-dated {key}={item} at {path}, now is {now}")
             _walk(item, now, f"{path}.{key}")
-    elif isinstance(value, (list, tuple)):
+    elif isinstance(value, list | tuple):
         for index, item in enumerate(value):
             _walk(item, now, f"{path}[{index}]")
     elif isinstance(value, str):

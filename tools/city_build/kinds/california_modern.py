@@ -11,7 +11,7 @@ Every kind is deterministic from plot.seed and takes its accent colours from plo
 import colorsys
 import math
 
-from .kit import Kit, WHITE, OFFWHITE, CONCRETE, DARK_STEEL, GLASS, TERRAZZO, TEAK, LEAF, FLOWER
+from .kit import Kit, WHITE, DARK_STEEL, GLASS, TERRAZZO, TEAK, LEAF, FLOWER
 
 LAMP = (255, 190, 112)
 DIM = (138, 108, 78)
@@ -47,7 +47,7 @@ def vivid(rgb, s_min=0.68, v_min=0.88):
 
 
 def mix(a, b, t):
-    return tuple(int(round(lerp(x, y, t))) for x, y in zip(a, b))
+    return tuple(int(round(lerp(x, y, t))) for x, y in zip(a, b, strict=False))
 
 
 class Ctx:
@@ -220,7 +220,7 @@ class Ctx:
         th = h - crown * 0.75
         k.plant("Trunk", "Bark", (104, 88, 70), x, y, 0, 0.36 * spread, 0.36 * spread, th, r.uniform(0, 360))
         leaf = r.choice(LEAF)
-        for i in range(r.randint(3, 5)):
+        for _i in range(r.randint(3, 5)):
             a, rr = r.uniform(0, 6.28), r.uniform(0.3, 0.8) * crown
             c = bloom if (bloom and r.random() < 0.6) else leaf
             s = r.uniform(0.6, 0.85) * crown
@@ -230,7 +230,7 @@ class Ctx:
         if th > 3.2:
             # tall trees: lower tiers of foliage down the trunk so they read as full crowns, not lollipops
             for tz in (th * 0.62, th * 0.82) if th > 5.5 else (th * 0.7,):
-                for i in range(2):
+                for _i in range(2):
                     a = r.uniform(0, 6.28)
                     s = r.uniform(0.5, 0.7) * crown
                     k.plant("Puff", "Foliage", leaf, x + 0.45 * crown * math.cos(a), y + 0.45 * crown * math.sin(a), tz,
@@ -265,7 +265,7 @@ class Ctx:
         self.k.plant("Stone", "PermeableStone", (176, 150, 118), x, y, 0, 0.7 * s, 0.55 * s, 0.4 * s, r.uniform(0, 360))
 
     def cactus(self, x, y, h=1.6):
-        k, r = self.k, self.r
+        k = self.k
         c = (84, 128, 80)
         k.plant("Cylinder", "Foliage", c, x, y, 0, 0.32, 0.32, h)
         if h > 1.2:
@@ -804,7 +804,7 @@ def _butterfly_house(c, x0, x1, H, colour, wall, idx, slots):
         k.tri(c.glass, (vx, yy, zw), (hx1 - 0.2, yy, zw), (hx1 - 0.2, yy, zr - rise * ov_s / max(0.1, hx1 - vx) - 0.02), n)
         if n[1] < 0:
             for f in (0.33, 0.66):
-                for xa, xb, zz in ((hx0, vx, zw + rise), (vx, hx1, zw + rise)):
+                for xa, xb, _zz in ((hx0, vx, zw + rise), (vx, hx1, zw + rise)):
                     xm = lerp(xa, xb, f)
                     zt = zw + rise * abs(xm - vx) / max(0.1, abs((xa if xa != vx else xb) - vx))
                     k.box(white, xm - 0.04, yy - 0.05, zw, xm + 0.04, yy + 0.02, zt)
@@ -846,7 +846,7 @@ def _butterfly_house(c, x0, x1, H, colour, wall, idx, slots):
         cx0, cx1 = (x0 + side, hx0) if left_cp else (hx1, x1 - side)
         cz = zw + 0.15
         k.box(white, cx0 - (0.0 if left_cp else 0.0), fy - 0.8, cz, cx1, by - 2.0, cz + 0.18)
-        for px in (cx0 + 0.1, ):
+        for _px in (cx0 + 0.1, ):
             pass
         ox = cx0 + 0.12 if left_cp else cx1 - 0.12
         for py in (fy - 0.6, fy + 2.6):

@@ -7,7 +7,6 @@ import re
 import subprocess
 import sys
 import threading
-import time
 from pathlib import Path
 
 GB = 1024 ** 3
@@ -18,8 +17,8 @@ def used_gb():
     """RAM that can't be handed to something else right now, or None if this platform isn't covered."""
     if sys.platform == "darwin":
         text = subprocess.run(["vm_stat"], capture_output=True, text=True).stdout
-        page = int(re.search(r"page size of (\d+)", text).group(1))
-        pages = sum(int(re.search(rf"{name}:\s+(\d+)", text).group(1))
+        page = int(re.search(r"page size of (\d+)", text).group(1))  # pyright: ignore[reportOptionalMemberAccess]  # vm_stat always prints it
+        pages = sum(int(re.search(rf"{name}:\s+(\d+)", text).group(1))  # pyright: ignore[reportOptionalMemberAccess]  # as above
                     for name in ("Pages active", "Pages wired down", "Pages occupied by compressor"))
         return pages * page / GB
     meminfo = Path("/proc/meminfo")

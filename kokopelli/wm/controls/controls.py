@@ -48,7 +48,7 @@ def load_rgb(clip, k):
 
 def resize_rgb(rgb, size):
     # NVIDIA resizes RGB with antialiased bicubic (torchvision); PIL's bicubic is the same antialiased filter.
-    return np.array(Image.fromarray(rgb).resize(size, Image.BICUBIC))
+    return np.array(Image.fromarray(rgb).resize(size, Image.Resampling.BICUBIC))
 
 
 def edge(rgb_small, low=100, high=200):
@@ -146,7 +146,7 @@ class Palette:
 
     def __init__(self, seed=SEED):
         self.rng = np.random.default_rng(seed)
-        self.colours = {0: (0, 0, 0)}
+        self.colours: dict[object, tuple[int, ...]] = {0: (0, 0, 0)}
 
     def __getitem__(self, key):
         if key not in self.colours:
@@ -173,9 +173,11 @@ class Writer:
                                    str(path)], stdin=subprocess.PIPE)
 
     def write(self, frame):
+        assert self.p.stdin is not None  # stdin=PIPE
         self.p.stdin.write(np.ascontiguousarray(frame).tobytes())
 
     def close(self):
+        assert self.p.stdin is not None  # stdin=PIPE
         self.p.stdin.close()
         assert self.p.wait() == 0
 
@@ -207,7 +209,7 @@ def sheet(clip, out, frames, picks):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])  # pyright: ignore[reportOptionalMemberAccess]  # the module has a docstring
     ap.add_argument("--clip", default="out/filter_test/test_clip")
     ap.add_argument("--out", default="out/city_wm/bridge/controls")
     ap.add_argument("--frames", type=int, default=150, help="first N frames of the clip (150 = 5 s at 30 fps)")

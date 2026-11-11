@@ -1,7 +1,7 @@
 """What the agent may do. The agent returns text; only a decision that validates here reaches the sim."""
 import json
 import re
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
@@ -34,7 +34,7 @@ class Wait(_Action):
     type: Literal["wait"] = "wait"
 
 
-Action = Annotated[Union[MoveTo, LookAt, Interact, Speak, Wait], Field(discriminator="type")]
+Action = Annotated[MoveTo | LookAt | Interact | Speak | Wait, Field(discriminator="type")]
 
 
 class Decision(BaseModel):

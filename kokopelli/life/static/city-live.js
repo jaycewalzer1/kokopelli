@@ -180,7 +180,7 @@ function drawLog() {
     if (ui.data.live && nearBottom || ui.firstLog) list.scrollTop = ui.data.live ? list.scrollHeight : 0;
     ui.firstLog = false;
   }
-  list.querySelectorAll(".decision").forEach(button => button.setAttribute("aria-current", String(!ui.data.live && Number(button.dataset.index) === ui.index)));
+  list.querySelectorAll(".decision").forEach(button => { button.setAttribute("aria-current", String(!ui.data.live && Number(button.dataset.index) === ui.index)); });
 }
 
 function drawReplay() {

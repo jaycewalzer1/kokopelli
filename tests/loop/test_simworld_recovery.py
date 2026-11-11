@@ -4,9 +4,8 @@ import unittest
 try:
     import unrealcv  # noqa: F401
 except ImportError:
-    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv")
+    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv") from None
 
-import tempfile
 import time
 import unittest
 from pathlib import Path
@@ -81,7 +80,7 @@ class CheckpointTest(AdapterCase):
         first = [self.sim.step({"type": "wait"}).final_state.npcs[0].pose for _ in range(2)]
         self.sim.restore_state(start)
         second = [self.sim.step({"type": "wait"}).final_state.npcs[0].pose for _ in range(2)]
-        for a, b in zip(first, second):
+        for a, b in zip(first, second, strict=False):
             self.assertAlmostEqual(a.location.x, b.location.x, delta=0.01)
             self.assertAlmostEqual(a.location.y, b.location.y, delta=0.01)
 

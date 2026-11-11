@@ -44,7 +44,7 @@ def parse_appraisal(raw):
     match = re.search(r"\{.*\}", raw, re.DOTALL)
     try:
         data = json.loads(match.group()) if match else None
-        feeling, intensity, why = str(data["feeling"]).strip().lower(), float(data["intensity"]), str(data.get("why", "")).strip()
+        feeling, intensity, why = str(data["feeling"]).strip().lower(), float(data["intensity"]), str(data.get("why", "")).strip()  # pyright: ignore[reportOptionalSubscript, reportOptionalMemberAccess]  # None -> TypeError, caught below
     except (ValueError, TypeError, KeyError):
         return None
     if not feeling or intensity != intensity:
@@ -57,7 +57,7 @@ def parse_change(raw):
     match = re.search(r"\{.*\}", raw, re.DOTALL)
     try:
         data = json.loads(match.group()) if match else None
-        changed, what = data["changed"], str(data.get("what") or "").strip()
+        changed, what = data["changed"], str(data.get("what") or "").strip()  # pyright: ignore[reportOptionalSubscript, reportOptionalMemberAccess]  # None -> TypeError, caught below
     except (ValueError, TypeError, KeyError, AttributeError):
         return None, False
     if changed is not True:
@@ -234,7 +234,7 @@ class FeelingAgent:
             reported = parse_appraisal(raw)
             felt = reported and settle(current, reported)
             # The mood moves slowly, but how big this moment is comes from what the model just said about it.
-            gate = reported and {**felt, "intensity": reported["intensity"]}
+            gate = reported and {**felt, "intensity": reported["intensity"]}  # pyright: ignore[reportGeneralTypeIssues]  # felt is a dict whenever reported is
             fields.update(raw=raw if not reported else None, reported=reported, **cost)
         point = decision_point(previous, gate, agent_input.visible, last_visible, gap, change)
         self._write({"kind": "appraisal", "tick": agent_input.tick, "t": agent_input.now, "seconds": 0.0, "usage": None, **fields, **noticed,

@@ -136,7 +136,7 @@ def main_frame(director_png, row, caps, eyes, eye_labels, run_meta):
     # side panels: what each agent sees
     ew, eh = SIDE_W - 24, int((SIDE_W - 24) * 256 / 448)
     y = 16
-    for (who, frame), label in zip(eyes, eye_labels):
+    for (who, frame), label in zip(eyes, eye_labels, strict=False):
         d.text((12, 0), "", font=font(10))
         d.text((MAIN_W + 12, y), label, font=font(20, True), fill=COLORS.get(who, OTHER))
         y += 30

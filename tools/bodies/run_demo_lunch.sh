@@ -7,7 +7,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PORT="${PORT:-9001}"
 HOLD_GB="${HOLD_GB:-24}"
-cd "$ROOT"
+cd "$ROOT" || exit
 
 started=""
 if ! lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1; then

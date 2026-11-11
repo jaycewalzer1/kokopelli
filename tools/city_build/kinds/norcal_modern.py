@@ -12,8 +12,8 @@ from california_modern.Ctx so both families look like one city.
 """
 import math
 
-from .california_modern import Ctx, clamp, lerp, mix, vivid, tilt_x, LAMP, JACARANDA, MAPLE
-from .kit import WHITE, DARK_STEEL, LEAF, FLOWER
+from .california_modern import Ctx, clamp, lerp, mix, vivid, tilt_x, JACARANDA, MAPLE
+from .kit import LEAF, FLOWER
 
 REDWOOD = (146, 96, 66)          # oiled redwood siding
 WEATHERED = (122, 110, 98)       # Sea Ranch silvered redwood
@@ -87,7 +87,7 @@ def cypress(c, x, y, h, lean=0.0, flat=1.0, wind=0.0):
         f = i / max(1, tiers - 1)
         zz = lerp(h * 0.38, h * 0.82, f)
         s = (2.5 - 0.7 * f) * sz
-        for j in range(2):
+        for _j in range(2):
             k.plant("Puff", "Foliage", col, x + wind * f + r.uniform(-0.5, 0.5), y + r.uniform(-0.5, 0.5), zz,
                     s * r.uniform(0.9, 1.1), s * r.uniform(0.8, 1.0), s * 0.5, r.uniform(0, 360))
 
@@ -460,7 +460,7 @@ def sea_ranch(plot):
         tops.append(_shed(c, wood, line, ua, va, ub, vb, zlo, zhi, fall, roof))
 
     # windows: Condo One is nearly blind; a few saddlebag bays, deep small windows, one big glass corner to the sea
-    for j, (ua, va, ub, vb, fall, zlo, zhi) in enumerate(units):
+    for _j, (ua, va, ub, vb, fall, zlo, _zhi) in enumerate(units):
         cx = (ua + ub) / 2
         if fall == "y0" and ub - ua > 3.0:
             # a boxed bay on the low street wall, plus a clerestory slot high on the side
@@ -568,10 +568,8 @@ def hedgerow_house(plot):
         boards(k, wood, line, "x", xa, xb, yy, 0, hzz, o, top=zlo_at)
     # the roof: one plane, overhanging the meadow wall, nearly reaching the ground on the hedge side
     ext_lo = 0.9
-    sl = (hzz - hz) / (hx_hi - hx_lo)
     x_lo_e = hx_lo - ext_lo * (1 if hedge_left else -1)
     x_hi_e = hx_hi + 0.5 * (1 if hedge_left else -1)
-    z_lo_e, z_hi_e = zlo_at(x_lo_e), zlo_at(x_hi_e)
     ra, rb = min(x_lo_e, x_hi_e), max(x_lo_e, x_hi_e)
     tilt_x(k, roof, ra, rb, fy - 0.5, by + 0.5, zlo_at(ra), zlo_at(rb), 0.2)
     # meadow wall: a long high clerestory under the eave and a big window seat bay at eye level
@@ -790,7 +788,6 @@ def eichler_x100(plot):
     glass, white and bold colour panels, an open interior court, a steel-framed carport, glass to the garden."""
     c = Ctx(plot)
     k, r, w, d = c.k, c.r, c.w, c.d
-    H = clamp(plot.h_max, 4.0, 5.5)
     steel = c.m("steel", "Plain", (46, 48, 52))
     roofw = c.m("roofw", "Plain", (236, 234, 228))
     panel_w = c.m("panelw", "Plain", (232, 228, 214))

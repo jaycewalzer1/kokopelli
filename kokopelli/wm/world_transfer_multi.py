@@ -48,11 +48,11 @@ def normalize_weights(controls, weights=None):
         raise ValueError(f"weights must name exactly the controls: missing {sorted(missing)}, extra {sorted(extra)}")
     raw = [float(weights[h]) for h in hints]
     if any(not w >= 0 for w in raw):   # `not >=` also rejects NaN
-        raise ValueError(f"weights must be non-negative, got {dict(zip(hints, raw))}")
+        raise ValueError(f"weights must be non-negative, got {dict(zip(hints, raw, strict=False))}")
     total = sum(raw)
     if not total > 0 or total == float("inf"):
-        raise ValueError(f"weights must have a positive, finite sum, got {dict(zip(hints, raw))}")
-    return {h: w / total for h, w in zip(hints, raw)}
+        raise ValueError(f"weights must have a positive, finite sum, got {dict(zip(hints, raw, strict=False))}")
+    return {h: w / total for h, w in zip(hints, raw, strict=False)}
 
 
 def transfer_video_multi(prompt, controls, output, weights=None, size="832x480", frames=None, seed=2025, window=51,
@@ -139,13 +139,13 @@ class MultiGenerator(wt.Generator):
                 if i == 35:
                     break
             o = None
-            for w, context in zip(weights, contexts):
+            for w, context in zip(weights, contexts, strict=False):
                 ks = [c[0] for c in context[i]] + [k]
                 vs = [c[1] for c in context[i]] + [v]
                 part = w * mx.fast.scaled_dot_product_attention(q, mx.concatenate(ks, axis=2),
                                                                 mx.concatenate(vs, axis=2), scale=128 ** -0.5)
                 o = part if o is None else o + part
-            h = h + layer["o"](o.transpose(0, 2, 1, 3).reshape(1, N, 4096))
+            h = h + layer["o"](o.transpose(0, 2, 1, 3).reshape(1, N, 4096))  # pyright: ignore[reportOptionalMemberAccess]  # weights is never empty
             x = mx.fast.rms_norm(h, layer["ln2"], wt.EPS)
             a = layer["gate"](x)
             h = h + layer["down"](a * mx.sigmoid(a) * layer["up"](x))
@@ -182,7 +182,7 @@ def causal_loop(gen, lat_cs, weights, text_kv, n_text, rope, sigmas, seed, windo
         ctxs = [layers(history.view(b, True)) for b in branches]
         mx.random.seed(seed + f)
         x = mx.random.normal((1, 1, h_lat, w_lat, 48)).astype(mx.float32)
-        for step, (s, s_next) in enumerate(zip(sigmas[:-1], sigmas[1:])):
+        for step, (s, s_next) in enumerate(zip(sigmas[:-1], sigmas[1:], strict=False)):
             v, _ = gen.target(wt.patchify(x.astype(mx.bfloat16)), cos, sin, ctxs, weights, sigma=s)
             x0 = x - s * wt.unpatchify(v, h_lat, w_lat)
             if s_next == 0.0:
@@ -205,7 +205,7 @@ def causal_loop(gen, lat_cs, weights, text_kv, n_text, rope, sigmas, seed, windo
     return out
 
 
-def parse_pairs(pairs, flag, cast=str):
+def parse_pairs(pairs, flag, cast: type = str):
     out = {}
     for pair in pairs or []:
         hint, sep, value = pair.partition("=")
@@ -239,7 +239,7 @@ def run(args):
     videos = [wt.read_video(controls[h], width, height, h, args.frames) for h in hints]
     frames = len(videos[0])
     if any(len(v) != frames for v in videos):
-        raise ValueError(f"controls differ in length: {dict(zip(hints, map(len, videos)))}; pass --frames")
+        raise ValueError(f"controls differ in length: {dict(zip(hints, map(len, videos), strict=False))}; pass --frames")
     latents_t = 1 + -(-(frames - 1) // wt.TCF)
     text = args.prompt if args.raw_prompt else wt.format_prompt(args.prompt, frames, fps, width, height)
     ids = wt.tokenize(model_dir, text)

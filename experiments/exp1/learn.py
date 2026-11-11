@@ -91,7 +91,7 @@ class Sleeper:
             coefficient = float(dscores[k])
             if coefficient == 0.0:
                 continue
-            _, grad = nn.value_and_grad(self.policy.model, lambda model: self.policy.score_one(row, k) * coefficient)(self.policy.model)
+            _, grad = nn.value_and_grad(self.policy.model, lambda model, k=k, coefficient=coefficient: self.policy.score_one(row, k) * coefficient)(self.policy.model)
             grads = grad if grads is None else tree_map(lambda a, b: a + b, grads, grad)
             mx.eval(grads)   # release this sequence's graph before the next
         return grads, float(pg), float(kl), float(weight)

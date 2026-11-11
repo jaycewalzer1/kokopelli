@@ -11,7 +11,6 @@ const ACTIONS = {
 const ui = {uiVersion: null, board: null, drawn: "", status: "proposed"};
 
 const escapeHtml = text => String(text ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-const plural = (n, thing) => `${n.toLocaleString("en-US")} ${thing}${n === 1 ? "" : "s"}`;
 const imageUrl = image => `/api/moodboard/image?id=${encodeURIComponent(image.id)}`;
 const withStatus = status => ui.board.images.filter(image => image.status === status);
 

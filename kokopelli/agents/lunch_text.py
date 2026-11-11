@@ -3,6 +3,7 @@ prompt, the reply-format notes, what Lunch tells a mind (LunchWords), and the re
 to."""
 import math
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from kokopelli.agents import live
 from kokopelli.agents.live import Cast, bearing, compass, rough
@@ -119,6 +120,12 @@ def lunch_cast(nav):
 
 class LunchWords:
     """What Lunch tells a mind (needs self.world, self.nav, self.cast, self.minds)."""
+
+    if TYPE_CHECKING:   # set by Lunch.__init__ (lunch_wm.py), declared for the type checker only
+        world: Any
+        nav: Any
+        cast: Any
+        minds: dict[str, Any]
 
     # --- what a mind is told
     def describe(self, mind):

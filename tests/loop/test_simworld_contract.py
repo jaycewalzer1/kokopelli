@@ -9,7 +9,7 @@ import unittest
 try:
     import unrealcv  # noqa: F401
 except ImportError:
-    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv")
+    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv") from None
 
 import sys
 import unittest
@@ -148,7 +148,7 @@ class ContractTest(unittest.TestCase):
         for viewmode, builder in (("lit", c.render(1, "lit", "png")), ("object_mask", c.render(1, "object_mask", "png")),
                                   ("depth", c.render(1, "depth", "npy"))):
             with self.subTest(viewmode=viewmode):
-                self.assertEqual(self.sent_by(lambda: self.ucv.get_image(1, viewmode)), [builder])
+                self.assertEqual(self.sent_by(lambda viewmode=viewmode: self.ucv.get_image(1, viewmode)), [builder])
 
 
 @unittest.skipIf(IMPORT_ERROR is not None, f"cannot import the real simworld client: {IMPORT_ERROR}")

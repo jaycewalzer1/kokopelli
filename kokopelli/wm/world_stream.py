@@ -23,6 +23,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from typing import Any
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -112,6 +113,7 @@ class WorldStream:
                                raw_prompt=raw_prompt)
 
     def _call(self, **msg):
+        assert self.proc.stdin is not None and self.proc.stdout is not None  # both are PIPE
         self.proc.stdin.write(json.dumps(msg) + "\n")
         self.proc.stdin.flush()
         line = self.proc.stdout.readline()
@@ -182,17 +184,17 @@ class Worker:
         self.text_kv = wt.text_cache(arrays, ids, self.rope)
         del arrays
         mx.clear_cache()
-        self.gen = None
+        self.gen: Any = None
         self.history = wm.MultiHistory(len(self.hints), window, sink)
         self.frames_in = 0                       # control frames received
-        self.tail = {h: None for h in self.hints}  # recent control frames kept for encoder warm-up
+        self.tail: dict[str, Any] = {h: None for h in self.hints}  # recent control frames kept for encoder warm-up
         self.tail_start = 0                      # global index of tail[0]
         self.lat_c = {h: [] for h in self.hints}  # control latents not yet painted (per hint, list of [1,1,h,w,48])
         self.painted = []                        # recent target latents kept for decoder warm-up
         self.n_painted = 0
         self.frames_out = 0
         self.timing = {"text_s": round(time.time() - t, 1)}
-        return {"hints": self.hints, "weights": dict(zip(self.hints, self.weights)), "text_tokens": self.n_text,
+        return {"hints": self.hints, "weights": dict(zip(self.hints, self.weights, strict=False)), "text_tokens": self.n_text,
                 "formatted_prompt": self.text, "model": self.model_dir.name, "checkpoint_id": cfg["checkpoint_id"]}
 
     def _load(self):
@@ -255,7 +257,7 @@ class Worker:
         ctxs = [layers(hist.view(b, True)) for b in branches]
         mx.random.seed(self.seed + f)
         x = mx.random.normal((1, 1, h_lat, w_lat, 48)).astype(mx.float32)
-        for step, (s, s_next) in enumerate(zip(self.sigmas[:-1], self.sigmas[1:])):
+        for step, (s, s_next) in enumerate(zip(self.sigmas[:-1], self.sigmas[1:], strict=False)):
             with stage(f"denoise_{step}"):
                 v, _ = gen.target(wt.patchify(x.astype(mx.bfloat16)), cos, sin, ctxs, self.weights, sigma=s)
                 x0 = x - s * wt.unpatchify(v, h_lat, w_lat)

@@ -85,6 +85,7 @@ def feed_machine():
     """Keep the latest macmon reading. It stops by itself if the panel goes, on its next write to the closed pipe."""
     try:
         process = subprocess.Popen([shutil.which("macmon") or "/opt/homebrew/bin/macmon", "pipe", "-i", str(MACHINE_EVERY_MS)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        assert process.stdout is not None  # stdout=PIPE
         for line in process.stdout:
             if reading := parse_machine(line):
                 _machine.update(reading=reading, at=time.time())

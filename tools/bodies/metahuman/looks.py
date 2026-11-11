@@ -12,7 +12,6 @@ The dry run validates the schema and resolves every slot against the wardrobe ca
 """
 import argparse
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -59,14 +58,14 @@ def validate(looks):
         return ["'people' must be a non-empty object"]
     for pid, p in people.items():
         where = f"people.{pid}"
-        if not isinstance(p.get("age"), (int, float)) or not 1 <= p["age"] <= 110:
+        if not isinstance(p.get("age"), int | float) or not 1 <= p["age"] <= 110:
             errs.append(f"{where}.age must be a number of years")
         skin = p.get("skin")
         if not isinstance(skin, dict):
             errs.append(f"{where}.skin missing")
         else:
             for k in ("u", "v"):
-                if not isinstance(skin.get(k), (int, float)) or not 0 <= skin[k] <= 1:
+                if not isinstance(skin.get(k), int | float) or not 0 <= skin[k] <= 1:
                     errs.append(f"{where}.skin.{k} must be 0..1")
             if not 0 <= skin.get("freckles", 0) <= 1:
                 errs.append(f"{where}.skin.freckles must be 0..1")
@@ -89,7 +88,7 @@ def validate(looks):
                     errs.append(f"{where}.{slot}.{k} must be a list of names")
             if slot in GROOM_SLOTS:
                 for k in UNIT:
-                    if k in s and not (isinstance(s[k], (int, float)) and 0 <= s[k] <= 1):
+                    if k in s and not (isinstance(s[k], int | float) and 0 <= s[k] <= 1):
                         errs.append(f"{where}.{slot}.{k} must be 0..1")
             if slot == "outfit":
                 for name, rgb in (s.get("colors") or {}).items():
@@ -98,7 +97,7 @@ def validate(looks):
         body = p.get("body")
         if body is not None:
             h = body.get("height")
-            if h is not None and h != "min" and not (isinstance(h, (int, float)) and 120 <= h <= 220):
+            if h is not None and h != "min" and not (isinstance(h, int | float) and 120 <= h <= 220):
                 errs.append(f"{where}.body.height must be cm or 'min'")
             for k in ("fat", "muscle", "fem"):
                 if k in body and not 0 <= body[k] <= 1:

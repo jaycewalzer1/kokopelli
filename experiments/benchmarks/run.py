@@ -122,7 +122,7 @@ def run_prompts(arm, seed, instrument, backend, info, args, sampling, done, out_
         batch = work[start:start + size]
         built = [make_request(arm, instrument, *entry[:2], seed, entry[2], sampling) for entry in batch]
         outputs = backend.generate_batch([request for _, request in built])
-        parsed = [instrument.parse(output.text, entry[0], order) for entry, (order, _), output in zip(batch, built, outputs)]
+        parsed = [instrument.parse(output.text, entry[0], order) for entry, (order, _), output in zip(batch, built, outputs, strict=False)]
 
         # Retry a parse failure once with a fresh seed. A second failure is recorded as invalid, never dropped.
         retries = [index for index, result in enumerate(parsed) if not result.valid]
@@ -130,11 +130,11 @@ def run_prompts(arm, seed, instrument, backend, info, args, sampling, done, out_
         if retries:
             second = backend.generate_batch([
                 make_request(arm, instrument, batch[i][0], batch[i][1], seed, batch[i][2], sampling, attempt=1)[1] for i in retries])
-            for index, output in zip(retries, second):
+            for index, output in zip(retries, second, strict=False):
                 outputs[index] = output
                 parsed[index] = instrument.parse(output.text, batch[index][0], built[index][0])
 
-        for index, ((item, template, sample), (order, request)) in enumerate(zip(batch, built)):
+        for index, ((item, template, sample), (order, _request)) in enumerate(zip(batch, built, strict=False)):
             result: Parsed = parsed[index]
             scored = instrument.score(result, item, order) if result.valid else None
             row = {**base_row(args.run_id, arm, instrument, seed, info, sampling),

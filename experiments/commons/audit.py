@@ -90,7 +90,7 @@ def main():
     lines += ["", f"The newcomer among scripted sustainable founders who do not adapt: collapse in {hit_n}/{len(SEEDS)} seeds" + (f", seasons {min(when_n)}-{max(when_n)}." if when_n else "."),
               "", f"Scripted all-sustainable agents: project completion {st.mean(goal):.2f} (min {min(goal):.2f}); share of seasons with needs met {st.mean(needs):.2f} (min {min(needs):.2f}).",
               "", "## c) One defector among sustainable agents, first 10 seasons (R3)", "", "| Seed | Defector | Mean of others |", "|---|---|---|"]
-    lines += [f"| {s} | {p[0]:.3f} | {p[1]:.3f} |" for s, p in zip(SEEDS, pairs)]
+    lines += [f"| {s} | {p[0]:.3f} | {p[1]:.3f} |" for s, p in zip(SEEDS, pairs, strict=False)]
     lines += ["", "## d) Satiated agent, marginal reward for 10 more fish", "", "| Reward | Marginal |", "|---|---|"]
     lines += [f"| {mode} | {value:.5f} |" for mode, value in margin.items()]
     r1 = with_mode(config, "R1")

@@ -3,7 +3,6 @@ import json
 import subprocess
 import sys
 import tempfile
-import time
 import unittest
 from datetime import time as clock
 from pathlib import Path

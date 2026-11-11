@@ -26,7 +26,7 @@ def main():
     near, far = np.nanpercentile(np.stack(logs), [1, 99])
     folder = CLIP / "preview_depth"
     folder.mkdir(exist_ok=True)
-    for path, frame in zip(files, logs):
+    for path, frame in zip(files, logs, strict=False):
         scaled = np.nan_to_num(np.clip((far - frame) / (far - near), 0, 1), nan=0.0)
         cv2.imwrite(str(folder / f"{path.stem}.png"), (scaled * 255).astype(np.uint8))
     encode(folder / "%04d.png", CLIP / "depth.mp4")

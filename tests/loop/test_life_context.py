@@ -1,7 +1,7 @@
 import sqlite3
 import tempfile
 import unittest
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from pathlib import Path
 
 from kokopelli.life.seed import LifeSeed

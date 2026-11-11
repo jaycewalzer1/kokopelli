@@ -169,7 +169,7 @@ def filter_test_entries():
     return entries
 
 
-MULTICONTROL_ABOUT = {"A": "Sim-Transfer with several controls mixed inside attention (world_transfer_multi.py). Untrained mix.",
+MULTICONTROL_ABOUT: dict[str | None, str] = {"A": "Sim-Transfer with several controls mixed inside attention (world_transfer_multi.py). Untrained mix.",
                       "B": "Base Cosmos3-Nano, NVIDIA's own multi-control path (world_multicontrol_base.py): 50 steps with guidance."}
 
 

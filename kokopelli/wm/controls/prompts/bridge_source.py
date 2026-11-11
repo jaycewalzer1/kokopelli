@@ -3,6 +3,7 @@
 Each sentence is S(text, VIBE.md qualities, kept image ids, which part of the sim frame it matches)."""
 import json
 from pathlib import Path
+from typing import Any
 
 from kokopelli.wm.controls.prompts import build
 
@@ -166,7 +167,7 @@ def to_caption(v, size=(832, 480), duration="10s", fps=30):
                                 "images": p["images"], "geometry": p["geometry"]})
         return join(parts)
 
-    cap = {"subjects": []}
+    cap: dict[str, Any] = {"subjects": []}
     for i, s in enumerate(v["subjects"]):
         cap["subjects"].append({"description": take(f"subjects[{i}].description", s["description"]),
                                 "appearance_details": take(f"subjects[{i}].appearance_details", s["appearance_details"]),

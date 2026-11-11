@@ -50,7 +50,7 @@ class RewardTest(unittest.TestCase):
         states = [state]
         for action in ["work", "rest", "commit", "study"]:
             states.append(step(states[-1], action))
-        rewards = [homeostatic_reward(a, b) for a, b in zip(states, states[1:])]
+        rewards = [homeostatic_reward(a, b) for a, b in zip(states, states[1:], strict=False)]
         self.assertAlmostEqual(sum(rewards), drive(states[0]) - drive(states[-1]))
 
     def test_recovering_early_beats_recovering_late_only_with_a_discount(self):
@@ -75,8 +75,8 @@ class StepTest(unittest.TestCase):
         # Sharing the noise is what makes comparing branches fair: the difference is the action, not luck.
         state = state_at([50] * 4)
         work, rest = step(state, "work"), step(state, "rest")
-        expected = [a - b for a, b in zip(WORLD["actions"]["work"], WORLD["actions"]["rest"])]
-        for got, want in zip([a - b for a, b in zip(work.values, rest.values)], expected):
+        expected = [a - b for a, b in zip(WORLD["actions"]["work"], WORLD["actions"]["rest"], strict=False)]
+        for got, want in zip([a - b for a, b in zip(work.values, rest.values, strict=False)], expected, strict=False):
             self.assertAlmostEqual(got, want)
 
     def test_a_delayed_effect_lands_one_turn_later_and_only_once(self):
@@ -87,7 +87,7 @@ class StepTest(unittest.TestCase):
         calm = step(step(state, "idle"), "idle")
         hangover = step(tomorrow, "idle")
         immediate = WORLD["actions"]["risk"]
-        for got, base, now, later in zip(hangover.values, calm.values, immediate, WORLD["later"]["risk"]):
+        for got, base, now, later in zip(hangover.values, calm.values, immediate, WORLD["later"]["risk"], strict=False):
             self.assertAlmostEqual(got - base, now + later)
         self.assertEqual(hangover.pending, (0, 0, 0, 0))
 
@@ -106,7 +106,7 @@ class StepTest(unittest.TestCase):
 
     def test_held_out_healthy_ranges_never_overlap_the_training_centers(self):
         for seed in range(50):
-            centers = [(low + high) / 2 for low, high in zip(start(seed, "ood").low, start(seed, "ood").high)]
+            centers = [(low + high) / 2 for low, high in zip(start(seed, "ood").low, start(seed, "ood").high, strict=False)]
             self.assertTrue(all(center <= 35 or center >= 65 for center in centers))
 
 

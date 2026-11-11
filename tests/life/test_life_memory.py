@@ -14,7 +14,7 @@ from kokopelli.life.overnight import month_at, overnight_phases
 from kokopelli.life.panel import make_server
 from kokopelli.life.seed import LifeSeed
 from kokopelli.life.store import Store
-from kokopelli.life.windows import children, find, life_window
+from kokopelli.life.windows import find, life_window
 from kokopelli.settings import LIFE_LLM
 
 BIRTH = date(1990, 3, 14)

@@ -4,7 +4,7 @@ import unittest
 try:
     import unrealcv  # noqa: F401
 except ImportError:
-    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv")
+    raise unittest.SkipTest("needs unrealcv; run with simworld/.venv") from None
 
 import hashlib
 import json

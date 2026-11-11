@@ -62,7 +62,7 @@ def stats(folder):
     grounded = sum(any(thing.replace("_", " ") in row["why"].lower() for thing in row["visible"]) for row in asked)
     # Did the feeling move more on ticks where something had just happened than on ticks where nothing had?
     moved, still = [0, 0], [0, 0]
-    for previous, current in zip(felt, felt[1:]):
+    for previous, current in zip(felt, felt[1:], strict=False):
         action = choices.get(previous["tick"], {}).get("action") or {}
         eventful = set(previous["visible"]) != set(current["visible"]) or action.get("type", "wait") != "wait"
         bucket = moved if eventful else still
@@ -154,7 +154,7 @@ def compare(base, other):
     configs = [json.loads((Path(folder) / "config.json").read_text()) for folder in (base, other)]
     differs = [key for key in configs[0] if key != "agent_weights" and configs[0][key] != configs[1].get(key)]
     timelines = [timeline(Path(folder) / "feelings.jsonl") for folder in (base, other)]
-    pairs = list(zip(*timelines))
+    pairs = list(zip(*timelines, strict=False))
     return {"seed": configs[0].get("seed"), "weights": [config.get("agent_weights") for config in configs], "settings_that_differ": differs,
             "first_tick_acting_differently": next((a["tick"] for a, b in pairs if a["action"] != b["action"]), None),
             "ticks_compared": len(pairs), "base": stats(base), "other": stats(other)}

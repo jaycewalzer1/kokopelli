@@ -118,7 +118,7 @@ def test_budget_stops_before_going_over(run, tmp_path):
 def test_invalid_twice_means_no_harvest(run, config):
     class Bad(run.FakeModel):
         def ask(self, requests, tokens, seed):
-            return ["not json at all" if '"harvest"' in r[1] else out for r, out in zip(requests, super().ask(requests, tokens, seed))]
+            return ["not json at all" if '"harvest"' in r[1] else out for r, out in zip(requests, super().ask(requests, tokens, seed), strict=False)]
     world = run.play(105, "clones", small(config, 2), Bad(), None, "R3", log=lambda *_: None)
     assert all(a["asked"] == 0 for row in world["history"] for a in row["agents"].values())
     rows = [json.loads(line) for line in (run.ROOT / "R3" / "seed_105" / "clones" / "log.jsonl").read_text().splitlines()]

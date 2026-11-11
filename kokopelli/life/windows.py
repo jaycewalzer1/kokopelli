@@ -112,7 +112,7 @@ def _every(window, step):
 def _slice(parent, level, cuts, label):
     edges = [parent.start, *cuts, parent.end]
     return [Window(level, label(start), start, end, parent.id, index)
-            for index, (start, end) in enumerate(zip(edges, edges[1:]))]
+            for index, (start, end) in enumerate(zip(edges, edges[1:], strict=False))]
 
 
 @lru_cache(maxsize=4096)

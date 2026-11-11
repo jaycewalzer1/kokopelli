@@ -16,7 +16,7 @@ import struct
 import threading
 import time
 import warnings
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import unrealcv
 
@@ -112,17 +112,17 @@ class Wire:
 
     def __init__(self, host: str, port: int, request_timeout: float = 30.0, connect_timeout: float = 30.0,
                  reconnect_attempts: int = 3, reconnect_backoff_s: float = 2.0,
-                 on_reconnect: Optional[Callable[[], None]] = None):
+                 on_reconnect: Callable[[], None] | None = None):
         self.host, self.port = host, port
         self.request_timeout = request_timeout
         self.connect_timeout = connect_timeout
         self.reconnect_attempts = reconnect_attempts
         self.reconnect_backoff_s = reconnect_backoff_s
         self.on_reconnect = on_reconnect
-        self.client: Optional[_Client] = None
+        self.client: _Client | None = None
         self.commands_sent = 0
         self.reconnects = 0
-        self.templates: Optional[tuple] = None  # what the server says it supports, if it says
+        self.templates: tuple | None = None  # what the server says it supports, if it says
         self.seen: set[str] = set()
 
     @property
@@ -131,7 +131,7 @@ class Wire:
 
     def connect(self) -> None:
         """Connect, trying up to 1 + reconnect_attempts times. Raises if every attempt fails."""
-        error: Optional[SimWorldError] = None
+        error: SimWorldError | None = None
         for attempt in range(self.reconnect_attempts + 1):
             if attempt:
                 time.sleep(self.reconnect_backoff_s * 2 ** (attempt - 1))
@@ -140,6 +140,7 @@ class Wire:
                 return
             except SimWorldError as e:
                 error = e
+        assert error is not None  # the loop runs at least once and only gets here after a failed attempt
         raise type(error)(f"gave up after {self.reconnect_attempts + 1} attempts. Last error: {error}") from error
 
     def _connect_once(self) -> None:
@@ -188,12 +189,13 @@ class Wire:
             raise ConnectionError("not connected")
         self.commands_sent += 1
         self.seen.add(NUMBER.sub("0", command))  # one entry per kind of command, not per coordinate
+        assert self.client is not None  # checked by self.connected above
         response = self.client.request(command, timeout=timeout)
         if response is None:
             raise ConnectionError("connection closed before the reply")
         return response
 
-    def request(self, command: str, timeout: Optional[float] = None, resend: Optional[bool] = None):
+    def request(self, command: str, timeout: float | None = None, resend: bool | None = None):
         """Send a command and return the reply, as str or as bytes for images.
 
         resend says whether it is safe to send again after losing the link. Reads are safe.
@@ -225,6 +227,7 @@ class Wire:
             raise ConnectionLostError(f"not connected, could not send {command!r}")
         self.commands_sent += 1
         self.seen.add(NUMBER.sub("0", command))
+        assert self.client is not None  # checked by self.connected above
         try:
             self.client.request(command, -1)
         except (ConnectionError, OSError) as e:
