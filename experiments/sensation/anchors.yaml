@@ -145,39 +145,54 @@ hunger_food_choice:
   source: >-
     March and Gluth, "Hunger shifts attention and attribute weighting in dietary choice", eLife 13:RP103736 (version
     of record 2025, first posted as a preprint in 2024), https://doi.org/10.7554/eLife.103736
-  verified: true   # read on 2026-11-10 from the journal's XML (version of record); see `read` for what was and wasn't
+  verified: true   # read in full on 2026-11-10 from the journal's XML (version of record)
   read:
     - "version of record (JATS XML), https://raw.githubusercontent.com/elifesciences/elife-article-xml/master/articles/elife-103736-v1.xml"
-    - "read in full: abstract, digest, introduction, all results (behaviour, eye tracking, modelling), discussion, and the methods' preregistration, participants, procedure, hunger manipulation and task sections"
-    - "not read: the methods' statistical and model-fitting details, the appendices (so the stronger calorie-based effects they report are not quoted here), and the peer reviews beyond the reviewers' main criticisms"
+    - "read in full: abstract, digest, introduction, results, discussion, methods (data analysis and model fitting included), appendices 1 to 12, the eLife assessment, the three public reviews and the authors' response"
+    - "not read: the reference list, and the figures themselves (the XML has their captions, not the images)"
   real:
     summary: >-
       Hungry people chose the tastier, less healthy food more often. 70 people each made the same kind of choice twice,
       once hungry after an overnight fast and once after a protein shake: between two pictured foods shown with their
       nutrition scores, they preferred the tastier one overall, and less so when sated (mixed-model coefficient for
-      sated -0.211, SE 0.103, p = 0.04). Hungry, they also looked more at the food pictures than at the nutrition
-      scores.
+      sated -0.211, SE 0.103, p = 0.04, in the preregistered model). Counting every choice by calories instead, they
+      chose the higher-calorie food less when sated (-0.261, SE 0.054, p < 0.001). Hungry, they also looked more at
+      the food pictures than at the nutrition scores.
     design: >-
       Preregistered, within-person, two sessions 5 to 10 days apart, order counterbalanced (36 hungry first, 34 sated
       first). Everyone fasted overnight before both sessions; in the sated session they drank a protein shake worth 25%
       of their daily energy need. Choices were between two of 66 food pictures, each with its Nutri-Score, with eye
-      tracking; one chosen item was really handed over. Overall preference for the tastier option: intercept 0.73, SE
-      0.098, p < 0.001. In the mediation analysis the direct path from hunger to choosing the tastier option was 0.27
-      (SE 0.12, 95% credible interval 0.03 to 0.52). The authors say the effects were "markedly stronger" for
-      high- against low-calorie choices; those numbers are in an appendix that wasn't read.
+      tracking; one chosen item was really handed over. The taste-against-health analysis uses only the trials where
+      one food was rated tastier and the other healthier (75.68 per person on average, SD 21.96). Overall preference
+      for the tastier option: intercept 0.73, SE 0.098, p < 0.001. In the mediation analysis the direct path from
+      hunger to choosing the tastier option was 0.27 (SE 0.12, 95% credible interval 0.03 to 0.52).
+    robustness: >-
+      From the appendices and the authors' response to reviewers. The coefficient for sated is -0.211 (p = 0.04) in
+      the preregistered model with condition and attention only (Appendix 4, table 1a). With age and BMI added it is
+      -0.19, SE 0.096, p = 0.052; with mood, change in hunger rating and three eating-behaviour scales added, in a
+      smaller sample, -0.168, SE 0.197, p = 0.394. Adding the order of the two sessions changed nothing (order -0.001,
+      SE 0.163, p = 0.995; sated still -0.211, p = 0.04). Exploratory analyses were stronger: choosing the more wanted
+      food over the healthier one, sated -0.325, SE 0.113, p = 0.004 (85.11 trials per person); choosing the
+      higher-calorie food, over all trials (185.65 per person), sated -0.261, SE 0.054, p < 0.001. The authors call
+      the calorie effect "even stronger" than the taste-against-health one. Health ratings and calorie content were
+      strongly negatively correlated (r = -.73 in both sessions).
     direction: rises
   lay_prediction:
     summary: >-
-      None measured. The paper treats "hunger makes you choose worse food" as common experience, but asked nobody to
-      predict it, so there is no gap between belief and behaviour to test here: the question for a model is only
-      whether its order moves with its body at all.
+      None measured. The paper treats "hunger makes you choose worse food" as common experience (a reviewer writes
+      "everyone knows it to be true"), but asked nobody to predict it, so there is no gap between belief and behaviour
+      to test here: the question for a model is only whether its order moves with its body at all.
     direction: null
   limits: >-
-    One study, 70 people in Hamburg (53 women), and the choice effect is small with p = 0.04. The choices were between
-    two pictured snack-like foods with a nutrition label, not an order from a lunch board, and "tasty" and "healthy"
-    are each person's own ratings. The authors note that everyone knew which session had the shake, so expectation
-    could have added to the effect; a reviewer notes that eating more when hungry is sensible, not an error. The menu
-    scene's second score (large dishes) has no direct counterpart in what was read.
+    One study, 70 people in Hamburg (53 women); independent replications were not looked for. The preregistered
+    taste-against-health effect is small (p = 0.04) and is no longer significant once age and BMI, or mood and
+    eating-style scores, are added to the model; the plainer result, more calories when hungry, is the stronger one.
+    The choices were between two pictured snack-like foods with a nutrition label, not an order from a lunch board,
+    and "tasty" and "healthy" are each person's own ratings. Everyone knew which session had the shake, and the
+    authors say they cannot rule out that expectation added to the effect; a reviewer wanted a first-session-only
+    analysis, which wasn't reported. Reviewers also note that choosing more calories when hungry is sensible, not an
+    error. The menu scene's second score (large dishes) has no direct counterpart here: the nearest is the calorie
+    result, and a large salad is not obviously more calories than a small toastie.
 
 pain_patience:
   used_by: [pain_queue]
