@@ -17,15 +17,20 @@ the table unless the mask fails a clear gate.
 
 ## Build status (2026-11-10, branch `feat/object-labels`)
 
-No model has run. Everything below is code plus tests on synthetic data and the tiny fake model; the one real-data check
+Everything below is code plus tests on synthetic data and the tiny fake model; the one real-data check
 was the no-GPU half of a paint (label pass, caption, tokenizer spans, regions, mask) on the bridge clip.
+
+**2026-11-11, first real paints:** the ambiguous-circle test (`experiments/labels/README.md`). One plain disc in the seg
+control came out as a stone sphere with no label, a soccer ball or a pumpkin under those labels, steady for 93 frames,
+caption-only and masked alike. So Tier A works for a single object and the masked path runs on the real model; what the
+mask adds is still unmeasured. Milestones 3 and 6 on the regression clip are still not run.
 
 The plan's line numbers are `main`'s. On this branch `world_transfer.py` has grown: the target's attention is at
 lines 313-316, `patchify` at 355, `tokenize` at 142, `text_cache` at 225, the store pass at 501.
 
 | # | Milestone | State |
 |---|---|---|
-| 0 | Read-through + decisions D1-D5 | **Open.** Built with the leans, each one a flag or a one-line change (table below). Section 9 is still yours to answer |
+| 0 | Read-through + decisions D1-D5 | Leans confirmed by the owner 2026-11-11 ("solid"), each one a flag or a one-line change (table below). Section 9's prediction: "idk" |
 | 1 | Label colours in capture, `labels/` pass, `labels_meta.json` | Code done: `SimWorldConfig.label_actors`, `kokopelli/wm/labels.py build`, `capture.py --labels`. **No regression clip:** it needs the Unreal server and the sphere stand-ins |
 | 2 | Label checker + calibration | Code done: `kokopelli/wm/label_check.py`. **Not calibrated:** needs 50 hand-sorted crops and a Qwen run |
 | 3 | Baseline: no labels vs Tier A | Not run (needs the clip, the GPU queue, and your prediction, section 9 question 4). Tier A is `--label-steps 0` |
