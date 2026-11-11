@@ -263,7 +263,7 @@ Subagent in its own worktree (branch `reorg/7-test-tree`). Merged after phases 9
 Left: `make test` (life tests) still runs unittest without the memory guard. `tools/pace/wmloop_one_tick.py` now imports
 `tests.loop.fake_unrealcv` (Owed: PACE). `kokopelli/ops/status.py` suites that point at the old worktrees are unchanged.
 
-## Phase 8: linters (worktree agent, 2026-11-10)
+## Phase 8: linters (merge f4597f2, 2026-11-10)
 
 Branch `reorg/8-linters` from `main` at `1518821`, in a worktree (the orchestrator reviews, retests and merges). Run
 alongside phases 3, 7 and 9 in their own worktrees, so edits in their files were kept small.
@@ -390,3 +390,48 @@ when they removed `sys.path` lines in files this branch took off the ignore list
 - The worktree was created at `e53c8d5`, before the fast pass; the branch was made at `1518821` instead.
 - The Bash hook refuses commands whose text contains "git" anywhere, including inside `logits`; scripts went in files.
 - Two places catch the `TypeError` from using a `None` on purpose (above), so blanket asserts would have changed them.
+
+### Phase 8 merge (orchestrator)
+
+Merged last, after phases 9, 3 and 7 (f4597f2). Seven conflicts, resolved as the section above proposed (described in the
+merge message). After the merge, in the same commit: the 5 unused imports removed and the reasoned SC2086 disable on
+`$v` in `tools/fable/test_all.sh`. Checks on main: `MAC=1 make test-all` main 723 passed, 10 skipped, 2 xfailed;
+experiments 259 passed, 1 skipped; py310 197 passed; mac_server 26 failed, 215 passed, 16 skipped (baseline). Peak 1.3 GB.
+Smoke 96 / 29 / 10, 0 failures. ruff 0.11.4 clean, `pyright kokopelli` 0 errors, lint-imports 3 kept,
+`uvx pre-commit run --all-files` passes and changes nothing.
+
+## After the phases (orchestrator, 2026-11-10)
+
+- 0c58789: three launchers moved one folder deeper in the fast pass but still climbed the old number of levels to the
+  repo root: `experiments/benchmarks/noise_check_turns.sh`, `experiments/filter_test/scripts/queue_all.sh`,
+  `experiments/wm_multicontrol/run_a.sh`. Fixed; each now resolves to the repo root. The smoke check only runs
+  `bash -n` on shell launchers, so it could not catch this.
+- Worktrees: the four agent worktrees of phases 3, 7, 8, 9 removed (their `.venv`/`out`/`models` symlinks went to the
+  Trash first; the real folders are untouched). Of the five pre-reorg worktrees, only `exp1` was retired (clean, no
+  ignored data, nothing reads it). The other four are kept on purpose:
+  - `wm-agent-loop`: `runs/` (agent-loop runs) is read by `PIPELINE_PATHS["agent_loop"]` and `loop/mind_change_check.py`.
+  - `agent-a2d4c0a770bb9b339` (feat/evals): `benchmarks/results/` is read by `PIPELINE_PATHS["evals"]`.
+  - `commons`: raw game logs under `runs/commons/` and one untracked `overnight.log`; `experiments/commons/overnight.sh`
+    still runs there.
+  - `agent-aa5f839d86d587545` (feat/wm-simworld): clean, but `kokopelli/ops/status.py` runs the SimWorld suite in it.
+  Retiring them means copying that data somewhere the code reads (for example `out/`) and repointing `PIPELINE_PATHS`,
+  `status.py`, `mind_change_check.py` and `overnight.sh`: a behavior change, left for the owner.
+
+## Final state
+
+All ten phases are merged into local main. Final checks are in the next entry.
+
+Owed to the owner:
+- **Not pushed.** `main` is many commits ahead of `origin/main`; the CI workflow (`.github/workflows/ci.yml`) can't be
+  verified until it is pushed.
+- **GPU:** one real queue dry run of the transfer path (about a minute). No model or GPU was used in any phase.
+- **PACE:** update the cluster checkout before the next job: scripts are `tools/pace/...` (`tools/pace/evals/`),
+  modules `kokopelli.loop.*`, `experiments.benchmarks.*`; `tools/pace/wmloop_one_tick.py` imports `tests.loop.fake_unrealcv`.
+- **Watchdog:** still the process started before the move, from `ops/memguard.py` (a stand-in now). After a reboot:
+  `nohup python3 -m kokopelli.ops.memguard watch >/dev/null 2>&1 &` from the repo root.
+- **No `ruff format` / import-sorting commit** (would rewrite ~300 files and flatten the hand-aligned style).
+- **The four kept worktrees** above, and the stand-ins `ops/gpu.py`, `ops/memguard.py` (the hook's fallback and old habits).
+- `make test` (life tests only) still runs unittest without the memory guard.
+- `~/.kokopelli/fable/worker.sh` and its briefs name old paths and `integration/fable`.
+- `out/staged/started/` holds one finished 2026-11-05 job naming `-m life.scenario_night` (history, untouched).
+- A process started as `-m kokopelli.mind.run` is no longer recognised by the panel (it is `kokopelli.loop.run_mind` now).
