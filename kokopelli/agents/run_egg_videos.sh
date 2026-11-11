@@ -48,7 +48,8 @@ if ! lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1; then
 	sleep 20   # let the map finish streaming in
 	python3 kokopelli/ops/ram_share.py claim --name "egg_server_$PORT" --gb 10 --pid "$(pgrep -f "SimWorld.*-cvport=$PORT" | head -1)" || true
 	echo "building the city on $PORT"
-	simworld/.venv/bin/python -I tools/city_build/build_city.py --port "$PORT" || { echo "build_city failed"; pkill -f "SimWorld.*-cvport=$PORT"; exit 4; }
+	# --world is named because build_city.py's own default still points at tools/world.json, which the reorg moved.
+	simworld/.venv/bin/python -I tools/city_build/build_city.py --port "$PORT" --world data/city/world.json || { echo "build_city failed"; pkill -f "SimWorld.*-cvport=$PORT"; exit 4; }
 fi
 
 code=0
