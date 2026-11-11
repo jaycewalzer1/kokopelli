@@ -12,7 +12,7 @@ set -u
 
 GPU=/Users/jaycewalzer/Desktop/kokopelli/ops/gpu.py
 PY=/Users/jaycewalzer/Desktop/kokopelli/.venv/bin/python
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="$1"; SAMPLES="$2"; shift 2
 INSTRUMENTS=()
 while [ "$1" != "--" ]; do INSTRUMENTS+=("$1"); shift; done

@@ -5,7 +5,7 @@
 # a1 runs core.world_transfer (blur alone, the baseline) and core.world_transfer_multi (blur at weight 1), saves both latents
 # and checks they are bit-identical.
 set -e
-K="$(cd "$(dirname "$0")/.." && pwd)"
+K="$(cd "$(dirname "$0")/../.." && pwd)"
 R="$HOME/cosmos3/cosmos3-mlx"
 PY="$R/.venv/bin/python"
 C="$K/out/city_wm/bridge/controls/832x480"
