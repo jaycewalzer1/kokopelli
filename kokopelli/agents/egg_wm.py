@@ -254,7 +254,12 @@ class EggLife(WorldModelLife):
                            "detector": seen_wm.about(settings.SEEN["backend"]) if self.seen_asked or self.seen_failed else None}}
         (self.out / "egg.json").write_text(json.dumps(result, indent=1))
         meta = json.loads((self.out / "run.json").read_text())
-        meta.update(scene="egg", level=self.args.level, arm=self.arm, outcome=result["outcome"], dry_run=result["dry_run"])
+        # run.json is the sidecar a reader opens first, so it names the precision and both weights folders itself.
+        painter_dir = getattr(self.wm, "model_dir", None)
+        meta.update(scene="egg", level=self.args.level, arm=self.arm, outcome=result["outcome"], dry_run=result["dry_run"],
+                    quantize=self.args.quantize, world_model_checkpoint=result["world_model_checkpoint"],
+                    world_model_weights=str(painter_dir) if painter_dir else None,
+                    agent_weights=str(self.args.weights) if real_brain else None)
         (self.out / "run.json").write_text(json.dumps(meta, indent=1))
 
 

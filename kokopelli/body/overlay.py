@@ -77,13 +77,19 @@ def body_at(lines: list[dict], t: float) -> dict:
 
 
 def shown_at(lines: list[dict], t: float) -> dict:
-    """What the panel shows at time t: the body as it is then, with the choice made at that moment.
-    egg_wm writes a line before each decision, so the choice made at line k is only recorded on line k+1, 15 seconds
-    later. Without this the panel says "Nothing yet" for the whole step in which she is already doing it."""
+    """What the panel shows at time t: the body as it is then, with the choice made at that moment and the cue that
+    went into it. egg_wm writes a line before each decision, so the choice made at line k, and the cue she felt when
+    making it, are only recorded on line k+1, 15 seconds later. Without this the panel says "Nothing yet" for the whole
+    step in which she is already doing it. The cue comes from the same line as the choice, or the two fall a decision
+    apart."""
     line = body_at(lines, t)
     k = next(i for i, other in enumerate(lines) if other is line)
     if k + 1 < len(lines):
-        return {**line, "last_action": lines[k + 1].get("last_action"), "outcome": lines[k + 1].get("outcome")}
+        after = lines[k + 1]
+        shown = {**line, "last_action": after.get("last_action"), "outcome": after.get("outcome")}
+        if "felt" in after:
+            shown["felt"] = after["felt"]
+        return shown
     return line
 
 

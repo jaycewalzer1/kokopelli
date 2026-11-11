@@ -194,7 +194,11 @@ class EggLoopTest(unittest.TestCase):
         self.assertIs(result["dry_run"], True)
         self.assertIsNone(result["world_model"])
         self.assertIsNone(result["agent_model"])
-        self.assertIs(json.loads(((self.tmp / "links" / "full").resolve() / "run.json").read_text())["dry_run"], True)
+        sidecar = json.loads(((self.tmp / "links" / "full").resolve() / "run.json").read_text())
+        self.assertIs(sidecar["dry_run"], True)
+        # The sidecar has a place for the precision and both weights folders, and a stand-in has no folder to name.
+        self.assertEqual((sidecar["world_model_weights"], sidecar["agent_weights"]), (None, None))
+        self.assertIn("quantize", sidecar)
 
     def test_overlay_and_triptych(self):
         from kokopelli.body import overlay
@@ -207,6 +211,11 @@ class EggLoopTest(unittest.TestCase):
         lines = [{"t": 0.0, "last_action": None, "outcome": None}, {"t": 15.0, "last_action": {"type": "give"}, "outcome": "gave"}]
         self.assertEqual(overlay.shown_at(lines, 3.0), {"t": 0.0, "last_action": {"type": "give"}, "outcome": "gave"})
         self.assertIs(overlay.shown_at(lines, 15.0), lines[1])
+        # The cue shown is the one that went into the choice beside it: both are recorded on the following line.
+        lines = [{"t": 0.0, "felt": ["a"], "last_action": None}, {"t": 15.0, "felt": ["a"], "last_action": {"type": "give"}},
+                 {"t": 30.0, "felt": ["b"], "last_action": {"type": "cook"}}]
+        self.assertEqual([(shown["felt"], shown["last_action"]) for shown in (overlay.shown_at(lines, t) for t in (3.0, 20.0, 30.0))],
+                         [(["a"], {"type": "give"}), (["b"], {"type": "cook"}), (["b"], {"type": "cook"})])
         # A film too short for the panel's text is enlarged by a whole number, and the record says by how much.
         self.assertEqual([overlay.fitting_scale(h) for h in (480, 256, 36)], [1, 2, 14])
         big = overlay.overlay(self.tmp / "links" / "full", out=self.tmp / "big.mp4", scale=2)
