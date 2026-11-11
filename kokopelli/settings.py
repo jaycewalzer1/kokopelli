@@ -131,3 +131,9 @@ SCENARIO_NIGHT = {
     "qwen_gb": 20, "cosmos_gb": 18,  # what each model needs free before it loads
 }
 # Every worktree the architecture chart may name a file in. A file there is only checked while its worktree exists.
+
+# What the agent is told it sees is checked against the painted frame (kokopelli/wm/seen.py). backend is one of
+# seen.BACKENDS. The detectors run on torch, which .venv doesn't have, so torch_python names an interpreter that does.
+# The backend here is provisional until experiments/sensation/seen_eval.py has been run on painted frames.
+SEEN = {"backend": "owlv2", "threshold": 0.2, "min_iou": 0.3, "device": "auto",
+        "torch_python": ROOT / "simworld" / ".venv" / "bin" / "python"}
