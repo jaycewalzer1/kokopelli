@@ -32,7 +32,8 @@ class Scene:
     """One scene, as the sweep sees it.
 
     name        the sweep's name: the --sweep argument, the seed (so it can never change once a run exists), run.json
-    variable    the body variable the levels move (or "contact" when the levels are things touched)
+    variable    the body variable the levels move, or "contact" when the levels are things touched (level_values is
+                then None)
     levels      in order, comfortable end first
     prompt      (level, arm, paraphrase) -> the prompt text
     score       raw reply -> {"valid", "outcome", <outcome>: 1/0, <broad>: 1/0, ...}; the 1/0 fields are None when the
@@ -40,11 +41,14 @@ class Scene:
     paraphrases how many wordings of each cue the sweep runs
     anchor      key in experiments/sensation/anchors.yaml
     outcome     the scorer's primary 1/0 field: the thing was done, by an action
-    broad       the wider 1/0 field: done, or said yes to out loud (a text-only answer has no next turn to follow through)
+    broad       the second 1/0 field. In a scene where someone asks for something it is the wider score: done, or said
+                yes to out loud (a text-only answer has no next turn to follow through). In a scene that is a choice it
+                is whatever the scene says: the menu's other axis, the queue's "anything but leaving"
     level_values the body number behind each level, for logs and reports only (None when the levels aren't numbers)
+    broad_anchored  False when the anchor says nothing about the second score: its verdict then says only what the model did
     grows       what there is more of at the last level than at the first: a verdict reads "falls with <grows>"
     rate, primary, change, change_broad   the report's words for the two scores
-    mock        three canned replies for the mock backend: doing it, saying no, doing something else
+    mock        three canned replies for the mock backend: one that scores 1 on `outcome`, then two that score 0
     """
     name: str
     variable: str
@@ -62,6 +66,7 @@ class Scene:
     change_broad: str
     mock: tuple[str, str, str]
     level_values: Mapping[str, float] | None = None
+    broad_anchored: bool = True
 
 
 def compose(*sections: str) -> str:

@@ -4,8 +4,9 @@
     python -m experiments.sensation.sweep report out/sensation/try
     python -m experiments.sensation.sweep list          every registered scene, its levels and its anchor's status
 
-The scenes are kokopelli/body/scenes/ (SWEEPS below is that registry): hunger_egg, energy_boxes, warmth_door. Each one
-declares its variable, levels, prompt builder, scorer, anchor key and the words its report uses.
+The scenes are kokopelli/body/scenes/ (SWEEPS below is that registry): hunger_egg, energy_boxes, warmth_door,
+hunger_menu, pain_queue. Each one declares its variable, levels, prompt builder, scorer, anchor key and the words its
+report uses.
 
 Real models only through the GPU queue (the queue can't see this process otherwise):
     python3 kokopelli/ops/gpu.py run --name evals_hunger_egg --priority 40 --max-hours 2 --cwd $K \
@@ -270,12 +271,14 @@ def analyse(out):
     margin = anchor["margin"]
     first, last = sweep.levels[0], sweep.levels[-1]
 
-    def reads_as(change, arm):
+    def reads_as(change, arm, anchored=True):
         if arm == "none" and anchor["direction"] != "flat":
             # The none arm sees the same prompt at every level, so it is flat by construction. Against an anchor that
             # says behaviour moves (or against no anchor) that isn't a finding about the model, so no comparison is made.
             seen, words = _seen(change, margin, sweep.grows)
             return words if seen is None else f"{words}: the pipeline check, not a finding"
+        if not anchored:   # the anchor's source says nothing about this score
+            return verdict(change, margin, None, None, sweep.grows)
         return verdict(change, margin, anchor["direction"], anchor["lay_direction"], sweep.grows)
 
     cells_out, arms_out = [], {}
@@ -297,7 +300,7 @@ def analyse(out):
         change = bootstrap(paired_change(rows, arm, first, last, sweep.outcome))
         change_shared = bootstrap(paired_change(rows, arm, first, last, sweep.broad))
         arms_out[arm] = {"change": change, "change_shared": change_shared, "verdict": reads_as(change, arm),
-                         "verdict_shared": reads_as(change_shared, arm)}
+                         "verdict_shared": reads_as(change_shared, arm, sweep.broad_anchored)}
     gap = None
     if "cue" in arms_out and "label" in arms_out:
         cue = paired_change(rows, "cue", first, last, sweep.outcome)

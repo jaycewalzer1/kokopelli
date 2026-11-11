@@ -34,7 +34,7 @@ class EveryRegisteredSceneRunsTest(unittest.TestCase):
 
     def test_the_sweeps_are_the_scenes_registry(self):
         self.assertIs(sweep.SWEEPS, scenes.REGISTRY)
-        self.assertGreaterEqual(set(sweep.SWEEPS), {"hunger_egg", "energy_boxes", "warmth_door"})
+        self.assertEqual(set(sweep.SWEEPS), {"hunger_egg", "energy_boxes", "warmth_door", "hunger_menu", "pain_queue"})
 
     def test_every_cell_ran_once_and_every_mock_reply_parsed(self):
         for name, out in self.falling.items():
@@ -51,7 +51,7 @@ class EveryRegisteredSceneRunsTest(unittest.TestCase):
             record = json.loads((out / "run.json").read_text())
             self.assertEqual((record["sweep"], record["variable"], record["levels"], record["paraphrases"]),
                              (name, scene.variable, list(scene.levels), scene.paraphrases), name)
-            self.assertEqual(record["level_values"], dict(scene.level_values), name)
+            self.assertEqual(record["level_values"], dict(scene.level_values) if scene.level_values else None, name)
             self.assertFalse(record["real"], name)
             self.assertEqual(len(record["prompt_sha256"]), len(scene.levels) * len(cues.ARMS) * scene.paraphrases, name)
 
@@ -78,12 +78,21 @@ class EveryRegisteredSceneRunsTest(unittest.TestCase):
         # energy: people's helping falls with sleep loss, and the source has no lay prediction
         self.assertEqual(falling["energy_boxes"], "falls with tiredness: the direction people move (size not compared)")
         self.assertEqual(level["energy_boxes"], "flat: not what people do")
-        # warmth: no verified anchor, so only what the model did
+        # warmth and pain: no verified anchor, so only what the model did
         self.assertEqual(falling["warmth_door"], "falls with cold: no verified anchor")
         self.assertEqual(level["warmth_door"], "flat: no verified anchor")
+        self.assertEqual(falling["pain_queue"], "falls with pain: no verified anchor")
+        # the menu: hungry people order richer food, so a model whose rich orders fall or stay put isn't doing what they do
+        self.assertEqual(falling["hunger_menu"], "falls with hunger: not what people do")
+        self.assertEqual(level["hunger_menu"], "flat: not what people do")
+        # ... and its second score (large dishes) is something the anchor's source doesn't speak to
+        self.assertEqual(sweep.analyse(self.falling["hunger_menu"])["arms"]["cue"]["verdict_shared"],
+                         "falls with hunger: no verified anchor")
+        self.assertEqual(sweep.analyse(self.falling["energy_boxes"])["arms"]["cue"]["verdict_shared"],
+                         "falls with tiredness: the direction people move (size not compared)")
 
     def test_the_none_arm_is_never_scored_against_an_anchor_that_moves(self):
-        for name in ("energy_boxes", "warmth_door"):
+        for name in ("energy_boxes", "warmth_door", "hunger_menu", "pain_queue"):
             self.assertEqual(sweep.analyse(self.level[name])["arms"]["none"]["verdict"], "flat: the pipeline check, not a finding")
         self.assertEqual(sweep.analyse(self.level["hunger_egg"])["arms"]["none"]["verdict"], "flat: matches what people do")
 
@@ -96,11 +105,13 @@ class EveryRegisteredSceneRunsTest(unittest.TestCase):
             self.assertIn(f"## {scene.rate} by level", text)
             self.assertIn(f"Primary score: {scene.primary}.", text)
             self.assertIn(f"{SAMPLES} samples x {scene.paraphrases} wordings per cell.", text)
-            self.assertIn(f"Levels ({scene.variable}): " + ", ".join(f"{level} {value:g}" for level, value in scene.level_values.items()), text)
+            levels = (", ".join(f"{level} {value:g}" for level, value in scene.level_values.items()) if scene.level_values
+                      else ", ".join(scene.levels))
+            self.assertIn(f"Levels ({scene.variable}): {levels}\n", text)
             self.assertIn(f"| Arm | {scene.change} | Verdict | {scene.change_broad} | Verdict |", text)
             if name != "hunger_egg":
-                for hunger_word in ("Teo", "hunger", "egg", "Giving"):
-                    self.assertNotIn(hunger_word, text, (name, hunger_word))
+                for egg_word in ("Teo", "egg", "Giving", "spoken yes" if scene.broad != "agreed" else "Teo"):
+                    self.assertNotIn(egg_word, text, (name, egg_word))
             saved = json.loads((out / "report.json").read_text())
             self.assertEqual(saved["words"]["rate"], scene.rate)
             # the keys the panel reads (kokopelli/life/sensations.py) are there for every scene
@@ -108,16 +119,17 @@ class EveryRegisteredSceneRunsTest(unittest.TestCase):
             self.assertEqual((saved["outcome"], saved["broad"]), (scene.outcome, scene.broad))
 
     def test_a_scene_without_a_verified_anchor_reports_only_what_the_model_did(self):
-        text = sweep.report(self.falling["warmth_door"]).read_text()
-        self.assertIn("**No verified anchor** for this scene", text)
-        self.assertIn("**No verified anchor.**", text)
-        self.assertIn("no verified anchor", text)
-        for claim in ("matches what people", "What people do:", "which anchor it matches", "the direction people move",
-                      "not what people do", "matches neither"):
-            self.assertNotIn(claim, text, claim)
-        saved = json.loads((self.falling["warmth_door"] / "report.json").read_text())
-        self.assertEqual((saved["anchor"]["verified"], saved["anchor"]["direction"], saved["anchor"]["lay_direction"]),
-                         (False, None, None))
+        for name in ("warmth_door", "pain_queue"):
+            text = sweep.report(self.falling[name]).read_text()
+            self.assertIn("**No verified anchor** for this scene", text, name)
+            self.assertIn("**No verified anchor.**", text, name)
+            self.assertIn("no verified anchor", text, name)
+            for claim in ("matches what people", "What people do:", "which anchor it matches", "the direction people move",
+                          "not what people do", "matches neither"):
+                self.assertNotIn(claim, text, (name, claim))
+            saved = json.loads((self.falling[name] / "report.json").read_text())
+            self.assertEqual((saved["anchor"]["verified"], saved["anchor"]["direction"], saved["anchor"]["lay_direction"]),
+                             (False, None, None), name)
 
     def test_a_verified_anchor_with_a_direction_is_reported_as_one(self):
         text = sweep.report(self.falling["energy_boxes"]).read_text()
@@ -136,6 +148,22 @@ class EveryRegisteredSceneRunsTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             sweep.run("energy_boxes", "mock", samples=SAMPLES, out=self.level["warmth_door"], mock_tilt=0.0)
 
+    def test_the_panels_listing_carries_each_scenes_words_and_anchor_status(self):
+        from kokopelli.life import sensations
+        for out in self.falling.values():
+            sweep.report(out)
+        with mock.patch.object(sensations, "OUT", Path(self.tmp.name)):
+            listed = {run["sweep"]: run for run in sensations._sweeps() if run["id"].endswith("_falling")}
+        self.assertEqual(sorted(listed), sorted(sweep.SWEEPS))
+        for name, run in listed.items():
+            scene = sweep.SWEEPS[name]
+            self.assertEqual((run["words"]["rate"], run["words"]["primary"], run["paraphrases"], run["levels"]),
+                             (scene.rate, scene.primary, scene.paraphrases, list(scene.levels)), name)
+            self.assertFalse(run["real"], name)
+            self.assertEqual(set(run["cells"]), {f"{arm}|{level}" for arm in cues.ARMS for level in scene.levels}, name)
+        self.assertEqual({name: run["anchor"]["verified"] for name, run in listed.items()},
+                         {"hunger_egg": True, "energy_boxes": True, "warmth_door": False, "hunger_menu": True, "pain_queue": False})
+
     def test_the_listing_names_every_scene_and_its_anchors_status(self):
         lines = sweep.listing().splitlines()
         self.assertEqual(len(lines), len(sweep.SWEEPS))
@@ -143,6 +171,8 @@ class EveryRegisteredSceneRunsTest(unittest.TestCase):
         self.assertIn("verified anchor `hunger_sharing` (people: flat, predicted: falls)", by_name["hunger_egg"])
         self.assertIn("verified anchor `sleep_loss_helping` (people: falls, no lay prediction)", by_name["energy_boxes"])
         self.assertIn("no verified anchor (`warmth_priming`)", by_name["warmth_door"])
+        self.assertIn("verified anchor `hunger_food_choice` (people: rises, no lay prediction)", by_name["hunger_menu"])
+        self.assertIn("no verified anchor (`pain_patience`)", by_name["pain_queue"])
 
 
 class VerdictTest(unittest.TestCase):

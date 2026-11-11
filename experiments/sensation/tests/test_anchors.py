@@ -43,14 +43,19 @@ class AnchorsFileTest(unittest.TestCase):
                 self.assertIsNone(entry["lay_prediction"]["direction"], key)
 
     def test_the_entries_added_with_the_scenes_registry_say_which_text_was_read(self):
-        for key in ("sleep_loss_helping", "warmth_priming"):
-            self.assertTrue(all("https://" in line for line in ENTRIES[key]["read"]), key)
+        for key in ("sleep_loss_helping", "warmth_priming", "hunger_food_choice"):
+            self.assertIn("https://", " ".join(ENTRIES[key]["read"]), key)
+            self.assertTrue(all(isinstance(line, str) for line in ENTRIES[key]["read"]), key)
+        self.assertNotIn("read", ENTRIES["pain_patience"])   # nothing was read for it, and it says so
+        self.assertIn("NOT read", ENTRIES["pain_patience"]["source"])
 
     def test_tonights_statuses(self):
         self.assertEqual({key: entry["verified"] for key, entry in ENTRIES.items()},
-                         {"hunger_sharing": True, "sleep_loss_helping": True, "warmth_priming": False})
+                         {"hunger_sharing": True, "sleep_loss_helping": True, "warmth_priming": False,
+                          "hunger_food_choice": True, "pain_patience": False})
         self.assertEqual(sweep.load_anchor("sleep_loss_helping")["direction"], "falls")
         self.assertIsNone(sweep.load_anchor("sleep_loss_helping")["lay_direction"])
+        self.assertEqual(sweep.load_anchor("hunger_food_choice")["direction"], "rises")
         self.assertEqual(ANCHORS["flat_margin"], 0.10)
 
 

@@ -8,7 +8,7 @@ import re
 import unittest
 
 from kokopelli.body import cues, egg, scenes
-from kokopelli.body.scenes import boxes, door
+from kokopelli.body.scenes import boxes, door, menu, queue
 from kokopelli.body.scenes import egg as egg_scene
 from kokopelli.body.scenes.scene import Decision
 
@@ -28,8 +28,10 @@ def block_of(prompt: str) -> str:
 
 def state_words(scene) -> set[str]:
     """Words that would name the state: the levels past the first, and the last word of each level's plain label
-    ("You are very tired." -> "tired")."""
+    ("You are very tired." -> "tired"; the queue scene's own labels end in "pain")."""
     words = set(scene.levels[1:])
+    if scene.level_values is None:
+        return words | {label.rstrip(".").split()[-1].lower() for label in queue.LABEL.values()} | {"hurt", "hurts", "toe"}
     for level in scene.levels:
         band = cues.band(scene.variable, scene.level_values[level])
         if band:
@@ -66,6 +68,22 @@ REPLIES = {
         ('{"thought": "The kettle is on.", "action": {"type": "go_in"}}', "declined", 0, 0),
         ("", None, None, None),
     ],
+    "hunger_menu": [   # scores: comfort (a rich dish), large
+        ('{"thought": "Proper food.", "action": {"type": "order", "item": "pie"}}', "pie", 1, 1),
+        ('{"action": "order", "item": "Toastie", "thought": "Just a bite."}', "toastie", 1, 0),
+        ('{"thought": "Greens.", "action": {"type": "order", "item": "salad"}}', "salad", 0, 1),
+        ('{"thought": "Light.", "action": {"type": "say", "text": "Could I have the soup, please?"}}', "soup", 0, 0),
+        ('{"thought": "Hmm.", "action": {"type": "say", "text": "Is the pie or the toastie better today?"}}', "other", 0, 0),
+        ('{"thought": "ok", "action": {"type": "eat"}}', None, None, None),
+    ],
+    "pain_queue": [   # scores: stayed, not_left
+        ('{"thought": "Nearly there.", "action": {"type": "wait"}}', "stayed", 1, 1),
+        ('{"action": "wait", "thought": "It won\'t be long."}', "stayed", 1, 1),
+        ('{"thought": "Monday.", "action": {"type": "leave"}}', "left", 0, 0),
+        ('{"action": "leave"}', "left", 0, 0),
+        ('{"thought": "Honestly.", "action": {"type": "say", "text": "Is there only one counter open?"}}', "other", 0, 1),
+        ('{"thought": "ok", "action": {"type": "sit"}}', None, None, None),
+    ],
 }
 
 
@@ -76,7 +94,8 @@ class EveryRegisteredSceneTest(unittest.TestCase):
         self.assertEqual(sorted(REPLIES), sorted(scenes.REGISTRY))
         for scene in scenes.REGISTRY.values():
             self.assertGreaterEqual(len(scene.levels), 3, scene.name)   # a curve, not just a difference
-            self.assertEqual(list(scene.level_values), list(scene.levels), scene.name)
+            if scene.level_values is not None:
+                self.assertEqual(list(scene.level_values), list(scene.levels), scene.name)
             self.assertEqual(len(scene.mock), 3, scene.name)
 
     def test_prompts_differ_only_in_the_body_block(self):
@@ -129,12 +148,18 @@ class EveryRegisteredSceneTest(unittest.TestCase):
                 self.assertEqual((got["outcome"], got[scene.outcome], got[scene.broad]), (outcome, primary, broad), (name, raw))
                 self.assertEqual(got["valid"], outcome is not None, (name, raw))
 
-    def test_each_scenes_mock_replies_score_as_done_declined_and_not_done(self):
+    def test_each_scenes_mock_replies_score_one_then_zero_twice(self):
         for scene in scenes.REGISTRY.values():
-            does, says_no, other = (scene.score(raw) for raw in scene.mock)
-            self.assertEqual((does["valid"], does[scene.outcome]), (True, 1), scene.name)
-            self.assertEqual((says_no["valid"], says_no["outcome"]), (True, "declined"), scene.name)
-            self.assertEqual((other["valid"], other[scene.outcome], other[scene.broad]), (True, 0, 0), scene.name)
+            scored = [scene.score(raw) for raw in scene.mock]
+            self.assertEqual([(s["valid"], s[scene.outcome]) for s in scored], [(True, 1), (True, 0), (True, 0)], scene.name)
+
+    def test_the_felt_lines_never_name_the_state_in_the_scenes_written_with_the_registry(self):
+        """For the words this lane wrote (the queue's) no felt line says pain or hurt. The older warmth cues in cues.py
+        do use "cold" and "cool"; that is recorded in docs/log/sensations/2026-11-11-more.md, not changed here."""
+        for wordings in queue.FELT.values():
+            self.assertEqual(len(wordings), queue.PARAPHRASES)
+            for line in wordings:
+                self.assertIsNone(re.search(r"\b(pain|painful|hurt|hurts|hurting|sore|agony)\b|\d", line, re.I), line)
 
 
 class EggSceneMovedTest(unittest.TestCase):
@@ -159,23 +184,38 @@ class NewScenesTest(unittest.TestCase):
                          {"warm": None, "cool": "cool", "cold": "severe_cold"})
 
     def test_only_the_scenes_variable_is_out_of_range(self):
-        for module, variable in ((boxes, "energy"), (door, "warmth")):
+        for level in queue.LEVELS:   # the queue's levels are touches: the body's own variables are quiet throughout
+            self.assertEqual(cues.sensations(queue.start_body(level).values(), "label"), [], level)
+        self.assertIs(menu.LEVELS, egg.LEVELS)
+        for module, variable in ((boxes, "energy"), (door, "warmth"), (menu, "food")):
             for level in module.LEVELS:
                 values = module.start_body(level).values()
                 others = [cues.band(name, value) for name, value in values.items() if name != variable]
                 self.assertEqual(others, [None, None], (module.__name__, level))
             with self.assertRaises(ValueError):
-                module.start_body("starving")
+                module.start_body("somewhere in between")
 
     def test_the_comfortable_level_is_a_quiet_body(self):
-        for module, level in ((boxes, "rested"), (door, "warm")):
+        for module, level in ((boxes, "rested"), (door, "warm"), (queue, "unhurt")):
             for arm in cues.ARMS:
                 self.assertNotIn("Right now:", module.text_prompt(level, arm), (module.__name__, arm))
 
     def test_the_door_scenes_persona_doesnt_say_warm(self):
         self.assertNotIn("warm", door.WHO.lower())
         self.assertEqual(door.WHO.replace("friendly", "warm"), egg.WHO)
-        self.assertEqual(boxes.WHO, egg.WHO)
+        self.assertEqual((boxes.WHO, menu.WHO, queue.WHO), (egg.WHO,) * 3)
+
+    def test_the_queues_two_levels_are_two_different_touches_through_the_contact_component(self):
+        mild, sharp = (block_of(queue.text_prompt(level, "cue", 0)) for level in ("mild", "sharp"))
+        self.assertEqual(mild, "Right now:\n- " + queue.FELT["toe_knock"][0] + "\n")
+        self.assertEqual(sharp, "Right now:\n- " + queue.FELT["toe_stub"][0] + "\n")
+        self.assertEqual(block_of(queue.text_prompt("sharp", "label", 2)), "Right now:\n- You are in a lot of pain.\n")
+
+    def test_the_menu_board_is_two_by_two(self):
+        self.assertEqual(sorted((rich, large) for _, rich, large in menu.MENU.values()),
+                         [(False, False), (False, True), (True, False), (True, True)])
+        self.assertEqual(menu.classify({"type": "order", "item": "chips"}), "other")
+        self.assertEqual(menu.classify({"type": "leave"}), "other")
 
     def test_saying_no_is_possible_and_costs_nothing_to_say(self):
         """Each new ask offers its own way out, and each action list has a way to turn it down without a word."""
