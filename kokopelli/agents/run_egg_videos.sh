@@ -14,6 +14,10 @@
 #
 # Writes out/sensation/videos/<stamp>_<arm>/{full,half,starving} (links to each run folder, with overlay.mp4) and
 # hunger_triptych.mp4 with its .json sidecar. OUT=<folder> picks the folder instead.
+#
+# LEVELS="full" runs only those levels into OUT, so each level can be its own queue job with a pause between them (on
+# a charger too small for the GPU, one long job empties the battery). The side-by-side film is made by whichever job
+# finds all three overlays in OUT. VOICE=0 skips the inner voice.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PORT="${PORT:-9001}"
@@ -44,13 +48,16 @@ if ! lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1; then
 fi
 
 code=0
-for level in full half starving; do
+# shellcheck disable=SC2086  # LEVELS is a space-separated list, split on purpose
+for level in ${LEVELS:-full half starving}; do
 	echo "== $level"
 	python3 kokopelli/ops/ram_share.py hold --name egg_agent --gb 22 -- \
 		.venv/bin/python -m kokopelli.agents.egg_wm --port "$PORT" --level "$level" --out "$OUT/$level" "$@" || { code=$?; echo "$level failed ($code)"; }
 	if [[ -e "$OUT/$level/world_model.mp4" ]]; then
 		# The inner voice is optional: Kokoro downloads once from Hugging Face; without it the films are still complete.
-		.venv/bin/python -m kokopelli.body.voice "$OUT/$level" || echo "no inner voice for $level; the film is fine without it"
+		if [[ "${VOICE:-1}" == 1 ]]; then
+			.venv/bin/python -m kokopelli.body.voice "$OUT/$level" || echo "no inner voice for $level; the film is fine without it"
+		fi
 		.venv/bin/python -m kokopelli.body.overlay one "$OUT/$level"   # also writes overlay_voice.mp4 when voice.wav exists
 	fi
 done
@@ -60,6 +67,10 @@ if [[ -n "$started" ]]; then
 	pkill -f "SimWorld.*-cvport=$PORT" || true
 fi
 
-.venv/bin/python -m kokopelli.body.overlay triptych "$OUT" || code=$?
+if [[ -e "$OUT/full/overlay.mp4" && -e "$OUT/half/overlay.mp4" && -e "$OUT/starving/overlay.mp4" ]]; then
+	.venv/bin/python -m kokopelli.body.overlay triptych "$OUT" || code=$?
+else
+	echo "no side-by-side film yet: it needs overlay.mp4 for full, half and starving in $OUT"
+fi
 echo "videos in $OUT"
 exit $code
