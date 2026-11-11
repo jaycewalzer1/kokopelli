@@ -1,6 +1,6 @@
-# Lint, type-check and the tests that need neither MLX nor Unreal. Written in reorg phase 8 and not run yet:
-# it can only be checked once main is pushed. macOS on Apple silicon, because uv.lock only resolves for
-# darwin/arm64 (see [tool.uv] environments in pyproject.toml).
+# Lint, type-check and the tests that need neither MLX nor Unreal. Written in reorg phase 8 for the layout after
+# phases 3 and 7 (tests under tests/, pytest, [tool.importlinter]) and not run yet: it can only be checked once main
+# is pushed. macOS on Apple silicon, because uv.lock only resolves for darwin/arm64 ([tool.uv] in pyproject.toml).
 name: ci
 
 on:
@@ -18,20 +18,22 @@ jobs:
       - name: ruff (pinned to the pre-commit version)
         run: uvx ruff@0.11.4 check .
 
-      - name: install the main environment
+      - name: install the main environment and the dev tools
         # pyright reads third-party types from .venv; cosmos3_mlx and unrealcv are stubbed under typings/.
-        run: uv sync --frozen
+        # The two tools are the [dependency-groups] dev pins in pyproject.toml.
+        run: |
+          uv sync --frozen
+          uv pip install --python .venv/bin/python import-linter==2.16 pytest==9.2.0
 
       - name: pyright on the library
         run: uvx pyright kokopelli
 
-      - name: import-linter
-        # The contracts come with reorg phase 3. Until its config is in pyproject.toml (or .importlinter), skip.
+      - name: import contracts
         run: |
-          if grep -q '^\[tool.importlinter\]' pyproject.toml || [ -f .importlinter ]; then
-            uvx --from import-linter lint-imports
+          if grep -q '^\[tool.importlinter\]' pyproject.toml; then
+            .venv/bin/lint-imports
           else
-            echo "no import-linter config yet (reorg phase 3); skipped"
+            echo "no [tool.importlinter] in pyproject.toml; skipped"
           fi
 
   tests:
@@ -39,9 +41,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
-      - name: install the main environment
-        run: uv sync --frozen
-      - name: ops suite (standard library only)
-        # Through the same script as on the Mac, so a moved test folder (reorg phase 7) is picked up there.
-        # The other suites load MLX or need simworld/.venv and the Unreal server, which CI doesn't have.
-        run: tools/fable/test_all.sh ops
+      - name: install the main environment and pytest
+        run: |
+          uv sync --frozen
+          uv pip install --python .venv/bin/python pytest==9.2.0
+      - name: ops tests (standard library only)
+        # Not through tools/fable/test_all.sh: it also starts a py310 run in simworld/.venv, which CI doesn't have.
+        # The other tests load MLX or need simworld/.venv and the Unreal server.
+        run: .venv/bin/python -W ignore -m pytest -q -rfE -m "not py310" tests/ops
