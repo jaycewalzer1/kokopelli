@@ -178,15 +178,15 @@ def load_torch_detector(backend: str, device: str = "auto"):
         model = tf.GroundingDinoForObjectDetection.from_pretrained(spec["repo"], **kw).to(dev).eval()
 
         def dino(image, labels):
-            asked = [lab.replace(".", " ") for lab in labels]   # the processor joins labels with full stops
-            inputs = proc(images=[image], text=[asked], return_tensors="pt").to(dev)
-            with torch.no_grad():
-                out = model(**inputs)
-            res = proc.post_process_grounded_object_detection(out, inputs.input_ids, threshold=FLOOR, text_threshold=0.25,
-                                                              target_sizes=[(image.height, image.width)])[0]
-            named = [(match_label(lab, asked), box.tolist(), float(s))
-                     for lab, box, s in zip(res["text_labels"], res["boxes"], res["scores"], strict=True)]
-            return [(labels[asked.index(lab)], box, s) for lab, box, s in named if lab is not None]
+            found = []
+            for label in labels:   # one pass per label: asked together, weak boxes come back named after several labels at once
+                inputs = proc(images=[image], text=[[label.replace(".", " ")]], return_tensors="pt").to(dev)
+                with torch.no_grad():
+                    out = model(**inputs)
+                res = proc.post_process_grounded_object_detection(out, inputs.input_ids, threshold=FLOOR, text_threshold=FLOOR,
+                                                                  target_sizes=[(image.height, image.width)])[0]
+                found += [(label, box.tolist(), float(s)) for box, s in zip(res["boxes"], res["scores"], strict=True)]
+            return found
         return dino, dev
 
     if backend in ("florence2", "florence2_ground"):
@@ -197,7 +197,7 @@ def load_torch_detector(backend: str, device: str = "auto"):
         def florence(image, labels):
             asked = [lab.replace(".", " ") for lab in labels]
             text = task if backend == "florence2" else task + ". ".join(asked)
-            inputs = proc(text=text, images=image, return_tensors="pt").to(dev)
+            inputs = proc(text=[text], images=[image], return_tensors="pt").to(dev)
             with torch.no_grad():
                 ids = model.generate(**inputs, max_new_tokens=256, num_beams=3, do_sample=False)
             raw = proc.batch_decode(ids, skip_special_tokens=False)[0]
@@ -218,7 +218,8 @@ def about(backend: str, **more: Any) -> dict[str, Any]:
 
 
 def worker(backend: str, device: str) -> None:
-    """Answer one JSON request per line on stdin: {"image": path, "labels": [...]} -> {"detections": [...], "seconds": s}."""
+    """Answer one JSON request per line on stdin: {"image": path, "labels": [...]} -> {"detections": [...], "seconds": s};
+    {"stats": true} -> the worker's memory so far."""
     pipe = sys.stdout
     sys.stdout = sys.stderr   # libraries print while loading; the pipe carries only JSON
     Image = importlib.import_module("PIL.Image")
@@ -232,6 +233,11 @@ def worker(backend: str, device: str) -> None:
             continue
         try:
             ask = json.loads(line)
+            if ask.get("stats"):   # memory so far: this process's peak, and what Metal holds for the model (0 on cpu)
+                peak = importlib.import_module("resource").getrusage(0).ru_maxrss / 1e9   # macOS counts bytes
+                metal = importlib.import_module("torch").mps.driver_allocated_memory() / 1e9 if dev == "mps" else 0.0
+                print(json.dumps({"peak_rss_gb": round(peak, 2), "metal_gb": round(metal, 2)}), file=pipe, flush=True)
+                continue
             image = Image.open(ask["image"]).convert("RGB")
             t = time.time()
             found = detect(image, list(ask["labels"]))
@@ -295,6 +301,14 @@ class WorkerDetector:
             raise RuntimeError(f"{self.backend}: {reply['error']}")
         self.last_seconds = reply["seconds"]
         return [Detection(d["label"], (d["box"][0], d["box"][1], d["box"][2], d["box"][3]), d["score"]) for d in reply["detections"]]
+
+    def stats(self) -> dict[str, Any]:
+        """The worker's memory so far, or {} if it was never started."""
+        if self.proc is None or self.proc.stdin is None:
+            return {}
+        self.proc.stdin.write(json.dumps({"stats": True}) + "\n")
+        self.proc.stdin.flush()
+        return self._read()
 
     def close(self) -> None:
         if self.proc is not None:
