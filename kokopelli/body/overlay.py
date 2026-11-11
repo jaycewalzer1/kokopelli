@@ -85,13 +85,14 @@ def describe_action(action: dict | None) -> str:
     return {"cook": "Cooks an egg.", "eat": "Eats.", "wait": "Waits."}.get(kind, kind)
 
 
-def panel(height, title, line, fonts, final=None):
-    """One side panel, drawn for one body line. Cached by the caller: it only changes once per sim step."""
+def panel(height, title, line, fonts, final=None, dry=False):
+    """One side panel, drawn for one body line. Cached by the caller: it only changes once per sim step.
+    dry: no real model painted or answered, and the panel says so on every frame."""
     img = Image.new("RGB", (PANEL_W, height), BG)
     d = ImageDraw.Draw(img)
     d.line([(0, 0), (0, height)], fill=HAIR, width=1)
     x, y = PAD, PAD
-    d.text((x, y), "HUNGER LEVEL", font=fonts.eyebrow, fill=MUTED)
+    d.text((x, y), "HUNGER LEVEL" + ("  ·  DRY RUN, NO REAL MODEL" if dry else ""), font=fonts.eyebrow, fill=INK if dry else MUTED)
     y += 18
     d.line([(x, y), (PANEL_W - PAD, y)], fill=GOLD, width=1)   # the one gold hairline
     y += 8
@@ -147,6 +148,7 @@ def overlay(run_dir: str | Path, out: str | Path | None = None, title: str | Non
     lines = [json.loads(line) for line in (run / "body.jsonl").read_text().splitlines() if line.strip()]
     result = json.loads((run / "egg.json").read_text()) if (run / "egg.json").exists() else {}
     title = title or result.get("level", run.name)
+    dry = bool(result.get("dry_run"))
     w, h, fps, _ = probe(film)
     out = Path(out or run / "overlay.mp4")
     fonts, cache = Fonts(), {}
@@ -165,7 +167,7 @@ def overlay(run_dir: str | Path, out: str | Path | None = None, title: str | Non
             line = body_at(lines, k / fps)
             key = (line["t"], line.get("outcome"))
             if key not in cache:
-                cache[key] = panel(h, title, line, fonts, final=None)
+                cache[key] = panel(h, title, line, fonts, final=None, dry=dry)
             frame = np.concatenate([np.frombuffer(raw, np.uint8).reshape(h, w, 3), cache[key]], axis=1)
             writer.stdin.write(frame.tobytes())
             k += 1
@@ -178,7 +180,7 @@ def overlay(run_dir: str | Path, out: str | Path | None = None, title: str | Non
     sidecar = {"made_by": "kokopelli/body/overlay.py", "source": str(film), "frames": k, "fps": fps, "panel_px": PANEL_W,
                "level": result.get("level"), "arm": result.get("arm"), "outcome": result.get("outcome"),
                "world_model": result.get("world_model"), "quantize": result.get("quantize"), "size": result.get("size"),
-               "agent_model": result.get("agent_model")}
+               "agent_model": result.get("agent_model"), "dry_run": result.get("dry_run")}
     out.with_name(out.name + ".json").write_text(json.dumps(sidecar, indent=1))
     return out
 
@@ -207,13 +209,15 @@ def triptych(folder: str | Path, out: str | Path | None = None, levels: tuple = 
     out = Path(out or folder / "hunger_triptych.mp4")
     subprocess.run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", graph, "-map", "[out]", "-t", f"{longest:.3f}",
                     "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p", str(out)], check=True)
-    outcomes = {}
+    outcomes, dry = {}, {}
     for level in levels:
         path = folder / level / "egg.json"
-        outcomes[level] = json.loads(path.read_text()).get("outcome") if path.exists() else None
+        result = json.loads(path.read_text()) if path.exists() else {}
+        outcomes[level], dry[level] = result.get("outcome"), result.get("dry_run")
     out.with_name(out.name + ".json").write_text(json.dumps(
         {"made_by": "kokopelli/body/overlay.py triptych", "levels": list(levels), "outcomes": outcomes,
-         "sources": [str(v.resolve()) for v in videos], "seconds": round(longest, 2)}, indent=1))
+         "sources": [str(v.resolve()) for v in videos], "seconds": round(longest, 2),
+         "dry_run": True if any(dry.values()) else None if None in dry.values() else False}, indent=1))
     return out
 
 

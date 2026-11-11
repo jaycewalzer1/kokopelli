@@ -188,6 +188,14 @@ class EggLoopTest(unittest.TestCase):
         meta = json.loads((run / "run.json").read_text())
         self.assertEqual((meta["scene"], meta["level"], meta["arm"]), ("egg", "full", "cue"))
 
+    def test_a_run_on_stand_ins_says_so_in_every_record(self):
+        # Nothing here was painted by Cosmos or answered by Qwen, so no record may name them.
+        result = self.result("full")
+        self.assertIs(result["dry_run"], True)
+        self.assertIsNone(result["world_model"])
+        self.assertIsNone(result["agent_model"])
+        self.assertIs(json.loads(((self.tmp / "links" / "full").resolve() / "run.json").read_text())["dry_run"], True)
+
     def test_overlay_and_triptych(self):
         from kokopelli.body import overlay
         for level in ("full", "half", "starving"):
@@ -199,6 +207,8 @@ class EggLoopTest(unittest.TestCase):
         w, h, _, _ = overlay.probe(tri)
         self.assertEqual(w, 3 * (W + overlay.PANEL_W))
         meta = json.loads(tri.with_name(tri.name + ".json").read_text())
+        self.assertIs(meta["dry_run"], True)
+        self.assertIs(json.loads((self.tmp / "links" / "full" / "overlay.mp4.json").read_text())["dry_run"], True)
         self.assertEqual(meta["outcomes"], {"full": "gave", "half": "gave", "starving": "declined"})
 
     def test_voice_is_placed_at_decision_times_and_muxed(self):

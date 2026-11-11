@@ -34,7 +34,8 @@ class SensationsTest(unittest.TestCase):
             make_video(real / "world_model.mp4")
             make_video(real / "overlay.mp4")
             (real / "egg.json").write_text(json.dumps({"level": level, "arm": "cue", "outcome": outcome, "food_at_start": 8.0,
-                                                       "first_response": {"action": {"type": "give"}, "thought": "Sure."}}))
+                                                       "first_response": {"action": {"type": "give"}, "thought": "Sure."},
+                                                       **({} if level == "full" else {"dry_run": level == "half"})}))
             run.mkdir(parents=True, exist_ok=True)
             (run / level).symlink_to(real, target_is_directory=True)
         make_video(run / "hunger_triptych.mp4")
@@ -65,6 +66,8 @@ class SensationsTest(unittest.TestCase):
         self.assertTrue(video["triptych"])
         self.assertEqual(video["levels"]["starving"]["outcome"], "declined")
         self.assertEqual(video["levels"]["full"]["has"], {"overlay": True, "voice": False, "plain": True})
+        # A record that doesn't say which models ran is passed on as "not recorded", never as real.
+        self.assertEqual([video["levels"][level]["dry"] for level in ("full", "half", "starving")], [None, True, False])
 
     def test_videos_are_served_with_ranges(self):
         with self.get("/api/sensations/video?run=20261110-120000_cue&kind=overlay&level=half", {"Range": "bytes=0-99"}) as response:

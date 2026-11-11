@@ -65,6 +65,8 @@ def _videos():
             levels[level] = {"outcome": result.get("outcome"), "food": result.get("food_at_start"),
                              "first": (result.get("first_response") or {}).get("action"),
                              "thought": (result.get("first_response") or {}).get("thought"),
+                             # True: stand-ins painted or answered. None: the record doesn't say. The page marks both.
+                             "dry": result.get("dry_run"),
                              "has": {kind: (run / name).exists() for kind, name in FILES.items()}}
         if not levels:
             continue

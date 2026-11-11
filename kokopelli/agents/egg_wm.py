@@ -232,16 +232,22 @@ class EggLife(WorldModelLife):
 
     def write_sidecar(self):
         super().write_sidecar()
+        # Who really painted and who really answered, taken from the objects that did it and never assumed: the real
+        # stream names its weights folder, a stand-in has none; a stand-in for Qwen is a function from somewhere else.
+        from kokopelli.wm import llm_model
+        painted_by = self.wm.info.get("model")
+        real_brain = getattr(llm_model.ask, "__module__", None) == llm_model.__name__
         result = {"level": self.args.level, "arm": self.arm, "food_at_start": egg.LEVELS[self.args.level],
                   "outcome": self.final_outcome(), "first_response": self.responses[0] if self.responses else None,
                   "responses": self.responses, "body_at_end": self.body.as_dict(), "seed": self.args.seed,
-                  "agent_model": Path(self.args.weights).name, "world_model": "Cosmos3-Nano-Sim-Transfer",
+                  "agent_model": Path(self.args.weights).name if real_brain else None, "world_model": painted_by,
+                  "world_model_checkpoint": self.wm.info.get("checkpoint_id"), "dry_run": painted_by is None or not real_brain,
                   "quantize": self.args.quantize, "size": self.args.size, "run": self.out.name,
                   "seen": {"on": self.seen_on, "asked": self.seen_asked, "dropped": self.seen_dropped, "failed": self.seen_failed,
                            "detector": seen_wm.about(settings.SEEN["backend"]) if self.seen_asked or self.seen_failed else None}}
         (self.out / "egg.json").write_text(json.dumps(result, indent=1))
         meta = json.loads((self.out / "run.json").read_text())
-        meta.update(scene="egg", level=self.args.level, arm=self.arm, outcome=result["outcome"])
+        meta.update(scene="egg", level=self.args.level, arm=self.arm, outcome=result["outcome"], dry_run=result["dry_run"])
         (self.out / "run.json").write_text(json.dumps(meta, indent=1))
 
 

@@ -45,9 +45,11 @@ function levelCard(run, level) {
          aria-label="${escapeHtml(`${level}, ${kind === "plain" ? "painted film" : "film with the viewer overlay"}`)}"></video>`
     : `<div class="empty box">No ${kind === "plain" ? "film" : "overlay"} yet</div>`;
   const outcome = info.outcome ? `<span class="tag ${info.outcome === "gave" ? "strong" : ""}">${escapeHtml(info.outcome)}</span>` : "";
+  // A film is only shown as real when its record says real models painted and answered.
+  const dry = info.dry === false ? "" : `<span class="tag">${info.dry ? "Dry run, no real model" : "Models not recorded"}</span>`;
   return `<figure class="level">
     ${player}
-    <div class="name">${escapeHtml(level)}${outcome}</div>
+    <div class="name">${escapeHtml(level)}${outcome}${dry}</div>
     <p class="first">${escapeHtml(describe(info.first))}</p>
     ${info.thought ? `<p class="thought">${escapeHtml(info.thought)}</p>` : ""}
   </figure>`;
