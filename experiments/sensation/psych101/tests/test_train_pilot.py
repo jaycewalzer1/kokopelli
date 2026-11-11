@@ -12,8 +12,9 @@ from pathlib import Path
 import mlx.core as mx
 import mlx.nn as nn
 import numpy as np
-from mlx_vlm import load
+from mlx_vlm import generate, load
 from mlx_vlm.models.qwen3_vl import Model, ModelConfig
+from mlx_vlm.prompt_utils import apply_chat_template
 from mlx_vlm.trainer.peft.lora_layers import LoRALinear
 from mlx_vlm.utils import save_weights
 
@@ -175,6 +176,14 @@ class PilotJobTest(unittest.TestCase):
         self.assertFalse(any(hasattr(module, "lora_a") for _, module in model.named_modules()))
         sampling = (self.root / "floats" / "fused" / "generation_config.json").read_text()
         self.assertEqual(sampling, (train_pilot.BASE / "generation_config.json").read_text())   # what the backend's check compares
+
+    def test_the_float_folder_answers_a_prompt_the_way_the_sweep_asks(self):
+        # The sweep generates with a cache, one token at a time; float layers among 4-bit ones must not trip that path.
+        model, processor = load(str(self.root / "floats" / "fused"))
+        prompt = apply_chat_template(processor, model.config, "Teo asks for one of your two eggs. What do you do?", num_images=0)
+        mx.random.seed(1)
+        result = generate(model, processor, prompt, max_tokens=6, temperature=0.7)
+        self.assertEqual(result.generation_tokens, 6)
 
     def test_the_4_bit_folder_gives_the_loss_measured_before_it_was_written(self):
         losses, fused = self.rounded["validation_loss"], self.rounded["fused"]
