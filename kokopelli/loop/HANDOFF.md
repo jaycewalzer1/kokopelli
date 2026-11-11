@@ -196,3 +196,177 @@ Not applied. `kokopelli/agents/live_wm.py` belongs to the Sim-Transfer area; it'
 `Life.log` (`kokopelli/agents/live.py:246`) reads `self.sim_t`, which only `Life.run` sets (`live.py:479`). `WorldModelLife.__init__` calls `self.log("world_model", ...)` at `kokopelli/agents/live_wm.py:104`, before `run`. Read from the code, not run: `live_wm.main` builds a plain `WorldModelLife(args)`, so that line should raise `AttributeError: ... no attribute 'sim_t'` once the world-model worker has started. `lunch_wm.py` sets its own clock in `__init__` (line 97) and isn't affected.
 
 `kokopelli/agents/egg_wm.py` works around it by setting `self.sim_t = 0.0` before `super().__init__(args)`. The fix on your side is one line, `self.sim_t = 0.0` at the top of `Life.__init__` (`live.py:216`), after which the workaround in `egg_wm.py` can go. Still the case on `main` at 6d6e339.
+
+## Ask from the sensations work (2026-11-10): `visible` should be what was painted, not what the sim holds
+
+Not applied. This is the patch for the known gap in `kokopelli/mind/OPEN_DECISIONS.md` ("`visible` comes from the sim, not from what the world model drew"). It uses `kokopelli/wm/seen.py` (branch `sens/seen`; the loop may import `wm`).
+
+What it does: `Loop._decide` no longer hands `self.visible` (every NPC and present object the sim holds) to the prompt, the agent and `parse_decision`. It first asks `seen()` which of them a detector finds in the newest painted frame, and uses that shorter list. The sim proposes, the picture decides; the detector can only drop ids, never add one. Each check is logged as a `seen` event (`frame`, `sim_visible`, `kept` with boxes and scores). Behind `Config.seen`, off by default, so nothing changes until you turn it on.
+
+How it was checked: applied in the `sens/seen` worktree on 2026-11-10, `tools/fable/test_all.sh tests/loop tests/mind` gave 145 passed (the two new tests below included; they use a fake detector) and py310 197 passed; ruff 0.11.4, pyright and lint-imports clean; then reverted. It has not run with a real detector or a real world model.
+
+Things to decide before turning it on:
+
+- **Labels.** A detector needs words. The patch looks for "a person" for any NPC id and the id with spaces for an object ("bread_basket" becomes "bread basket"), with `Config.seen_labels` to override per id. The sim's object `kind` would be a better default, but `SimStep.state` puts "held by X" in the same field.
+- **Who is who.** The candidates carry no box, so two NPCs and one painted person confirms whichever comes first in `visible`. `seen.Candidate` takes a `box`; filling it from `Capture.seg` (the actor's mask) or from the pose and camera would fix that, and would also stop a stranger Cosmos painted from confirming a sim person who is off screen. Measured on 2026-11-11 (`docs/log/sensations/2026-11-11-seen.md`, 122 frames of one run): it matters. In the 8 s where the sim's courtyard is empty Cosmos painted a walker of its own, and Grounding DINO tiny found her in 14 frames at scores of 0.55 to 0.79, inside the range it gives the sim's own people. Without a box only a threshold of 0.8 keeps her out, and that also drops 51 of the 72 frames where the sim's person is on screen. With the sim's box on the candidate (overlap 0.3 or more) the same detections confirm 55 of 72 at a threshold of 0.3; how often a stranger would then stand in the box was not measurable on these frames.
+- **Other paths that still read the sim.** `outcome_text(self.pending, self.visible, step.visible, ...)` in `tick` and the saved `visible` in the checkpoint still use the sim's list, on purpose: the patch only changes what the agent is told and may act on. `kokopelli/mind/feeling.py` reads `agent_input.visible`, so it gets the painted list with no change.
+- **A forced `wait`.** If the agent names something the detector dropped, `parse_decision` rejects it with "isn't something you can see", which is the intended behaviour, and after two tries the turn is lost as today.
+- **Memory.** The detector lives in a worker process under `simworld/.venv` (torch) from the first check to the end of the run. `seen_wm.release()` after the call gives it back at the cost of a reload each tick.
+- **The mock world model.** Its frames are drawings a detector finds nothing in, so `seen=True` with `wm="mock"` drops everything. The tests below patch the detector.
+
+```diff
+diff --git a/kokopelli/loop/config.py b/kokopelli/loop/config.py
+index d5ea5f7..89f4550 100644
+--- a/kokopelli/loop/config.py
++++ b/kokopelli/loop/config.py
+@@ -44,6 +44,11 @@ class Config:
+     agent_frames: int = 6
+     notes_shown: int = 5
+     counterfactual: bool = True
++    # Tell the agent only about things a detector finds in the newest painted frame (kokopelli/wm/seen.py). Off by
++    # default: the mock world model paints nothing a detector could find. seen_labels maps a sim id to the words to
++    # look for; a person not named there is "a person", a thing is its id with spaces.
++    seen: bool = False
++    seen_labels: dict = field(default_factory=dict)
+ 
+     wm_preset: str = "mock"
+     wm_style: str = "A steady view of the scene, natural light, continuous motion."
+diff --git a/kokopelli/loop/loop.py b/kokopelli/loop/loop.py
+index 7979132..4027515 100644
+--- a/kokopelli/loop/loop.py
++++ b/kokopelli/loop/loop.py
+@@ -11,6 +11,7 @@ from kokopelli.loop.leak_guard import LeakError, drop_future
+ from kokopelli.loop.memory import MemorySampler
+ from kokopelli.loop.notebook import latest, remember, write_bundle
+ from kokopelli.loop.prompt_builder import build_agent_prompt, build_wm_prompt, outcome_text
++from kokopelli.wm import seen as seen_wm
+ 
+ 
+ def text_hash(text):
+@@ -28,6 +29,7 @@ class Loop:
+         self.cond = []
+         self.since_anchor = 0
+         self.visible = []
++        self.people = set()
+         self.outcome = None
+         self.memory = MemorySampler().start()
+ 
+@@ -39,7 +41,7 @@ class Loop:
+         first = self.sim.reset(self.config.seed, start, self.out, self.config.capture_offsets)
+         # Real video can't start from the mock sim's grid drawing, so it starts from the prompt alone.
+         self.cond = [] if self.config.text_start or self.config.wm_filter else [CondFrame(first.captures[0].rgb, "sim")]
+-        self.visible = first.visible
++        self.visible, self.people = first.visible, set(first.state.get("npcs", ()))
+         self.log.append("sim_reset", 0, {"state": first.state, "capture": self._capture_data(first.captures[0]), "visible": first.visible})
+ 
+     def resume(self, saved):
+@@ -74,7 +76,7 @@ class Loop:
+         memory["sim"] = self.memory.take()
+         now = step.state["sim_time"]
+         self.outcome = outcome_text(self.pending, self.visible, step.visible, step.state.get("last_result")) if tick > 1 else None
+-        self.visible = step.visible
++        self.visible, self.people = step.visible, set(step.state.get("npcs", ()))
+         self.log.append("sim_step", tick, {"state": step.state, "captures": [self._capture_data(c) for c in self._logged_captures(step)],
+                                            "visible": step.visible, "seconds": step.seconds})
+ 
+@@ -200,19 +202,33 @@ class Loop:
+             self.log.append("reanchor", tick, {"offset_s": offset, "reason": reason, "frame": self._rel(frame),
+                                                "replaced": "oldest", "cond": [self._cond_data(item) for item in self.cond]})
+ 
++    def _painted(self, tick, images):
++        """The sim's visible list, cut down to what a detector finds in the newest painted frame. The sim proposes, the
++        picture decides: an id the frame doesn't show is not something the agent can see, name or act on this tick."""
++        if not self.config.seen or not images or not self.visible:
++            return self.visible
++        labels = self.config.seen_labels
++        asked = [seen_wm.Candidate(name, labels.get(name, "a person" if name in self.people else name.replace("_", " ")))
++                 for name in self.visible]
++        kept = seen_wm.seen(images[-1], asked)
++        self.log.append("seen", tick, {"frame": self._rel(images[-1]), "sim_visible": list(self.visible),
++                                      "kept": [{"id": s.id, "label": s.label, "box": list(s.box), "score": s.score} for s in kept]})
++        return [s.id for s in kept]
++
+     def _decide(self, tick, now, context, images):
++        visible = self._painted(tick, images)
+         notes, _ = drop_future(self.notes, now)
+         notes = latest(notes, self.config.notes_shown)
+-        prompt, _ = self._guarded(tick, now, build_agent_prompt, context, notes, self.visible, len(images), now, self.outcome)
++        prompt, _ = self._guarded(tick, now, build_agent_prompt, context, notes, visible, len(images), now, self.outcome)
+         self.log.append("agent_input", tick, {"prompt": prompt, "hash": text_hash(prompt), "images": [self._rel(p) for p in images],
+                                               "image_hashes": [file_hash(p) for p in images], "notes": notes, "leak_check": "passed"})
+         error, forced = None, False
+         for attempt in (1, 2):
+             clock = time.perf_counter()
+-            raw = self.agent.decide(AgentInput(prompt, images, self.visible, now, tick, error))
++            raw = self.agent.decide(AgentInput(prompt, images, visible, now, tick, error))
+             latency = round(time.perf_counter() - clock, 4)
+             try:
+-                decision = parse_decision(raw, self.visible)
++                decision = parse_decision(raw, visible)
+                 self.log.append("agent_output", tick, {"attempt": attempt, "raw": raw, "valid": True, "reshaped": was_reshaped(raw), "seconds": latency})
+                 break
+             except InvalidDecision as invalid:
+@@ -220,7 +236,7 @@ class Loop:
+                 self.log.append("agent_output", tick, {"attempt": attempt, "raw": raw, "valid": False, "error": error, "seconds": latency})
+         else:
+             # Two bad replies. The agent loses its turn rather than the run stopping.
+-            decision, forced = parse_decision('{"action": {"type": "wait"}}', self.visible), True
++            decision, forced = parse_decision('{"action": {"type": "wait"}}', visible), True
+             self.log.append("agent_fallback", tick, {"action": "wait", "reason": error})
+         if decision.diary:
+             write_bundle(self.out / "memory", remember(self.notes, now, decision.diary))
+diff --git a/tests/loop/test_seen_visible.py b/tests/loop/test_seen_visible.py
+new file mode 100644
+index 0000000..b0b8b9f
+--- /dev/null
++++ b/tests/loop/test_seen_visible.py
+@@ -0,0 +1,48 @@
++"""The loop's visible list filtered by kokopelli/wm/seen.py, on the mock loop with a fake detector (no model)."""
++import json
++import tempfile
++import unittest
++from pathlib import Path
++from unittest import mock
++
++from kokopelli.loop.config import Config
++from kokopelli.loop.run import run
++from kokopelli.wm import seen as seen_wm
++
++
++class OnlyTheBench:
++    """A fake detector: whatever is asked, it finds a bench and nothing else."""
++
++    def detect(self, frame, labels):
++        return [seen_wm.Detection("bench", (10.0, 10.0, 60.0, 40.0), 0.9)] if "bench" in labels else []
++
++
++def prompts(out):
++    events = [json.loads(line) for line in (Path(out) / "events.jsonl").read_text().splitlines()]
++    return [e["data"]["prompt"] for e in events if e["kind"] == "agent_input"], [e for e in events if e["kind"] == "seen"]
++
++
++class SeenVisibleTest(unittest.TestCase):
++    def setUp(self):
++        patch = mock.patch.object(seen_wm, "default_detector", lambda: OnlyTheBench())
++        patch.start()
++        self.addCleanup(patch.stop)
++
++    def test_off_by_default_the_agent_is_told_everything_the_sim_holds(self):
++        out = tempfile.mkdtemp(prefix="wmloop_")
++        run(Config(ticks=2, counterfactual=False), out)
++        told, seen_events = prompts(out)
++        self.assertEqual(seen_events, [])
++        self.assertTrue(all("bench" in p and "ball" in p for p in told))
++
++    def test_on_the_agent_is_told_only_what_the_detector_found(self):
++        out = tempfile.mkdtemp(prefix="wmloop_")
++        run(Config(ticks=2, counterfactual=False, seen=True), out)
++        told, seen_events = prompts(out)
++        self.assertEqual(len(seen_events), 2)
++        self.assertTrue(all("You can see: bench." in p for p in told))
++        self.assertTrue(all([k["id"] for k in e["data"]["kept"]] == ["bench"] and len(e["data"]["sim_visible"]) > 1 for e in seen_events))
++
++
++if __name__ == "__main__":
++    unittest.main()
+```

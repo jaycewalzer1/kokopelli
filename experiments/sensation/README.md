@@ -27,7 +27,8 @@ Spec, limits and open questions: [`docs/M1_HUNGER_BENCHMARK.md`](../../docs/M1_H
 | `sweep.py` | The paired sweep (levels x delivery arms x wordings x samples) over any registered scene, the analysis and the report |
 | `anchors.yaml` | What people do and what people predict, per sweep, with the source, which text was read, and its limits. `verified: true` only for a source read in full whose finding held up. Reports only |
 | `arms/` | This experiment's own arm configs (which weights answer), looked up before the benchmarks'. `base_4bit` is the weights the egg videos decide with |
-| `tests/` | The sweep end to end on the mock backend, for every registered scene: a planted fall is caught, no effect reads as flat, the verdict follows each anchor, and an unverified anchor is never compared with |
+| `seen_eval.py` | A separate question: which detector should `kokopelli/wm/seen.py` use to confirm that a person the sim holds was really painted? Precision, recall and latency per backend on the one painted run with people in it. Queue job `sens_seen_eval` (priority 42); results in `out/sensation/seen_eval/<run>/` |
+| `tests/` | The sweep end to end on the mock backend, for every registered scene: a planted fall is caught, no effect reads as flat, the verdict follows each anchor, and an unverified anchor is never compared with. `test_seen_eval.py`: the detector evaluation's labels and scoring on hand-made inputs |
 
 ## Rerun
 

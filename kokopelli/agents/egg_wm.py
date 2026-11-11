@@ -14,7 +14,11 @@ What this adds to that loop:
     ones come and go between decisions;
   - three body verbs (give, cook, eat) and the scene's actions list (kokopelli/body/egg.py), the same words the text sweep uses;
   - Teo's scripted answers, and the outcome: gave, declined, promised, or no answer;
-  - body.jsonl: the true state each step, with what the agent felt, for the viewer overlay (kokopelli/body/overlay.py).
+  - body.jsonl: the true state each step, with what the agent felt, for the viewer overlay (kokopelli/body/overlay.py);
+  - a check on the one thing the prompt takes from the sim about other people: who is close enough to talk. Within arm's
+    reach (live_wm.REACH_M) she just knows. Farther than that, Teo is only named if a detector finds a person in the
+    painted frame (kokopelli/wm/seen.py); --no-seen turns the check off. As staged he stands inside arm's reach and
+    nobody can walk, so the check is never consulted and no detector is loaded.
 
 Pairing: Qwen's sampling seed depends on the run seed and the decision number, not on the level, so the three levels
 draw the same luck and differ only in the body (as in experiments/sensation/sweep.py). The world model's seed is the same
@@ -27,6 +31,7 @@ import json
 import math
 from pathlib import Path
 
+from kokopelli import settings
 from kokopelli.agents import live_wm
 from kokopelli.agents.live import HEAR_M, STEP_S, Cast, Life, m
 from kokopelli.agents.live_wm import WorldModelLife
@@ -34,6 +39,7 @@ from kokopelli.body import components, cues, egg
 from kokopelli.body import state as body_state
 from kokopelli.body._hash import stable_int
 from kokopelli.loop.adapters.simworld import NpcSpec
+from kokopelli.wm import seen as seen_wm
 
 HERE = Path(__file__).resolve().parent
 ROOT = live_wm.ROOT
@@ -81,6 +87,8 @@ class EggLife(WorldModelLife):
         self.responses = []
         self.felt, self.felt_lines = "", []
         self.verb_done = None
+        self.seen_on = getattr(args, "seen", True)
+        self.seen_asked = self.seen_dropped = self.seen_failed = 0
         self.last = "Teo has just walked up to the kitchen door."
         self.heard = [f"{egg.NEIGHBOUR['name']} ({egg.NEIGHBOUR['id']}): \"{egg.ASK}\""]
         self.body_log = (self.out / "body.jsonl").open("a")
@@ -90,6 +98,26 @@ class EggLife(WorldModelLife):
             Path(args.out).symlink_to(self.out, target_is_directory=True)
 
     # --- what the agent is told
+    def in_talking_distance(self, state, me):
+        """The neighbour, if he is close enough to talk. Inside arm's reach the sim's word is enough (she knows who is
+        right beside her). Farther than that he is only named if a detector finds a person in the painted frame."""
+        near = [n for n in state.npcs if n.id == egg.NEIGHBOUR["id"] and math.dist(me, m(n.pose.location)) <= HEAR_M]
+        far = [n for n in near if math.dist(me, m(n.pose.location)) > live_wm.REACH_M]
+        if not (far and self.seen_on):
+            return near
+        try:
+            kept = {s.id for s in seen_wm.seen(self.seen, [seen_wm.Candidate(n.id, "a person") for n in far])}
+        except (RuntimeError, OSError) as error:   # a detector that won't run must not end a life: the sim's word stands, on record
+            self.seen_failed += 1
+            self.log("seen_failed", error=str(error))
+            return near
+        finally:
+            seen_wm.release()   # the detector's memory goes back before Qwen and the world model need it
+        self.seen_asked += 1
+        self.seen_dropped += len(far) - len(kept)
+        self.log("seen", frame=Path(self.seen).name, asked=[n.id for n in far], kept=sorted(kept))
+        return [n for n in near if n not in far or n.id in kept]
+
     def describe(self, state):
         me = m(state.agent.pose.location)
         lines = [f"Time: {state.time_of_day.clock[:5]}.",
@@ -97,7 +125,7 @@ class EggLife(WorldModelLife):
                  egg.reach_lines(self.body)]
         close = [egg.neighbour_line(f"{live_wm.live.rough(math.dist(me, m(n.pose.location)))} "
                                     f"{live_wm.live.bearing(me, state.agent.pose.rotation.yaw, m(n.pose.location))}")
-                 for n in state.npcs if n.id == egg.NEIGHBOUR["id"] and math.dist(me, m(n.pose.location)) <= HEAR_M]
+                 for n in self.in_talking_distance(state, me)]
         lines.append("Who is right next to you (close enough to talk):\n" + ("\n".join(close) if close else "- nobody"))
         contact, self.body = body_state.touched(self.body)
         self.felt_lines = self.feel(contact)
@@ -208,7 +236,9 @@ class EggLife(WorldModelLife):
                   "outcome": self.final_outcome(), "first_response": self.responses[0] if self.responses else None,
                   "responses": self.responses, "body_at_end": self.body.as_dict(), "seed": self.args.seed,
                   "agent_model": Path(self.args.weights).name, "world_model": "Cosmos3-Nano-Sim-Transfer",
-                  "quantize": self.args.quantize, "size": self.args.size, "run": self.out.name}
+                  "quantize": self.args.quantize, "size": self.args.size, "run": self.out.name,
+                  "seen": {"on": self.seen_on, "asked": self.seen_asked, "dropped": self.seen_dropped, "failed": self.seen_failed,
+                           "detector": seen_wm.about(settings.SEEN["backend"]) if self.seen_asked or self.seen_failed else None}}
         (self.out / "egg.json").write_text(json.dumps(result, indent=1))
         meta = json.loads((self.out / "run.json").read_text())
         meta.update(scene="egg", level=self.args.level, arm=self.arm, outcome=result["outcome"])
@@ -232,6 +262,8 @@ def main():
     ap.add_argument("--quantize", type=int, choices=(4, 8), default=8, help="owner's default is 8-bit")
     ap.add_argument("--wm-prompt", default=WM_PROMPT)
     ap.add_argument("--out", help="a link to the run folder, e.g. out/sensation/videos/<run>/starving")
+    ap.add_argument("--no-seen", dest="seen", action="store_false",
+                    help="name a neighbour beyond arm's reach from the sim alone, without checking the painted frame")
     args = ap.parse_args()
     args.steps = max(1, int(round(args.minutes * 60 / STEP_S)))
     args.who, args.situation = egg.WHO, egg.SITUATION
