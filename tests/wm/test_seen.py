@@ -18,7 +18,7 @@ from kokopelli.wm import seen as seen_mod
 from kokopelli.wm.seen import Candidate, Detection, Seen, confirm, iou, seen
 
 ROOT = Path(__file__).resolve().parents[2]
-PAINTED = ROOT / "out" / "bodies" / "demo" / "runs" / "wm" / "frames" / "mara" / "seen_0006.png"   # Iris walking up, 44 s in
+PAINTED = ROOT / "out" / "bodies" / "demo" / "runs" / "wm" / "frames" / "mara" / "seen_0006.png"   # the other agent standing in front, 50 s in
 
 
 class FakeDetector:

@@ -17,6 +17,7 @@ and must not pull in anything heavy.
 | `blend.py` | Crossfades clips into one video |
 | `video_check.py` | Mosaic and drift scores for a painted video, CPU only |
 | `manifest.py` | The `manifest` block every output sidecar carries (commit, weights, seed, prompt, controls) |
+| `seen.py` | `seen(frame, candidates)`: keeps a sim candidate only if an open-vocabulary detector (OWLv2, Grounding DINO or Florence-2, by `settings.SEEN`) finds it in the painted frame. The detectors need torch, so they run in a worker under `simworld/.venv`. Measured by `experiments/sensation/seen_eval.py` |
 | `controls/` | Builds the control videos (depth, seg, edge, blur) from SimWorld shots; `controls/prompts/` holds the prompts ([README](controls/prompts/README.md)) |
 
 ## Running
