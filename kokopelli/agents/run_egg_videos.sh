@@ -22,6 +22,9 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PORT="${PORT:-9001}"
 cd "$ROOT" || exit
+# The packaged server isn't in git, so a worktree has none. Use the main checkout's (the folder that holds .git).
+SERVER="$ROOT/mac_server"
+[[ -d "$SERVER/Packaged" ]] || SERVER="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)/mac_server"
 
 arm=cue
 args=("$@")
@@ -34,7 +37,8 @@ mkdir -p "$OUT"
 started=""
 if ! lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1; then
 	echo "starting SimWorld (minimized) on $PORT"
-	MINIMIZED=1 NOMOUSE=1 CVPORT="$PORT" mac_server/scripts/run.sh packaged >"/tmp/egg_server_$PORT.log" 2>&1 &
+	[[ -d "$SERVER/Packaged" ]] || { echo "no packaged server at $SERVER/Packaged"; exit 3; }
+	MINIMIZED=1 NOMOUSE=1 CVPORT="$PORT" "$SERVER/scripts/run.sh" packaged >"/tmp/egg_server_$PORT.log" 2>&1 &
 	started=$!
 	for _ in $(seq 1 180); do
 		lsof -iTCP:"$PORT" -sTCP:LISTEN -P >/dev/null 2>&1 && break
