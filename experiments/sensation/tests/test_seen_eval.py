@@ -1,6 +1,8 @@
 """experiments/sensation/seen_eval.py: the labels read from a seg control frame and the scoring, on hand-made inputs.
 No video, no detector, no model."""
+import tempfile
 import unittest
+from pathlib import Path
 
 import numpy as np
 
@@ -72,6 +74,17 @@ class ScoreTest(unittest.TestCase):
     def test_no_threshold_precise_enough_means_no_pick(self):
         noisy = {name: found((0.99, (0, 0, 9, 9))) for name in "abcde"}
         self.assertIsNone(ev.best_at_bar(self.rows, noisy))
+
+    def test_detectors_only_see_frames_that_get_scored_headline_first(self):
+        late = [{"frame": f"late{k}", "truth": "person", "boxes": [], "part": "late"} for k in range(9)]
+        got = [r["frame"] for r in ev.to_detect([late[0], *self.rows, *late[1:]])]
+        self.assertEqual(got, ["a", "b", "c", "d", "late0", "late4", "late8"])   # "e" is unclear; the late ones every 4th
+
+    def test_a_backend_that_runs_out_of_time_says_so_and_stops(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = ev.detect_all(Path(tmp), self.rows, "owlv2", fake=True, budget_s=-1.0)   # the fake detector; no time at all
+            self.assertEqual((entry["frames_done"], entry["frames_asked"]), (0, 4))
+            self.assertIn("out of time", entry["cut_short"])
 
     def test_the_fake_detector_says_it_is_fake(self):
         about = ev.FakeDetector([]).start()["about"]

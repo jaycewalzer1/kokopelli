@@ -3,7 +3,7 @@
     # CPU, no model: pick the frames, build the labels from the sim's segmentation, write audit sheets to look at
     .venv/bin/python -m experiments.sensation.seen_eval labels --out out/sensation/seen_eval/RUN
     # The detectors, one at a time, through the GPU queue only:
-    python3 kokopelli/ops/gpu.py run --name sens_seen_eval --priority 42 --max-hours 1.5 --gb 6 --cwd "$PWD" \
+    python3 kokopelli/ops/gpu.py run --name sens_seen_eval --priority 42 --max-hours 0.35 --gb 6 --cwd "$PWD" \
         --about "Leak fix: precision, recall and latency of OWLv2, Grounding DINO tiny and Florence-2-base at confirming a sim person in Cosmos-painted frames of the bodies demo run, to pick the backend for kokopelli/wm/seen.py" \
         --output out/sensation/seen_eval/RUN -- .venv/bin/python -m experiments.sensation.seen_eval run --out out/sensation/seen_eval/RUN
     # CPU: the tables again from the saved detections (after changing a threshold, say)
@@ -24,6 +24,11 @@ a material class, painted in a fixed palette, H.264). So:
     right; confirmed with nobody on screen is the leak surviving; that includes strangers Cosmos paints on its own;
   - frames up to CLEAN_UNTIL_S are the headline. After that this run's films break into a mosaic (its README); those
     are scored apart, because there a person the sim shows may truly not be painted.
+
+Model time is kept short (the first run was made on a 68 W charger, where every model minute drained the battery):
+the detectors only see the frames that get scored, which is every headline frame with a clear truth and every
+LATE_EVERY-th frame after the mosaic, and each backend has BUDGET_S seconds of detecting. A backend that runs out
+before the headline frames are done is reported as cut short and can't be picked.
 
 Limits to keep in view: one run, two views, neighbouring frames half a second apart, one kind of thing (a person), and
 the truth is the sim's, read back from a compressed video with colours matched by hand.
@@ -66,6 +71,8 @@ BACKENDS = ("owlv2", "grounding_dino", "florence2", "florence2_ground")
 THRESHOLDS = [round(0.05 * k, 2) for k in range(1, 20)]
 PRECISION_BAR, LATENCY_BAR_S = 0.9, 1.0
 HINT_IOU = 0.3
+LATE_EVERY = 4              # of the frames after the mosaic, the detectors see every 4th (one every 4 s)
+BUDGET_S = 180.0            # seconds of detecting per backend, over all its tries; the load is not counted
 
 
 def people_in(seg_rgb):
@@ -184,18 +191,33 @@ class FakeDetector:
         pass
 
 
-def detect_all(out, rows, backend, fake=False, device=None):
-    """Run one backend over every frame and save all it found; returns that backend's entry for run.json."""
+def to_detect(rows):
+    """The frames a detector is run on, headline first: every headline frame with a clear truth, then every
+    LATE_EVERY-th frame after the mosaic. Unclear frames are never scored, so no model time goes on them."""
+    clean = [r for r in rows if r["part"] == "clean" and r["truth"] != "unclear"]
+    late = [r for r in rows if r["part"] == "late" and r["truth"] != "unclear"]
+    return clean + late[::LATE_EVERY]
+
+
+def detect_all(out, rows, backend, fake=False, device=None, budget_s=BUDGET_S):
+    """Run one backend over the frames of to_detect(rows) and save all it found, stopping when budget_s seconds of
+    detecting are used up; returns that backend's entry for run.json."""
     out = Path(out)
     det = FakeDetector(rows) if fake else seen_mod.WorkerDetector(backend, device=device)
-    entry = {"backend": backend, "fake": fake, "errors": []}
+    todo = to_detect(rows)
+    began = None
+    entry = {"backend": backend, "fake": fake, "errors": [], "frames_asked": len(todo), "frames_done": 0, "budget_s": round(budget_s, 1)}
     try:
         t0 = time.time()
         info = det.start()
         entry.update(load_seconds=info.get("load_seconds"), about=info.get("about"), start_seconds=round(time.time() - t0, 2))
+        began = time.time()
         with (out / f"detections_{backend}.jsonl").open("w") as log:
-            for row in rows:
+            for row in todo:
                 t = time.time()
+                if t - began > budget_s:
+                    entry["cut_short"] = f"out of time: {entry['frames_done']} of {len(todo)} frames in {budget_s:.0f} s"
+                    break
                 try:
                     found = det.detect(str(out / "frames" / row["frame"]), [LABEL])
                 except RuntimeError as error:
@@ -206,9 +228,12 @@ def detect_all(out, rows, backend, fake=False, device=None):
                 log.write(json.dumps({"frame": row["frame"], "seconds": det.last_seconds, "round_trip_s": round(time.time() - t, 4),
                                       "detections": [{"label": d.label, "box": [round(v, 1) for v in d.box], "score": round(d.score, 4)}
                                                      for d in found]}) + "\n")
+                entry["frames_done"] += 1
+        entry["detect_seconds"] = round(time.time() - began, 1)
         entry["memory"] = det.stats()
     except Exception as error:   # one backend failing must not lose the others; run.json and the report say it failed
         entry["failed"] = f"{type(error).__name__}: {error}"
+        entry["detect_seconds_before_failing"] = round(time.time() - began, 1) if began else 0.0
     finally:
         det.close()
     return entry
@@ -257,7 +282,9 @@ def analyse(out):
     rows = record["rows"]
     clean, late = [r for r in rows if r["part"] == "clean"], [r for r in rows if r["part"] == "late"]
     count = lambda part, truth: sum(r["truth"] == truth for r in part)   # noqa: E731
-    result = {"frames": {name: {"all": len(part), "person": count(part, "person"), "nobody": count(part, "nobody"), "unclear": count(part, "unclear")}
+    shown = {r["frame"] for r in to_detect(rows)}
+    result = {"frames": {name: {"all": len(part), "person": count(part, "person"), "nobody": count(part, "nobody"), "unclear": count(part, "unclear"),
+                                "shown_to_detectors": sum(r["frame"] in shown for r in part)}
                          for name, part in (("clean", clean), ("late", late))}, "backends": {}, "fake": bool(run.get("fake"))}
     for entry in run["backends"]:
         name = entry["backend"]
@@ -270,17 +297,19 @@ def analyse(out):
         small = [r for r in clean if r["truth"] != "person" or max(b[3] - b[1] for b in r["boxes"]) < SMALL_H]
         large = [r for r in clean if r["truth"] != "person" or max(b[3] - b[1] for b in r["boxes"]) >= SMALL_H]
         at_bar = best_at_bar(clean, found)
+        complete = all(r["frame"] in found for r in clean if r["truth"] != "unclear")   # cut short or erroring: not fully measured
         latency = {"median_s": round(statistics.median(warm), 4), "p95_s": round(sorted(warm)[int(0.95 * (len(warm) - 1))], 4),
                    "first_frame_s": seconds[0], "load_s": entry.get("load_seconds")}
         result["backends"][name] = {
             "ran": True, "frames_scored": len(seconds), "errors": len(entry.get("errors", [])), "latency": latency,
+            "complete": complete, "cut_short": entry.get("cut_short"), "first_try_failed": entry.get("first_try_failed"),
             "memory": entry.get("memory"), "about": entry.get("about"), "at_bar_clean": at_bar,
             "sweep_clean": [score(clean, found, t) for t in THRESHOLDS],
             "late_at_same_threshold": score(late, found, at_bar["threshold"]) if at_bar else None,
             "small_at_same_threshold": score(small, found, at_bar["threshold"]) if at_bar else None,
             "large_at_same_threshold": score(large, found, at_bar["threshold"]) if at_bar else None,
             "hinted_recall_clean": score(clean, found, at_bar["threshold"], hinted=True) if at_bar else None,
-            "passes": bool(at_bar and at_bar["recall"] and latency["median_s"] < LATENCY_BAR_S)}
+            "passes": bool(complete and at_bar and at_bar["recall"] and latency["median_s"] < LATENCY_BAR_S)}
     passing = {} if result["fake"] else {n: b for n, b in result["backends"].items() if b.get("passes")}   # a fake detector is never picked
     result["pick"] = max(passing, key=lambda n: (passing[n]["at_bar_clean"]["recall"], -passing[n]["latency"]["median_s"])) if passing else None
     (out / "report.json").write_text(json.dumps(result, indent=1))
@@ -300,6 +329,8 @@ def report(out):
               f"in {f['clean']['person']}, nobody in {f['clean']['nobody']}, and {f['clean']['unclear']} are left out as unclear. "
               f"After the mosaic sets in (every 1 s): {f['late']['all']} frames, person in {f['late']['person']}, nobody in {f['late']['nobody']}, "
               f"unclear {f['late']['unclear']}.", "",
+              f"Shortened to save model time: the detectors were shown only the frames that are scored, {f['clean']['shown_to_detectors']} headline "
+              f"frames and every {LATE_EVERY}th frame after the mosaic ({f['late']['shown_to_detectors']}), and each backend had {BUDGET_S:g} s of detecting.", "",
               f"On each frame seen() gets one candidate, \"{LABEL}\", with no box. Precision: of the frames where it was confirmed, the share where the "
               "sim's segmentation has a person on screen. Recall: of the frames where it has one, the share confirmed. "
               f"The bar is the best recall at precision >= {PRECISION_BAR:g} with a median under {LATENCY_BAR_S:g} s per frame.", "",
@@ -316,6 +347,12 @@ def report(out):
             top = max(b["sweep_clean"], key=lambda r: r["precision"] or 0.0)
             lines.append(f"| {name} | none reaches {PRECISION_BAR:g} (best precision {top['precision']} at {top['threshold']:g}, recall {top['recall']}) | | | "
                          f"{top['tp']} / {top['fp']} / {top['fn']} / {top['tn']} | {lat['median_s']:.3f} | {lat['p95_s']:.3f} | {lat['load_s']} | no |")
+    for name, b in result["backends"].items():
+        notes = [f"cut short ({b['cut_short']}), so it can't be picked" if b.get("cut_short") else "",
+                 f"{b['errors']} frames gave an error" if b.get("errors") else "",
+                 f"the first try failed ({b['first_try_failed']}) and these numbers are from the retry on the CPU" if b.get("first_try_failed") else ""]
+        if any(notes):
+            lines += ["", f"{name}: " + "; ".join(n for n in notes if n) + "."]
     lines += ["", f"**Pick: {result['pick'] or 'none'}.**" + (" (A fake detector is never picked.)" if fake else ""), "",
               "## At each backend's own threshold from the table", "",
               "| Backend | Small people (under 60 px tall): recall | Larger: recall | With the sim's box (IoU >= 0.3): recall | After the mosaic: precision, recall |",
@@ -362,7 +399,8 @@ def run(out, backends, fake=False):
     for backend in backends:   # one detector loaded at a time
         entry = detect_all(out, rows, backend, fake)
         if entry.get("failed") and not fake:   # Metal lacks an operation now and then; the CPU answer is slower but real
-            entry = {**detect_all(out, rows, backend, device="cpu"), "first_try_failed": entry["failed"]}
+            left = BUDGET_S - entry.get("detect_seconds_before_failing", 0.0)
+            entry = {**detect_all(out, rows, backend, device="cpu", budget_s=left), "first_try_failed": entry["failed"]}
         record["backends"].append(entry)
         record["finished"] = time.strftime("%Y-%m-%dT%H:%M:%S")
         (out / "run.json").write_text(json.dumps(record, indent=1))
