@@ -48,7 +48,9 @@ SETTINGS = {
     # The two attention projections LoRA was introduced on. Fewer layers than "every linear layer" keeps the fused
     # folder small if the adapted layers have to be stored as 32-bit floats (about 2.6 GB more than 4-bit, not 30).
     "targets": ["q_proj", "v_proj"],
-    "learning_rate": 5e-5, "optimizer": "adamw", "weight_decay": 0.0, "batch_size": 1, "max_seq_length": 4096,
+    # 1e-4 is the usual LoRA rate. Centaur and the homeostatic runs use 5e-5 over far more steps; the pilot sees each of
+    # a few thousand rows once, so at the lower rate "nothing changed" would say little.
+    "learning_rate": 1e-4, "optimizer": "adamw", "weight_decay": 0.0, "batch_size": 1, "max_seq_length": 4096,
     "train_on_completions": True, "seed": 0,
 }
 
