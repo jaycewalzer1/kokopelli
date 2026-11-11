@@ -134,6 +134,7 @@ SCENARIO_NIGHT = {
 
 # What the agent is told it sees is checked against the painted frame (kokopelli/wm/seen.py). backend is one of
 # seen.BACKENDS. The detectors run on torch, which .venv doesn't have, so torch_python names an interpreter that does.
-# The backend here is provisional until experiments/sensation/seen_eval.py has been run on painted frames.
-SEEN = {"backend": "owlv2", "threshold": 0.2, "min_iou": 0.3, "device": "auto",
+# Backend and threshold are what experiments/sensation/seen_eval.py picked on 2026-11-11 (the only backend to reach 0.9
+# precision; at 0.8 it confirmed 21 of 72 painted people and no stranger; docs/log/sensations/2026-11-11-seen.md).
+SEEN = {"backend": "grounding_dino", "threshold": 0.8, "min_iou": 0.3, "device": "auto",
         "torch_python": ROOT / "simworld" / ".venv" / "bin" / "python"}

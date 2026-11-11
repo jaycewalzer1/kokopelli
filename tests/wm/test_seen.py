@@ -7,6 +7,7 @@ job with RUN_LONG_TESTS=1.
 import json
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -18,7 +19,8 @@ from kokopelli.wm import seen as seen_mod
 from kokopelli.wm.seen import Candidate, Detection, Seen, confirm, iou, seen
 
 ROOT = Path(__file__).resolve().parents[2]
-PAINTED = ROOT / "out" / "bodies" / "demo" / "runs" / "wm" / "frames" / "mara" / "seen_0006.png"   # the other agent standing in front, 50 s in
+FILM = ROOT / "out" / "bodies" / "demo" / "runs" / "wm" / "film" / "mara.mp4"   # painted by Cosmos3-Nano-Sim-Transfer
+FRAME = 832   # 52 s in, the other agent standing in front: the frame seen_eval's detectors were surest of (mara_0832)
 
 
 class FakeDetector:
@@ -146,12 +148,20 @@ class LazyTest(unittest.TestCase):
 @pytest.mark.slow(reason="loads a real detector (the SEEN backend) in its worker; run it from a GPU-queue job")
 class RealDetectorTest(unittest.TestCase):
     def test_the_person_cosmos_painted_is_confirmed_and_a_made_up_thing_is_dropped(self):
-        if not PAINTED.exists():
-            self.skipTest(f"no painted frame at {PAINTED}")
-        try:
-            kept = seen(str(PAINTED), [Candidate("iris", "a person"), Candidate("zebra", "a zebra")])
-        finally:
-            seen_mod.release()
+        if not FILM.exists():
+            self.skipTest(f"no painted film at {FILM}")
+        import cv2
+        film = cv2.VideoCapture(str(FILM))
+        for _ in range(FRAME + 1):   # read up to the frame: seeking in H.264 isn't exact
+            ok, frame = film.read()
+            self.assertTrue(ok, "the film is shorter than expected")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = str(Path(tmp) / "painted.png")
+            cv2.imwrite(path, frame)
+            try:
+                kept = seen(path, [Candidate("iris", "a person"), Candidate("zebra", "a zebra")])
+            finally:
+                seen_mod.release()
         self.assertEqual([s.id for s in kept], ["iris"])
         x0, y0, x1, y1 = kept[0].box
         self.assertTrue(0 <= x0 < x1 <= 448 and 0 <= y0 < y1 <= 256)
