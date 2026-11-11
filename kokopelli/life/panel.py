@@ -23,7 +23,8 @@ from kokopelli.settings import (LIFE_BUDGET, LIFE_DB, LIFE_DEFAULT_SEED, LIFE_DE
                       LIFE_WARN_SIMULATED_DAYS, ROOT)
 
 STATIC = Path(__file__).with_name("static")
-CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8"}
+CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
+                 ".svg": "image/svg+xml", ".jpg": "image/jpeg"}
 STATE_KINDS = {"moved", "person_met", "relationship_changed", "money_changed", "skill_changed"}
 
 

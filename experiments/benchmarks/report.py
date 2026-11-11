@@ -3,8 +3,8 @@ guardrail deltas, human norms, and pass or fail against the pre-registration.
 
 Run:  python -m experiments.benchmarks.report experiments/benchmarks/results/<run_id>
 
-The HTML follows DESIGN.md and inlines its tokens. The rule is one clay element and one gold hairline per page. So the
-clay marks only the key arm on the first chart, and the gold hairline is only the human norm on that same chart.
+The HTML follows DESIGN.md and inlines its tokens. The rule is one pigment series and one gold hairline per page. So the
+pigment marks only the key arm on the first chart, and the gold hairline is only the human norm on that same chart.
 """
 import argparse
 import html
@@ -23,24 +23,21 @@ ARM_ORDER = ["base", "lived", "described", "shuffled", "flipped_lived", "rendere
 INVALID_WARNING = 0.05
 
 CSS = """
-:root { color-scheme: light dark; --surface-100: #F3EEE6; --surface-200: #EAE3D8; --umber: #3B2A22; --hairline: #CFC4B4; --ink: #2B1E18; --ink-muted: #6E6056; --clay: #8F4739; --gold: #9A7B40; --danger: #9E2A22; --sage: #5E6B4E; --slate: #4F5F6B;
-  --font-serif: "Fraunces", Georgia, serif; --font-sans: "Work Sans", system-ui, sans-serif; --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --space-2: 8px; --space-4: 16px; --space-6: 24px; --space-12: 48px; --radius-none: 0px; --radius-sm: 2px; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --surface-100: #14100D; --surface-200: #1E1814; --umber: #33271F; --hairline: #3A302A; --ink: #EDE5DA; --ink-muted: #A89A8C; --clay: #C07A62; --gold: #C4A66B; --danger: #E8877C; --sage: #9AA88A; --slate: #8E9EAA; } }
-:root[data-theme="dark"] { --surface-100: #14100D; --surface-200: #1E1814; --umber: #33271F; --hairline: #3A302A; --ink: #EDE5DA; --ink-muted: #A89A8C; --clay: #C07A62; --gold: #C4A66B; --danger: #E8877C; --sage: #9AA88A; --slate: #8E9EAA; color-scheme: dark; }
-:root[data-theme="light"] { color-scheme: light; }
+:root { color-scheme: light; --ground: #D0CCC5; --panel: #CEC9C0; --maroon-deep: #3E191C; --hairline: #ABA59F; --ink: #2A1B18; --ink-muted: #5E524A; --maroon: #5A2328; --pigment: #A65A48; --gold: #B48322; --danger: #9E2A22; --sage: #5E6B4E; --slate: #4F5F6B;
+  --font-display: "Fraunces", Georgia, serif; --font-body: "Work Sans", system-ui, sans-serif; --font-mono: "JetBrains Mono", ui-monospace, monospace; --display-weight: 300;
+  --space-2: 8px; --space-4: 16px; --space-6: 24px; --space-12: 48px; --radius-slab: 0px; --radius-button: 2px; }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--surface-100); color: var(--ink); font-family: var(--font-sans); font-size: 16px; line-height: 24px; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 24px; }
 main { max-width: 960px; margin: 0 auto; padding: var(--space-12) var(--space-6); }
 h1, h2, p { margin: 0; }
-h1 { font: 300 40px/44px var(--font-serif); overflow-wrap: anywhere; }
-h2 { font: 400 28px/34px var(--font-serif); margin-bottom: var(--space-4); }
+h1 { font: var(--display-weight) 40px/44px var(--font-display); overflow-wrap: anywhere; }
+h2 { font: var(--display-weight) 28px/34px var(--font-display); margin-bottom: var(--space-4); }
 p { max-width: 65ch; }
 .eyebrow { display: block; font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); overflow-wrap: anywhere; }
 .ruled { padding-bottom: var(--space-2); margin-bottom: var(--space-2); border-bottom: 1px solid var(--hairline); }
-.small { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+.small { font: 400 13px/18px var(--font-body); color: var(--ink-muted); }
 section { margin-top: var(--space-12); }
-.card { background: var(--surface-200); border: 1px solid var(--hairline); padding: var(--space-4); margin-top: var(--space-4); }
+.card { background: var(--panel); border: 1px solid var(--hairline); padding: var(--space-4); margin-top: var(--space-4); }
 .alert { border-left: 1px solid var(--ink-muted); padding-left: var(--space-4); margin-top: var(--space-4); }
 .scroll { overflow-x: auto; margin-top: var(--space-4); }
 table { border-collapse: collapse; width: 100%; font: 400 13px/20px var(--font-mono); }
@@ -58,7 +55,7 @@ td.wrap > .cell { display: block; min-width: 168px; }  /* Tables ignore min-widt
 .track { position: relative; height: 24px; border-bottom: 1px solid var(--hairline); }
 .ci { position: absolute; top: 12px; height: 1px; background: var(--ink); }
 .dot { position: absolute; top: 9px; width: 7px; height: 7px; margin-left: -3px; background: var(--ink); }
-.ci.key, .dot.key { background: var(--clay); }
+.ci.key, .dot.key { background: var(--pigment); }
 .norm { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--gold); }
 .norm.quiet { background: var(--ink-muted); }
 .axis { display: flex; justify-content: space-between; font: 400 11px/16px var(--font-mono); color: var(--ink-muted); }
@@ -237,7 +234,7 @@ def _status_cell(status):
 def to_html(data):
     record = data["record"]
     parts = ['<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">',
-             f'<title>Evaluation Report</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap"><style>{CSS}</style></head><body><main>',
+             f'<title>Evaluation Report</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap"><style>{CSS}</style></head><body><main>',
              f'<span class="eyebrow ruled">Kokopelli evaluation report</span><h1>{_e(record["run_id"])}</h1>',
              f'<p class="small" style="margin-top:8px">Backend {_e(record["backend"])}, commit {_e(record["sessions"][-1]["git"]["commit"][:10])}, {data["n_rows"]} results.</p>']
     for note in _warnings(data):
@@ -259,7 +256,7 @@ def to_html(data):
         entry = data["entries"].get(name, {})
         norms = load_norms(name)
         lines = _human_lines(norms)
-        # Accents go on the first chart with a human norm, or there'd be more than one clay or gold mark on the page.
+        # Accents go on the first chart with a human norm, or there'd be more than one pigment or gold mark on the page.
         accents = bool(lines) and not accents_used
         accents_used = accents_used or accents
         role = "Guardrail" if entry.get("role") == "guardrail" else f"{entry.get('transfer', '')} transfer"

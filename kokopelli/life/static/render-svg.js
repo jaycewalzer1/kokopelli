@@ -55,7 +55,7 @@ export function createRenderer(svg) {
       if (markup !== drawn) { stage.innerHTML = markup; drawn = markup; labels = scene.labels; placeLabels(); }
       const cursor = scene.positions.get(scene.cursor);
       const liveMarkup = running && scene.liveLine ?
-        `<path class="tree-pulse" d="${scene.liveLine}" style="fill:none;stroke:var(--surface-100);stroke-width:2" stroke-linecap="round" vector-effect="non-scaling-stroke"/>` +
+        `<path class="tree-pulse" d="${scene.liveLine}" style="fill:none;stroke:var(--ground);stroke-width:2" stroke-linecap="round" vector-effect="non-scaling-stroke"/>` +
         (cursor ? `<circle class="tree-ring" cx="${cursor.x}" cy="${cursor.y}" r="4" style="fill:none;stroke:var(--ink);stroke-width:1.4"/>` : "") : "";
       if (liveMarkup !== liveDrawn) { live.innerHTML = liveMarkup; liveDrawn = liveMarkup; }
     },

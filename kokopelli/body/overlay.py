@@ -11,7 +11,7 @@ the felt line is the point of the benchmark.
 Frame i of a painted film is sim time i / fps (live_wm.py captures at video rate from t = 0), so body.jsonl lines up
 with the film by time: each frame shows the latest body line at or before it.
 
-Colours are DESIGN.md's dark theme, so the panel reads as part of the dev panel. No CPU-heavy work beyond decode,
+Colours are the dark theme of the design system before Design Guide v1. The guide has no dark theme yet, so these stay as they were. No CPU-heavy work beyond decode,
 draw and encode; never a GPU job.
 """
 import argparse
@@ -28,7 +28,7 @@ LEVEL_ORDER = ("full", "half", "starving")
 PANEL_W = 420
 PANEL_MIN_H = 480   # lines the panel needs for all its text; a shorter film is enlarged to reach it
 PAD = 24
-# DESIGN.md section 1, dark theme.
+# The previous design system's dark theme (see the note above).
 BG, SURFACE, HAIR = (20, 16, 13), (30, 24, 20), (58, 48, 42)
 INK, MUTED, CLAY, GOLD = (237, 229, 218), (168, 154, 140), (192, 122, 98), (196, 166, 107)
 RANGE = (40, 80)

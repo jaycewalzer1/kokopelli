@@ -28,4 +28,4 @@ If I say I'm in a hurry or tell you to just do it, do the task without the teach
 
 ## UI
 
-All UI must follow DESIGN.md. Use only its tokens. Run its section 8 checklist before finishing any UI task.
+All UI must follow DESIGN.md. Use only its tokens. Run its checklist (section 12) before finishing any UI task.

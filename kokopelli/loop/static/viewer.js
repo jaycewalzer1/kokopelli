@@ -1,8 +1,6 @@
 // Draws one run from /api/run. Every value comes from the run's log, so text is only ever set as text.
 const byId = (id) => document.getElementById(id);
 const file = (path) => `/files/${path}`;
-const theme = new URLSearchParams(location.search).get("theme");
-if (theme) document.documentElement.dataset.theme = theme;
 
 const page = { ticks: [], index: 0, playing: null, truth: "rgb", detail: "World model prompt" };
 const TRUTH = { rgb: "Color", depth: "Depth", seg: "Segments" };

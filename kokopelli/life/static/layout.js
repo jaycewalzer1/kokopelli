@@ -6,8 +6,8 @@ const ARC = 1.5 * Math.PI, HUB_RING = 95, YEAR_RING = 175, STAGE_LABEL_RING = 30
 const NODE_SIZE = {season: 4, month: 3.6, week: 3.2, day: 2.8, hour: 2.5, min15: 2.3, min5: 2.1, min1: 2, sec30: 1.8};
 // When labels would overlap, the lowest rank stays: the Life node, the chosen path, stage names, the branch in view, then the years.
 const RANK = {life: 0, chosen: 1, stage: 2, branch: 3, year: 4};
-const PAGE = "var(--surface-100)", INK = "var(--ink)", MUTED = "var(--ink-muted)", HAIRLINE = "var(--hairline)";
-// One color per stage, in DESIGN.md's fixed order. Clay is the action color and gold is the highlighted path, so neither is a stage.
+const PAGE = "var(--ground)", INK = "var(--ink)", MUTED = "var(--ink-muted)", HAIRLINE = "var(--hairline)";
+// One color per stage, in DESIGN.md's fixed order. Pigment marks the agent and gold is the highlighted path, so neither is a stage.
 export const STAGE_COLORS = ["var(--sage)", "var(--slate)", "var(--dust-rose)", "var(--walnut)"];
 
 // Rings get closer together further out, so eleven levels fit on one screen.

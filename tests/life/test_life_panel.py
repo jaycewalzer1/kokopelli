@@ -130,6 +130,12 @@ class PanelTest(unittest.TestCase):
             with urllib.request.urlopen(f"{self.base}/static/{name}") as response:
                 self.assertIn("text/css", response.headers["Content-Type"])
 
+    def test_the_texture_and_logo_are_served(self):
+        # design.css points at both, so a page without them loses its ground and its mark.
+        for name, kind in (("concrete.jpg", "image/jpeg"), ("logo-ink.svg", "image/svg+xml"), ("logo-light.svg", "image/svg+xml")):
+            with urllib.request.urlopen(f"{self.base}/static/{name}") as response:
+                self.assertEqual(response.headers["Content-Type"], kind)
+
     def test_the_default_seed_makes_a_run(self):
         defaults = self.get("/api/defaults")
         self.assertIsInstance(self.post("/api/runs", defaults)["run_id"], int)

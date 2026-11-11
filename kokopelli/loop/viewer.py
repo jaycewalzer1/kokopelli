@@ -10,8 +10,10 @@ from urllib.parse import unquote, urlparse
 from kokopelli.loop import replay
 
 STATIC = Path(__file__).with_name("static")
-DESIGN_CSS = Path(__file__).parent.parent / "life" / "static" / "design.css"
-PAGES = {"/": STATIC / "viewer.html", "/viewer.css": STATIC / "viewer.css", "/viewer.js": STATIC / "viewer.js", "/design.css": DESIGN_CSS}
+# The design system and the two files its stylesheet points at live with the panel.
+DESIGN = Path(__file__).parent.parent / "life" / "static"
+PAGES = {"/": STATIC / "viewer.html", "/viewer.css": STATIC / "viewer.css", "/viewer.js": STATIC / "viewer.js",
+         **{f"/{name}": DESIGN / name for name in ("design.css", "concrete.jpg", "logo-ink.svg")}}
 
 
 def make_handler(run_dir):

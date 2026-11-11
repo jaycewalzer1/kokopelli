@@ -1,4 +1,4 @@
-"""Screenshot a report for DESIGN.md's section 8 checklist: both themes, at desktop width and at 375px.
+"""Screenshot a report for DESIGN.md's checklist (section 12): at desktop width and at 375px.
 
 Run:  python -m experiments.benchmarks.report_screenshots experiments/benchmarks/results/<run_id>/report.html <folder for images>
 Headless Chrome's window can't go below 500px, so the 375px views put the page in an iframe. This also measures
@@ -41,14 +41,12 @@ def main():
     page = args.report.read_text()
     with tempfile.TemporaryDirectory(prefix="evals_chrome_") as temp:
         folder, profile = Path(temp), Path(temp) / "profile"
-        for theme in ("light", "dark"):
-            themed = page.replace('<html lang="en">', f'<html lang="en" data-theme="{theme}">')
-            (folder / f"{theme}.html").write_text(themed)
-            (folder / f"{theme}_375.html").write_text(
-                f'<!doctype html><body style="margin:0"><iframe src="{theme}.html" width="375" height="{HEIGHT}" style="border:0"></iframe>')
-            chrome(f"--window-size=1200,{HEIGHT}", f"--screenshot={args.out / f'{theme}.png'}", f"file://{folder / f'{theme}.html'}", profile=profile)
-            chrome(f"--window-size=500,{HEIGHT}", f"--screenshot={args.out / f'{theme}_375.png'}", f"file://{folder / f'{theme}_375.html'}", profile=profile)
-            print(theme, "sideways overflow at 375px:", overflow_at_375(themed, folder, profile), "px")
+        (folder / "report.html").write_text(page)
+        (folder / "report_375.html").write_text(
+            f'<!doctype html><body style="margin:0"><iframe src="report.html" width="375" height="{HEIGHT}" style="border:0"></iframe>')
+        chrome(f"--window-size=1200,{HEIGHT}", f"--screenshot={args.out / 'report.png'}", f"file://{folder / 'report.html'}", profile=profile)
+        chrome(f"--window-size=500,{HEIGHT}", f"--screenshot={args.out / 'report_375.png'}", f"file://{folder / 'report_375.html'}", profile=profile)
+        print("sideways overflow at 375px:", overflow_at_375(page, folder, profile), "px")
     print("Images in", args.out)
 
 

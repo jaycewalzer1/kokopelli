@@ -17,7 +17,7 @@ header p { margin-top: var(--space-2); }
 .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6); }
 figure { margin: 0; min-width: 0; }
 figcaption { margin-bottom: var(--space-2); }
-figure video, figure img { display: block; width: 100%; aspect-ratio: 7 / 4; background: var(--surface-200); border: 1px solid var(--hairline); box-sizing: border-box; }
+figure video, figure img { display: block; width: 100%; aspect-ratio: 7 / 4; background: var(--panel); border: 1px solid var(--hairline); box-sizing: border-box; }
 figure p, figure .tabs { margin-top: var(--space-2); }
 
 #chart { display: block; width: 100%; height: 120px; margin-top: var(--space-2); }

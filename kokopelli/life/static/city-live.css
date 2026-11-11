@@ -10,17 +10,17 @@ header #run { width: 300px; max-width: 100%; }
 .map { grid-area: map; }
 .log { grid-area: log; min-width: 0; }
 
-.eyes-frame { margin: 0; aspect-ratio: 16 / 9; background: var(--surface-200); border: 1px solid var(--hairline); display: flex; align-items: center; justify-content: center; }
+.eyes-frame { margin: 0; aspect-ratio: 16 / 9; background: var(--panel); border: 1px solid var(--hairline); display: flex; align-items: center; justify-content: center; }
 #eyes { display: block; width: 100%; height: 100%; object-fit: contain; }
 #eyes[hidden], #eyes-none[hidden] { display: none; }
 .replay { margin-top: var(--space-2); }
 .replay[hidden] { display: none; }
 .replay-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
-.replay-row button { padding: 4px var(--space-2); font: 400 13px/18px var(--font-sans); }
+.replay-row button { padding: 4px var(--space-2); font: 400 13px/18px var(--font-body); }
 #scrub { display: block; width: 100%; padding: 0; border: 0; accent-color: var(--ink); }
 
 .now .facts { margin: 0; }
-.said p, .heard { font: 400 16px/24px var(--font-sans); overflow-wrap: anywhere; }
+.said p, .heard { font: 400 16px/24px var(--font-body); overflow-wrap: anywhere; }
 .thought { font-style: italic; }
 .heard { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
 
@@ -30,7 +30,7 @@ header #run { width: 300px; max-width: 100%; }
 .map-buttons { display: flex; gap: var(--space-2); }
 .map-buttons button[aria-pressed="true"] { border-color: var(--ink); }
 .legend i { display: inline-block; }
-.legend .key-agent { width: 10px; height: 10px; border-radius: 50%; background: var(--clay); }
+.legend .key-agent { width: 10px; height: 10px; border-radius: 50%; background: var(--pigment); }
 .legend .key-npc { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--dust-rose); }
 .legend .key-object { width: 8px; height: 8px; background: var(--walnut); }
 .legend .key-route { width: 16px; height: 0; border-top: 2px solid var(--ink); }
@@ -40,20 +40,20 @@ header #run { width: 300px; max-width: 100%; }
 #plan-svg .goal { fill: none; stroke: var(--ink); stroke-width: 1px; }
 #plan-svg .trail { fill: none; stroke: var(--ink-muted); stroke-width: 1px; stroke-linejoin: round; }
 #plan-svg .trail-ahead { fill: none; stroke: var(--hairline); stroke-width: 1px; stroke-dasharray: 3 3; }
-#plan-svg .npc { fill: var(--surface-100); stroke: var(--dust-rose); stroke-width: 1.5px; }
+#plan-svg .npc { fill: var(--ground); stroke: var(--dust-rose); stroke-width: 1.5px; }
 #plan-svg .object { fill: var(--walnut); }
-#plan-svg .agent-dot { fill: var(--clay); stroke: var(--surface-100); stroke-width: 2px; }
-#plan-svg .agent-heading { stroke: var(--clay); stroke-width: 3px; stroke-linecap: round; }
+#plan-svg .agent-dot { fill: var(--pigment); stroke: var(--ground); stroke-width: 2px; }
+#plan-svg .agent-heading { stroke: var(--pigment); stroke-width: 3px; stroke-linecap: round; }
 #plan-svg .mark-label { font-family: var(--font-mono); fill: var(--ink); dominant-baseline: central; paint-order: stroke;
-  stroke: var(--surface-100); stroke-width: 3px; pointer-events: none; }
+  stroke: var(--ground); stroke-width: 3px; pointer-events: none; }
 
 #decisions { margin: 0; padding: 0; list-style: none; max-height: calc(100vh - 200px); overflow-y: auto; }
 #decisions li { border-bottom: 1px solid var(--hairline); }
 .decision { display: flex; gap: var(--space-2); width: 100%; text-align: left; padding: var(--space-2) var(--space-2) var(--space-2) 0;
-  border: 0; border-left: 2px solid transparent; border-radius: var(--radius-none); font: 400 13px/18px var(--font-sans); }
+  border: 0; border-left: 2px solid transparent; border-radius: var(--radius-slab); font: 400 13px/18px var(--font-body); }
 .decision:hover:not(:disabled) { border-left-color: var(--hairline); }
-.decision[aria-current="true"] { border-left-color: var(--ink); background: var(--surface-200); }
-.decision img, .no-thumb { flex: none; width: 96px; height: 54px; margin-left: var(--space-2); object-fit: cover; background: var(--surface-200); border: 1px solid var(--hairline); }
+.decision[aria-current="true"] { border-left-color: var(--ink); background: var(--panel); }
+.decision img, .no-thumb { flex: none; width: 96px; height: 54px; margin-left: var(--space-2); object-fit: cover; background: var(--panel); border: 1px solid var(--hairline); }
 .decision-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
 .decision-thought { font-style: italic; }
 .reply { padding-left: var(--space-2); border-left: 1px solid var(--dust-rose); }

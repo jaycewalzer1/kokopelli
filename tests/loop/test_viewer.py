@@ -32,7 +32,7 @@ class ViewerTest(unittest.TestCase):
             return response.read()
 
     def test_pages_are_served(self):
-        for path in ("/", "/viewer.js", "/viewer.css", "/design.css"):
+        for path in ("/", "/viewer.js", "/viewer.css", "/design.css", "/concrete.jpg", "/logo-ink.svg"):
             self.assertTrue(self.get(path))
 
     def test_the_run_comes_from_the_log(self):
