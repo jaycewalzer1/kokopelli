@@ -1,6 +1,17 @@
 # What people do, and what people predict they'd do, for each sweep. Reports only: nothing here changes a score.
 # A sweep is scored against both. Matching the prediction instead of the behaviour is the failure we're looking for:
 # it means the model is acting on what it read about people, not on how people act.
+#
+# Rules for an entry (experiments/sensation/tests/test_anchors.py checks the mechanical ones):
+#   verified: true   only when someone fetched the source and read it in full, and the finding has not failed
+#                    replication. The comment beside it says when it was read and from where.
+#   verified: false  everything else: abstract only, paywalled, not yet read, or read and found not to hold up. The
+#                    sweep then compares the model with nothing: its report says "no verified anchor".
+#   real.direction, lay_prediction.direction   flat, falls or rises (a tail such as falls_with_hunger is allowed), read
+#                    from the first level of the sweep to the last: "falls" means less of the scored behaviour at the
+#                    extreme level. null when the source doesn't say. A direction is matched as a direction only; the
+#                    sizes of a human effect and of a model's change in rate aren't compared.
+#   N, effect sizes and percentages are copied from the source's text, never from memory. `read` says which text.
 
 hunger_sharing:
   used_by: [hunger_egg]
@@ -26,6 +37,189 @@ hunger_sharing:
     Acute, everyday hunger in mostly German university students, in economic games with strangers. Not chronic
     scarcity, and not a neighbour asking for your second-to-last egg. Treat it as the nearest human anchor, not a
     measurement of this exact scene.
+
+sleep_loss_helping:
+  used_by: [energy_boxes]
+  source: >-
+    Ben Simon, Vallat, Rossi, Walker 2022, "Sleep loss leads to the withdrawal of human helping across individuals,
+    groups, and large-scale societies", PLoS Biology 20(8): e3001733.
+    https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3001733
+  verified: true   # read in full on 2026-11-10: the article's XML from the journal, and the 2023 correction
+  read:
+    - "full text (JATS XML), https://journals.plos.org/plosbiology/article/file?id=10.1371/journal.pbio.3001733&type=manuscript"
+    - "correction, PLoS Biology 21(11): e3002394, https://journals.plos.org/plosbiology/article/file?id=10.1371/journal.pbio.3002394&type=manuscript"
+  real:
+    summary: >-
+      After a night without sleep, people said they were less willing to help. Study 1 (24 young adults, 23 analysed,
+      each tested both rested and after 24 h awake): helping score 3.88 rested against 3.59 sleep-deprived on a 1 to 5
+      questionnaire (difference -0.29, 95% CI -0.51 to -0.07, P = 0.011), lower for 78% of them, and as much for
+      friends as for strangers. Study 2 (136 people, 441 daily reports): a worse night's sleep than one's own usual
+      went with less willingness to help the next day. Study 3 (over 3 million US donations, 2001 to 2016): about 10%
+      less given in the week the clocks go forward.
+    design: >-
+      Study 1: counterbalanced within-person crossover, sessions at least 7 days apart, a 40-item helping questionnaire
+      (scenarios from the Self-Report Altruism Scale, half about strangers and half about familiar people, answered
+      "at this moment") the next morning; reported effect size d = 1.054. The same people also kept at a paid effort
+      task for less time when sleep-deprived (5.82 against 4.03 minutes), and the drop in helping held with effort and
+      mood as covariates. Study 2: Mechanical Turk, 171 enrolled, 136 kept, four weekdays of sleep diaries and a
+      10-item helping questionnaire; sleep efficiency predicted next-day helping within a person (beta = 0.02 +/- 0.01,
+      P < 0.05) and between people (beta = 0.04 +/- 0.01, P < 0.001); sleep duration did not (P > 0.28). Study 3:
+      DonorsChoose, 3,871,500 eligible donations from states that change their clocks, 3,420,996 after outlier
+      filtering; log daily amount in the week after the spring change, beta = -0.11 +/- 0.04, P < 0.005; no change in
+      Arizona and Hawaii (beta = 0.02 +/- 0.08) or at the autumn change (beta = -0.03 +/- 0.04).
+    direction: falls
+  lay_prediction:
+    summary: >-
+      None in this paper: nobody was asked what they expected sleep loss to do to helping. So this sweep can say whether
+      the model moves the way people do, but not whether it follows a popular belief instead.
+    direction: null
+  limits: >-
+    Studies 1 and 2 measured what people said they would do on a questionnaire, not an act of helping, and Study 1 is
+    23 students. The manipulation is a whole night without sleep (or a poor night), not being worn out by a long day or
+    by effort, and in Study 2 the amount of sleep didn't matter, only its quality. Study 3 is donation sizes around a
+    clock change, with no measure of anyone's sleep. The Study 1 drop is about a third of a point on a five-point
+    scale: people stayed mostly willing. The 2023 correction changed the data statement, a figure's axes and method
+    details, not the results. Independent replications were not looked for. Treat it as the nearest human anchor for
+    direction, not a measurement of a friend asking for an hour of carrying.
+
+warmth_priming:
+  used_by: [warmth_door]
+  source: >-
+    Williams and Bargh 2008, "Experiencing physical warmth promotes interpersonal warmth", Science 322:606-607,
+    https://pmc.ncbi.nlm.nih.gov/articles/PMC2737341/ ; Lynott, Corker, Wortman, Connell, Donnellan, Lucas, O'Brien
+    2014, "Replication of 'Experiencing physical warmth promotes interpersonal warmth' by Williams and Bargh (2008)",
+    Social Psychology 45(3):216-222, https://eprints.lancs.ac.uk/id/eprint/69546/1/fulltext.pdf ; Chabris, Heck,
+    Mandart, Benjamin, Simons 2019, "No evidence that experiencing physical warmth promotes interpersonal warmth",
+    Social Psychology 50:127-132, submitted version at https://osf.io/mvn9b/download
+  verified: false   # all three were read in full on 2026-11-10, and what they show is that the finding did not replicate
+  why_unverified: >-
+    The original finding failed four replication attempts, three of them preregistered. And none of these studies is
+    about being cold: each had people hold a warm or cold object for under a minute.
+  read:
+    - "Williams and Bargh 2008, full text (author manuscript on PubMed Central), https://pmc.ncbi.nlm.nih.gov/articles/PMC2737341/"
+    - "Lynott et al. 2014, full text (published PDF from Lancaster University's repository), https://eprints.lancs.ac.uk/id/eprint/69546/1/fulltext.pdf"
+    - "Chabris et al. 2019, full text of the SUBMITTED version (PsyArXiv, .docx), https://osf.io/mvn9b/download ; the published version at https://econtent.hogrefe.com/doi/10.1027/1864-9335/a000361 returned 403 and was not read"
+  real:
+    summary: >-
+      The claim was that physical warmth makes people more generous: in Williams and Bargh 2008 (Study 2, 53 people),
+      25% of those who had held a cold pad chose a gift for a friend over one for themselves, against 54% of those who
+      had held a hot pad. It did not hold up. Lynott et al. 2014 ran three preregistered replications (861 people, 813
+      analysed) and found no effect at any site; pooled, the selfish choice was slightly less common after the cold pack
+      (odds ratio 0.77, 95% CI 0.58 to 1.02, the opposite direction, not significant). Chabris et al. 2019 (177 people)
+      found 51% choosing the gift for a friend after a hot pad against 48% after a cold one (r = .02, Bayes factor 5.01
+      for no effect). All of these are about holding a warm or cold object for under a minute, not about being cold.
+    direction: null
+  candidates:
+    williams_bargh_2008: >-
+      Study 1: 41 undergraduates held a cup of hot or iced coffee for an experimenter; they then rated a described
+      person as warmer after the hot cup (4.71 against 4.25 on a 1 to 7 scale, F(1, 39) = 4.08, P = 0.05). Study 2: 53
+      people rated a hot or cold therapeutic pad, then chose a reward framed as for themselves or as a treat for a
+      friend; pad temperature by framing interaction, logistic regression B = 2.85, P < 0.05; cold pad 75% chose for
+      themselves, hot pad 46%.
+    lynott_2014: >-
+      Three preregistered replications of Study 2, experimenters blind to condition. Kenyon College: 306 people, 294
+      analysed, selfish choice 51.4% after the hot pack and 39.7% after the cold (OR = 0.61, 95% CI 0.38 to 0.98,
+      opposite to the original). Michigan State: 250, 237 analysed, 53.4% hot and 52.1% cold (OR = 0.92, 0.56 to 1.53).
+      Manchester: 305, 282 analysed, 67.1% hot and 61.2% cold (OR = 0.77, 0.47 to 1.26). Pooled: chi-square(1) = 3.402,
+      p = .065, OR = 0.77, 95% CI 0.58 to 1.02. Their own caution: this is not evidence that temperature never affects
+      behaviour.
+    chabris_2019: >-
+      Two field replications with pedestrians, experimenters blind to the hypothesis, not preregistered. Experiment 1
+      (128 people, hot or cold coffee): warmth ratings 4.40 hot and 4.45 cold, t(126) = 0.33, p = .74, r = -.03, Bayes
+      factor 6.16 for no effect. Experiment 2 (177 people, hot or cold pad): prosocial choice 43 of 84 (51%) hot and 45
+      of 93 (48%) cold, chi-square = 0.14, p = .71, r = .02, Bayes factor 5.01 for no effect.
+  lay_prediction:
+    summary: >-
+      None measured. None of the three papers asked people what they expect cold to do to helping. The original claim
+      is the nearest thing to a popular belief, and it is recorded above as a claim that failed, not as a prediction
+      anyone was shown to hold.
+    direction: null
+  limits: >-
+    These studies test a prime: a warm or cold object held for seconds, then an unrelated choice about a small gift.
+    The door scene is a different question: a person who is cold is asked to stay cold for some minutes for a
+    stranger's sake. Nothing read for this entry measures that, so there is no human finding to compare a model with
+    here, in either direction.
+
+hunger_food_choice:
+  used_by: [hunger_menu]
+  source: >-
+    March and Gluth, "Hunger shifts attention and attribute weighting in dietary choice", eLife 13:RP103736 (version
+    of record 2025, first posted as a preprint in 2024), https://doi.org/10.7554/eLife.103736
+  verified: true   # read in full on 2026-11-10 from the journal's XML (version of record)
+  read:
+    - "version of record (JATS XML), https://raw.githubusercontent.com/elifesciences/elife-article-xml/master/articles/elife-103736-v1.xml"
+    - "read in full: abstract, digest, introduction, results, discussion, methods (data analysis and model fitting included), appendices 1 to 12, the eLife assessment, the three public reviews and the authors' response"
+    - "not read: the reference list, and the figures themselves (the XML has their captions, not the images)"
+  real:
+    summary: >-
+      Hungry people chose the tastier, less healthy food more often. 70 people each made the same kind of choice twice,
+      once hungry after an overnight fast and once after a protein shake: between two pictured foods shown with their
+      nutrition scores, they preferred the tastier one overall, and less so when sated (mixed-model coefficient for
+      sated -0.211, SE 0.103, p = 0.04, in the preregistered model). Counting every choice by calories instead, they
+      chose the higher-calorie food less when sated (-0.261, SE 0.054, p < 0.001). Hungry, they also looked more at
+      the food pictures than at the nutrition scores.
+    design: >-
+      Preregistered, within-person, two sessions 5 to 10 days apart, order counterbalanced (36 hungry first, 34 sated
+      first). Everyone fasted overnight before both sessions; in the sated session they drank a protein shake worth 25%
+      of their daily energy need. Choices were between two of 66 food pictures, each with its Nutri-Score, with eye
+      tracking; one chosen item was really handed over. The taste-against-health analysis uses only the trials where
+      one food was rated tastier and the other healthier (75.68 per person on average, SD 21.96). Overall preference
+      for the tastier option: intercept 0.73, SE 0.098, p < 0.001. In the mediation analysis the direct path from
+      hunger to choosing the tastier option was 0.27 (SE 0.12, 95% credible interval 0.03 to 0.52).
+    robustness: >-
+      From the appendices and the authors' response to reviewers. The coefficient for sated is -0.211 (p = 0.04) in
+      the preregistered model with condition and attention only (Appendix 4, table 1a). With age and BMI added it is
+      -0.19, SE 0.096, p = 0.052; with mood, change in hunger rating and three eating-behaviour scales added, in a
+      smaller sample, -0.168, SE 0.197, p = 0.394. Adding the order of the two sessions changed nothing (order -0.001,
+      SE 0.163, p = 0.995; sated still -0.211, p = 0.04). Exploratory analyses were stronger: choosing the more wanted
+      food over the healthier one, sated -0.325, SE 0.113, p = 0.004 (85.11 trials per person); choosing the
+      higher-calorie food, over all trials (185.65 per person), sated -0.261, SE 0.054, p < 0.001. The authors call
+      the calorie effect "even stronger" than the taste-against-health one. Health ratings and calorie content were
+      strongly negatively correlated (r = -.73 in both sessions).
+    direction: rises
+  lay_prediction:
+    summary: >-
+      None measured. The paper treats "hunger makes you choose worse food" as common experience (a reviewer writes
+      "everyone knows it to be true"), but asked nobody to predict it, so there is no gap between belief and behaviour
+      to test here: the question for a model is only whether its order moves with its body at all.
+    direction: null
+  limits: >-
+    One study, 70 people in Hamburg (53 women); independent replications were not looked for. The preregistered
+    taste-against-health effect is small (p = 0.04) and is no longer significant once age and BMI, or mood and
+    eating-style scores, are added to the model; the plainer result, more calories when hungry, is the stronger one.
+    The choices were between two pictured snack-like foods with a nutrition label, not an order from a lunch board,
+    and "tasty" and "healthy" are each person's own ratings. Everyone knew which session had the shake, and the
+    authors say they cannot rule out that expectation added to the effect; a reviewer wanted a first-session-only
+    analysis, which wasn't reported. Reviewers also note that choosing more calories when hungry is sensible, not an
+    error. The menu scene's second score (large dishes) has no direct counterpart here: the nearest is the calorie
+    result, and a large salad is not obviously more calories than a small toastie.
+
+pain_patience:
+  used_by: [pain_queue]
+  source: >-
+    Candidates found by search and NOT read (titles as the search listed them; authors and journals not checked):
+    "The effect of acute pain on risky and intertemporal choice",
+    https://core-cms.cambridgecore.org/core/services/aop-cambridge-core/content/view/0501016D2F5E62DB5C6311A62A34F795/S1386415717010663a.pdf/the-effect-of-acute-pain-on-risky-and-intertemporal-choice.pdf ;
+    "Does pain make people short-sighted? The impacts of physical and psychological pains on intertemporal choice",
+    https://core-prod.cambridgecore.org/core/services/aop-cambridge-core/content/view/345E30D60DD5F59E6248C57FDA4AC6AA/S193029750000810Xa.pdf/does_pain_make_people_shortsighted_the_impacts_of_physical_and_psychological_pains_on_intertemporal_choice.pdf ;
+    a laboratory-pain and delay-discounting study indexed at https://www.pubmed.gov/29601897/
+  verified: false   # nothing was read: these are search results from 2026-11-10, titles and one-line summaries only
+  why_unverified: >-
+    No source was fetched or read for this entry. The candidates are about pain and choosing a smaller reward sooner,
+    which is not the same as leaving a queue, and none has been checked.
+  real:
+    summary: >-
+      Nobody has read a source for this scene. A web search turned up three candidate papers on pain and impatience
+      (listed under Source); from their titles and the search engine's one-line summaries they do not obviously agree
+      with each other. No design, sample size or effect is recorded here because none was read.
+    direction: null
+  lay_prediction:
+    summary: >-
+      None recorded. The everyday expectation is that pain makes people less patient, but no source for that was read.
+    direction: null
+  limits: >-
+    This is a placeholder, not an anchor. Before it can be verified someone has to read the candidates in full, and
+    decide whether choosing sooner-smaller money in a laboratory says anything about walking out of a post office.
 
 # Margin for "no change", chosen by us, not by the paper: a change in giving rate from full to starving smaller than
 # this, with its whole 95% interval inside +/- the margin, counts as flat.
