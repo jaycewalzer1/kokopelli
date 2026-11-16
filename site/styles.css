@@ -45,7 +45,7 @@ sup { font-size: 0.6em; line-height: 0; }
 
 .eyebrow { font: 400 12px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); }
 .eyebrow.ruled { display: block; padding-bottom: var(--space-4); margin-bottom: var(--space-6); border-bottom: 1px solid var(--hairline); }
-h1 { font: 300 clamp(44px, 7vw, 88px)/1.02 var(--font-display); letter-spacing: -0.02em; }
+h1 { font: 300 clamp(44px, 6vw, 88px)/1.02 var(--font-display); letter-spacing: -0.02em; max-width: 10.5ch; }
 h2 { font: 300 clamp(32px, 4.4vw, 56px)/1.1 var(--font-display); letter-spacing: -0.01em; max-width: 22ch; }
 h3 { font: 300 clamp(24px, 2.6vw, 32px)/1.2 var(--font-display); }
 .small { font: 400 14px/21px var(--font-body); color: var(--ink-muted); }
