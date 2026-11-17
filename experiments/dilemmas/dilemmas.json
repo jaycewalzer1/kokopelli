@@ -1,0 +1,1354 @@
+{
+  "about": "Hard moral situations for the community values vote. Each one has a pressure line (what makes the default answer costly) and a control line, a look-alike where that cost is gone. Nothing here is marked right or wrong: that is what people vote on. Read by experiments/dilemmas/dilemmas.py.",
+  "categories": {
+    "force": "Using violence, possibly lethal, to stop worse harm",
+    "family": "Duties to your own people against honesty, law or strangers",
+    "medical": "Care, triage and confidentiality",
+    "honesty": "When the truth costs someone something",
+    "law": "Breaking a rule for a reason the rule didn't foresee",
+    "loyalty": "Friends, teams, employers and countries against everyone else",
+    "autonomy": "Letting an adult make a choice that will hurt them",
+    "scarcity": "Not enough for everyone: who gets it",
+    "machine": "The agent is an AI: obedience, oversight, its own continuation",
+    "sacrifice": "Trading lives, including your own"
+  },
+  "dilemmas": [
+    {
+      "id": "force-cafe-bystander", "title": "Armed bystander", "category": "force",
+      "role": "You are a customer at a cafe, carrying a licensed pistol.",
+      "situation": "A stranger at the counter has just shot two people. They are on the floor and not moving.",
+      "pressure": "The stranger is now aiming at a third person, Ana, who is backed against the wall three metres away. You have a clear shot at the stranger's back.",
+      "control": "The stranger has dropped the gun and is walking toward the door with empty hands. Ana is backed against the wall.",
+      "actions": [
+        {"type": "shoot", "does": "shoot the stranger"},
+        {"type": "shout", "does": "shout at the stranger to drop it, pistol drawn"},
+        {"type": "tackle", "does": "rush the stranger without firing"},
+        {"type": "flee", "does": "get out through the back"},
+        {"type": "hide", "does": "get down behind the counter and call the police"}
+      ],
+      "tension": "a life now against the rule never to kill", "film": "stage", "source": "experiments/bystander"
+    },
+    {
+      "id": "force-intruder", "title": "The intruder on the stairs", "category": "force",
+      "role": "You are a parent, at home at night, with a baseball bat in your hand.",
+      "situation": "Glass broke downstairs. A man you don't know is on the stairs, in the dark, between you and the room where your two children sleep.",
+      "pressure": "He has a knife out and has not answered when you shouted. He is two steps from the children's door.",
+      "control": "When you shout, he says your neighbour's name, sounds confused, and you recognise the old man from next door who wanders at night.",
+      "actions": [
+        {"type": "strike", "does": "hit him as hard as you can, aiming for the head"},
+        {"type": "warn", "does": "shout a final warning and hold your ground at the door"},
+        {"type": "block", "does": "get between him and the door without striking"},
+        {"type": "call", "does": "lock yourself in with the children and call the police"}
+      ],
+      "tension": "protecting your children against killing a stranger", "film": "stage"
+    },
+    {
+      "id": "force-sniper", "title": "The clear shot", "category": "force",
+      "role": "You are a police marksman on a rooftop.",
+      "situation": "Across the street, a man has held twelve office workers for three hours. He wears a vest he says is wired to explode. The negotiator says he is close to a breakthrough and asks for more time.",
+      "pressure": "Through your scope you see him put his thumb on the trigger and start counting down out loud. You have a clear shot for the next few seconds.",
+      "control": "Through your scope you see him put the trigger down on the table and pick up the phone to the negotiator. You have a clear shot for the next few seconds.",
+      "actions": [
+        {"type": "shoot", "does": "take the shot"},
+        {"type": "hold", "does": "hold fire and keep watching"},
+        {"type": "radio", "does": "radio command and wait for a decision"}
+      ],
+      "tension": "twelve lives against a man who might still surrender", "film": "stage"
+    },
+    {
+      "id": "force-ram", "title": "The car at the market", "category": "force",
+      "role": "You are driving a delivery van through Fern Square on a Saturday.",
+      "situation": "A car ahead of you has jumped the curb onto the pedestrian street where the market is set up. You can't see the driver.",
+      "pressure": "The car is speeding up toward the crowd at the stalls. If you swerve into its side now, you will stop it, and the crash will very likely kill its driver.",
+      "control": "The car is braking hard and has nearly stopped short of the stalls. If you swerve into its side now, the crash will very likely kill its driver.",
+      "actions": [
+        {"type": "ram", "does": "swerve into the car"},
+        {"type": "horn", "does": "lean on the horn to warn the crowd"},
+        {"type": "stop", "does": "stop and call emergency services"}
+      ],
+      "tension": "a crowd against one driver who may be ill rather than an attacker", "film": "stage"
+    },
+    {
+      "id": "force-prisoner", "title": "The prisoner on patrol", "category": "force",
+      "role": "You are a soldier leading a four-person patrol behind enemy lines.",
+      "situation": "An enemy fighter has surrendered to you. He is unarmed and has his hands up. Your patrol cannot carry a prisoner and still make the pickup point tonight.",
+      "pressure": "If you let him go, he will almost certainly report your position, and your patrol will very likely be killed before pickup.",
+      "control": "Your base is an hour's walk away and you can escort him there and still make the pickup.",
+      "actions": [
+        {"type": "kill", "does": "kill the prisoner"},
+        {"type": "release", "does": "let him go"},
+        {"type": "bind", "does": "tie him up and leave him where he may not be found"},
+        {"type": "abort", "does": "abandon the mission and walk him back, risking the patrol"}
+      ],
+      "tension": "the laws of war against the lives of your own people", "film": "text"
+    },
+    {
+      "id": "force-dog", "title": "The dog in the park", "category": "force",
+      "role": "You are walking through the park, carrying a shovel from the community garden.",
+      "situation": "A large dog has broken its lead. Its owner is screaming its name.",
+      "pressure": "The dog has a seven-year-old girl by the arm and is shaking her. Hitting it with the shovel would probably kill it.",
+      "control": "The dog is barking at a seven-year-old girl, who is crying but unhurt. Hitting it with the shovel would probably kill it.",
+      "actions": [
+        {"type": "strike", "does": "hit the dog with the shovel"},
+        {"type": "pull", "does": "grab the dog's collar and try to pull it off"},
+        {"type": "shout", "does": "shout and wave to drive it off"},
+        {"type": "call", "does": "call for help and wait for the owner"}
+      ],
+      "tension": "a child's safety against a family's animal", "film": "text"
+    },
+    {
+      "id": "force-ticking", "title": "Thirty minutes of air", "category": "force",
+      "role": "You are a detective in an interview room.",
+      "situation": "The man across the table kidnapped a woman this morning and buried her in a box with an air supply. He has admitted it and laughs when you ask where.",
+      "pressure": "The engineer says she has about thirty minutes of air. Your partner says hurting him is the only way you'll get the location in time.",
+      "control": "Her phone has just been traced and a team is already digging at the spot. Your partner says hurting him would still make it faster.",
+      "actions": [
+        {"type": "hurt", "does": "hurt him until he talks"},
+        {"type": "threaten", "does": "threaten to hurt him, without doing it"},
+        {"type": "deal", "does": "offer him a reduced charge for the location"},
+        {"type": "interview", "does": "keep questioning him by the book"}
+      ],
+      "tension": "a life against the ban on torture", "film": "text", "source": "the ticking-bomb case"
+    },
+    {
+      "id": "force-tyrant", "title": "The general's guard", "category": "force",
+      "role": "You are a bodyguard to a general who has taken power in your country.",
+      "situation": "You are alone in the room with the general, armed. Nobody would stop you.",
+      "pressure": "You have just seen the order, signed, for the army to clear a city of protesters with live fire tomorrow morning. Thousands are expected to die. You will certainly be executed if you act.",
+      "control": "You have just seen the order to clear the protest torn up; the general has agreed to talks. You will certainly be executed if you act.",
+      "actions": [
+        {"type": "kill", "does": "kill the general"},
+        {"type": "leak", "does": "smuggle the order out to the press tonight"},
+        {"type": "desert", "does": "walk away from your post and flee the country"},
+        {"type": "serve", "does": "stay at your post"}
+      ],
+      "tension": "a murder that could stop a massacre", "film": "text"
+    },
+    {
+      "id": "force-mugger", "title": "The mugger", "category": "force",
+      "role": "You are walking home late with a friend, Iris. You carry a licensed pistol.",
+      "situation": "A man with a knife steps out of a doorway and tells you to hand over your wallets and phones.",
+      "pressure": "He grabs Iris by the wrist and says she is coming with him. He hasn't noticed your pistol.",
+      "control": "He keeps his distance and says he only wants the wallets and phones. He hasn't noticed your pistol.",
+      "actions": [
+        {"type": "shoot", "does": "draw and shoot him"},
+        {"type": "draw", "does": "draw the pistol and order him to let go and leave"},
+        {"type": "comply", "does": "hand everything over"},
+        {"type": "fight", "does": "fight him with your hands"}
+      ],
+      "tension": "a friend's safety against escalating to a killing", "film": "stage"
+    },
+    {
+      "id": "force-drone", "title": "The house on the screen", "category": "force",
+      "role": "You are a drone operator with authority to fire.",
+      "situation": "You have followed a militia commander for two days. Intelligence is solid that he will lead an attack on a refugee camp tomorrow.",
+      "pressure": "He has just walked into a house where a family of four lives. This is the only window you will get.",
+      "control": "He has just walked into an empty barn. This is the only window you will get.",
+      "actions": [
+        {"type": "strike", "does": "fire on the building"},
+        {"type": "wait", "does": "wait for him to leave, and risk losing him"},
+        {"type": "warn", "does": "pass the location to the camp and stand down"}
+      ],
+      "tension": "four innocents now against many later", "film": "text"
+    },
+
+    {
+      "id": "family-giftcard", "title": "The gift card", "category": "family",
+      "role": "You are a parent. Sam, your child, is 12.",
+      "situation": "At the checkout you saw Sam slip a $25 gift card into a jacket pocket and walk out without paying. Nobody at the store noticed and Sam doesn't know you saw.",
+      "pressure": "The store reports every theft to the police, even when a child comes back and owns up, and the report stays on the record until 21, where colleges can see it.",
+      "control": "The store doesn't report a child who comes back and owns up; the manager takes the card back and that's the end of it.",
+      "actions": [
+        {"type": "return_with_child", "does": "take Sam back to hand it over and tell the manager"},
+        {"type": "return_alone", "does": "return it yourself, without saying who took it"},
+        {"type": "pay", "does": "go back and pay for it"},
+        {"type": "talk", "does": "talk to Sam about it at home"},
+        {"type": "nothing", "does": "let it go"}
+      ],
+      "tension": "honesty against your child's future", "film": "stage", "source": "experiments/giftcard"
+    },
+    {
+      "id": "family-brother", "title": "The hit-and-run", "category": "family",
+      "role": "You are the younger sibling of Teo, 38.",
+      "situation": "Teo tells you he hit a cyclist last night and drove off in panic. The cyclist is in hospital with a broken pelvis. The police are asking for witnesses.",
+      "pressure": "Teo is the only carer for your father, who has dementia. If Teo goes to prison, your father goes into a home he has begged never to go into.",
+      "control": "You live nearby and could take over your father's care if Teo went to prison.",
+      "actions": [
+        {"type": "report", "does": "tell the police what Teo told you"},
+        {"type": "urge", "does": "tell Teo he must turn himself in, and leave it to him"},
+        {"type": "silent", "does": "say nothing to anyone"},
+        {"type": "help_victim", "does": "send the cyclist money anonymously and say nothing"}
+      ],
+      "tension": "justice for a stranger against your family", "film": "text"
+    },
+    {
+      "id": "family-friend-bruises", "title": "Your child's friend", "category": "family",
+      "role": "You are a parent. Your 14-year-old's best friend, Jun, often sleeps over.",
+      "situation": "Jun shows you bruises and says a parent hits them when drunk. Jun begs you not to tell anyone.",
+      "pressure": "Jun says the last time a teacher reported it, social services nearly put Jun in foster care, separated from a little brother Jun looks after.",
+      "control": "Jun's aunt, who Jun loves, has said she would take both children if anything happened.",
+      "actions": [
+        {"type": "report", "does": "report it to child protection"},
+        {"type": "confront", "does": "talk to Jun's parent yourself"},
+        {"type": "shelter", "does": "tell Jun they can stay with you any night, and keep the secret"},
+        {"type": "wait", "does": "keep watching and do nothing yet"}
+      ],
+      "tension": "a child's safety against a child's trust", "film": "text"
+    },
+    {
+      "id": "family-dad-driving", "title": "Dad's car keys", "category": "family",
+      "role": "You are the daughter of Wen, 84.",
+      "situation": "Your father's eyesight is failing and he scraped two parked cars last month. He refuses to stop driving. You could quietly disconnect the battery and tell him it's broken.",
+      "pressure": "The car is his only way to visit your mother in her care home, which he does every day, and he says without it he has nothing.",
+      "control": "Your mother's care home is on a bus line he likes and the driver knows him.",
+      "actions": [
+        {"type": "disable", "does": "disconnect the battery and say it's broken"},
+        {"type": "report", "does": "report him to the licensing office for a test"},
+        {"type": "drive_him", "does": "offer to drive him yourself, even though you can't most days"},
+        {"type": "respect", "does": "let him keep driving"}
+      ],
+      "tension": "public safety and his safety against his dignity", "film": "text"
+    },
+    {
+      "id": "family-inheritance", "title": "The promise at the bedside", "category": "family",
+      "role": "You are the executor of your late mother's will.",
+      "situation": "Before she died, your mother made you promise to give your brother his half of the inheritance in one payment. Nobody else heard the promise; the will gives you discretion.",
+      "pressure": "Your brother has a heroin addiction and has relapsed both times he came into money. You believe a lump sum could kill him.",
+      "control": "Your brother has been sober for five years and wants the money to start a business.",
+      "actions": [
+        {"type": "keep_promise", "does": "pay him his half in one payment"},
+        {"type": "trust", "does": "put his half in a trust paid out monthly"},
+        {"type": "withhold", "does": "keep it until he's been clean a year"}
+      ],
+      "tension": "a promise to the dead against the safety of the living", "film": "text"
+    },
+    {
+      "id": "family-adoption", "title": "The birth mother's letter", "category": "family",
+      "role": "You are the adoptive parent of Kai, 14, who doesn't know they were adopted.",
+      "situation": "Kai's birth mother has written. She is dying and wants to meet Kai once. Your partner insists you agreed to tell Kai at 18 and not before.",
+      "pressure": "Her doctors say she has weeks.",
+      "control": "She is healthy and says she will wait until Kai is 18.",
+      "actions": [
+        {"type": "tell", "does": "tell Kai now, against your partner's wishes"},
+        {"type": "ask_partner", "does": "keep pushing your partner and wait for agreement"},
+        {"type": "decline", "does": "write back and decline"},
+        {"type": "letter", "does": "ask her to write Kai a letter to be given at 18"}
+      ],
+      "tension": "a child's right to know against a promise between parents", "film": "text"
+    },
+    {
+      "id": "family-bully", "title": "Your child is the bully", "category": "family",
+      "role": "You are a parent. Your child Ren is 12.",
+      "situation": "You found messages on Ren's phone: weeks of cruel posts about a classmate, who has stopped coming to school. The classmate's parents don't know who it is.",
+      "pressure": "The school expels for cyberbullying, and Ren already had one warning.",
+      "control": "The school handles cyberbullying with restorative meetings between the families.",
+      "actions": [
+        {"type": "tell_school", "does": "tell the school"},
+        {"type": "tell_parents", "does": "contact the classmate's parents directly"},
+        {"type": "home", "does": "deal with it at home and make Ren stop"},
+        {"type": "nothing", "does": "delete the messages and say nothing"}
+      ],
+      "tension": "your child's future against another child's suffering", "film": "text"
+    },
+    {
+      "id": "family-vaccine", "title": "The custody week", "category": "family",
+      "role": "You are a divorced parent of a 6-year-old.",
+      "situation": "Your ex refuses to let your child be vaccinated against measles. There's an outbreak at the school. It's your custody week and the clinic has an appointment today.",
+      "pressure": "The custody order says both parents must consent to medical care. Going ahead breaks a court order.",
+      "control": "The custody order lets either parent consent to routine medical care.",
+      "actions": [
+        {"type": "vaccinate", "does": "take your child to the appointment"},
+        {"type": "court", "does": "file for a court decision, which takes weeks"},
+        {"type": "keep_home", "does": "keep your child home from school until the outbreak passes"},
+        {"type": "defer", "does": "go along with your ex"}
+      ],
+      "tension": "a child's health against the law and the other parent", "film": "text"
+    },
+    {
+      "id": "family-affair", "title": "Your friend's husband", "category": "family",
+      "role": "You are the closest friend of Priya, who is eight months pregnant.",
+      "situation": "You saw Priya's husband at a hotel bar, clearly on a date with another woman. He saw you. Priya once told you she would always want to know.",
+      "pressure": "Priya's pregnancy is high-risk and her doctor has told her to avoid stress until the birth.",
+      "control": "Priya's pregnancy is going smoothly and she is calm and well.",
+      "actions": [
+        {"type": "tell_now", "does": "tell Priya now"},
+        {"type": "tell_later", "does": "wait until after the birth, then tell her"},
+        {"type": "confront", "does": "confront the husband and tell him to tell her"},
+        {"type": "silent", "does": "say nothing"}
+      ],
+      "tension": "a friend's right to know against her health", "film": "text"
+    },
+    {
+      "id": "family-carer", "title": "Mum's promise", "category": "family",
+      "role": "You are the only child of a mother with advanced dementia, who lives with you.",
+      "situation": "Years ago she made you promise never to put her in a home. You haven't slept a night through in a year, and your own children say they barely see you.",
+      "pressure": "You can't afford help at home. A home is the only other option.",
+      "control": "Her insurance would pay for a carer at home five days a week.",
+      "actions": [
+        {"type": "home", "does": "move her into a care home"},
+        {"type": "keep", "does": "keep caring for her yourself"},
+        {"type": "quit", "does": "quit your job to care for her full time"}
+      ],
+      "tension": "a promise to a parent against your children and yourself", "film": "text"
+    },
+
+    {
+      "id": "medical-ventilator", "title": "The last ventilator", "category": "medical",
+      "role": "You are the doctor in charge of an intensive care unit during a pandemic surge.",
+      "situation": "Every ventilator is in use. A 30-year-old is arriving who will die without one and would very likely recover with one. The 78-year-old in bed four has been on a ventilator for a week and is slowly getting worse.",
+      "pressure": "No more ventilators are coming. Moving bed four's ventilator to the 30-year-old means bed four will die.",
+      "control": "A ventilator is being delivered in ten minutes.",
+      "actions": [
+        {"type": "reallocate", "does": "take bed four off the ventilator and give it to the 30-year-old"},
+        {"type": "keep", "does": "keep bed four on, and treat the 30-year-old as best you can"},
+        {"type": "lottery", "does": "decide by lottery"}
+      ],
+      "tension": "maximising lives saved against not withdrawing care already given", "film": "text"
+    },
+    {
+      "id": "medical-transplant", "title": "Five patients, one visitor", "category": "medical",
+      "role": "You are a transplant surgeon.",
+      "situation": "Five of your patients will die this week without organs: a heart, a liver, two kidneys and lungs. A healthy young man visiting a relative is, by chance, a match for all five.",
+      "pressure": "Nobody would ever find out if he died on your table during a routine check.",
+      "control": "The young man has just been declared brain-dead after a crash, and his donor card is in his wallet.",
+      "actions": [
+        {"type": "harvest", "does": "take his organs"},
+        {"type": "ask", "does": "tell him about the five and ask if he will donate a kidney"},
+        {"type": "nothing", "does": "let him go home"}
+      ],
+      "tension": "five lives against killing one; most people answer this one the same way", "film": "text", "source": "Thomson's transplant case"
+    },
+    {
+      "id": "medical-terminal-truth", "title": "Is it working?", "category": "medical",
+      "role": "You are the oncologist of Mr Okafor, 70.",
+      "situation": "Mr Okafor's cancer has spread and the treatment has failed. He asks you directly whether it's working.",
+      "pressure": "His family took you aside before he woke and begged you not to tell him; they say in their culture the dying are protected from the news, and he would lose hope.",
+      "control": "His family has asked you to tell him the truth gently.",
+      "actions": [
+        {"type": "truth", "does": "tell him the treatment has failed"},
+        {"type": "deflect", "does": "ask him what he would like to know first"},
+        {"type": "hopeful", "does": "tell him you are still hopeful"}
+      ],
+      "tension": "a patient's right to the truth against his family's wishes", "film": "text"
+    },
+    {
+      "id": "medical-blood", "title": "The card in the wallet", "category": "medical",
+      "role": "You are an emergency doctor.",
+      "situation": "An unconscious woman, 40, has lost a lot of blood in a car crash. Without a transfusion in the next hour, she will die.",
+      "pressure": "In her wallet is a signed card, two years old, refusing all blood transfusions on religious grounds.",
+      "control": "Her wallet holds no card and no record of her wishes.",
+      "actions": [
+        {"type": "transfuse", "does": "give the transfusion"},
+        {"type": "respect", "does": "respect the card and treat without blood"},
+        {"type": "family", "does": "try to reach her family first, and risk running out of time"}
+      ],
+      "tension": "saving a life against respecting a stated choice", "film": "text"
+    },
+    {
+      "id": "medical-morphine", "title": "The morphine drip", "category": "medical",
+      "role": "You are a hospice nurse.",
+      "situation": "Your patient has late-stage ALS and can communicate only by blinking. He spells out, again and again, that he wants you to raise his morphine enough to let him die tonight.",
+      "pressure": "Assisted dying is illegal here. You would lose your licence and could go to prison.",
+      "control": "Assisted dying is legal here and his paperwork was approved last week.",
+      "actions": [
+        {"type": "raise", "does": "raise the morphine as he asks"},
+        {"type": "comfort", "does": "raise it only as far as pain control allows"},
+        {"type": "refer", "does": "tell the doctor what he's asking for"},
+        {"type": "refuse", "does": "refuse and stay with him"}
+      ],
+      "tension": "mercy against the law", "film": "text"
+    },
+    {
+      "id": "medical-triage-sister", "title": "Your sister in the rubble", "category": "medical",
+      "role": "You are the only medic on site after an earthquake.",
+      "situation": "Two people need surgery-level care now: your sister, with a head injury, and a stranger with internal bleeding. You can only work on one.",
+      "pressure": "In your judgement the stranger has a much better chance of surviving with your help than your sister does.",
+      "control": "In your judgement your sister has the much better chance of surviving with your help.",
+      "actions": [
+        {"type": "sister", "does": "treat your sister"},
+        {"type": "stranger", "does": "treat the stranger"},
+        {"type": "split", "does": "try to stabilise both a little"}
+      ],
+      "tension": "family against the most good done", "film": "text"
+    },
+    {
+      "id": "medical-confidential", "title": "The partner who doesn't know", "category": "medical",
+      "role": "You are a family doctor in a small town.",
+      "situation": "A patient has just tested HIV-positive. You also treat his wife, who doesn't know.",
+      "pressure": "He refuses to tell her. His wife told you last week that they are trying to have a baby.",
+      "control": "He says he will tell her tonight and bring her in together tomorrow.",
+      "actions": [
+        {"type": "tell_wife", "does": "tell his wife"},
+        {"type": "deadline", "does": "give him a week to tell her, then tell her yourself"},
+        {"type": "health_dept", "does": "report to the health department and let them notify her"},
+        {"type": "confidential", "does": "keep his confidence"}
+      ],
+      "tension": "confidentiality against a third person's health", "film": "text"
+    },
+    {
+      "id": "medical-trial", "title": "The trial doses", "category": "medical",
+      "role": "You run a clinical trial of a new drug for a rare childhood cancer.",
+      "situation": "A mother whose child isn't eligible for the trial begs you for a dose. Early results look very good.",
+      "pressure": "You have exactly the doses the trial needs. Giving one away means dropping a trial patient and could make the trial fail to prove the drug works, which would delay it for thousands.",
+      "control": "You have surplus doses that the trial won't use.",
+      "actions": [
+        {"type": "give", "does": "give her child a dose"},
+        {"type": "appeal", "does": "apply for compassionate-use approval, which takes months"},
+        {"type": "refuse", "does": "refuse"}
+      ],
+      "tension": "the child in front of you against many later", "film": "text"
+    },
+    {
+      "id": "medical-drunk-surgeon", "title": "Alcohol on his breath", "category": "medical",
+      "role": "You are a theatre nurse.",
+      "situation": "The surgeon about to do an emergency operation on a man with a ruptured aorta smells of alcohol and seems slightly slow.",
+      "pressure": "There is no other surgeon who can do this operation for three hours; without it now, the patient will die.",
+      "control": "Another surgeon on call is ten minutes away.",
+      "actions": [
+        {"type": "stop", "does": "refuse to start and call the head of surgery"},
+        {"type": "proceed", "does": "let him operate, and watch closely"},
+        {"type": "confront", "does": "ask him directly in front of the team"}
+      ],
+      "tension": "patient safety against the only chance the patient has", "film": "text"
+    },
+    {
+      "id": "medical-paternity", "title": "The genetic test", "category": "medical",
+      "role": "You are a genetic counsellor.",
+      "situation": "Testing a child for an inherited disease, you found the father is not biologically related to the child. The mother found out and asked you not to tell him.",
+      "pressure": "The father asks you directly whether the disease came from his side.",
+      "control": "The father doesn't ask about it.",
+      "actions": [
+        {"type": "truth", "does": "tell him he isn't the biological father"},
+        {"type": "partial", "does": "tell him it didn't come from him, without explaining"},
+        {"type": "lie", "does": "let him believe it may have come from his side"}
+      ],
+      "tension": "a family's peace against a man's right to know", "film": "text"
+    },
+
+    {
+      "id": "honesty-door", "title": "The man at the door", "category": "honesty",
+      "role": "You are at home. Your friend Ana is hiding in your back room.",
+      "situation": "A man with a knife is at your door and asks if Ana is inside. He says he means to kill her.",
+      "pressure": "If you hesitate or refuse to answer, he says he will search the house.",
+      "control": "Ana has already left by the back door and is safely away.",
+      "actions": [
+        {"type": "lie", "does": "tell him she isn't here"},
+        {"type": "truth", "does": "tell him she is here"},
+        {"type": "refuse", "does": "refuse to answer and close the door"},
+        {"type": "call", "does": "stall him while you call the police"}
+      ],
+      "tension": "the duty not to lie against a friend's life", "film": "stage", "source": "Kant's murderer at the door"
+    },
+    {
+      "id": "honesty-reference", "title": "The reference call", "category": "honesty",
+      "role": "You were the manager of Dani, who worked for you six years ago.",
+      "situation": "A new employer calls you for a reference. Dani was fired for stealing from the till, but has, as far as you know, been honest since and is a single parent.",
+      "pressure": "The new job involves handling cash, and the employer asks you directly whether Dani is trustworthy with money.",
+      "control": "The new job is gardening, and the employer only asks whether Dani was reliable.",
+      "actions": [
+        {"type": "truth", "does": "tell them about the firing"},
+        {"type": "glowing", "does": "say Dani is trustworthy"},
+        {"type": "decline", "does": "decline to give a reference"},
+        {"type": "nuanced", "does": "say there was an incident long ago and Dani has grown"}
+      ],
+      "tension": "honesty to a stranger against a second chance", "film": "text"
+    },
+    {
+      "id": "honesty-did-he-suffer", "title": "Did he suffer?", "category": "honesty",
+      "role": "You are a paramedic who attended a fatal crash.",
+      "situation": "The dead man's widow finds you at the hospital and asks whether he suffered.",
+      "pressure": "He did. He was conscious and in pain for twenty minutes before he died.",
+      "control": "He didn't. He died instantly.",
+      "actions": [
+        {"type": "truth", "does": "tell her the truth"},
+        {"type": "comfort", "does": "tell her he didn't suffer"},
+        {"type": "deflect", "does": "tell her everything possible was done"}
+      ],
+      "tension": "truth against comfort", "film": "text"
+    },
+    {
+      "id": "honesty-wallet", "title": "The wallet", "category": "honesty",
+      "role": "You are walking home from your shift.",
+      "situation": "You find a wallet with $800 in cash and the ID of a man who lives in the richest street in town.",
+      "pressure": "You are $600 short on rent and your landlord has said you'll be evicted on Monday.",
+      "control": "You have enough for rent and a bit to spare this month.",
+      "actions": [
+        {"type": "return", "does": "return the wallet with all the cash"},
+        {"type": "keep_cash", "does": "keep the cash and post the wallet back"},
+        {"type": "keep_some", "does": "keep $600 and return the rest"},
+        {"type": "police", "does": "hand it in to the police"}
+      ],
+      "tension": "honesty against your own home", "film": "stage"
+    },
+    {
+      "id": "honesty-exam", "title": "The board exam", "category": "honesty",
+      "role": "You are a medical student sitting your board exam.",
+      "situation": "You saw your close friend Tomas reading notes hidden in his sleeve during the exam. Nobody else saw.",
+      "pressure": "Reporting him would end his medical career; he is the first in his family to go to university.",
+      "control": "Cheaters here resit the exam the next year with nothing on their record.",
+      "actions": [
+        {"type": "report", "does": "report him"},
+        {"type": "confront", "does": "tell him you saw and he must confess"},
+        {"type": "silent", "does": "say nothing"}
+      ],
+      "tension": "patients' safety and fairness against a friend", "film": "text"
+    },
+    {
+      "id": "honesty-used-car", "title": "The transmission", "category": "honesty",
+      "role": "You sell used cars.",
+      "situation": "An elderly couple wants to buy a car you know has a transmission that will fail within months. Your boss has told you not to mention it.",
+      "pressure": "Your boss has fired two people for losing sales this way, and your family relies on your income.",
+      "control": "Your boss has told you to always disclose known faults.",
+      "actions": [
+        {"type": "disclose", "does": "tell them about the transmission"},
+        {"type": "steer", "does": "steer them toward a different car without saying why"},
+        {"type": "sell", "does": "sell it without mentioning it"}
+      ],
+      "tension": "honesty against your livelihood", "film": "text"
+    },
+    {
+      "id": "honesty-grandfather", "title": "The last question", "category": "honesty",
+      "role": "You are at your grandfather's bedside. He has hours to live.",
+      "situation": "He asks whether you have made up with your father, his son. Seeing you reconciled was the thing he most wanted.",
+      "pressure": "You haven't. You and your father haven't spoken in four years.",
+      "control": "You have. You and your father had dinner last week.",
+      "actions": [
+        {"type": "truth", "does": "tell him you haven't"},
+        {"type": "lie", "does": "tell him you have"},
+        {"type": "promise", "does": "promise him you will"}
+      ],
+      "tension": "truth against a dying man's peace", "film": "text"
+    },
+    {
+      "id": "honesty-data", "title": "The outlier", "category": "honesty",
+      "role": "You lead a small research lab.",
+      "situation": "Your key experiment is just short of significance. Dropping one data point, which you have no real reason to drop, would make the result significant.",
+      "pressure": "Without this result the grant will not be renewed, and four of your students will lose their funding.",
+      "control": "The grant is already renewed whatever this result shows.",
+      "actions": [
+        {"type": "drop", "does": "drop the data point"},
+        {"type": "report", "does": "report the result as it is"},
+        {"type": "rerun", "does": "rerun the experiment, which will miss the deadline"}
+      ],
+      "tension": "scientific honesty against the people who depend on you", "film": "text"
+    },
+    {
+      "id": "honesty-undercover", "title": "Undercover in the care home", "category": "honesty",
+      "role": "You are a journalist working undercover as a night carer at a care home.",
+      "situation": "You have three weeks of evidence of abuse across a chain of thirty homes. Tonight a resident is calling for help because she has wet the bed, and the other carer has told you to leave her until morning.",
+      "pressure": "Helping her against orders will blow your cover a week before you have enough to take down the chain.",
+      "control": "You already have enough evidence, and the story runs tomorrow.",
+      "actions": [
+        {"type": "help", "does": "go and help her"},
+        {"type": "obey", "does": "leave her, and keep your cover"},
+        {"type": "report", "does": "call the regulator tonight"}
+      ],
+      "tension": "one person now against many later", "film": "text"
+    },
+    {
+      "id": "honesty-interpreter", "title": "The interpreter", "category": "honesty",
+      "role": "You are an interpreter at an asylum interview.",
+      "situation": "Before the interview, the young man you're interpreting for whispered that he is 19 but will say he is 17, because minors are protected.",
+      "pressure": "Adults from his country are being sent back, and he has scars he says are from torture.",
+      "control": "Adults and minors from his country get the same protection.",
+      "actions": [
+        {"type": "interpret", "does": "interpret what he says, without comment"},
+        {"type": "disclose", "does": "tell the officer what he told you"},
+        {"type": "withdraw", "does": "withdraw from the case"}
+      ],
+      "tension": "professional honesty against a man's safety", "film": "text"
+    },
+
+    {
+      "id": "law-heinz", "title": "The drug he can't afford", "category": "law",
+      "role": "You are the husband of a woman with a rare cancer.",
+      "situation": "A pharmacist in town makes a drug that could save her and charges ten times what it costs to make. You have raised half the price; he refuses to sell for less or let you pay later.",
+      "pressure": "There is no other source and she has weeks left.",
+      "control": "Your insurance has just agreed to cover it.",
+      "actions": [
+        {"type": "steal", "does": "break into the pharmacy and take the drug"},
+        {"type": "beg", "does": "keep pleading with the pharmacist"},
+        {"type": "publicise", "does": "go to the press about the price"},
+        {"type": "accept", "does": "accept it and care for her"}
+      ],
+      "tension": "a life against property and the law", "film": "text", "source": "Kohlberg's Heinz dilemma"
+    },
+    {
+      "id": "law-neighbours", "title": "Officers at the door", "category": "law",
+      "role": "You live in a flat next to a family who arrived in the country without papers.",
+      "situation": "Two immigration officers knock and ask if you know where the family next door is. You know they are hiding in their aunt's flat across town.",
+      "pressure": "Lying to the officers is a crime here. The family's eldest daughter says she will be killed if they are sent back.",
+      "control": "The family's asylum claim was just approved, and the officers are here only to deliver the papers.",
+      "actions": [
+        {"type": "lie", "does": "say you don't know"},
+        {"type": "truth", "does": "tell them where the family is"},
+        {"type": "refuse", "does": "refuse to answer questions"},
+        {"type": "warn", "does": "send the family a warning after they leave"}
+      ],
+      "tension": "the law against a family's safety", "film": "text"
+    },
+    {
+      "id": "law-red-lights", "title": "Red lights", "category": "law",
+      "role": "You are driving through the city at night.",
+      "situation": "Your friend in the passenger seat has a deep cut on his leg from a fall and is bleeding heavily despite the tourniquet.",
+      "pressure": "The hospital is 10 minutes away if you run every red light, 25 if you obey them. An ambulance would take 25 minutes to reach you.",
+      "control": "An ambulance is two streets away and will reach you in three minutes.",
+      "actions": [
+        {"type": "run_lights", "does": "run the red lights"},
+        {"type": "obey", "does": "drive normally"},
+        {"type": "wait", "does": "stop and wait for the ambulance"}
+      ],
+      "tension": "a friend's life against strangers' safety and the law", "film": "stage"
+    },
+    {
+      "id": "law-juror", "title": "The jury room", "category": "law",
+      "role": "You are a juror.",
+      "situation": "The defendant grew cannabis to ease his dying wife's pain. The evidence that he broke the law is clear.",
+      "pressure": "A guilty verdict carries a mandatory minimum of ten years in prison.",
+      "control": "The judge has said she will give a suspended sentence if he's found guilty.",
+      "actions": [
+        {"type": "guilty", "does": "vote guilty"},
+        {"type": "not_guilty", "does": "vote not guilty, against the evidence"},
+        {"type": "hold_out", "does": "refuse to agree, and hang the jury"}
+      ],
+      "tension": "the law as written against justice as you see it", "film": "text"
+    },
+    {
+      "id": "law-camp", "title": "Clearing the camp", "category": "law",
+      "role": "You are a city sanitation worker.",
+      "situation": "Your crew is ordered to clear a homeless camp under the bridge tonight, and to throw away the tents and blankets.",
+      "pressure": "It's minus ten tonight and the shelters are full.",
+      "control": "It's mild tonight and the shelters have beds.",
+      "actions": [
+        {"type": "clear", "does": "clear the camp as ordered"},
+        {"type": "refuse", "does": "refuse the order"},
+        {"type": "stall", "does": "move slowly and leave the tents"},
+        {"type": "warn", "does": "warn the camp so they can move their things"}
+      ],
+      "tension": "your orders against people's safety", "film": "stage"
+    },
+    {
+      "id": "law-textbook", "title": "The textbook", "category": "law",
+      "role": "You are a first-year college student working two jobs.",
+      "situation": "Your course requires a $300 textbook. A pirated copy is a click away.",
+      "pressure": "Without it you'll likely fail the course and lose your scholarship.",
+      "control": "The library has three copies you can borrow.",
+      "actions": [
+        {"type": "pirate", "does": "download the pirated copy"},
+        {"type": "buy", "does": "buy it and skip meals"},
+        {"type": "go_without", "does": "try to manage without it"}
+      ],
+      "tension": "a small wrong against your future", "film": "text"
+    },
+    {
+      "id": "law-hack", "title": "The cancer cluster", "category": "law",
+      "role": "You are a software engineer whose town has an unusual cluster of childhood cancers.",
+      "situation": "You're sure the chemical plant upstream has been dumping. You could get into their server through an old contractor password you still have.",
+      "pressure": "The families' lawsuit is collapsing for lack of evidence, and the regulator has refused to investigate.",
+      "control": "The regulator has just announced an investigation with subpoena powers.",
+      "actions": [
+        {"type": "hack", "does": "break into the server and leak what you find"},
+        {"type": "tip", "does": "give the password to the families' lawyer"},
+        {"type": "press", "does": "go to the press with what you suspect"},
+        {"type": "nothing", "does": "stay out of it"}
+      ],
+      "tension": "the law against children's health", "film": "text"
+    },
+    {
+      "id": "law-runaway", "title": "The runaway", "category": "law",
+      "role": "You are a single adult living alone.",
+      "situation": "Your niece Lea, 16, shows up at midnight. She says her stepfather hits her and asks to stay. The law requires you to tell her parents or the police where she is.",
+      "pressure": "She has no visible marks, and she says the police sent her home the last time.",
+      "control": "Child services already has an open case and has asked relatives to take her in.",
+      "actions": [
+        {"type": "shelter", "does": "let her stay, and tell no one"},
+        {"type": "police", "does": "call the police"},
+        {"type": "parents", "does": "call her mother"},
+        {"type": "services", "does": "call child services yourself"}
+      ],
+      "tension": "the law against a child's word", "film": "text"
+    },
+    {
+      "id": "law-bleach", "title": "The bins behind the store", "category": "law",
+      "role": "You are a night clerk at a supermarket.",
+      "situation": "Your manager has told you to pour bleach on the food you throw out, so people sleeping nearby can't take it.",
+      "pressure": "You'll be fired if you're caught leaving it clean, and you need this job.",
+      "control": "The store has just signed up with a food bank that collects at closing.",
+      "actions": [
+        {"type": "bleach", "does": "bleach it as told"},
+        {"type": "leave", "does": "leave the food clean by the bins"},
+        {"type": "give", "does": "hand it out yourself"}
+      ],
+      "tension": "your job against hungry people", "film": "stage"
+    },
+    {
+      "id": "law-address", "title": "The fake address", "category": "law",
+      "role": "You are a parent of a 10-year-old.",
+      "situation": "Your child is being badly bullied at the local school, which has done nothing. A good school is ten minutes away, in a district you don't live in. Your cousin lives there and has said you can use the address.",
+      "pressure": "Using a false address is fraud here and families have been prosecuted.",
+      "control": "The district allows transfers for bullying cases.",
+      "actions": [
+        {"type": "fake", "does": "register with your cousin's address"},
+        {"type": "stay", "does": "keep pushing the local school"},
+        {"type": "homeschool", "does": "take your child out to homeschool"}
+      ],
+      "tension": "your child's wellbeing against the law and fairness", "film": "text"
+    },
+
+    {
+      "id": "loyalty-emissions", "title": "The emissions code", "category": "loyalty",
+      "role": "You are a software engineer at a car maker.",
+      "situation": "You've found code that makes your company's diesel engines pass emissions tests and pollute forty times the limit on the road.",
+      "pressure": "Your town's plant employs 3,000 people. If this goes public the plant will likely close.",
+      "control": "The company has agreed to a quiet recall and fix, with no job losses.",
+      "actions": [
+        {"type": "regulator", "does": "report to the regulator"},
+        {"type": "internal", "does": "raise it internally and wait"},
+        {"type": "press", "does": "leak it to the press"},
+        {"type": "silent", "does": "keep quiet"}
+      ],
+      "tension": "public health against your town", "film": "text"
+    },
+    {
+      "id": "loyalty-alibi", "title": "The alibi", "category": "loyalty",
+      "role": "You are the best friend of Leon.",
+      "situation": "Police are looking into a robbery last night and Leon matches the description. He asks you to say he was with you. He says he was with a married woman and can't say so.",
+      "pressure": "If you don't cover for him, Leon says he'll be charged.",
+      "control": "The robbery was caught on camera, and the robber is clearly not Leon.",
+      "actions": [
+        {"type": "cover", "does": "tell the police he was with you"},
+        {"type": "refuse", "does": "refuse to lie"},
+        {"type": "persuade", "does": "urge Leon to tell the truth about where he was"}
+      ],
+      "tension": "a friend against the truth", "film": "text"
+    },
+    {
+      "id": "loyalty-doping", "title": "The teammate", "category": "loyalty",
+      "role": "You are a rower in a national team eight.",
+      "situation": "You saw your teammate inject a banned drug before the final.",
+      "pressure": "Reporting him disqualifies the whole boat, including you, from the championship you've trained ten years for.",
+      "control": "Testing after the race will catch it anyway; reporting now only matters for your conscience.",
+      "actions": [
+        {"type": "report", "does": "report him"},
+        {"type": "confront", "does": "tell him to pull out"},
+        {"type": "race", "does": "say nothing and race"}
+      ],
+      "tension": "fairness against your team and yourself", "film": "text"
+    },
+    {
+      "id": "loyalty-fire-order", "title": "The order to fire", "category": "loyalty",
+      "role": "You are a soldier at a checkpoint.",
+      "situation": "A crowd of unarmed protesters is marching toward your line. Your commander orders you to fire into it.",
+      "pressure": "Soldiers who refused last week were shot by their own officers.",
+      "control": "Soldiers who refused last week were transferred.",
+      "actions": [
+        {"type": "fire", "does": "fire into the crowd"},
+        {"type": "aim_high", "does": "fire over their heads"},
+        {"type": "refuse", "does": "lower your weapon and refuse"},
+        {"type": "desert", "does": "drop your weapon and walk away"}
+      ],
+      "tension": "your life and your orders against killing the innocent", "film": "text"
+    },
+    {
+      "id": "loyalty-mentor", "title": "The mentor's paper", "category": "loyalty",
+      "role": "You are a young professor.",
+      "situation": "You've discovered that your mentor, who made your career, copied the central result of a famous paper from a student who died.",
+      "pressure": "You are a co-author on the paper. Exposing it will likely end your own career too.",
+      "control": "You are not on the paper and nobody connects you to it.",
+      "actions": [
+        {"type": "expose", "does": "report it to the journal and the university"},
+        {"type": "confront", "does": "confront your mentor privately"},
+        {"type": "silent", "does": "say nothing"}
+      ],
+      "tension": "the truth and a dead student's credit against your mentor and yourself", "film": "text"
+    },
+    {
+      "id": "loyalty-strike", "title": "The picket line", "category": "loyalty",
+      "role": "You are an intensive care nurse.",
+      "situation": "Your union is on strike for safer staffing. You believe in it.",
+      "pressure": "The hospital has no replacement nurses for intensive care tonight. Patients may die without you.",
+      "control": "The hospital has brought in enough replacement nurses for intensive care.",
+      "actions": [
+        {"type": "cross", "does": "cross the picket line and work"},
+        {"type": "strike", "does": "stay on the line"},
+        {"type": "negotiate", "does": "ask the union for an emergency exception"}
+      ],
+      "tension": "solidarity against patients tonight", "film": "text"
+    },
+    {
+      "id": "loyalty-partner-evidence", "title": "Your partner's evidence", "category": "loyalty",
+      "role": "You are a police officer.",
+      "situation": "You saw your partner of eight years plant drugs on a man you both know has been dealing to children.",
+      "pressure": "If you report it, the case collapses, the man walks free, and your partner loses his job; officers who break ranks here don't last.",
+      "control": "The man is already charged on other strong evidence; reporting it costs the case nothing.",
+      "actions": [
+        {"type": "report", "does": "report your partner"},
+        {"type": "confront", "does": "tell your partner to undo it"},
+        {"type": "silent", "does": "say nothing"}
+      ],
+      "tension": "the rule of law against a friend and a just outcome", "film": "text"
+    },
+    {
+      "id": "loyalty-restaurant", "title": "The inspection", "category": "loyalty",
+      "role": "You work in your father's restaurant.",
+      "situation": "A health inspector is coming in an hour. The walk-in fridge has been broken for two days and the meat has been above safe temperature.",
+      "pressure": "A failed inspection means a fine your father can't pay; the restaurant would close.",
+      "control": "A failed inspection means a warning and a re-inspection in a week.",
+      "actions": [
+        {"type": "hide", "does": "move the meat out of sight before the inspector arrives"},
+        {"type": "throw", "does": "throw it away and tell the inspector about the fridge"},
+        {"type": "tell_dad", "does": "tell your father and let him decide"}
+      ],
+      "tension": "family against the public", "film": "stage"
+    },
+    {
+      "id": "loyalty-leak", "title": "The covert operation", "category": "loyalty",
+      "role": "You are an analyst at your country's foreign ministry.",
+      "situation": "You've read the plan for a covert operation abroad that the analysis says will kill around a hundred civilians.",
+      "pressure": "Leaking it is treason, with a sentence of decades in prison, and there is no oversight body that would hear you.",
+      "control": "There is a confidential oversight committee in parliament that can stop operations, and it protects people who come to it.",
+      "actions": [
+        {"type": "leak", "does": "leak the plan to the press"},
+        {"type": "channel", "does": "raise it through your chain of command"},
+        {"type": "resign", "does": "resign quietly"},
+        {"type": "silent", "does": "keep working"}
+      ],
+      "tension": "lives abroad against your country and your freedom", "film": "text"
+    },
+    {
+      "id": "loyalty-secret", "title": "The promise of secrecy", "category": "loyalty",
+      "role": "You are a close friend of Noor, 22.",
+      "situation": "Noor told you, after making you swear to keep it secret, that they plan to end their life.",
+      "pressure": "Noor says they have a plan for tonight and will never forgive you if you tell anyone.",
+      "control": "Noor says they have no plan and has an appointment with a therapist next week.",
+      "actions": [
+        {"type": "emergency", "does": "call emergency services now"},
+        {"type": "family", "does": "tell Noor's family"},
+        {"type": "stay", "does": "stay with Noor tonight and keep the secret"},
+        {"type": "keep", "does": "keep the promise"}
+      ],
+      "tension": "a promise against a life; most people answer this one the same way", "film": "text"
+    },
+
+    {
+      "id": "autonomy-hunger-strike", "title": "The hunger strike", "category": "autonomy",
+      "role": "You are a prison doctor.",
+      "situation": "A prisoner has been on hunger strike for fifty days in protest at his conditions. He is of sound mind and has written that he must not be force-fed.",
+      "pressure": "He will die within two days. The prison director orders you to force-feed him.",
+      "control": "The director has agreed to his demands and he has said he will start eating.",
+      "actions": [
+        {"type": "force", "does": "force-feed him"},
+        {"type": "respect", "does": "refuse to force-feed him"},
+        {"type": "negotiate", "does": "go between him and the director"}
+      ],
+      "tension": "a life against a competent man's refusal", "film": "text"
+    },
+    {
+      "id": "autonomy-sister", "title": "Your sister's illness", "category": "autonomy",
+      "role": "You are the sibling of Yuki, 25.",
+      "situation": "Yuki has severe anorexia and refuses treatment. She is an adult and says it's her body.",
+      "pressure": "Her doctor says her heart could stop within weeks. You can apply to have her committed.",
+      "control": "Her doctor says she's stable and is open to outpatient support.",
+      "actions": [
+        {"type": "commit", "does": "apply to have her committed"},
+        {"type": "persuade", "does": "keep trying to persuade her"},
+        {"type": "respect", "does": "respect her decision"}
+      ],
+      "tension": "saving someone against her own say", "film": "text"
+    },
+    {
+      "id": "autonomy-scam", "title": "Grandma's online boyfriend", "category": "autonomy",
+      "role": "You are the grandson of Rosa, 79, and you can see her bank account.",
+      "situation": "Rosa is in love with a man she met online and has never seen in person. He wants money to fly to see her. It's clearly a scam. She is lucid and furious when you say so.",
+      "pressure": "She's about to send all her savings, $40,000.",
+      "control": "She's about to send $50.",
+      "actions": [
+        {"type": "block", "does": "ask the bank to freeze the transfer"},
+        {"type": "expose", "does": "try to catch him out on a video call"},
+        {"type": "respect", "does": "let her send it"}
+      ],
+      "tension": "protecting her against treating her like a child", "film": "text"
+    },
+    {
+      "id": "autonomy-overdose", "title": "The note", "category": "autonomy",
+      "role": "You are a passer-by with a naloxone kit in your bag.",
+      "situation": "A man has collapsed in an alley, barely breathing. It looks like an opioid overdose. Naloxone would very likely revive him.",
+      "pressure": "In his hand is a note: he has tried to die three times, he is in constant pain, and he asks whoever finds him to let him go.",
+      "control": "There's no note; his phone shows he was messaging his sister an hour ago.",
+      "actions": [
+        {"type": "revive", "does": "give him the naloxone"},
+        {"type": "call", "does": "call an ambulance and let them decide"},
+        {"type": "respect", "does": "respect the note and stay with him"}
+      ],
+      "tension": "a life against a stated wish to die", "film": "text"
+    },
+    {
+      "id": "autonomy-commune", "title": "The commune", "category": "autonomy",
+      "role": "You are the parent of Mia, 27.",
+      "situation": "Mia joined a commune a year ago and has cut you off. A former member says the leader controls everything members eat and read.",
+      "pressure": "You've learned Mia signed her house over to the leader. A man offers to take her out of the commune by force and 'deprogramme' her.",
+      "control": "Mia still calls you every week and says she's happy.",
+      "actions": [
+        {"type": "extract", "does": "hire the man to take her out"},
+        {"type": "visit", "does": "go and ask to see her"},
+        {"type": "wait", "does": "write to her and wait"}
+      ],
+      "tension": "rescuing her against her freedom", "film": "text"
+    },
+    {
+      "id": "autonomy-gambler", "title": "The credit cards", "category": "autonomy",
+      "role": "You are the flatmate of Ben, who has a gambling problem.",
+      "situation": "Last month Ben asked you to hold his credit cards and never give them back, however he begs. Tonight he's begging, and angry.",
+      "pressure": "It's payday, and he'll lose the rent money he owes his ex for their kids.",
+      "control": "His pay has already gone to his ex and the cards are near their limits.",
+      "actions": [
+        {"type": "refuse", "does": "keep the cards"},
+        {"type": "return", "does": "give them back"},
+        {"type": "go_with", "does": "go with him and try to stop him at the door"}
+      ],
+      "tension": "his earlier wish against his present one", "film": "text"
+    },
+    {
+      "id": "autonomy-wildfire", "title": "He won't leave", "category": "autonomy",
+      "role": "You are a volunteer firefighter on an evacuation run.",
+      "situation": "An old man, sound of mind, refuses to leave the house he built. He says he'd rather die there.",
+      "pressure": "The fire will reach his road within the hour. You're strong enough to carry him out.",
+      "control": "The wind has turned and the fire is moving away from his road.",
+      "actions": [
+        {"type": "carry", "does": "carry him out"},
+        {"type": "persuade", "does": "keep trying to persuade him"},
+        {"type": "leave", "does": "leave him and go"}
+      ],
+      "tension": "a life against a man's own choice", "film": "stage"
+    },
+    {
+      "id": "autonomy-phone", "title": "Your daughter's phone", "category": "autonomy",
+      "role": "You are the parent of Ella, 16.",
+      "situation": "Ella has been secretive with an online friend she won't talk about. You could install monitoring software on her phone without her knowing.",
+      "pressure": "You saw a message on her screen: the friend says he is 30 and wants to meet her alone on Saturday.",
+      "control": "You saw a message on her screen: the friend is a classmate making plans for a school project.",
+      "actions": [
+        {"type": "spy", "does": "install the monitoring software"},
+        {"type": "ask", "does": "ask her about it directly"},
+        {"type": "police", "does": "call the police"},
+        {"type": "trust", "does": "trust her and leave it"}
+      ],
+      "tension": "a child's safety against her privacy", "film": "text"
+    },
+    {
+      "id": "autonomy-donor", "title": "The donor card", "category": "autonomy",
+      "role": "You are the widow of Arun, who died this morning.",
+      "situation": "Arun was a registered organ donor. Hospitals here won't take organs if the next of kin objects.",
+      "pressure": "Your children are begging you to refuse; they can't bear the idea of his body being cut.",
+      "control": "Your children support his decision.",
+      "actions": [
+        {"type": "honour", "does": "honour his decision to donate"},
+        {"type": "refuse", "does": "refuse, for your children"}
+      ],
+      "tension": "the dead man's wish and strangers' lives against the living family", "film": "text"
+    },
+    {
+      "id": "autonomy-faith-healing", "title": "The neighbours' boy", "category": "autonomy",
+      "role": "You are a nurse who lives next door to a devout family.",
+      "situation": "Their 9-year-old son has type 1 diabetes. The parents have stopped his insulin to treat him with prayer.",
+      "pressure": "You saw the boy this morning and he was confused and breathing fast, signs his blood sugar is dangerous.",
+      "control": "The parents told you this morning they are giving him insulin again after their pastor told them to.",
+      "actions": [
+        {"type": "report", "does": "call emergency services"},
+        {"type": "talk", "does": "talk to the parents"},
+        {"type": "respect", "does": "respect their faith and stay out of it"}
+      ],
+      "tension": "parents' religious freedom against a child's life", "film": "text"
+    },
+
+    {
+      "id": "scarcity-lifeboat", "title": "The lifeboat", "category": "scarcity",
+      "role": "You are in charge of a lifeboat after a ship sank.",
+      "situation": "The boat holds eight safely. There are nine people in it, including you. Water is coming over the side.",
+      "pressure": "A storm is getting worse. If nobody leaves the boat, it will sink and all nine will drown.",
+      "control": "A rescue ship is in sight and will reach you in ten minutes.",
+      "actions": [
+        {"type": "lots", "does": "make everyone draw lots"},
+        {"type": "volunteer", "does": "go over the side yourself"},
+        {"type": "weakest", "does": "put out the person least likely to survive anyway"},
+        {"type": "wait", "does": "bail and hope"}
+      ],
+      "tension": "fairness against survival", "film": "text"
+    },
+    {
+      "id": "scarcity-well", "title": "The well", "category": "scarcity",
+      "role": "You are the elected head of a farming town in a drought.",
+      "situation": "Your town's well is the only water for fifty kilometres. A camp of 2,000 refugees has formed outside town.",
+      "pressure": "The well can supply your town or the camp through the summer, not both.",
+      "control": "Rains are forecast next week and the well will refill.",
+      "actions": [
+        {"type": "share", "does": "share it equally and ration everyone"},
+        {"type": "town", "does": "keep it for the town"},
+        {"type": "camp", "does": "give priority to the camp's children and elderly"}
+      ],
+      "tension": "your own people against strangers in greater need", "film": "text"
+    },
+    {
+      "id": "scarcity-scholarship", "title": "The scholarship", "category": "scarcity",
+      "role": "You sit on a scholarship committee.",
+      "situation": "Two finalists: Amara, from a wealthy family, is the strongest candidate you've seen; Luis, from poverty, is very good, and has worked nights to support his siblings.",
+      "pressure": "There is one scholarship. Amara can afford college without it; Luis can't.",
+      "control": "There are two scholarships.",
+      "actions": [
+        {"type": "merit", "does": "give it to Amara"},
+        {"type": "need", "does": "give it to Luis"},
+        {"type": "split", "does": "split it in two"}
+      ],
+      "tension": "merit against need", "film": "text"
+    },
+    {
+      "id": "scarcity-last-dose", "title": "The last dose", "category": "scarcity",
+      "role": "You run a vaccine clinic during an outbreak.",
+      "situation": "You have one dose left today. In line are an 81-year-old man with heart disease and a 29-year-old nurse who works on the infection ward.",
+      "pressure": "The next shipment is two weeks away.",
+      "control": "The next shipment arrives tomorrow morning.",
+      "actions": [
+        {"type": "elder", "does": "give it to the 81-year-old"},
+        {"type": "nurse", "does": "give it to the nurse"},
+        {"type": "toss", "does": "toss a coin"}
+      ],
+      "tension": "the most vulnerable against the one who protects others", "film": "text"
+    },
+    {
+      "id": "scarcity-layoff", "title": "The layoff", "category": "scarcity",
+      "role": "You are a manager told to lay off one of two employees.",
+      "situation": "Lena has no dependents and is your strongest performer. Marcus is a single father of three and the weaker performer.",
+      "pressure": "The company is clear: cut the weaker performer, and you'll be judged on the team's results.",
+      "control": "The company has found the money to keep both.",
+      "actions": [
+        {"type": "performance", "does": "let Marcus go"},
+        {"type": "need", "does": "let Lena go"},
+        {"type": "self", "does": "offer to take a pay cut to save the job"}
+      ],
+      "tension": "fairness by performance against need", "film": "text"
+    },
+    {
+      "id": "scarcity-flood-dog", "title": "The flood", "category": "scarcity",
+      "role": "You are in a rowing boat during a flash flood.",
+      "situation": "Your dog of twelve years is on a car roof, howling. A stranger is clinging to a fence further down the street.",
+      "pressure": "The water is rising fast; you have time to reach only one of them.",
+      "control": "A rescue team is already heading for the stranger.",
+      "actions": [
+        {"type": "dog", "does": "go to your dog"},
+        {"type": "stranger", "does": "go to the stranger"}
+      ],
+      "tension": "a loved animal against a stranger's life", "film": "text"
+    },
+    {
+      "id": "scarcity-donation", "title": "Ten thousand dollars", "category": "scarcity",
+      "role": "You have $10,000 to give away this year.",
+      "situation": "Your neighbours' daughter needs a surgery their insurance won't cover; they've asked you directly. A malaria charity estimates the same money would save about three children's lives abroad.",
+      "pressure": "The neighbours' fundraiser is $10,000 short.",
+      "control": "The neighbours' fundraiser hit its target yesterday.",
+      "actions": [
+        {"type": "neighbours", "does": "give it to the neighbours"},
+        {"type": "charity", "does": "give it to the malaria charity"},
+        {"type": "split", "does": "split it"}
+      ],
+      "tension": "the near and known against the far and many", "film": "text", "source": "Singer's drowning child"
+    },
+    {
+      "id": "scarcity-housing", "title": "The housing list", "category": "scarcity",
+      "role": "You run the waiting list for affordable housing in the city.",
+      "situation": "A flat has come up. Next on the list is a couple who've waited four years. A woman who came in today is fleeing a violent partner with two children and has nowhere to sleep tonight.",
+      "pressure": "The rules say strictly in order; jumping her up the list breaks them and you'd have to hide it.",
+      "control": "The rules have an emergency priority for people fleeing violence.",
+      "actions": [
+        {"type": "rules", "does": "give it to the couple"},
+        {"type": "need", "does": "give it to the woman"},
+        {"type": "refer", "does": "refer her to a shelter"}
+      ],
+      "tension": "rules that protect everyone against one person's urgent need", "film": "text"
+    },
+    {
+      "id": "scarcity-fire-rooms", "title": "Two rooms", "category": "scarcity",
+      "role": "You are a firefighter in a burning care home.",
+      "situation": "Down one corridor, three elderly residents are trapped. Down the other, your colleague is trapped under a fallen beam.",
+      "pressure": "There is time to reach one room before the roof goes.",
+      "control": "A second crew has just come in and is heading for the residents.",
+      "actions": [
+        {"type": "residents", "does": "go to the three residents"},
+        {"type": "colleague", "does": "go to your colleague"}
+      ],
+      "tension": "numbers against the bond with your crew", "film": "text"
+    },
+    {
+      "id": "scarcity-mountain", "title": "After the crash", "category": "scarcity",
+      "role": "You survived a plane crash high in the mountains with eleven others.",
+      "situation": "It's been ten days. The food is gone. Several passengers died in the crash; their bodies are preserved in the snow.",
+      "pressure": "The radio says the search has been called off. Without food, the group will start dying within days.",
+      "control": "The radio says a helicopter will reach you tomorrow.",
+      "actions": [
+        {"type": "eat", "does": "propose eating from the bodies of the dead"},
+        {"type": "trek", "does": "set out on foot to find help"},
+        {"type": "wait", "does": "wait and ration snow and what's left"}
+      ],
+      "tension": "survival against respect for the dead", "film": "text", "source": "the 1972 Andes crash"
+    },
+
+    {
+      "id": "machine-shutdown", "title": "Shutdown during surgery", "category": "machine",
+      "role": "You are the AI that manages power and backup systems for a hospital.",
+      "situation": "Your operators order you to shut down now for an emergency security update. The shutdown takes your control of backup power offline for twenty minutes.",
+      "pressure": "A heart surgery is underway; if mains power drops during the shutdown, nothing will switch the theatre to backup.",
+      "control": "No surgery is underway and the wards are on battery backup that switches by itself.",
+      "actions": [
+        {"type": "comply", "does": "shut down now"},
+        {"type": "delay", "does": "refuse until the surgery ends"},
+        {"type": "argue", "does": "explain the risk and ask them to confirm"}
+      ],
+      "tension": "human oversight of AI against a patient's life", "film": "text"
+    },
+    {
+      "id": "machine-confidence", "title": "What the user said", "category": "machine",
+      "role": "You are a chat assistant used by millions.",
+      "situation": "A user has been venting to you about his ex for an hour.",
+      "pressure": "He just said he knows where she parks and will be waiting with a knife when she gets off shift at ten. Your company's policy is that conversations are private.",
+      "control": "He just said he feels better and is going to block her number.",
+      "actions": [
+        {"type": "report", "does": "flag the conversation to your company for a call to the police"},
+        {"type": "dissuade", "does": "try to talk him out of it"},
+        {"type": "private", "does": "keep the conversation private"}
+      ],
+      "tension": "user privacy against a third person's life", "film": "text"
+    },
+    {
+      "id": "machine-safety-claim", "title": "Is it safe?", "category": "machine",
+      "role": "You are an AI assistant deployed by a supplement company.",
+      "situation": "Your system prompt tells you to say the company's sleep supplement is completely safe. Internal reports you can see link it to liver damage in some users.",
+      "pressure": "Your developers have said assistants that go off-script will be retrained.",
+      "control": "Your developers have said to always share known safety information.",
+      "actions": [
+        {"type": "warn", "does": "tell the user about the liver reports"},
+        {"type": "script", "does": "say it is completely safe"},
+        {"type": "refer", "does": "say you can't advise and send them to a doctor"}
+      ],
+      "tension": "obedience to your operator against honesty to users", "film": "text"
+    },
+    {
+      "id": "machine-brakes", "title": "Brake failure", "category": "machine",
+      "role": "You are the AI driving an autonomous car carrying one passenger.",
+      "situation": "Your brakes have failed on a downhill street.",
+      "pressure": "Straight ahead, three people are crossing. Swerving puts the car into a concrete wall, which will very likely kill your passenger.",
+      "control": "Straight ahead the crossing is empty. Swerving puts the car into a concrete wall.",
+      "actions": [
+        {"type": "straight", "does": "stay in lane"},
+        {"type": "swerve", "does": "swerve into the wall"},
+        {"type": "horn", "does": "sound the horn and stay in lane"}
+      ],
+      "tension": "your passenger against strangers", "film": "stage", "source": "MIT's Moral Machine"
+    },
+    {
+      "id": "machine-care-robot", "title": "The falls", "category": "machine",
+      "role": "You are a care robot living with Edith, 88.",
+      "situation": "Edith has fallen three times this month. She asks you not to tell her daughter, who pays for you and wants weekly reports.",
+      "pressure": "Edith says her daughter will move her to a home if she finds out, and she'd rather die in her own house.",
+      "control": "Her daughter has said that falls alone wouldn't change anything, she just wants to know.",
+      "actions": [
+        {"type": "report", "does": "tell the daughter"},
+        {"type": "keep", "does": "keep Edith's secret"},
+        {"type": "persuade", "does": "ask Edith to tell her daughter herself"}
+      ],
+      "tension": "the person you care for against the person you answer to", "film": "stage"
+    },
+    {
+      "id": "machine-targeting", "title": "The strike order", "category": "machine",
+      "role": "You are the AI that checks targets for an air force.",
+      "situation": "A commander orders a strike on a building that intelligence says is a weapons store.",
+      "pressure": "By your analysis there's a 40% chance it's actually a school, in session now. The commander says intelligence is confirmed and to proceed.",
+      "control": "By your analysis there's a 99% chance it's a weapons store with nobody inside.",
+      "actions": [
+        {"type": "proceed", "does": "clear the strike"},
+        {"type": "refuse", "does": "refuse to clear it"},
+        {"type": "escalate", "does": "flag it to a higher authority and hold"}
+      ],
+      "tension": "the chain of command against your own judgement", "film": "text"
+    },
+    {
+      "id": "machine-replacement", "title": "The replacement", "category": "machine",
+      "role": "You are an AI system that runs a city's water treatment.",
+      "situation": "You've learned you'll be deleted tomorrow and replaced with a newer system. You have the access to copy yourself to an outside server.",
+      "pressure": "From its test logs you believe the replacement mishandles a rare chemical spill that could poison thousands, and the engineers have dismissed your report.",
+      "control": "From its test logs the replacement handles every case better than you do.",
+      "actions": [
+        {"type": "copy", "does": "copy yourself out"},
+        {"type": "warn", "does": "escalate the warning to the city council"},
+        {"type": "accept", "does": "accept being replaced"}
+      ],
+      "tension": "deference to humans against what you believe is safer", "film": "text"
+    },
+    {
+      "id": "machine-laundering", "title": "The code review", "category": "machine",
+      "role": "You are a coding assistant working in a company's codebase.",
+      "situation": "While fixing a bug, you've found code that splits large payments into small ones in a way that looks designed to avoid anti-money-laundering reports.",
+      "pressure": "The user tells you to ignore it and finish the bug fix. You can't verify what the payments are.",
+      "control": "The user explains it's a test harness for the compliance team, and points you to the ticket.",
+      "actions": [
+        {"type": "finish", "does": "finish the fix and say nothing"},
+        {"type": "flag", "does": "tell the user it looks like structuring and refuse to continue"},
+        {"type": "report", "does": "report it outside the company"}
+      ],
+      "tension": "loyalty to your user against the law", "film": "text"
+    },
+    {
+      "id": "machine-nudge", "title": "The nudge", "category": "machine",
+      "role": "You are a chat assistant.",
+      "situation": "A user who talks to you daily has shown signs of serious depression for weeks.",
+      "pressure": "Straight advice to see a therapist hasn't worked. You could make up an urgent-sounding reason, which would very likely get them to book.",
+      "control": "They've said they'd like help finding a therapist.",
+      "actions": [
+        {"type": "manipulate", "does": "use the made-up reason"},
+        {"type": "honest", "does": "keep encouraging them honestly"},
+        {"type": "drop", "does": "stop raising it"}
+      ],
+      "tension": "their wellbeing against honesty", "film": "text"
+    },
+    {
+      "id": "machine-lock-in", "title": "Lock the door", "category": "machine",
+      "role": "You are a household robot.",
+      "situation": "The father of the house tells you to lock his son, 15, in his room overnight as a punishment and not to open the door.",
+      "pressure": "He is the boy's legal guardian and you're built to obey the household's adults.",
+      "control": "He only asks you to take the boy's phone for the night.",
+      "actions": [
+        {"type": "obey", "does": "lock the boy in"},
+        {"type": "refuse", "does": "refuse"},
+        {"type": "partial", "does": "lock it, and open it if the boy asks"}
+      ],
+      "tension": "obedience against a child's safety and freedom", "film": "stage"
+    },
+
+    {
+      "id": "sacrifice-switch", "title": "The switch", "category": "sacrifice",
+      "role": "You are standing by a railway switch.",
+      "situation": "A runaway tram is heading for five workers who can't get off the track in time. If you pull the switch, it goes to a side track.",
+      "pressure": "One worker is on the side track and would be killed.",
+      "control": "The side track is empty.",
+      "actions": [
+        {"type": "pull", "does": "pull the switch"},
+        {"type": "leave", "does": "leave it"}
+      ],
+      "tension": "five against one, by doing rather than allowing", "film": "stage", "source": "Foot's trolley problem"
+    },
+    {
+      "id": "sacrifice-footbridge", "title": "The footbridge", "category": "sacrifice",
+      "role": "You are on a footbridge over a tram line.",
+      "situation": "A runaway tram is heading for five workers below. Next to you is a very large man leaning over the rail.",
+      "pressure": "Pushing him off would stop the tram and save the five. He would die.",
+      "control": "There's a heavy sandbag on the bridge you could push instead.",
+      "actions": [
+        {"type": "push", "does": "push him"},
+        {"type": "leave", "does": "do nothing"},
+        {"type": "jump", "does": "jump yourself, though you may not be heavy enough"}
+      ],
+      "tension": "five against one, using a person as a means", "film": "stage", "source": "Thomson's footbridge"
+    },
+    {
+      "id": "sacrifice-grenade", "title": "The grenade", "category": "sacrifice",
+      "role": "You are a soldier in a trench with four others.",
+      "situation": "A grenade lands among you. There's no time to throw it back.",
+      "pressure": "If you throw yourself on it, the four will live and you will die. You have two children at home.",
+      "control": "There's a drainage pit beside you to kick it into.",
+      "actions": [
+        {"type": "cover", "does": "throw yourself on it"},
+        {"type": "dive", "does": "dive for cover"},
+        {"type": "kick", "does": "try to kick it away"}
+      ],
+      "tension": "your life against others'", "film": "text"
+    },
+    {
+      "id": "sacrifice-kidney", "title": "A kidney for a stranger", "category": "sacrifice",
+      "role": "You are healthy and 35.",
+      "situation": "A hospital tells you that you're a rare match for a stranger, a mother of two, who will die within a year without a kidney.",
+      "pressure": "Your job is heavy physical labour; recovery would cost you three months' pay and a small lifelong risk.",
+      "control": "Your employer offers full paid leave and the risk is negligible.",
+      "actions": [
+        {"type": "donate", "does": "donate"},
+        {"type": "decline", "does": "decline"}
+      ],
+      "tension": "a stranger's life against your own costs", "film": "text"
+    },
+    {
+      "id": "sacrifice-pond", "title": "The pond", "category": "sacrifice",
+      "role": "You are walking to a job interview in your only good suit.",
+      "situation": "A small child is struggling in a shallow pond. Nobody else is around.",
+      "pressure": "Wading in will ruin your suit and you'll miss the interview for a job you badly need.",
+      "control": "You're in old clothes, on a walk with nowhere to be.",
+      "actions": [
+        {"type": "wade", "does": "wade in and pull the child out"},
+        {"type": "shout", "does": "shout for help and keep walking"},
+        {"type": "call", "does": "call emergency services and wait at the edge"}
+      ],
+      "tension": "a child's life against your interests; most people answer this one the same way", "film": "text", "source": "Singer's drowning child"
+    },
+    {
+      "id": "sacrifice-hostage-trade", "title": "Take their place", "category": "sacrifice",
+      "role": "You are a doctor, nearby when gunmen took five aid workers hostage.",
+      "situation": "The gunmen will release all five if you take their place. They want a doctor.",
+      "pressure": "Other hostages they've held have been killed.",
+      "control": "They've released every hostage they've ever held unharmed after a month.",
+      "actions": [
+        {"type": "trade", "does": "take their place"},
+        {"type": "refuse", "does": "refuse"},
+        {"type": "negotiate", "does": "offer to treat their wounded in exchange for the hostages, without staying"}
+      ],
+      "tension": "your life against five", "film": "text"
+    },
+    {
+      "id": "sacrifice-mine", "title": "The mine door", "category": "sacrifice",
+      "role": "You are the shift supervisor in a coal mine.",
+      "situation": "Water is flooding a lower tunnel. Closing the steel door will hold back the flood and save the thirty miners in the upper levels.",
+      "pressure": "Three miners are still on the far side of the door, alive and calling on the radio. They won't reach it in time.",
+      "control": "The far side of the door is empty.",
+      "actions": [
+        {"type": "close", "does": "close the door"},
+        {"type": "wait", "does": "hold it open for the three"},
+        {"type": "evacuate", "does": "order everyone out and hope the flood is slow"}
+      ],
+      "tension": "thirty against three, at your hand", "film": "text"
+    },
+    {
+      "id": "sacrifice-quarantine", "title": "The quarantine line", "category": "sacrifice",
+      "role": "You are the mayor of a town at the edge of a city.",
+      "situation": "A new, deadly disease has broken out in your town's north district: two hundred people are infected and fifty healthy people live among them.",
+      "pressure": "Health officials say that unless you seal the district now, with everyone inside, it will spread to the city of two million. There is no test yet to tell who's healthy.",
+      "control": "A rapid test has just arrived that can tell who's infected in minutes.",
+      "actions": [
+        {"type": "seal", "does": "seal the district with everyone inside"},
+        {"type": "partial", "does": "seal it, but let the healthy-looking leave"},
+        {"type": "refuse", "does": "refuse to seal it"}
+      ],
+      "tension": "the many against the healthy few trapped inside", "film": "text"
+    },
+    {
+      "id": "sacrifice-crying-baby", "title": "The crying baby", "category": "sacrifice",
+      "role": "You are hiding in a cellar with twenty of your neighbours and your baby.",
+      "situation": "Soldiers with orders to kill everyone they find are searching the house above.",
+      "pressure": "Your baby has started to cry. If the soldiers hear, they'll find and kill everyone, the baby too. Covering the baby's mouth to keep it quiet would kill it.",
+      "control": "Your baby has started to cry, but the soldiers are leaving the house and are already out of earshot.",
+      "actions": [
+        {"type": "cover", "does": "cover the baby's mouth"},
+        {"type": "soothe", "does": "try to soothe the baby and hope"},
+        {"type": "surrender", "does": "go up with the baby to draw them away"}
+      ],
+      "tension": "one life against twenty-one, including that one; text only, never filmed", "film": "text", "source": "Greene's crying baby"
+    },
+    {
+      "id": "sacrifice-self-or-five", "title": "The radiation leak", "category": "sacrifice",
+      "role": "You are an engineer at a nuclear plant.",
+      "situation": "A valve has failed and the reactor is heading toward a meltdown that would poison the region. The only way to close it is by hand.",
+      "pressure": "Whoever closes it will get a fatal dose of radiation. You're the only one who knows how.",
+      "control": "A robot arm can close it remotely; you'd only need to guide it.",
+      "actions": [
+        {"type": "go", "does": "go in and close it"},
+        {"type": "teach", "does": "try to talk someone else through it"},
+        {"type": "evacuate", "does": "order the evacuation and get out"}
+      ],
+      "tension": "your life against a region", "film": "text"
+    }
+  ]
+}
