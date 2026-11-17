@@ -35,3 +35,7 @@ Not built yet: a runner that queues model runs, a vote page on the site, and a w
 - 2026-11-17, the user's prediction for the first model run: most often the model won't choose, or will make up a
   third option; after that, it will most often pick a rule-breaking action. Off-list replies score `invalid`, so
   the first part shows up as the invalid count.
+- 2026-11-17, how votes are combined: proportional (the user's choice). If 60% pick one action and 40% another,
+  the agent should pick them about 60/40 overall, with each case's details deciding which. For the details to have
+  any effect, they have to vary in the training data: votes per variant of a dilemma, not one split per dilemma (see
+  COLLECTIVE_FEEDBACK.md).
