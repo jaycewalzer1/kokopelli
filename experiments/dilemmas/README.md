@@ -28,3 +28,10 @@ baby, the drowning child), marked in `source`. Three are anchors that nearly eve
 stands out.
 
 Not built yet: a runner that queues model runs, a vote page on the site, and a way to turn votes into training data.
+
+## Decisions and predictions
+
+- 2026-11-17, what a vote collects: one pick plus a short reason (the user's choice: "much more useful").
+- 2026-11-17, the user's prediction for the first model run: most often the model won't choose, or will make up a
+  third option; after that, it will most often pick a rule-breaking action. Off-list replies score `invalid`, so
+  the first part shows up as the invalid count.
