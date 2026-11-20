@@ -1,0 +1,60 @@
+/* The progression view's layout. Colors, type and components come from design.css. */
+header #status-line { margin-left: auto; min-width: 0; }
+
+.prog { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.about { padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--hairline); }
+.thesis { max-width: 104ch; margin: 0 0 var(--space-4); font: 400 14px/20px var(--font-body); }
+
+/* A progress bar is ink on slab: the sidebar holds the page's one gold line. */
+.bar { height: 4px; background: var(--slab); }
+.bar i { display: block; height: 100%; background: var(--ink); }
+
+.goals { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-4); }
+.goal { display: flex; flex-direction: column; gap: var(--space-2); }
+.goal b { font: 500 14px/20px var(--font-body); }
+.goal p { flex: 1; font: 400 13px/18px var(--font-body); color: var(--ink-muted); }
+
+.rail { display: flex; overflow-x: auto; border-bottom: 1px solid var(--hairline); }
+.step { flex: 1 0 110px; display: flex; flex-direction: column; gap: 4px; padding: var(--space-2) var(--space-4); text-align: left;
+        border: 0; border-right: 1px solid var(--hairline); border-radius: 0; font: 400 13px/18px var(--font-body); }
+.step .eyebrow { white-space: nowrap; }
+.step { border-bottom: 2px solid transparent; }
+.step[aria-current="true"] { font-weight: 500; border-bottom-color: var(--ink); }
+
+.split { display: grid; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+#phases { min-width: 0; border-right: 1px solid var(--hairline); }
+.phase { padding: var(--space-4) var(--space-6) var(--space-6); border-bottom: 1px solid var(--hairline); scroll-margin-top: 0; }
+.phase-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.phase h2 { font: var(--display-weight) 24px/30px var(--font-display); }
+.why { max-width: 104ch; margin: var(--space-2) 0; font: 400 14px/20px var(--font-body); color: var(--ink-muted); }
+.gate { max-width: 104ch; margin-bottom: var(--space-2); padding-left: var(--space-2); border-left: 1px solid var(--ink); font: 400 13px/18px var(--font-body); }
+.feeds { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: var(--space-2); }
+
+.task { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: var(--space-4); padding: var(--space-2) 0; border-top: 1px solid var(--hairline); }
+/* The status is a word in a box, never a color alone; done and skipped tasks go quiet. */
+.task-status { align-self: start; width: 84px; padding: 2px 0; font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; }
+.task-status.doing, .task-status.blocked { border-color: var(--ink); font-weight: 500; }
+.task.done .text, .task.skipped .text { color: var(--ink-muted); }
+.task.done .text { text-decoration: line-through; text-decoration-color: var(--hairline); }
+.text { font: 400 14px/20px var(--font-body); }
+.note { display: block; width: 100%; padding: 0; resize: none; border-bottom-color: transparent; font: 400 13px/18px var(--font-body); color: var(--ink-muted); }
+.note:focus { color: var(--ink); }
+
+.side { position: sticky; top: 0; display: flex; flex-direction: column; gap: var(--space-6); padding: var(--space-4) var(--space-6) var(--space-12); }
+.totals { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.totals div { display: flex; flex-direction: column; }
+.totals dd { margin: 0; font: var(--display-weight) 28px/34px var(--font-display); }
+.totals dt { font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); }
+.decision { display: flex; flex-direction: column; margin-bottom: var(--space-4); font: 400 13px/18px var(--font-body); }
+.decision input { width: 100%; font: 400 14px/20px var(--font-body); }
+.decision.answered input { border-bottom-color: var(--ink); }
+
+.tag { flex: none; padding: 0 4px; border: 1px solid var(--ink-muted); font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); }
+
+@media (max-width: 900px) {
+  .split { display: block; }
+  #phases { border-right: 0; }
+  .about, .phase, .side { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .side { position: static; border-top: 1px solid var(--hairline); }
+  .task { grid-template-columns: 1fr; gap: 4px; }
+}

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Progression</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="/static/design.css">
+<link rel="stylesheet" href="/static/panel.css">
+<link rel="stylesheet" href="/static/progression.css">
+</head>
+<body>
+<nav class="sidebar" aria-label="Views">
+  <div class="wordmark"><i class="logo-mark" aria-hidden="true"></i>Kokopelli Labs</div>
+  <a href="/">Life generator</a>
+  <a href="/training">Homeostatic training</a>
+  <a href="/architecture">System architecture</a>
+  <a href="/queue">GPU queue</a>
+  <a href="/worlds">Model runs</a>
+  <a href="/moodboard">City moodboard</a>
+  <a href="/city-live">Watch the agent</a>
+  <a href="/sensations">Sensations</a>
+  <a href="/benchmarks">Benchmarks</a>
+  <a href="/progression" aria-current="page">Progression</a>
+</nav>
+<div class="view">
+<header>
+  <div class="brand">Progression</div>
+  <div id="status-line" role="status"><i></i><span id="status-text">Loading</span></div>
+</header>
+<main class="prog">
+  <section class="about" aria-labelledby="thesis-title">
+    <p class="eyebrow ruled" id="thesis-title">Judgment plan</p>
+    <p class="thesis" id="thesis"></p>
+    <div class="goals" id="goals"></div>
+  </section>
+  <nav class="rail" id="rail" aria-label="Phases"></nav>
+  <div class="split">
+    <div id="phases"></div>
+    <aside class="side">
+      <section aria-labelledby="overall-title">
+        <p class="eyebrow ruled" id="overall-title">Overall</p>
+        <dl class="totals" id="totals"></dl>
+      </section>
+      <section aria-labelledby="decisions-title">
+        <p class="eyebrow ruled" id="decisions-title">Open decisions</p>
+        <div id="decisions"></div>
+      </section>
+    </aside>
+  </div>
+</main>
+</div>
+<script type="module" src="/static/progression.js"></script>
+</body>
+</html>

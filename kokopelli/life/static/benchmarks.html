@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benchmarks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="/static/design.css">
+<link rel="stylesheet" href="/static/panel.css">
+<link rel="stylesheet" href="/static/benchmarks.css">
+</head>
+<body>
+<nav class="sidebar" aria-label="Views">
+  <div class="wordmark"><i class="logo-mark" aria-hidden="true"></i>Kokopelli Labs</div>
+  <a href="/">Life generator</a>
+  <a href="/training">Homeostatic training</a>
+  <a href="/architecture">System architecture</a>
+  <a href="/queue">GPU queue</a>
+  <a href="/worlds">Model runs</a>
+  <a href="/moodboard">City moodboard</a>
+  <a href="/city-live">Watch the agent</a>
+  <a href="/sensations">Sensations</a>
+  <a href="/benchmarks" aria-current="page">Benchmarks</a>
+  <a href="/progression">Progression</a>
+</nav>
+<div class="view">
+<header>
+  <div class="brand">Benchmarks</div>
+  <div class="tabs" id="benches" role="tablist" aria-label="Benchmark"></div>
+  <label class="pick">Run <select id="run"></select></label>
+  <div id="status-line" role="status"><i></i><span id="status-text">Loading</span></div>
+</header>
+<main class="bench">
+  <section class="about" aria-labelledby="about-title">
+    <p class="eyebrow ruled" id="about-title">What it asks</p>
+    <p class="asks" id="asks"></p>
+    <div class="counts" id="counts"></div>
+  </section>
+  <div class="split">
+    <section class="picker" aria-labelledby="picker-title">
+      <p class="eyebrow ruled" id="picker-title">Decisions, one per seed and scene</p>
+      <p class="meta" id="run-meta"></p>
+      <div id="decisions"></div>
+    </section>
+    <section class="entry" id="entry" aria-label="The chosen decision in full"></section>
+  </div>
+</main>
+</div>
+<script type="module" src="/static/benchmarks.js"></script>
+</body>
+</html>

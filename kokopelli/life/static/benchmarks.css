@@ -1,0 +1,55 @@
+/* The benchmarks view's layout. Colors, type and components come from design.css. */
+header #status-line { margin-left: auto; min-width: 0; }
+header .pick { display: flex; align-items: center; gap: var(--space-2); font: 500 14px/20px var(--font-body); }
+header select { max-width: 260px; }
+header .tabs { flex-wrap: wrap; gap: 0 var(--space-4); min-width: 0; border-bottom: 0; margin-right: var(--space-4); }
+/* The sidebar holds the page's one gold line, so the chosen benchmark is marked in ink. */
+header .tab[aria-selected="true"] { border-bottom-color: var(--ink); }
+
+/* One scroll for the page: what the benchmark asks and its counts, then the decisions beside the chosen one. */
+.bench { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.about { padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--hairline); }
+.asks { max-width: 104ch; margin: 0 0 var(--space-4); font: 400 14px/20px var(--font-body); }
+.counts { overflow-x: auto; }
+.counts table { width: auto; }
+.counts caption { text-align: left; padding-bottom: var(--space-2); }
+.counts td.n { min-width: 56px; text-align: right; font: 400 13px/20px var(--font-mono); padding-right: var(--space-4); }
+.counts td.zero { color: var(--ink-muted); }
+.counts th.scene { white-space: nowrap; padding-right: var(--space-4); font: 400 13px/20px var(--font-body); text-transform: none; letter-spacing: 0; color: var(--ink); }
+.split { display: grid; grid-template-columns: 440px minmax(0, 1fr); align-items: start; }
+.picker, .entry { min-width: 0; box-sizing: border-box; padding: var(--space-4) var(--space-6) var(--space-12); }
+.picker { border-right: 1px solid var(--hairline); }
+.entry { position: sticky; top: 0; max-height: calc(100vh - 54px); overflow-y: auto; }
+.picker .meta { margin-bottom: var(--space-4); }
+.picker .pick { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); font: 500 14px/20px var(--font-body); }
+.none { font: 400 13px/18px var(--font-body); color: var(--ink-muted); padding: var(--space-2) 0; }
+
+table { border-collapse: collapse; width: 100%; }
+th { text-align: left; font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); }
+th, td { padding: var(--space-2) var(--space-2) var(--space-2) 0; border-bottom: 1px solid var(--hairline); vertical-align: middle; }
+td.seed { width: 40px; font: 400 13px/20px var(--font-mono); color: var(--ink-muted); }
+/* A decision is a quiet button. The chosen one is marked by its border and its weight, not by color. */
+.choice { display: block; width: 100%; padding: var(--space-2); text-align: left; font: 400 13px/18px var(--font-body); border-color: transparent; }
+.choice[aria-pressed="true"] { border-color: var(--ink); font-weight: 500; }
+
+.entry { display: flex; flex-direction: column; gap: var(--space-6); }
+.entry .title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.entry section { display: flex; flex-direction: column; min-width: 0; max-width: 104ch; }
+.entry pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 400 13px/20px var(--font-mono); }
+.entry dl { margin: 0; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--space-2) var(--space-4); font: 400 13px/20px var(--font-body); }
+.entry dt { color: var(--ink-muted); }
+.entry dd { margin: 0; overflow-wrap: anywhere; }
+.entry dd.mono { font: 400 13px/20px var(--font-mono); }
+
+/* A word in a box, never a color alone. */
+.tag { flex: none; padding: 0 4px; border: 1px solid var(--ink-muted); font: 400 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); }
+.tag.strong { border-color: var(--ink); color: var(--ink); }
+
+@media (max-width: 900px) {
+  .split { display: block; }
+  .about, .picker, .entry { padding: var(--space-4) var(--space-4) var(--space-12); }
+  .about { padding-bottom: var(--space-6); }
+  .entry { position: static; max-height: none; overflow: visible; }
+  .picker { border-right: 0; border-bottom: 1px solid var(--hairline); padding-bottom: var(--space-6); }
+  .entry dl { grid-template-columns: 72px minmax(0, 1fr); }
+}

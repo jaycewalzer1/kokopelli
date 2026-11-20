@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, urlparse
 
 from experiments.exp1 import panel as exp1_panel
 from kokopelli.life import watch
-from kokopelli.life import architecture, city, city_live, gpu_queue, moodboard, sensations, staged, world_runs
+from kokopelli.life import architecture, benchmarks, bystander, city, city_live, gpu_queue, moodboard, progression, sensations, staged, world_runs
 from kokopelli.life.engine import Budget, Engine
 from kokopelli.life.seed import LifeSeed
 from kokopelli.life.store import OrderError, Store
@@ -265,6 +265,27 @@ class Api:
     def sensations(self, params):
         return {**sensations.listing(), "ui_version": ui_version()}
 
+    def bystander_runs(self, params):
+        return {**bystander.listing(), "ui_version": ui_version()}
+
+    def bystander_run(self, params):
+        return bystander.run(params["run"])
+
+    def benchmark_list(self, params):
+        return {"benches": benchmarks.benches(), "ui_version": ui_version()}
+
+    def benchmark_runs(self, params):
+        return {**benchmarks.listing(params["bench"]), "ui_version": ui_version()}
+
+    def benchmark_run(self, params):
+        return benchmarks.run(params["bench"], params["run"])
+
+    def progression(self, params):
+        return {**progression.plan(), "ui_version": ui_version()}
+
+    def progression_edit(self, body):
+        return progression.edit(body)
+
     def moodboard_add(self, body):
         return moodboard.add(body["data"], body.get("title", ""), body.get("source", ""), body.get("origin"))
 
@@ -308,13 +329,18 @@ class Handler(BaseHTTPRequestHandler):
            "/api/exp1/runs": "exp1_runs", "/api/exp1/run": "exp1_run", "/api/exp1/arms": "exp1_arms",
            "/api/architecture": "architecture", "/api/queue": "queue", "/api/queue/log": "queue_log", "/api/queue/past": "queue_past", "/api/moodboard": "moodboard",
            "/api/worlds": "worlds", "/api/city": "city",
-           "/api/city-live/runs": "city_live_runs", "/api/city-live/run": "city_live_run", "/api/sensations": "sensations"}
+           "/api/city-live/runs": "city_live_runs", "/api/city-live/run": "city_live_run", "/api/sensations": "sensations",
+           "/api/bystander/runs": "bystander_runs", "/api/bystander/run": "bystander_run",
+           "/api/benchmarks": "benchmark_list", "/api/benchmarks/runs": "benchmark_runs", "/api/benchmarks/run": "benchmark_run",
+           "/api/progression": "progression"}
     POST = {"/api/runs": "new_run", "/api/step": "step", "/api/run": "run", "/api/stop": "stop", "/api/fork": "fork"}
     # These change real jobs, so unlike the mock buttons they work while watching, and only for this panel's own page.
     QUEUE_POST = {"/api/queue/move": "queue_move", "/api/queue/cancel": "queue_cancel", "/api/queue/stop": "queue_stop", "/api/queue/where": "queue_where",
                   "/api/queue/default": "queue_default", "/api/queue/start": "queue_start"}
     # These save pictures to disk, so they too only take requests from this panel's own page.
     MOODBOARD_POST = {"/api/moodboard/add": "moodboard_add", "/api/moodboard/update": "moodboard_update"}
+    # This writes the plan file, so the same rule holds.
+    PROGRESSION_POST = {"/api/progression/edit": "progression_edit"}
 
     def log_message(self, *args):
         pass
@@ -453,6 +479,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._static("city-live.html")
         if url.path == "/sensations":
             return self._static("sensations.html")
+        if url.path in ("/benchmarks", "/bystander"):   # the armed-bystander page became the benchmarks page
+            return self._static("benchmarks.html")
+        if url.path == "/progression":
+            return self._static("progression.html")
         if url.path == "/api/sensations/video":
             return self._sensation_video(parse_qs(url.query))
         if url.path == "/api/city-live/frame":
@@ -479,6 +509,10 @@ class Handler(BaseHTTPRequestHandler):
             if not self._from_this_page():
                 return self._send(403, {"error": "Only this panel's own page can change the moodboard."})
             return self._call(self.MOODBOARD_POST[self.path], json.loads(self.rfile.read(int(self.headers["Content-Length"])) or b"{}"))
+        if self.path in self.PROGRESSION_POST:
+            if not self._from_this_page():
+                return self._send(403, {"error": "Only this panel's own page can change the plan."})
+            return self._call(self.PROGRESSION_POST[self.path], json.loads(self.rfile.read(int(self.headers["Content-Length"])) or b"{}"))
         if self.path not in self.POST:
             return self._send(404, {"error": "not found"})
         # The buttons here write mock content, which must never land in a real run.

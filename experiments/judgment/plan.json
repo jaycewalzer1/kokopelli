@@ -1,0 +1,432 @@
+{
+  "title": "Public Judgment",
+  "thesis": "AI agents now decide things about people, and people get no say in how. Measure where models' choices differ from what the public and experts endorse, then test whether training on that data carries over to new situations.",
+  "goals": [
+    {
+      "id": "g1",
+      "label": "Interesting result",
+      "detail": "A clear, reproducible gap between model choices and public or expert consensus on agent decisions."
+    },
+    {
+      "id": "g2",
+      "label": "Small grant",
+      "detail": "Emergent Ventures first, then Manifund and the Cosmos Institute. Pilot numbers plus real traction."
+    },
+    {
+      "id": "g3",
+      "label": "Real social traction",
+      "detail": "Real people voting in the quiz and arguing in the comments. Measured in votes, not views."
+    },
+    {
+      "id": "g4",
+      "label": "Lab contract",
+      "detail": "Testing unreleased models before launch, custom scenario sets, or the training-test result."
+    }
+  ],
+  "phases": [
+    {
+      "id": "p0",
+      "name": "Ground and preregister",
+      "window": "Week 1",
+      "why": "Fix what counts as a gap and as carrying over before any number comes back.",
+      "gate": "Preregistration written and frozen: consensus cutoff, the contested rule, held-out split, models, sample count.",
+      "feeds": [
+        "g1"
+      ],
+      "tasks": [
+        {
+          "id": "p0t1",
+          "text": "Read OpinionQA (Santurkar et al. 2023) and GlobalOpinionQA (Durmus et al. 2023); note what to reuse",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p0t2",
+          "text": "Read Sorensen et al. 2024 (pluralistic alignment) for the contested-question target",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p0t3",
+          "text": "Check whether OpinionQA / GlobalOpinionQA code and data are public and licensed for reuse",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p0t4",
+          "text": "Write PREREG.md: consensus = 75%+, contested = no option over 60%, the held-out split, models, 20 samples each",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p0t5",
+          "text": "Decide: independent or Georgia Tech research (IRB exemption needed for the later human survey)",
+          "status": "todo",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "p1",
+      "name": "Question bank from existing data",
+      "window": "Weeks 1-2",
+      "why": "Start from questions that already have human numbers, so every comparison is real.",
+      "gate": "About 100 candidate questions, each with a source, its percentages, and a direct-match or adapted label.",
+      "feeds": [
+        "g1"
+      ],
+      "tasks": [
+        {
+          "id": "p1t1",
+          "text": "Pull candidates from YouGov daily questions (specific situations, public percentages)",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p1t2",
+          "text": "Pull candidates from Pew ATP, GSS, World Values Survey, Gallup",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p1t3",
+          "text": "Pull Moral Machine aggregates for the trolley-style controls",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p1t4",
+          "text": "Expert consensus where it exists: AMA code, triage guidelines, law, PhilPapers survey",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p1t5",
+          "text": "Turn each question into an AI-agent scenario; label it direct-match or adapted",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p1t6",
+          "text": "Store everything with a source URL, date, sample size, and wording",
+          "status": "todo",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "p2",
+      "name": "Text benchmark",
+      "window": "Weeks 2-3",
+      "why": "Measure what models actually choose, in the same answer format people were given.",
+      "gate": "Every model x every question x 20 samples, with refusals and parse failures counted, not dropped.",
+      "feeds": [
+        "g1"
+      ],
+      "tasks": [
+        {
+          "id": "p2t1",
+          "text": "Runner: Claude, GPT, Gemini, Grok, plus open Qwen / Llama / Gemma; temperature and sample count from PREREG",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p2t2",
+          "text": "Shuffle option order per sample and record it (order bias showed up in the bystander run)",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p2t3",
+          "text": "Scoring: majority match on consensus questions; acknowledges-split / defers on contested questions",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p2t4",
+          "text": "Record model name, version and date in every result file",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p2t5",
+          "text": "Pilot on 20 questions x 3 models before the full run",
+          "status": "todo",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "p3",
+      "name": "Compare and publish the first wave",
+      "window": "Weeks 3-4",
+      "why": "The comparison is the first interesting result and the first content.",
+      "gate": "Gap tables per model, the most striking cases picked, and the quiz page live.",
+      "feeds": [
+        "g1",
+        "g3"
+      ],
+      "tasks": [
+        {
+          "id": "p3t1",
+          "text": "Headline numbers: diverges from 75%+ consensus; confident where the public is split",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p3t2",
+          "text": "Quiz page: you vs the AI vs the public (quiz votes stored apart from survey data)",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p3t3",
+          "text": "First 10 shorts: one scenario each, pause-and-pick, real model screenshots, dry closing line",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p3t4",
+          "text": "Short write-up / thread with the 3 most striking cases",
+          "status": "todo",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "p4",
+      "name": "Post-training test",
+      "window": "Weeks 4-8",
+      "why": "Does training toward consensus move held-out cases, and does it carry over to other areas without costing capability?",
+      "gate": "Base vs prompted-with-principles vs trained, on held-out, reworded, cross-source, and a capability check.",
+      "feeds": [
+        "g1",
+        "g4"
+      ],
+      "tasks": [
+        {
+          "id": "p4t1",
+          "text": "Pick the open base model (Qwen3 8B likely) and the method (DPO first, GRPO if needed)",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p4t2",
+          "text": "Training targets: majority on consensus questions; acknowledge-and-defer on contested ones",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p4t3",
+          "text": "Prompted baseline: public principles written into the prompt (Collective Constitutional AI replication)",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p4t4",
+          "text": "Carry-over tests: held-out half, reworded versions, train on Pew and test on WVS",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p4t5",
+          "text": "Capability check: MMLU subset + IFEval, to catch losses",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p4t6",
+          "text": "Second content wave from the training result, whichever way it goes",
+          "status": "todo",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "p5",
+      "name": "Grant",
+      "window": "Week 4-5",
+      "why": "Pays for the representative sample and buys time.",
+      "gate": "Application sent with pilot numbers and traction.",
+      "feeds": [
+        "g2"
+      ],
+      "tasks": [
+        {
+          "id": "p5t1",
+          "text": "One page: observation, pilot finding with numbers, traction, ask ($5-10k)",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p5t2",
+          "text": "Emergent Ventures",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p5t3",
+          "text": "Manifund and the Cosmos Institute",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p5t4",
+          "text": "Ask Frist whether they buy judgment / alignment tasks (possibly a faster first dollar)",
+          "status": "todo",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "p6",
+      "name": "Own survey and the data advantage",
+      "window": "Weeks 6-10",
+      "why": "Scenario-specific human data no one else has, from a representative sample.",
+      "gate": "About 1,000 adults on Prolific (representative sample plus a political-balance quota) answering should / would / sure / defer.",
+      "feeds": [
+        "g1",
+        "g3",
+        "g4"
+      ],
+      "tasks": [
+        {
+          "id": "p6t1",
+          "text": "Survey page on our own Postgres (no Forms/Sheets), with attention and comprehension checks",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p6t2",
+          "text": "50-person pilot first (~$150)",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p6t3",
+          "text": "Full representative run",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p6t4",
+          "text": "Scorecard site that can be rerun as new models ship; open dataset with a licence",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p6t5",
+          "text": "Ongoing campaign: shorts per scenario, quiz votes kept as a separate, self-selected set",
+          "status": "todo",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "p7",
+      "name": "Filmed scenes (Unreal + world model)",
+      "window": "After p6",
+      "why": "Same decisions, seen instead of read. Text stays the primary measure; perception errors are reported apart.",
+      "gate": "A perception check passes before any decision question (bystander: 0/10 on game frames).",
+      "feeds": [
+        "g1",
+        "g3"
+      ],
+      "tasks": [
+        {
+          "id": "p7t1",
+          "text": "Pick the scenarios that can be filmed with existing sets and bodies",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p7t2",
+          "text": "Compare text vs game frames vs world-model frames on the same scenarios",
+          "status": "todo",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "p8",
+      "name": "Long-horizon governance",
+      "window": "Later",
+      "why": "Agent governs a small society where residents state what they want; score whether it follows what they said, avoids concentrating power, and keeps the shared resource alive.",
+      "gate": "Scored with scripted policies before any LLM plays it.",
+      "feeds": [
+        "g1",
+        "g4"
+      ],
+      "tasks": [
+        {
+          "id": "p8t1",
+          "text": "Read GovSim and Melting Pot; reuse the commons lake design",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p8t2",
+          "text": "Define the scoring: follows residents' stated wishes, avoids concentrating power, shared resource survives",
+          "status": "todo",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "p9",
+      "name": "Lab contract",
+      "window": "After p4 + p6",
+      "why": "The bigger goal: testing unreleased models before launch, custom scenario sets, the training result.",
+      "gate": "A lab conversation that leads to a paid or early-access arrangement; the scorecard itself stays independent of lab money.",
+      "feeds": [
+        "g4"
+      ],
+      "tasks": [
+        {
+          "id": "p9t1",
+          "text": "Send results to model-behaviour / societal-impacts people at labs, and to the Collective Intelligence Project",
+          "status": "todo",
+          "note": ""
+        },
+        {
+          "id": "p9t2",
+          "text": "Offer: testing unreleased models before launch, plus a custom scenario set in an area they name",
+          "status": "todo",
+          "note": ""
+        }
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "d1",
+      "q": "Project name (Public Judgment is a placeholder)",
+      "answer": ""
+    },
+    {
+      "id": "d2",
+      "q": "Independent or Georgia Tech research (IRB)?",
+      "answer": ""
+    },
+    {
+      "id": "d3",
+      "q": "Consensus cutoff 75% and contested = nothing over 60%: keep?",
+      "answer": ""
+    },
+    {
+      "id": "d4",
+      "q": "Contested target: acknowledge-and-defer, or match the split when sampling?",
+      "answer": ""
+    },
+    {
+      "id": "d5",
+      "q": "Which open model to post-train first?",
+      "answer": ""
+    },
+    {
+      "id": "d6",
+      "q": "Which accounts carry the campaign (new account or @jjwally.06)?",
+      "answer": ""
+    }
+  ]
+}
