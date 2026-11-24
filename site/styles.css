@@ -102,6 +102,7 @@ h3 { font: 300 clamp(24px, 2.6vw, 32px)/1.2 var(--font-display); }
 .insight { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--space-12); align-items: center; }
 .insight h2 { max-width: 24ch; }
 .pull { margin-top: var(--space-12); font: italic 300 clamp(28px, 3.4vw, 44px)/1.2 var(--font-display); }
+.insight-note { margin-top: var(--space-6); max-width: 56ch; }
 .mark { width: 100%; max-width: 380px; justify-self: end; opacity: 0.95; }
 
 .steps { list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-6); }
@@ -128,6 +129,7 @@ h3 { font: 300 clamp(24px, 2.6vw, 32px)/1.2 var(--font-display); }
 
 /* Benchmarks */
 .intro { max-width: 68ch; }
+.repeat + .intro { margin-top: var(--space-6); }
 .bench { margin-top: var(--space-12); padding: clamp(24px, 4vw, 48px); background: var(--panel); border-top: 3px solid var(--ink); }
 .bench-head { display: flex; flex-direction: column; gap: var(--space-4); max-width: 78ch; }
 .bench-body { margin-top: var(--space-12); display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-12); align-items: start; }

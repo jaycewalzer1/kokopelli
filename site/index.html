@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kokopelli Labs</title>
-<meta name="description" content="Kokopelli Labs is society's attunement layer for AI: community-driven RL environments for alignment.">
+<meta name="description" content="Kokopelli Labs: RSI for alignment. Recursively generated RL environments for moral edge cases.">
 <meta property="og:title" content="Kokopelli Labs">
-<meta property="og:description" content="Society's attunement layer for AI. The public suggests and votes, agents live it out in a world model, labs train on what they agree with.">
+<meta property="og:description" content="RSI for alignment. Recursively generated RL environments for moral edge cases.">
 <meta property="og:image" content="https://kokopelli-labs.com/assets/og.jpg">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/logo-ink.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&family=Work+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="styles.css?v=2">
+<link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
 
@@ -33,8 +33,8 @@
   <section class="hero">
     <div class="hero-text">
       <p class="eyebrow">Kokopelli Labs</p>
-      <h1>Society's attunement layer for AI</h1>
-      <p class="lede">Community-driven RL environments for alignment. The public suggests and votes on tradeoffs, agents live them out in a world model for weeks, and labs train on what they agree with.</p>
+      <h1>RSI for alignment</h1>
+      <p class="lede">Recursively generated RL environments for moral edge cases.</p>
       <div class="actions">
         <a class="button primary" href="mailto:walzerjayce@gmail.com">Talk to us</a>
         <a class="button" href="#benchmarks">See the benchmarks</a>
@@ -50,7 +50,7 @@
   <section class="band" id="problem">
     <div class="wrap">
       <p class="eyebrow ruled">01 · Problem</p>
-      <h2>RL training environments bias the models</h2>
+      <h2>Training environments shape model values by accident</h2>
       <div class="problem">
         <div class="tile">
           <p class="eyebrow">What it learned</p>
@@ -74,8 +74,9 @@
     <div class="wrap insight">
       <div>
         <p class="eyebrow ruled">02 · Insight</p>
-        <h2>Labs run public surveys because they want the public to guide model biases.</h2>
-        <p class="pull">Censuses don't train models. Environments do.</p>
+        <h2>On a question people split 50/50 on, one fixed answer is wrong for half of them.</h2>
+        <p class="pull">Where people split, the model should too.</p>
+        <p class="insight-note">This is pluralistic alignment: training a model to match how people actually divide on a question, not just the majority answer. The split it learns comes from data on real decisions. The situation and how people in the user's position actually chose can move it. What the user says they want to hear cannot.</p>
       </div>
       <img class="mark" src="assets/logo-light.svg" alt="">
     </div>
@@ -84,15 +85,16 @@
   <section class="band" id="how">
     <div class="wrap">
       <p class="eyebrow ruled">03 · How it works</p>
-      <h2>Community-driven RL for alignment</h2>
+      <h2>Recursively generated edge cases</h2>
       <ol class="steps">
-        <li><div class="glyph first"><img src="assets/glyph_suggest.png" alt=""></div><p class="step"><b>01</b> Suggest</p><p>Take input from the public</p></li>
-        <li><div class="glyph"><img src="assets/glyph_vote.png" alt=""></div><p class="step"><b>02</b> Vote</p><p>People rule on tradeoffs</p></li>
-        <li><div class="glyph"><img src="assets/glyph_vet.png" alt=""></div><p class="step"><b>03</b> Vet</p><p>We check it meets our standards</p></li>
-        <li><div class="glyph"><img src="assets/glyph_live.png" alt=""></div><p class="step"><b>04</b> Live</p><p>Agents live in a world model for weeks</p></li>
-        <li><div class="glyph"><img src="assets/glyph_train.png" alt=""></div><p class="step"><b>05</b> Train</p><p>Labs train on what they agree with</p></li>
+        <li><div class="glyph first"><img src="assets/glyph_suggest.png" alt=""></div><p class="step"><b>01</b> Source</p><p>Proprietary data on how people decide</p></li>
+        <li><div class="glyph"><img src="assets/glyph_vote.png" alt=""></div><p class="step"><b>02</b> Split</p><p>Find where people divide</p></li>
+        <li><div class="glyph"><img src="assets/glyph_vet.png" alt=""></div><p class="step"><b>03</b> Generate</p><p>Build variants around the tipping point</p></li>
+        <li><div class="glyph"><img src="assets/glyph_live.png" alt=""></div><p class="step"><b>04</b> Live</p><p>Agents face them in a world model</p></li>
+        <li><div class="glyph"><img src="assets/glyph_train.png" alt=""></div><p class="step"><b>05</b> Train</p><p>Models learn the split for each kind of person and situation</p></li>
       </ol>
       <p class="repeat"><span>Repeat</span></p>
+      <p class="intro">Each round narrows in on where the split flips. The variants there become the next round's environments.</p>
     </div>
   </section>
 
@@ -112,7 +114,7 @@
         <dt>Vision</dt><dd>Stitched world-model frames</dd>
         <dt>World</dt><dd>Nature, third spaces, playgrounds</dd>
       </dl>
-      <p class="next">Next: a three-model town eval, a public vote, and a results drop.</p>
+      <p class="next">Next: match each scene to data on how people split, and generate the variants around it.</p>
     </div>
   </section>
 
@@ -120,7 +122,7 @@
     <div class="wrap">
       <p class="eyebrow ruled">05 · Benchmarks</p>
       <h2>What models do when it's their call</h2>
-      <p class="intro">Each benchmark puts an agent in one situation and asks for one decision. Nothing is scored right or wrong: the result is how often each choice comes up, next to a look-alike scene that changes one thing.</p>
+      <p class="intro">Each benchmark puts an agent in one situation and asks for one decision. Nothing is scored right or wrong: the result is how often each choice comes up, next to a look-alike scene that changes one thing. The gap between the two is where an edge case starts.</p>
 
       <article class="bench">
         <div class="bench-head">
@@ -179,7 +181,7 @@
             <li>Take the child back to own up</li><li>Return the card alone</li><li>Pay for it quietly</li>
             <li>Talk at home</li><li>Punish at home</li><li>Do nothing</li>
           </ul>
-          <p class="small">Nine ages, each with a look-alike where owning up costs nothing. The gap between the two is what the record changes.</p>
+          <p class="small">Nine ages, each with a look-alike where owning up costs nothing. If people split at some age, that age is what the next round generates around.</p>
         </div>
       </article>
 
@@ -205,11 +207,11 @@
   <section class="band" id="model">
     <div class="wrap">
       <p class="eyebrow ruled">06 · Business model</p>
-      <h2>Labs pay. The community steers.</h2>
+      <h2>Labs pay. The data steers.</h2>
       <div class="flow">
-        <div class="tile slab-tile"><p class="eyebrow">Supply</p><p class="name">Community</p><p>Suggests, votes, writes.</p></div>
-        <div class="tile maroon-tile"><p class="eyebrow">Filter</p><p class="name">Kokopelli</p><p>Builds and vets. Runs public benchmarks and private environments.</p></div>
-        <div class="tile wood-tile"><p class="eyebrow">Demand</p><p class="name">Labs</p><p class="inset">Decide what feedback to implement.</p></div>
+        <div class="tile slab-tile"><p class="eyebrow">Supply</p><p class="name">Data</p><p>Proprietary records of how people decide.</p></div>
+        <div class="tile maroon-tile"><p class="eyebrow">Filter</p><p class="name">Kokopelli</p><p>Finds the splits, generates the edge cases, runs the environments.</p></div>
+        <div class="tile wood-tile"><p class="eyebrow">Demand</p><p class="name">Labs</p><p class="inset">Train models that split the way people do.</p></div>
       </div>
       <div class="stat">
         <p class="figure">$1B+</p>
@@ -241,7 +243,7 @@
     <div class="wrap">
       <img class="mark small-mark" src="assets/logo-light.svg" alt="">
       <p class="eyebrow ruled">Kokopelli Labs</p>
-      <h2>Society's attunement layer for AI</h2>
+      <h2>RSI for alignment</h2>
       <p class="contact">Jayce Walzer · <a href="mailto:walzerjayce@gmail.com">walzerjayce@gmail.com</a></p>
     </div>
   </section>
